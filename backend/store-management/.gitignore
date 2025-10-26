@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Phân chia công việc ###
+API_ENDPOINTS.md
+Phân chia công việc BE.pdf

@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AuthenticationDto {
+public class AuthenticationRequestDto {
     @NotBlank(message = "Tên đăng nhập không được để trống")
     private String username;
 
@@ -21,4 +21,12 @@ public class AuthenticationDto {
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không hợp lệ") // customize lại sau theo yêu cầu
     private String email;
+
+    @NotBlank(message = "Tên khách hàng không được để trống")
+    private String customerName;
+
+    @NotBlank(message = "Số điện thoại không được để trống")
+    private String phoneNumber;
+
+    private String address;
 }

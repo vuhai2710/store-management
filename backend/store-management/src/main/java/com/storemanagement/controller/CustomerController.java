@@ -1,4 +1,101 @@
 package com.storemanagement.controller;
 
+import com.storemanagement.dto.ApiResponse;
+import com.storemanagement.dto.CustomerDto;
+import com.storemanagement.service.CustomerService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1/customers")
+@RequiredArgsConstructor
 public class CustomerController {
+
+    private final CustomerService customerService;
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<List<CustomerDto>>> getAllCustomers() {
+        List<CustomerDto> customers = customerService.getAllCustomers();
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách customer thành công", customers));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<CustomerDto>> getCustomerById(@PathVariable Integer id) {
+        CustomerDto customer = customerService.getCustomerById(id);
+        return ResponseEntity.ok(ApiResponse.success("Lấy thông tin customer thành công", customer));
+    }
+
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<List<CustomerDto>>> searchCustomers(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String phone) {
+        List<CustomerDto> customers = customerService.searchCustomers(name, phone);
+        return ResponseEntity.ok(ApiResponse.success("Tìm kiếm customer thành công", customers));
+    }
+
+    @GetMapping("/type/{type}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<List<CustomerDto>>> getCustomersByType(
+            @PathVariable String type) {
+        List<CustomerDto> customers = customerService.getCustomersByType(type);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách customer theo loại thành công", customers));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<CustomerDto>> updateCustomer(
+            @PathVariable Integer id,
+            @RequestBody CustomerDto customerDto) {
+        CustomerDto updatedCustomer = customerService.updateCustomer(id, customerDto);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật customer thành công", updatedCustomer));
+    }
+
+    @PatchMapping("/{id}/upgrade-vip")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<CustomerDto>> upgradeToVip(@PathVariable Integer id) {
+        CustomerDto customer = customerService.upgradeToVip(id);
+        return ResponseEntity.ok(ApiResponse.success("Nâng cấp customer lên VIP thành công", customer));
+    }
+
+    @PatchMapping("/{id}/downgrade-regular")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<CustomerDto>> downgradeToRegular(@PathVariable Integer id) {
+        CustomerDto customer = customerService.downgradeToRegular(id);
+        return ResponseEntity.ok(ApiResponse.success("Hạ cấp customer xuống REGULAR thành công", customer));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteCustomer(@PathVariable Integer id) {
+        customerService.deleteCustomer(id);
+        return ResponseEntity.ok(ApiResponse.success("Xóa customer thành công", null));
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<CustomerDto>> getMyCustomerInfo() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        CustomerDto customer = customerService.getCustomerByUsername(username);
+        return ResponseEntity.ok(ApiResponse.success("Lấy thông tin customer thành công", customer));
+    }
+
+    @PutMapping("/me")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<CustomerDto>> updateMyCustomerInfo(
+            @RequestBody CustomerDto customerDto) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        CustomerDto updatedCustomer = customerService.updateMyCustomerInfo(username, customerDto);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin thành công", updatedCustomer));
+    }
 }

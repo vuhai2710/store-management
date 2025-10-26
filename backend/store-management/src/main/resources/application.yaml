@@ -30,6 +30,7 @@ spring:
 # JWT Configuration
 jwt:
   secret: storeManagementSecretKey12345678901234567890
+  signerKey: "1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij"
   expiration: 86400000 # 24 hours
 
 # Logging
