@@ -1,46 +1,76 @@
 import api from './api';
 
 export const authService = {
-  // Login
+  // Register - Đăng ký tài khoản mới
+  register: async (registerData) => {
+    try {
+      const response = await api.post('/auth/register', registerData);
+      // Lưu token và user info vào localStorage
+      if (response.data?.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.userInfo));
+      }
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Login - Đăng nhập
   login: async (credentials) => {
-    const response = await api.post('/auth/login', credentials);
-    return response.data;
+    try {
+      const response = await api.post('/auth/login', credentials);
+      // Lưu token và user info vào localStorage
+      if (response.data?.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.userInfo));
+      }
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   },
 
-  // Logout
+  // Logout - Đăng xuất
   logout: async () => {
-    const response = await api.post('/auth/logout');
-    return response.data;
+    try {
+      const response = await api.post('/auth/logout');
+      // Xóa token và user info khỏi localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return response.data;
+    } catch (error) {
+      // Vẫn xóa local data ngay cả khi API call thất bại
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      throw error;
+    }
   },
 
-  // Get current user
+  // Get current user - Lấy thông tin user hiện tại
   getCurrentUser: async () => {
-    const response = await api.get('/auth/me');
-    return response.data;
+    try {
+      const response = await api.get('/users/profile');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   },
 
-  // Refresh token
-  refreshToken: async () => {
-    const response = await api.post('/auth/refresh');
-    return response.data;
+  // Get user from localStorage
+  getUserFromStorage: () => {
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
   },
 
-  // Change password
-  changePassword: async (passwordData) => {
-    const response = await api.post('/auth/change-password', passwordData);
-    return response.data;
+  // Get token from localStorage
+  getToken: () => {
+    return localStorage.getItem('token');
   },
 
-  // Forgot password
-  forgotPassword: async (email) => {
-    const response = await api.post('/auth/forgot-password', { email });
-    return response.data;
-  },
-
-  // Reset password
-  resetPassword: async (resetData) => {
-    const response = await api.post('/auth/reset-password', resetData);
-    return response.data;
+  // Check if user is authenticated
+  isAuthenticated: () => {
+    return !!localStorage.getItem('token');
   },
 };
 

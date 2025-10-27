@@ -3,10 +3,15 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnp
+.pnp.js
 
 # Production build
 build/
 dist/
+out/
 
 # Environment variables
 .env
@@ -14,16 +19,33 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*.local
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+.jest/
 
 # Cache directories
 .cache/
 .parcel-cache/
+.eslintcache
+.stylelintcache
 
 # IDE files
 .vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
 
 # OS generated files
 .DS_Store
@@ -33,11 +55,53 @@ dist/
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
 
 # Logs
 logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Temporary files
 *.tmp
 *.temp
+*.bak
+*.backup
+
+# Debug files
+debug/
+.vscode-test/
+
+# React specific
+.react-scripts/
+public/hot-update.*
+*.hot-update.json
+*.hot-update.js
+
+# Source maps (optional - uncomment if you don't want to commit them)
+# *.map
+
+# Package manager (using npm)
+# Keep package-lock.json for npm
+yarn.lock          # Ignore if using npm
+pnpm-lock.yaml     # Ignore if using npm
+.yarn/
+.pnpm-store/
+
+# Optional
+.vercel
+.firebase/
+.netlify/
+
+# Storybook
+storybook-static/
+
+# Documentation files (personal notes - optional)
+# API_CONNECTION_GUIDE.md  # Uncomment if you want to keep this private
+# apiExamples.js            # Uncomment if you want to keep this private
+NOTES.md
+TODO.md
+CHANGELOG_INTERNAL.md

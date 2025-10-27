@@ -8,15 +8,27 @@ import {
   ShoppingCartOutlined,
 } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { logout } from '../../store/slices/authSlice';
 
 const { Header } = Layout;
 
 const AppHeader = ({ user }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     dispatch(logout());
+  };
+
+  const handleMenuClick = ({ key }) => {
+    if (key === 'profile') {
+      navigate('/profile');
+    } else if (key === 'settings') {
+      // TODO: Navigate to settings page
+    } else if (key === 'logout') {
+      handleLogout();
+    }
   };
 
   const userMenuItems = [
@@ -37,7 +49,6 @@ const AppHeader = ({ user }) => {
       key: 'logout',
       icon: <LogoutOutlined />,
       label: 'Đăng xuất',
-      onClick: handleLogout,
     },
   ];
 
@@ -74,7 +85,7 @@ const AppHeader = ({ user }) => {
         </Badge>
         
         <Dropdown
-          menu={{ items: userMenuItems }}
+          menu={{ items: userMenuItems, onClick: handleMenuClick }}
           placement="bottomRight"
           arrow
         >

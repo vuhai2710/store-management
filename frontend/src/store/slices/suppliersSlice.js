@@ -1,57 +1,52 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { mockData } from '../../services/mockData';
+import { suppliersService } from '../../services/suppliersService';
 
 // Async thunks
 export const fetchSuppliers = createAsyncThunk(
   'suppliers/fetchSuppliers',
-  async () => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(mockData.suppliers);
-      }, 500);
-    });
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await suppliersService.getAllSuppliers();
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Lỗi khi lấy danh sách nhà cung cấp');
+    }
   }
 );
 
 export const createSupplier = createAsyncThunk(
   'suppliers/createSupplier',
-  async (supplierData) => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newSupplier = {
-          id: Date.now(),
-          ...supplierData,
-          createdAt: new Date().toISOString(),
-        };
-        resolve(newSupplier);
-      }, 500);
-    });
+  async (supplierData, { rejectWithValue }) => {
+    try {
+      const response = await suppliersService.createSupplier(supplierData);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Lỗi khi tạo nhà cung cấp');
+    }
   }
 );
 
 export const updateSupplier = createAsyncThunk(
   'suppliers/updateSupplier',
-  async ({ id, supplierData }) => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ id, ...supplierData });
-      }, 500);
-    });
+  async ({ id, supplierData }, { rejectWithValue }) => {
+    try {
+      const response = await suppliersService.updateSupplier(id, supplierData);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Lỗi khi cập nhật nhà cung cấp');
+    }
   }
 );
 
 export const deleteSupplier = createAsyncThunk(
   'suppliers/deleteSupplier',
-  async (supplierId) => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(supplierId);
-      }, 500);
-    });
+  async (supplierId, { rejectWithValue }) => {
+    try {
+      await suppliersService.deleteSupplier(supplierId);
+      return supplierId;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Lỗi khi xóa nhà cung cấp');
+    }
   }
 );
 

@@ -1,0 +1,33 @@
+/**
+ * Constants - Order Status
+ */
+
+export const ORDER_STATUS = {
+  PENDING: "PENDING",
+  CONFIRMED: "CONFIRMED",
+  PROCESSING: "PROCESSING",
+  SHIPPING: "SHIPPING",
+  DELIVERED: "DELIVERED",
+  CANCELLED: "CANCELLED",
+  REFUNDED: "REFUNDED",
+};
+
+export const ORDER_STATUS_LABELS = {
+  [ORDER_STATUS.PENDING]: "Chờ xác nhận",
+  [ORDER_STATUS.CONFIRMED]: "Đã xác nhận",
+  [ORDER_STATUS.PROCESSING]: "Đang xử lý",
+  [ORDER_STATUS.SHIPPING]: "Đang giao hàng",
+  [ORDER_STATUS.DELIVERED]: "Đã giao hàng",
+  [ORDER_STATUS.CANCELLED]: "Đã hủy",
+  [ORDER_STATUS.REFUNDED]: "Đã hoàn tiền",
+};
+
+export const ORDER_STATUS_COLORS = {
+  [ORDER_STATUS.PENDING]: "orange",
+  [ORDER_STATUS.CONFIRMED]: "blue",
+  [ORDER_STATUS.PROCESSING]: "cyan",
+  [ORDER_STATUS.SHIPPING]: "geekblue",
+  [ORDER_STATUS.DELIVERED]: "green",
+  [ORDER_STATUS.CANCELLED]: "red",
+  [ORDER_STATUS.REFUNDED]: "purple",
+};

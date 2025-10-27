@@ -35,13 +35,6 @@ public class AuthenticationController {
         return ResponseEntity.ok(ApiResponse.success("Đăng nhập thành công", response));
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<ApiResponse<Object>> getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(ApiResponse.success("Lấy thông tin user thành công",
-            authentication.getPrincipal()));
-    }
-
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout() {
         // Với JWT stateless, logout chủ yếu xử lý ở phía client (xóa token)

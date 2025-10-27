@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+// Spring Boot API URL - thay đổi port thành 8080 (hoặc port của Spring Boot)
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
 
 // Create axios instance
 const api = axios.create({
@@ -9,6 +10,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Cho phép gửi cookies và credentials
 });
 
 // Request interceptor to add auth token
@@ -25,9 +27,19 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle errors
+// Response interceptor to handle Spring Boot ApiResponse format
 api.interceptors.response.use(
   (response) => {
+    // Spring Boot trả về format: { code, message, data }
+    // Trả về data để dễ sử dụng
+    if (response.data && response.data.data !== undefined) {
+      return {
+        ...response,
+        data: response.data.data,
+        message: response.data.message,
+        code: response.data.code,
+      };
+    }
     return response;
   },
   (error) => {
@@ -37,7 +49,17 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
-    return Promise.reject(error);
+    
+    // Xử lý error message từ Spring Boot
+    const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra';
+    const errorData = error.response?.data?.errors || null;
+    
+    return Promise.reject({
+      message: errorMessage,
+      errors: errorData,
+      status: error.response?.status,
+      originalError: error,
+    });
   }
 );
 
