@@ -1,9 +1,17 @@
-import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, Typography, Descriptions, Table, Tag, Button, Avatar } from 'antd';
-import { EditOutlined, UserOutlined } from '@ant-design/icons';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchCustomerById } from '../store/slices/customersSlice';
+import React, { useEffect } from "react";
+import { useParams } from "react-router-dom";
+import {
+  Card,
+  Typography,
+  Descriptions,
+  Table,
+  Tag,
+  Button,
+  Avatar,
+} from "antd";
+import { EditOutlined, UserOutlined } from "@ant-design/icons";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCustomerById } from "../store/slices/customersSlice";
 
 const { Title } = Typography;
 
@@ -20,29 +28,29 @@ const CustomerDetail = () => {
 
   const orderColumns = [
     {
-      title: 'Mã đơn hàng',
-      dataIndex: 'id',
-      key: 'id',
+      title: "Mã đơn hàng",
+      dataIndex: "id",
+      key: "id",
     },
     {
-      title: 'Ngày đặt',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date) => new Date(date).toLocaleDateString('vi-VN'),
+      title: "Ngày đặt",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (date) => new Date(date).toLocaleDateString("vi-VN"),
     },
     {
-      title: 'Tổng tiền',
-      dataIndex: 'totalAmount',
-      key: 'totalAmount',
-      render: (amount) => `${amount?.toLocaleString('vi-VN')} VNĐ`,
+      title: "Tổng tiền",
+      dataIndex: "totalAmount",
+      key: "totalAmount",
+      render: (amount) => `${amount?.toLocaleString("vi-VN")} VNĐ`,
     },
     {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
       render: (status) => (
-        <Tag color={status === 'completed' ? 'success' : 'processing'}>
-          {status === 'completed' ? 'Hoàn thành' : 'Đang xử lý'}
+        <Tag color={status === "completed" ? "success" : "processing"}>
+          {status === "completed" ? "Hoàn thành" : "Đang xử lý"}
         </Tag>
       ),
     },
@@ -63,15 +71,14 @@ const CustomerDetail = () => {
         <Button icon={<EditOutlined />}>Chỉnh sửa</Button>
       </div>
 
-      <Card title="Thông tin cá nhân" style={{ marginBottom: '16px' }}>
+      <Card title="Thông tin cá nhân" style={{ marginBottom: "16px" }}>
         <Descriptions column={2}>
           <Descriptions.Item label="Avatar">
-            <Avatar 
+            <Avatar
               size={64}
-              src={currentCustomer.avatar} 
+              src={currentCustomer.avatar}
               icon={<UserOutlined />}
-              style={{ backgroundColor: '#1890ff' }}
-            >
+              style={{ backgroundColor: "#1890ff" }}>
               {currentCustomer.name?.charAt(0)}
             </Avatar>
           </Descriptions.Item>
@@ -85,20 +92,25 @@ const CustomerDetail = () => {
             {currentCustomer.phone}
           </Descriptions.Item>
           <Descriptions.Item label="Địa chỉ" span={2}>
-            {currentCustomer.address || 'Chưa cập nhật'}
+            {currentCustomer.address || "Chưa cập nhật"}
           </Descriptions.Item>
           <Descriptions.Item label="Loại khách hàng">
-            <Tag color={currentCustomer.customerType === 'vip' ? 'gold' : 'blue'}>
-              {currentCustomer.customerType === 'vip' ? 'VIP' : 'Regular'}
-            </Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="Trạng thái">
-            <Tag color={currentCustomer.status === 'active' ? 'success' : 'default'}>
-              {currentCustomer.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
+            <Tag
+              color={
+                currentCustomer.customerType?.toUpperCase() === "VIP"
+                  ? "gold"
+                  : "blue"
+              }>
+              {currentCustomer.customerType?.toUpperCase() === "VIP"
+                ? "VIP"
+                : "REGULAR"}
             </Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Ngày tạo">
-            {new Date(currentCustomer.createdAt).toLocaleDateString('vi-VN')}
+            {new Date(currentCustomer.createdAt).toLocaleDateString("vi-VN")}
+          </Descriptions.Item>
+          <Descriptions.Item label="Cập nhật lần cuối">
+            {new Date(currentCustomer.updatedAt).toLocaleDateString("vi-VN")}
           </Descriptions.Item>
         </Descriptions>
       </Card>

@@ -1,75 +1,87 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { ordersService } from '../../services/ordersService';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { ordersService } from "../../services/ordersService";
 
 // Async thunks
 export const fetchOrders = createAsyncThunk(
-  'orders/fetchOrders',
+  "orders/fetchOrders",
   async (params, { rejectWithValue }) => {
     try {
       const response = await ordersService.getOrders(params);
       return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Lỗi khi tải danh sách đơn hàng');
+      return rejectWithValue(
+        error.response?.data?.message || "Lỗi khi tải danh sách đơn hàng"
+      );
     }
   }
 );
 
 export const fetchOrderById = createAsyncThunk(
-  'orders/fetchOrderById',
+  "orders/fetchOrderById",
   async (id, { rejectWithValue }) => {
     try {
       const response = await ordersService.getOrderById(id);
       return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Lỗi khi tải chi tiết đơn hàng');
+      return rejectWithValue(
+        error.response?.data?.message || "Lỗi khi tải chi tiết đơn hàng"
+      );
     }
   }
 );
 
 export const createOrder = createAsyncThunk(
-  'orders/createOrder',
+  "orders/createOrder",
   async (orderData, { rejectWithValue }) => {
     try {
       const response = await ordersService.createOrder(orderData);
       return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Lỗi khi tạo đơn hàng');
+      return rejectWithValue(
+        error.response?.data?.message || "Lỗi khi tạo đơn hàng"
+      );
     }
   }
 );
 
 export const updateOrder = createAsyncThunk(
-  'orders/updateOrder',
+  "orders/updateOrder",
   async ({ id, orderData }, { rejectWithValue }) => {
     try {
       const response = await ordersService.updateOrder(id, orderData);
       return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Lỗi khi cập nhật đơn hàng');
+      return rejectWithValue(
+        error.response?.data?.message || "Lỗi khi cập nhật đơn hàng"
+      );
     }
   }
 );
 
 export const updateOrderStatus = createAsyncThunk(
-  'orders/updateOrderStatus',
+  "orders/updateOrderStatus",
   async ({ id, status }, { rejectWithValue }) => {
     try {
       const response = await ordersService.updateOrderStatus(id, status);
       return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Lỗi khi cập nhật trạng thái đơn hàng');
+      return rejectWithValue(
+        error.response?.data?.message || "Lỗi khi cập nhật trạng thái đơn hàng"
+      );
     }
   }
 );
 
 export const deleteOrder = createAsyncThunk(
-  'orders/deleteOrder',
+  "orders/deleteOrder",
   async (id, { rejectWithValue }) => {
     try {
       await ordersService.deleteOrder(id);
       return id;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Lỗi khi xóa đơn hàng');
+      return rejectWithValue(
+        error.response?.data?.message || "Lỗi khi xóa đơn hàng"
+      );
     }
   }
 );
@@ -92,7 +104,7 @@ const initialState = {
 };
 
 const ordersSlice = createSlice({
-  name: 'orders',
+  name: "orders",
   initialState,
   reducers: {
     clearError: (state) => {
@@ -117,12 +129,18 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchOrders.fulfilled, (state, action) => {
         state.loading = false;
-        state.orders = action.payload.data;
-        state.pagination.total = action.payload.total;
+        // Response trực tiếp là array hoặc object, không có .data wrapper
+        if (Array.isArray(action.payload)) {
+          state.orders = action.payload;
+          state.pagination.total = action.payload.length;
+        } else {
+          state.orders = [];
+        }
         state.error = null;
       })
       .addCase(fetchOrders.rejected, (state, action) => {
         state.loading = false;
+        state.orders = []; // Set to empty array on error
         state.error = action.payload;
       })
       // Fetch order by ID
@@ -146,7 +164,9 @@ const ordersSlice = createSlice({
       })
       // Update order
       .addCase(updateOrder.fulfilled, (state, action) => {
-        const index = state.orders.findIndex(order => order.id === action.payload.id);
+        const index = state.orders.findIndex(
+          (order) => order.id === action.payload.id
+        );
         if (index !== -1) {
           state.orders[index] = action.payload;
         }
@@ -156,7 +176,9 @@ const ordersSlice = createSlice({
       })
       // Update order status
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
-        const index = state.orders.findIndex(order => order.id === action.payload.id);
+        const index = state.orders.findIndex(
+          (order) => order.id === action.payload.id
+        );
         if (index !== -1) {
           state.orders[index].status = action.payload.status;
         }
@@ -166,13 +188,14 @@ const ordersSlice = createSlice({
       })
       // Delete order
       .addCase(deleteOrder.fulfilled, (state, action) => {
-        state.orders = state.orders.filter(order => order.id !== action.payload);
+        state.orders = state.orders.filter(
+          (order) => order.id !== action.payload
+        );
         state.pagination.total -= 1;
       });
   },
 });
 
-export const { clearError, clearCurrentOrder, setFilters, setPagination } = ordersSlice.actions;
+export const { clearError, clearCurrentOrder, setFilters, setPagination } =
+  ordersSlice.actions;
 export default ordersSlice.reducer;
-
-

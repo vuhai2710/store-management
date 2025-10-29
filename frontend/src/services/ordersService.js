@@ -1,9 +1,11 @@
-import api from './api';
+import api from "./api";
 
 export const ordersService = {
   // Get all orders
   getOrders: async (params = {}) => {
-    const response = await api.get('/orders', { params });
+    const response = await api.get("/orders", { params });
+
+    // Endpoint này chưa có phân trang, xử lý response bình thường
     return response.data;
   },
 
@@ -15,7 +17,7 @@ export const ordersService = {
 
   // Create new order
   createOrder: async (orderData) => {
-    const response = await api.post('/orders', orderData);
+    const response = await api.post("/orders", orderData);
     return response.data;
   },
 
@@ -39,15 +41,15 @@ export const ordersService = {
 
   // Get order statistics
   getOrderStats: async (params = {}) => {
-    const response = await api.get('/orders/stats', { params });
+    const response = await api.get("/orders/stats", { params });
     return response.data;
   },
 
   // Export orders
   exportOrders: async (params = {}) => {
-    const response = await api.get('/orders/export', { 
+    const response = await api.get("/orders/export", {
       params,
-      responseType: 'blob'
+      responseType: "blob",
     });
     return response.data;
   },
@@ -55,7 +57,7 @@ export const ordersService = {
   // Print invoice
   printInvoice: async (id) => {
     const response = await api.get(`/orders/${id}/invoice`, {
-      responseType: 'blob'
+      responseType: "blob",
     });
     return response.data;
   },

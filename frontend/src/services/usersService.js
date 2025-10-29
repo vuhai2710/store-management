@@ -1,10 +1,22 @@
-import api from './api';
+import api from "./api";
 
 export const usersService = {
-  // Lấy tất cả users (ADMIN only)
-  getAllUsers: async () => {
+  // Lấy tất cả users với phân trang (ADMIN only)
+  getAllUsers: async (
+    pageNo = 1,
+    pageSize = 5,
+    sortBy = "idUser",
+    sortDirection = "ASC"
+  ) => {
     try {
-      const response = await api.get('/users');
+      const response = await api.get("/users", {
+        params: {
+          pageNo,
+          pageSize,
+          sortBy,
+          sortDirection,
+        },
+      });
       return response.data;
     } catch (error) {
       throw error;
@@ -55,7 +67,7 @@ export const usersService = {
   changeUserRole: async (id, role) => {
     try {
       const response = await api.patch(`/users/${id}/role`, null, {
-        params: { role }
+        params: { role },
       });
       return response.data;
     } catch (error) {
@@ -76,7 +88,7 @@ export const usersService = {
   // Lấy profile của user hiện tại (Authenticated users)
   getMyProfile: async () => {
     try {
-      const response = await api.get('/users/profile');
+      const response = await api.get("/users/profile");
       return response.data;
     } catch (error) {
       throw error;

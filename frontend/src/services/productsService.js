@@ -1,9 +1,11 @@
-import api from './api';
+import api from "./api";
 
 export const productsService = {
   // Get all products
   getProducts: async (params = {}) => {
-    const response = await api.get('/products', { params });
+    const response = await api.get("/products", { params });
+
+    // Endpoint này chưa có phân trang, xử lý response bình thường
     return response.data;
   },
 
@@ -15,7 +17,7 @@ export const productsService = {
 
   // Create new product
   createProduct: async (productData) => {
-    const response = await api.post('/products', productData);
+    const response = await api.post("/products", productData);
     return response.data;
   },
 
@@ -37,10 +39,10 @@ export const productsService = {
     images.forEach((image, index) => {
       formData.append(`images`, image);
     });
-    
+
     const response = await api.post(`/products/${productId}/images`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
@@ -48,20 +50,22 @@ export const productsService = {
 
   // Delete product image
   deleteImage: async (productId, imageId) => {
-    const response = await api.delete(`/products/${productId}/images/${imageId}`);
+    const response = await api.delete(
+      `/products/${productId}/images/${imageId}`
+    );
     return response.data;
   },
 
   // Get product categories
   getCategories: async () => {
-    const response = await api.get('/products/categories');
+    const response = await api.get("/products/categories");
     return response.data;
   },
 
   // Get low stock products
   getLowStockProducts: async (threshold = 10) => {
-    const response = await api.get('/products/low-stock', { 
-      params: { threshold } 
+    const response = await api.get("/products/low-stock", {
+      params: { threshold },
     });
     return response.data;
   },
@@ -72,5 +76,3 @@ export const productsService = {
     return response.data;
   },
 };
-
-

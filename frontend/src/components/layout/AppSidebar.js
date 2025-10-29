@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Layout, Menu } from 'antd';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from "react";
+import { Layout, Menu } from "antd";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   DashboardOutlined,
   ShoppingCartOutlined,
@@ -10,8 +10,7 @@ import {
   TeamOutlined,
   DollarOutlined,
   BarChartOutlined,
-  SettingOutlined,
-} from '@ant-design/icons';
+} from "@ant-design/icons";
 
 const { Sider } = Layout;
 
@@ -22,121 +21,49 @@ const AppSidebar = () => {
 
   const menuItems = [
     {
-      key: '/dashboard',
+      key: "/dashboard",
       icon: <DashboardOutlined />,
-      label: 'Dashboard',
+      label: "Dashboard",
     },
     {
-      key: 'orders',
+      key: "/orders",
       icon: <ShoppingCartOutlined />,
-      label: 'Quản lý Đơn hàng',
-      children: [
-        {
-          key: '/orders',
-          label: 'Danh sách đơn hàng',
-        },
-        {
-          key: '/orders/new',
-          label: 'Tạo đơn hàng mới',
-        },
-      ],
+      label: "Quản lý Đơn hàng",
     },
     {
-      key: 'products',
+      key: "/products",
       icon: <AppstoreOutlined />,
-      label: 'Quản lý Sản phẩm',
-      children: [
-        {
-          key: '/products',
-          label: 'Danh sách sản phẩm',
-        },
-        {
-          key: '/products/categories',
-          label: 'Danh mục sản phẩm',
-        },
-      ],
+      label: "Quản lý Sản phẩm",
     },
     {
-      key: 'customers',
+      key: "/customers",
       icon: <UserOutlined />,
-      label: 'Quản lý Khách hàng',
-      children: [
-        {
-          key: '/customers',
-          label: 'Danh sách khách hàng',
-        },
-        {
-          key: '/customers/groups',
-          label: 'Nhóm khách hàng',
-        },
-      ],
+      label: "Quản lý Khách hàng",
     },
     {
-      key: 'inventory',
+      key: "/inventory",
       icon: <InboxOutlined />,
-      label: 'Quản lý Kho',
-      children: [
-        {
-          key: '/inventory',
-          label: 'Tồn kho',
-        },
-        {
-          key: '/suppliers',
-          label: 'Nhà cung cấp',
-        },
-        {
-          key: '/warehouses',
-          label: 'Kho hàng',
-        },
-      ],
+      label: "Quản lý Kho",
     },
     {
-      key: 'employees',
+      key: "/suppliers",
+      icon: <InboxOutlined />,
+      label: "Nhà cung cấp",
+    },
+    {
+      key: "/employees",
       icon: <TeamOutlined />,
-      label: 'Quản lý Nhân viên',
-      children: [
-        {
-          key: '/employees',
-          label: 'Danh sách nhân viên',
-        },
-        {
-          key: '/employees/departments',
-          label: 'Phòng ban',
-        },
-        {
-          key: '/employees/roles',
-          label: 'Phân quyền',
-        },
-      ],
+      label: "Quản lý Nhân viên",
     },
     {
-      key: 'finance',
+      key: "/finance",
       icon: <DollarOutlined />,
-      label: 'Quản lý Tài chính',
-      children: [
-        {
-          key: '/finance',
-          label: 'Tài chính',
-        },
-        {
-          key: '/finance/payroll',
-          label: 'Quản lý lương',
-        },
-        {
-          key: '/finance/reports',
-          label: 'Báo cáo tài chính',
-        },
-      ],
+      label: "Quản lý Tài chính",
     },
     {
-      key: 'reports',
+      key: "/reports",
       icon: <BarChartOutlined />,
-      label: 'Báo cáo',
-    },
-    {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: 'Cài đặt hệ thống',
+      label: "Báo cáo",
     },
   ];
 
@@ -146,22 +73,13 @@ const AppSidebar = () => {
 
   const getSelectedKeys = () => {
     const path = location.pathname;
-    if (path === '/') return ['/dashboard'];
+    if (path === "/") return ["/dashboard"];
     return [path];
   };
 
   const getOpenKeys = () => {
-    const path = location.pathname;
-    const openKeys = [];
-    
-    if (path.startsWith('/orders')) openKeys.push('orders');
-    if (path.startsWith('/products')) openKeys.push('products');
-    if (path.startsWith('/customers')) openKeys.push('customers');
-    if (path.startsWith('/inventory') || path.startsWith('/suppliers') || path.startsWith('/warehouses')) openKeys.push('inventory');
-    if (path.startsWith('/employees')) openKeys.push('employees');
-    if (path.startsWith('/finance')) openKeys.push('finance');
-    
-    return openKeys;
+    // Không cần open keys nữa vì đã bỏ submenu
+    return [];
   };
 
   return (
@@ -170,23 +88,23 @@ const AppSidebar = () => {
       collapsed={collapsed}
       onCollapse={setCollapsed}
       style={{
-        background: '#001529',
-        minHeight: '100vh',
-      }}
-    >
-      <div style={{
-        height: '64px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#fff',
-        fontSize: collapsed ? '16px' : '18px',
-        fontWeight: 'bold',
-        borderBottom: '1px solid #002140',
+        background: "#001529",
+        minHeight: "100vh",
       }}>
-        {collapsed ? 'ERP' : 'ERP Store'}
+      <div
+        style={{
+          height: "64px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#fff",
+          fontSize: collapsed ? "16px" : "18px",
+          fontWeight: "bold",
+          borderBottom: "1px solid #002140",
+        }}>
+        {collapsed ? "ERP" : "ERP Store"}
       </div>
-      
+
       <Menu
         theme="dark"
         mode="inline"
@@ -195,8 +113,8 @@ const AppSidebar = () => {
         items={menuItems}
         onClick={handleMenuClick}
         style={{
-          background: '#001529',
-          border: 'none',
+          background: "#001529",
+          border: "none",
         }}
       />
     </Sider>

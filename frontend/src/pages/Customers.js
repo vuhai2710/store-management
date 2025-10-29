@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -13,7 +13,7 @@ import {
   Tooltip,
   Tag,
   Avatar,
-} from 'antd';
+} from "antd";
 import {
   PlusOutlined,
   SearchOutlined,
@@ -21,11 +21,15 @@ import {
   DeleteOutlined,
   EyeOutlined,
   UserOutlined,
-} from '@ant-design/icons';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { fetchCustomers, deleteCustomer, setPagination, setFilters } from '../store/slices/customersSlice';
-import CustomerForm from '../components/customers/CustomerForm';
+} from "@ant-design/icons";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import {
+  fetchCustomers,
+  deleteCustomer,
+  setPagination,
+} from "../store/slices/customersSlice";
+import CustomerForm from "../components/customers/CustomerForm";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -33,26 +37,65 @@ const { Option } = Select;
 const Customers = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { customers, loading, pagination, filters } = useSelector((state) => state.customers);
+  const { customers, loading, pagination, filters } = useSelector(
+    (state) => state.customers
+  );
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
-  const [, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
+  const [customerTypeFilter, setCustomerTypeFilter] = useState(null);
 
   useEffect(() => {
-    dispatch(fetchCustomers({ ...pagination, ...filters }));
-  }, [dispatch, pagination, filters]);
+    // If filtering by type, use getCustomersByType endpoint (no pagination)
+    if (customerTypeFilter) {
+      // Call API to get customers by type - this will be handled in slice
+      dispatch(fetchCustomers({ customerType: customerTypeFilter }));
+    } else {
+      // Normal flow with pagination
+      const params = {
+        pageNo: pagination.current || 1,
+        pageSize: pagination.pageSize || 10,
+        sortBy: "idCustomer",
+        sortDirection: "ASC",
+      };
 
-  const handleTableChange = (pagination, filters, sorter) => {
-    dispatch(setPagination(pagination));
+      // Add search params if exists
+      if (searchText) {
+        params.name = searchText;
+      }
+
+      dispatch(fetchCustomers(params));
+    }
+  }, [
+    dispatch,
+    pagination.current,
+    pagination.pageSize,
+    searchText,
+    customerTypeFilter,
+  ]);
+
+  const handleTableChange = (newPagination, filters, sorter) => {
+    // Don't allow pagination change when filtering by type
+    if (!customerTypeFilter) {
+      dispatch(
+        setPagination({
+          current: newPagination.current,
+          pageSize: newPagination.pageSize,
+        })
+      );
+    }
   };
 
   const handleSearch = (value) => {
     setSearchText(value);
-    dispatch(setFilters({ search: value }));
+    setCustomerTypeFilter(null); // Clear type filter when searching
+    dispatch(setPagination({ current: 1 }));
   };
 
-  const handleStatusFilter = (value) => {
-    dispatch(setFilters({ status: value }));
+  const handleCustomerTypeFilter = (value) => {
+    setCustomerTypeFilter(value);
+    setSearchText(""); // Clear search when filtering by type
+    dispatch(setPagination({ current: 1 }));
   };
 
   const handleCreateCustomer = () => {
@@ -72,79 +115,84 @@ const Customers = () => {
   const handleDeleteCustomer = async (customerId) => {
     try {
       await dispatch(deleteCustomer(customerId)).unwrap();
-      message.success('Xóa khách hàng thành công!');
+      message.success("Xóa khách hàng thành công!");
+      // Reload data after delete
+      if (customerTypeFilter) {
+        dispatch(fetchCustomers({ customerType: customerTypeFilter }));
+      } else {
+        const params = {
+          pageNo: pagination.current || 1,
+          pageSize: pagination.pageSize || 10,
+          sortBy: "idCustomer",
+          sortDirection: "ASC",
+        };
+        if (searchText) params.name = searchText;
+        dispatch(fetchCustomers(params));
+      }
     } catch (error) {
-      message.error('Xóa khách hàng thất bại!');
+      message.error("Xóa khách hàng thất bại!");
     }
   };
 
   const columns = [
     {
-      title: 'Avatar',
-      dataIndex: 'avatar',
-      key: 'avatar',
+      title: "Avatar",
+      dataIndex: "avatar",
+      key: "avatar",
       width: 60,
       render: (avatar, record) => (
-        <Avatar 
-          src={avatar} 
+        <Avatar
+          src={avatar}
           icon={<UserOutlined />}
-          style={{ backgroundColor: '#1890ff' }}
-        >
+          style={{ backgroundColor: "#1890ff" }}>
           {record.name?.charAt(0)}
         </Avatar>
       ),
     },
     {
-      title: 'Tên khách hàng',
-      dataIndex: 'name',
-      key: 'name',
+      title: "Tên khách hàng",
+      dataIndex: "name",
+      key: "name",
       render: (text) => <Text strong>{text}</Text>,
     },
     {
-      title: 'Email',
-      dataIndex: 'email',
-      key: 'email',
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
     },
     {
-      title: 'Số điện thoại',
-      dataIndex: 'phone',
-      key: 'phone',
+      title: "Số điện thoại",
+      dataIndex: "phone",
+      key: "phone",
     },
     {
-      title: 'Địa chỉ',
-      dataIndex: 'address',
-      key: 'address',
+      title: "Địa chỉ",
+      dataIndex: "address",
+      key: "address",
       ellipsis: true,
     },
     {
-      title: 'Loại khách hàng',
-      dataIndex: 'customerType',
-      key: 'customerType',
-      render: (type) => (
-        <Tag color={type === 'vip' ? 'gold' : 'blue'}>
-          {type === 'vip' ? 'VIP' : 'Regular'}
-        </Tag>
-      ),
+      title: "Loại khách hàng",
+      dataIndex: "customerType",
+      key: "customerType",
+      render: (type) => {
+        const typeUpper = type?.toUpperCase();
+        return (
+          <Tag color={typeUpper === "VIP" ? "gold" : "blue"}>
+            {typeUpper === "VIP" ? "VIP" : "REGULAR"}
+          </Tag>
+        );
+      },
     },
     {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => (
-        <Tag color={status === 'active' ? 'success' : 'default'}>
-          {status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
-        </Tag>
-      ),
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (date) => new Date(date).toLocaleDateString("vi-VN"),
     },
     {
-      title: 'Ngày tạo',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date) => new Date(date).toLocaleDateString('vi-VN'),
-    },
-    {
-      title: 'Hành động',
-      key: 'actions',
+      title: "Hành động",
+      key: "actions",
       render: (_, record) => (
         <Space>
           <Tooltip title="Xem chi tiết">
@@ -165,14 +213,9 @@ const Customers = () => {
             title="Bạn có chắc chắn muốn xóa khách hàng này?"
             onConfirm={() => handleDeleteCustomer(record.id)}
             okText="Xóa"
-            cancelText="Hủy"
-          >
+            cancelText="Hủy">
             <Tooltip title="Xóa">
-              <Button
-                type="text"
-                danger
-                icon={<DeleteOutlined />}
-              />
+              <Button type="text" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>
         </Space>
@@ -189,37 +232,28 @@ const Customers = () => {
 
       <Card className="table-container">
         {/* Filters */}
-        <div style={{ marginBottom: '16px' }}>
+        <div style={{ marginBottom: "16px" }}>
           <Space wrap>
             <Input.Search
-              placeholder="Tìm kiếm khách hàng..."
+              placeholder="Tìm kiếm theo tên khách hàng..."
               style={{ width: 300 }}
               onSearch={handleSearch}
               enterButton={<SearchOutlined />}
-            />
-            <Select
-              placeholder="Trạng thái"
-              style={{ width: 150 }}
               allowClear
-              onChange={handleStatusFilter}
-            >
-              <Option value="active">Hoạt động</Option>
-              <Option value="inactive">Không hoạt động</Option>
-            </Select>
+            />
             <Select
               placeholder="Loại khách hàng"
               style={{ width: 150 }}
               allowClear
-              onChange={(value) => dispatch(setFilters({ customerType: value }))}
-            >
-              <Option value="regular">Regular</Option>
-              <Option value="vip">VIP</Option>
+              onChange={handleCustomerTypeFilter}
+              value={customerTypeFilter}>
+              <Option value="REGULAR">REGULAR</Option>
+              <Option value="VIP">VIP</Option>
             </Select>
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={handleCreateCustomer}
-            >
+              onClick={handleCreateCustomer}>
               Thêm khách hàng
             </Button>
           </Space>
@@ -231,15 +265,19 @@ const Customers = () => {
           dataSource={customers}
           loading={loading}
           rowKey="id"
-          pagination={{
-            current: pagination.current,
-            pageSize: pagination.pageSize,
-            total: pagination.total,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} của ${total} khách hàng`,
-          }}
+          pagination={
+            customerTypeFilter
+              ? false
+              : {
+                  current: pagination.current,
+                  pageSize: pagination.pageSize,
+                  total: pagination.total,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total, range) =>
+                    `${range[0]}-${range[1]} của ${total} khách hàng`,
+                }
+          }
           onChange={handleTableChange}
           scroll={{ x: 800 }}
         />
@@ -247,18 +285,28 @@ const Customers = () => {
 
       {/* Customer Form Modal */}
       <Modal
-        title={editingCustomer ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng mới'}
+        title={editingCustomer ? "Chỉnh sửa khách hàng" : "Thêm khách hàng mới"}
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         footer={null}
         width={600}
-        destroyOnClose
-      >
+        destroyOnClose>
         <CustomerForm
           customer={editingCustomer}
           onSuccess={() => {
             setIsModalVisible(false);
-            dispatch(fetchCustomers({ ...pagination, ...filters }));
+            if (customerTypeFilter) {
+              dispatch(fetchCustomers({ customerType: customerTypeFilter }));
+            } else {
+              const params = {
+                pageNo: pagination.current || 1,
+                pageSize: pagination.pageSize || 10,
+                sortBy: "idCustomer",
+                sortDirection: "ASC",
+              };
+              if (searchText) params.name = searchText;
+              dispatch(fetchCustomers(params));
+            }
           }}
         />
       </Modal>
