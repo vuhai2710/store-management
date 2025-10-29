@@ -227,50 +227,42 @@ export const customersService = {
     }
   },
 
-  // Tạo mới customer
-  // Note: Backend không có endpoint POST /customers để tạo trực tiếp
-  // Customer chỉ có thể được tạo qua /auth/register
-  // Method này giữ lại cho tương lai nếu backend thêm endpoint
+  // Tạo mới customer qua Auth Register (ADMIN, EMPLOYEE)
+  // Backend: POST /api/v1/auth/register
+  // Body: AuthenticationRequestDto (username, password, email, customerName, phoneNumber, address)
+  // Returns: ApiResponse<AuthenticationResponseDto> { token, authenticated }
+  // Note: Backend tự động tạo User và Customer
   createCustomer: async (customerData) => {
     try {
       const requestData = {
-        customerName: customerData.customerName || customerData.name,
+        username: customerData.username,
+        password: customerData.password,
         email: customerData.email,
+        customerName: customerData.customerName || customerData.name,
         phoneNumber: customerData.phoneNumber || customerData.phone,
-        address: customerData.address,
+        address: customerData.address || "",
       };
 
-      console.log("Calling createCustomer with data:", requestData);
-      const response = await api.post("/customers", requestData);
-      console.log("API Response createCustomer:", response.data);
-      return handleSingleCustomerResponse(response.data);
+      console.log("Calling createCustomer (register) with data:", requestData);
+      const response = await api.post("/auth/register", requestData);
+      console.log("API Response createCustomer (register):", response.data);
+
+      // Response: { token, authenticated }
+      // Return success indicator - customer will be created with default REGULAR type
+      return {
+        success: true,
+        token: response.data.token,
+        authenticated: response.data.authenticated,
+      };
     } catch (error) {
-      console.error("Error createCustomer:", error);
-      // Backend chưa có endpoint này, sử dụng registerCustomer thay thế
+      console.error("Error createCustomer (register):", error);
       throw error;
     }
   },
 
-  // Đăng ký customer mới qua Auth Register
+  // Alias method for backward compatibility
   registerCustomer: async (formData) => {
-    try {
-      const payload = {
-        username: formData.username,
-        password: formData.password,
-        email: formData.email,
-        customerName: formData.name || formData.customerName,
-        phoneNumber: formData.phone || formData.phoneNumber,
-        address: formData.address,
-      };
-
-      console.log("Calling registerCustomer with data:", payload);
-      const response = await api.post("/auth/register", payload);
-      console.log("API Response registerCustomer:", response);
-      return response.data; // Returns token/username/role
-    } catch (error) {
-      console.error("Error registerCustomer:", error);
-      throw error;
-    }
+    return customersService.createCustomer(formData);
   },
 
   // Nâng cấp customer lên VIP (ADMIN only)

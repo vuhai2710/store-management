@@ -43,11 +43,10 @@ export const createCustomer = createAsyncThunk(
   async (customerData, { rejectWithValue }) => {
     try {
       const response = await customersService.createCustomer(customerData);
+      // Response from register endpoint: { success, token, authenticated }
       return response;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi tạo khách hàng"
-      );
+      return rejectWithValue(error.message || "Lỗi khi đăng ký khách hàng");
     }
   }
 );
@@ -143,9 +142,21 @@ const customersSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      .addCase(createCustomer.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(createCustomer.fulfilled, (state, action) => {
-        state.customers.unshift(action.payload);
+        state.loading = false;
+        // Register API returns { success, token, authenticated }
+        // We don't have customer data immediately, so just increment total
+        // The list will be reloaded to show new customer
         state.pagination.total += 1;
+        state.error = null;
+      })
+      .addCase(createCustomer.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
       .addCase(updateCustomer.fulfilled, (state, action) => {
         const index = state.customers.findIndex(
