@@ -1,4 +1,4 @@
-package com.storemanagement.utility;
+package com.storemanagement.utils;
 
 public enum CustomerType {
     VIP, REGULAR

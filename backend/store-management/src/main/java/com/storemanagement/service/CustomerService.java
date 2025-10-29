@@ -18,5 +18,6 @@ public interface CustomerService {
     CustomerDto upgradeToVip(Integer id);
     CustomerDto downgradeToRegular(Integer id);
     void deleteCustomer(Integer id);
+    void deleteCustomerByUser(User user);
     CustomerDto updateMyCustomerInfo(String username, CustomerDto customerDto);
 }

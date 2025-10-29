@@ -1,18 +1,17 @@
 package com.storemanagement.model;
 
-import com.storemanagement.utility.Role;
+import com.storemanagement.utils.Role;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
 @Data
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class User extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_user")
@@ -33,7 +32,4 @@ public class User {
 
     @Column(name = "is_active")
     private Boolean isActive = true;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
 }

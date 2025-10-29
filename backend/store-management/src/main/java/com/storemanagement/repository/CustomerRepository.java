@@ -2,7 +2,7 @@ package com.storemanagement.repository;
 
 import com.storemanagement.model.Customer;
 import com.storemanagement.model.User;
-import com.storemanagement.utility.CustomerType;
+import com.storemanagement.utils.CustomerType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -2,7 +2,7 @@ package com.storemanagement.config;
 
 import com.storemanagement.model.User;
 import com.storemanagement.repository.UserRepository;
-import com.storemanagement.utility.Role;
+import com.storemanagement.utils.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;

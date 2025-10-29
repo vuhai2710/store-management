@@ -1,17 +1,14 @@
 package com.storemanagement.service.impl;
 
 import com.storemanagement.dto.AuthenticationRequestDto;
-import com.storemanagement.dto.UserDto;
 import com.storemanagement.mapper.UserMapper;
 import com.storemanagement.model.User;
 import com.storemanagement.repository.UserRepository;
 import com.storemanagement.service.CustomerService;
 import com.storemanagement.service.UserService;
-import com.storemanagement.utility.Role;
+import com.storemanagement.utility.PageUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -119,6 +116,14 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(Integer id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + id));
+        
+        // Xóa customer liên quan trước nếu có
+        try {
+            customerService.deleteCustomerByUser(user);
+        } catch (RuntimeException e) {
+            // Nếu không tìm thấy customer thì bỏ qua
+        }
+        
         userRepository.delete(user);
     }
 }

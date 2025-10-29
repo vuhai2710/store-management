@@ -45,13 +45,10 @@ public class SecurityConfig {
 
     private static final String[] ADMIN_URLS = {
             "/api/v1/admin/**",
-            "/api/v1/employees/**",
-            "/api/v1/customers/**"
+            "/api/v1/employees/**"
     };
 
     private static final String[] EMPLOYEE_URLS = {
-            "/api/v1/employees/**",
-            "/api/v1/customers/**",
             "/api/v1/orders/**",
             "/api/v1/inventory/**",
             "/api/v1/suppliers/**"
@@ -60,7 +57,8 @@ public class SecurityConfig {
     private static final String[] CUSTOMER_URLS = {
             "/api/v1/cart/**",
             "/api/v1/orders/customer/**",
-            "/api/v1/products/customer/**"
+            "/api/v1/products/customer/**",
+            "/api/v1/customers/me"
     };
 
     @Bean
@@ -92,9 +90,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/public/**").permitAll()
+                        // Customer-specific endpoints (phải đặt trước)
+                        .requestMatchers(CUSTOMER_URLS).hasRole("CUSTOMER")
+                        // Admin & Employee endpoints cho /api/v1/customers/** (trừ /me)
+                        .requestMatchers("/api/v1/customers/**").hasAnyRole("ADMIN", "EMPLOYEE")
                         .requestMatchers(ADMIN_URLS).hasRole("ADMIN")
                         .requestMatchers(EMPLOYEE_URLS).hasAnyRole("ADMIN", "EMPLOYEE")
-                        .requestMatchers(CUSTOMER_URLS).hasRole("CUSTOMER")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

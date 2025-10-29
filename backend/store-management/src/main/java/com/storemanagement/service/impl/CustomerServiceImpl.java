@@ -8,7 +8,7 @@ import com.storemanagement.model.User;
 import com.storemanagement.repository.CustomerRepository;
 import com.storemanagement.repository.UserRepository;
 import com.storemanagement.service.CustomerService;
-import com.storemanagement.utility.CustomerType;
+import com.storemanagement.utils.CustomerType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,17 +57,37 @@ public class CustomerServiceImpl implements CustomerService {
     public List<CustomerDto> searchCustomers(String name, String phone) {
         List<Customer> customers = customerRepository.findAll();
 
-        if (name != null && !name.isEmpty()) {
-            customers = customers.stream()
-                    .filter(c -> c.getCustomerName().toLowerCase().contains(name.toLowerCase()))
-                    .collect(Collectors.toList());
+        // Nếu không có tham số tìm kiếm, trả về tất cả
+        if ((name == null || name.isEmpty()) && (phone == null || phone.isEmpty())) {
+            return customerMapper.toDtoList(customers);
         }
 
-        if (phone != null && !phone.isEmpty()) {
-            customers = customers.stream()
-                    .filter(c -> c.getPhoneNumber().contains(phone))
-                    .collect(Collectors.toList());
-        }
+        // Sử dụng OR logic: tìm theo name HOẶC phone
+        customers = customers.stream()
+                .filter(c -> {
+                    boolean matchName = false;
+                    boolean matchPhone = false;
+
+                    // Kiểm tra tên nếu có
+                    if (name != null && !name.isEmpty()) {
+                        matchName = c.getCustomerName().toLowerCase().contains(name.toLowerCase());
+                    }
+
+                    // Kiểm tra số điện thoại nếu có
+                    if (phone != null && !phone.isEmpty()) {
+                        matchPhone = c.getPhoneNumber().contains(phone);
+                    }
+
+                    // Trả về true nếu khớp ít nhất 1 điều kiện
+                    if ((name != null && !name.isEmpty()) && (phone != null && !phone.isEmpty())) {
+                        return matchName || matchPhone; // Cả 2 tham số có: OR logic
+                    } else if (name != null && !name.isEmpty()) {
+                        return matchName; // Chỉ có name
+                    } else {
+                        return matchPhone; // Chỉ có phone
+                    }
+                })
+                .collect(Collectors.toList());
 
         return customerMapper.toDtoList(customers);
     }
@@ -127,6 +147,23 @@ public class CustomerServiceImpl implements CustomerService {
     public void deleteCustomer(Integer id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer không tồn tại với ID: " + id));
+        
+        // Lưu lại user để xóa sau
+        User user = customer.getUser();
+        
+        // Xóa customer trước
+        customerRepository.delete(customer);
+        
+        // Xóa user liên quan nếu có
+        if (user != null) {
+            userRepository.delete(user);
+        }
+    }
+
+    @Override
+    public void deleteCustomerByUser(User user) {
+        Customer customer = customerRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Customer không tồn tại cho user"));
         customerRepository.delete(customer);
     }
 

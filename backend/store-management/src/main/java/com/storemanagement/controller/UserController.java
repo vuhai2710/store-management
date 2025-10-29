@@ -3,6 +3,7 @@ package com.storemanagement.controller;
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.UserDto;
 import com.storemanagement.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,7 +38,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<UserDto>> updateUser(
             @PathVariable Integer id,
-            @RequestBody UserDto userDto) {
+            @RequestBody @Valid UserDto userDto) {
         UserDto updatedUser = userService.updateUser(id, userDto);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật user thành công", updatedUser));
     }

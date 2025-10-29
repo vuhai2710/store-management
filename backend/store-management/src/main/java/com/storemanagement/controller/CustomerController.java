@@ -3,6 +3,7 @@ package com.storemanagement.controller;
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.CustomerDto;
 import com.storemanagement.service.CustomerService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -35,7 +36,7 @@ public class CustomerController {
 
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<List<CustomerDto>>> searchCustomers(
+    public ResponseEntity<ApiResponse<List<CustomerDto>>> searchCustomersByNameAndPhone(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String phone) {
         List<CustomerDto> customers = customerService.searchCustomers(name, phone);
@@ -54,7 +55,7 @@ public class CustomerController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<CustomerDto>> updateCustomer(
             @PathVariable Integer id,
-            @RequestBody CustomerDto customerDto) {
+            @RequestBody @Valid CustomerDto customerDto) {
         CustomerDto updatedCustomer = customerService.updateCustomer(id, customerDto);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật customer thành công", updatedCustomer));
     }
@@ -83,7 +84,7 @@ public class CustomerController {
     @PutMapping("/me")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<CustomerDto>> updateMyCustomerInfo(
-            @RequestBody CustomerDto customerDto) {
+            @RequestBody @Valid CustomerDto customerDto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         CustomerDto updatedCustomer = customerService.updateMyCustomerInfo(username, customerDto);

@@ -15,6 +15,11 @@ public interface CustomerMapper {
     Customer toEntity(AuthenticationRequestDto dto);
 
     // Customer → CustomerDto
+    @Mapping(target = "idUser", source = "user.idUser")
+    @Mapping(target = "username", source = "user.username")
+    @Mapping(target = "email", source = "user.email")
+    @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "formatDate")
+    @Mapping(target = "updatedAt", source = "updatedAt", qualifiedByName = "formatDate")
     CustomerDto toDto(Customer entity);
 
     List<CustomerDto> toDtoList(List<Customer> entities);
