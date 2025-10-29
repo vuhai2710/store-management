@@ -26,6 +26,7 @@ public class CustomerDto {
 
     private String address;
     private CustomerType customerType;
+    private Boolean isActive;
     private String createdAt;
     private String updatedAt;
 }

@@ -18,6 +18,7 @@ public interface CustomerMapper {
     @Mapping(target = "idUser", source = "user.idUser")
     @Mapping(target = "username", source = "user.username")
     @Mapping(target = "email", source = "user.email")
+    @Mapping(target = "isActive", source = "user.isActive")
     @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "formatDate")
     @Mapping(target = "updatedAt", source = "updatedAt", qualifiedByName = "formatDate")
     CustomerDto toDto(Customer entity);

@@ -13,7 +13,6 @@ import com.storemanagement.utils.CustomerType;
 import com.storemanagement.utils.PageUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -143,6 +142,7 @@ public class CustomerServiceImpl implements CustomerService {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer không tồn tại với ID: " + id));
 
+        // Cập nhật thông tin customer (tên, phone, address, type)
         if (customerDto.getCustomerName() != null) {
             customer.setCustomerName(customerDto.getCustomerName());
         }

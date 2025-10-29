@@ -1,5 +1,25 @@
 import api from "./api";
 
+// Helper function để parse date từ format dd/MM/yyyy sang ISO string
+const parseBackendDate = (dateString) => {
+  if (!dateString) return new Date().toISOString();
+
+  // Nếu đã là ISO string, trả về luôn
+  if (dateString.includes("T") || dateString.includes("-")) {
+    return dateString;
+  }
+
+  // Parse format dd/MM/yyyy từ backend
+  const parts = dateString.split("/");
+  if (parts.length === 3) {
+    const [day, month, year] = parts;
+    // Tạo ISO string: yyyy-MM-dd
+    return new Date(`${year}-${month}-${day}`).toISOString();
+  }
+
+  return new Date().toISOString();
+};
+
 // Helper function để transform customer data từ Backend sang Frontend format
 const transformCustomer = (customer) => ({
   id: customer.idCustomer,
@@ -14,8 +34,8 @@ const transformCustomer = (customer) => ({
   customerType: customer.customerType || "REGULAR",
   status: "active",
   avatar: null,
-  createdAt: customer.createdAt || new Date().toISOString(),
-  updatedAt: customer.updatedAt || new Date().toISOString(),
+  createdAt: parseBackendDate(customer.createdAt),
+  updatedAt: parseBackendDate(customer.updatedAt),
 });
 
 // Helper function để xử lý PageResponse<CustomerDto> từ Backend
@@ -179,16 +199,21 @@ export const customersService = {
 
   // Cập nhật customer (ADMIN, EMPLOYEE)
   // Backend: PUT /api/v1/customers/{id}
-  // Body: CustomerDto (customerName, email, phoneNumber, address)
+  // Body: CustomerDto (customerName, phoneNumber, address, customerType)
   // Returns: ApiResponse<CustomerDto>
+  // Note: Backend KHÔNG cho phép cập nhật email
+  // Backend validation:
+  //   - phoneNumber: ^0\d{9}$ (10 digits starting with 0)
+  //   - customerType: REGULAR hoặc VIP
   updateCustomer: async (id, customerData) => {
     try {
-      // Transform frontend data to match CustomerDto with validation
+      // Transform frontend data to match CustomerDto
+      // Chỉ gửi các trường backend cho phép cập nhật
       const requestData = {
         customerName: customerData.customerName || customerData.name,
-        email: customerData.email, // Must match: ^[A-Za-z0-9._%+-]+@gmail\.com$
         phoneNumber: customerData.phoneNumber || customerData.phone, // Must match: ^0\d{9}$
         address: customerData.address,
+        customerType: customerData.customerType, // REGULAR hoặc VIP
       };
 
       console.log("Calling updateCustomer with id:", id, "data:", requestData);
@@ -197,6 +222,7 @@ export const customersService = {
       return handleSingleCustomerResponse(response.data);
     } catch (error) {
       console.error("Error updateCustomer:", error);
+      console.error("Error details:", error.message, error.errors);
       throw error;
     }
   },
