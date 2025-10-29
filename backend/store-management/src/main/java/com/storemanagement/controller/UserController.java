@@ -1,17 +1,19 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
+import com.storemanagement.dto.PageResponse;
 import com.storemanagement.dto.UserDto;
 import com.storemanagement.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -22,9 +24,34 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<UserDto>>> getAllUsers() {
-        List<UserDto> users = userService.getAllUsers();
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách user thành công", users));
+    public ResponseEntity<ApiResponse<PageResponse<UserDto>>> getAllUsers(
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "5") Integer pageSize,
+            @RequestParam(defaultValue = "idUser") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        // Chuyển từ base-1 (FE) sang base-0 (Spring)
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
+
+        PageResponse<UserDto> userPage = userService.getAllUsersPaginated(pageable);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách user thành công", userPage));
+    }
+
+    @GetMapping("/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PageResponse<UserDto>>> getUsersByStatus(
+            @RequestParam Boolean isActive,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "5") Integer pageSize,
+            @RequestParam(defaultValue = "idUser") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
+
+        PageResponse<UserDto> userPage = userService.getUsersByIsActive(isActive, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách user theo trạng thái thành công", userPage));
     }
 
     @GetMapping("/{id}")

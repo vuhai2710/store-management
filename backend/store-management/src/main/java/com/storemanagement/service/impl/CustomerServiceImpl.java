@@ -2,6 +2,7 @@ package com.storemanagement.service.impl;
 
 import com.storemanagement.dto.AuthenticationRequestDto;
 import com.storemanagement.dto.CustomerDto;
+import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.CustomerMapper;
 import com.storemanagement.model.Customer;
 import com.storemanagement.model.User;
@@ -9,7 +10,11 @@ import com.storemanagement.repository.CustomerRepository;
 import com.storemanagement.repository.UserRepository;
 import com.storemanagement.service.CustomerService;
 import com.storemanagement.utils.CustomerType;
+import com.storemanagement.utils.PageUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +40,13 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public List<CustomerDto> getAllCustomers() {
         return customerMapper.toDtoList(customerRepository.findAll());
+    }
+
+    @Override
+    public PageResponse<CustomerDto> getAllCustomersPaginated(Pageable pageable) {
+        Page<Customer> customerPage = customerRepository.findAll(pageable);
+        List<CustomerDto> customerDtos = customerMapper.toDtoList(customerPage.getContent());
+        return PageUtils.toPageResponse(customerPage, customerDtos);
     }
 
     @Override
@@ -93,11 +105,34 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
+    public PageResponse<CustomerDto> searchCustomersPaginated(String name, String phone, Pageable pageable) {
+        String normalizedName = (name == null || name.trim().isEmpty()) ? null : name.trim();
+        String normalizedPhone = (phone == null || phone.trim().isEmpty()) ? null : phone.trim();
+
+        Page<Customer> page = customerRepository.searchCustomers(normalizedName, normalizedPhone, pageable);
+        List<CustomerDto> customerDtos = customerMapper.toDtoList(page.getContent());
+        return PageUtils.toPageResponse(page, customerDtos);
+    }
+
+
+    @Override
     public List<CustomerDto> getCustomersByType(String type) {
         try {
             CustomerType customerType = CustomerType.valueOf(type.toUpperCase());
             List<Customer> customers = customerRepository.findByCustomerType(customerType);
             return customerMapper.toDtoList(customers);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Customer type không hợp lệ: " + type);
+        }
+    }
+
+    @Override
+    public PageResponse<CustomerDto> getCustomersByTypePaginated(String type, Pageable pageable) {
+        try {
+            CustomerType customerType = CustomerType.valueOf(type.toUpperCase());
+            Page<Customer> page = customerRepository.findByCustomerType(customerType, pageable);
+            List<CustomerDto> customerDtos = customerMapper.toDtoList(page.getContent());
+            return PageUtils.toPageResponse(page, customerDtos);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Customer type không hợp lệ: " + type);
         }
@@ -147,13 +182,13 @@ public class CustomerServiceImpl implements CustomerService {
     public void deleteCustomer(Integer id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer không tồn tại với ID: " + id));
-        
+
         // Lưu lại user để xóa sau
         User user = customer.getUser();
-        
+
         // Xóa customer trước
         customerRepository.delete(customer);
-        
+
         // Xóa user liên quan nếu có
         if (user != null) {
             userRepository.delete(user);

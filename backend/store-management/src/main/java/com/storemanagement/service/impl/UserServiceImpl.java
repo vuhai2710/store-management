@@ -1,14 +1,21 @@
 package com.storemanagement.service.impl;
 
 import com.storemanagement.dto.AuthenticationRequestDto;
+import com.storemanagement.dto.PageResponse;
+import com.storemanagement.dto.UserDto;
 import com.storemanagement.mapper.UserMapper;
 import com.storemanagement.model.User;
 import com.storemanagement.repository.UserRepository;
 import com.storemanagement.service.CustomerService;
 import com.storemanagement.service.UserService;
-import com.storemanagement.utility.PageUtils;
+import com.storemanagement.utils.PageUtils;
+import com.storemanagement.utils.Role;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -46,6 +53,20 @@ public class UserServiceImpl implements UserService {
     public List<UserDto> getAllUsers() {
         List<User> users = userRepository.findAll();
         return userMapper.toDtoList(users);
+    }
+
+    @Override
+    public PageResponse<UserDto> getAllUsersPaginated(Pageable pageable) {
+        Page<User> userPage = userRepository.findAll(pageable); //Lấy thông tin
+        List<UserDto> userDtos = userMapper.toDtoList(userPage.getContent()); //Map entity sang dto
+        return PageUtils.toPageResponse(userPage, userDtos); //(page, data)
+    }
+
+    @Override
+    public PageResponse<UserDto> getUsersByIsActive(Boolean isActive, Pageable pageable) {
+        Page<User> userPage = userRepository.findByIsActive(isActive, pageable); //Lấy thông tin theo isActive
+        List<UserDto> userDtos = userMapper.toDtoList(userPage.getContent()); //Map entity sang dto
+        return PageUtils.toPageResponse(userPage, userDtos); //(page, data)
     }
 
     @Override

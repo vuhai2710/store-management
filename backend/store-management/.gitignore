@@ -34,5 +34,7 @@ build/
 
 ### Phân chia công việc ###
 API_ENDPOINTS.md
-VALIDATION_SUMMARY.md
+PAGINATION_GUIDE.md
+SUMMARY_PAGINATION.md
+FIX_CUSTOMER_PAGINATION.md
 Phân chia công việc BE.pdf

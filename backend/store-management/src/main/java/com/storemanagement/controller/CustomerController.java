@@ -2,9 +2,13 @@ package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.CustomerDto;
+import com.storemanagement.dto.PageResponse;
 import com.storemanagement.service.CustomerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -22,9 +26,17 @@ public class CustomerController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<List<CustomerDto>>> getAllCustomers() {
-        List<CustomerDto> customers = customerService.getAllCustomers();
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách customer thành công", customers));
+    public ResponseEntity<ApiResponse<PageResponse<CustomerDto>>> getAllCustomers(
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "5") Integer pageSize,
+            @RequestParam(defaultValue = "idCustomer") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
+
+        PageResponse<CustomerDto> customerPage = customerService.getAllCustomersPaginated(pageable);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách customer thành công", customerPage));
     }
 
     @GetMapping("/{id}")
@@ -36,19 +48,35 @@ public class CustomerController {
 
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<List<CustomerDto>>> searchCustomersByNameAndPhone(
+    public ResponseEntity<ApiResponse<PageResponse<CustomerDto>>> searchCustomersByNameAndPhone(
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) String phone) {
-        List<CustomerDto> customers = customerService.searchCustomers(name, phone);
-        return ResponseEntity.ok(ApiResponse.success("Tìm kiếm customer thành công", customers));
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "5") Integer pageSize,
+            @RequestParam(defaultValue = "idCustomer") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(pageNo-1, pageSize, Sort.by(direction, sortBy));
+
+        PageResponse<CustomerDto> customerPage = customerService.searchCustomersPaginated(name, phone, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Tìm kiếm customer thành công", customerPage));
     }
 
     @GetMapping("/type/{type}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<List<CustomerDto>>> getCustomersByType(
-            @PathVariable String type) {
-        List<CustomerDto> customers = customerService.getCustomersByType(type);
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách customer theo loại thành công", customers));
+    public ResponseEntity<ApiResponse<PageResponse<CustomerDto>>> getCustomersByType(
+            @PathVariable String type,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "5") Integer pageSize,
+            @RequestParam(defaultValue = "idCustomer") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
+
+        PageResponse<CustomerDto> customerPage = customerService.getCustomersByTypePaginated(type, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách customer theo loại thành công", customerPage));
     }
 
     @PutMapping("/{id}")
@@ -91,3 +119,4 @@ public class CustomerController {
         return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin thành công", updatedCustomer));
     }
 }
+
