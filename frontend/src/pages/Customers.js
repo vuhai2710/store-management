@@ -37,7 +37,7 @@ const { Option } = Select;
 const Customers = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { customers, loading, pagination, filters } = useSelector(
+  const { customers, loading, pagination } = useSelector(
     (state) => state.customers
   );
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -46,26 +46,25 @@ const Customers = () => {
   const [customerTypeFilter, setCustomerTypeFilter] = useState(null);
 
   useEffect(() => {
-    // If filtering by type, use getCustomersByType endpoint (no pagination)
+    const params = {
+      pageNo: pagination.current || 1,
+      pageSize: pagination.pageSize || 10,
+      sortBy: "idCustomer",
+      sortDirection: "ASC",
+    };
+
+    // If filtering by type, add customerType to params
     if (customerTypeFilter) {
-      // Call API to get customers by type - this will be handled in slice
-      dispatch(fetchCustomers({ customerType: customerTypeFilter }));
-    } else {
-      // Normal flow with pagination
-      const params = {
-        pageNo: pagination.current || 1,
-        pageSize: pagination.pageSize || 10,
-        sortBy: "idCustomer",
-        sortDirection: "ASC",
-      };
-
-      // Add search params if exists
-      if (searchText) {
-        params.name = searchText;
-      }
-
-      dispatch(fetchCustomers(params));
+      params.customerType = customerTypeFilter;
     }
+
+    // Add search params if exists
+    if (searchText) {
+      params.name = searchText;
+    }
+
+    dispatch(fetchCustomers(params));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     dispatch,
     pagination.current,
@@ -75,15 +74,12 @@ const Customers = () => {
   ]);
 
   const handleTableChange = (newPagination, filters, sorter) => {
-    // Don't allow pagination change when filtering by type
-    if (!customerTypeFilter) {
-      dispatch(
-        setPagination({
-          current: newPagination.current,
-          pageSize: newPagination.pageSize,
-        })
-      );
-    }
+    dispatch(
+      setPagination({
+        current: newPagination.current,
+        pageSize: newPagination.pageSize,
+      })
+    );
   };
 
   const handleSearch = (value) => {
@@ -265,19 +261,15 @@ const Customers = () => {
           dataSource={customers}
           loading={loading}
           rowKey="id"
-          pagination={
-            customerTypeFilter
-              ? false
-              : {
-                  current: pagination.current,
-                  pageSize: pagination.pageSize,
-                  total: pagination.total,
-                  showSizeChanger: true,
-                  showQuickJumper: true,
-                  showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} của ${total} khách hàng`,
-                }
-          }
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} của ${total} khách hàng`,
+          }}
           onChange={handleTableChange}
           scroll={{ x: 800 }}
         />

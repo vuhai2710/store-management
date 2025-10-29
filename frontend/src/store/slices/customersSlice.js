@@ -8,13 +8,10 @@ export const fetchCustomers = createAsyncThunk(
       // If customerType filter is provided, use getCustomersByType endpoint
       if (params?.customerType) {
         const response = await customersService.getCustomersByType(
-          params.customerType
+          params.customerType,
+          params // Pass pagination params
         );
-        // Transform to match expected format
-        return {
-          data: response, // getCustomersByType returns array directly
-          total: response.length,
-        };
+        return response;
       }
       // Otherwise use normal getCustomers with pagination
       const response = await customersService.getCustomers(params);
