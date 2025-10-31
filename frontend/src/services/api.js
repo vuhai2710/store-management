@@ -20,6 +20,16 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Thêm log để thấy request/response trong Console
+    api.interceptors.request.use(
+      (config) => {
+        const fullUrl = (config.baseURL || "") + (config.url || "");
+        console.debug("[API] ->", config.method?.toUpperCase(), fullUrl, { params: config.params, data: config.data });
+        config.headers = { ...(config.headers || {}), "Cache-Control": "no-cache", Pragma: "no-cache" };
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
     return config;
   },
   (error) => {
@@ -30,8 +40,7 @@ api.interceptors.request.use(
 // Response interceptor to handle Spring Boot ApiResponse format
 api.interceptors.response.use(
   (response) => {
-    // Spring Boot trả về format: { code, message, data }
-    // Trả về data để dễ sử dụng
+    console.debug("[API] <-", response.status, response.config?.url, response.data);
     if (response.data && response.data.data !== undefined) {
       return {
         ...response,

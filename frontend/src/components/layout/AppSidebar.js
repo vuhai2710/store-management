@@ -10,6 +10,7 @@ import {
   TeamOutlined,
   DollarOutlined,
   BarChartOutlined,
+  UserSwitchOutlined,
 } from "@ant-design/icons";
 
 const { Sider } = Layout;
@@ -39,6 +40,11 @@ const AppSidebar = () => {
       key: "/customers",
       icon: <UserOutlined />,
       label: "Quản lý Khách hàng",
+    },
+    {
+      key: "/users",
+      icon: <UserSwitchOutlined />,
+      label: "Quản lý Người dùng",
     },
     {
       key: "/inventory",

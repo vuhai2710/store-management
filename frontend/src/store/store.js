@@ -7,6 +7,7 @@ import inventoryReducer from './slices/inventorySlice';
 import employeesReducer from './slices/employeesSlice';
 import financeReducer from './slices/financeSlice';
 import suppliersReducer from './slices/suppliersSlice';
+import usersReducer from './slices/usersSlice'; // thêm
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     employees: employeesReducer,
     finance: financeReducer,
     suppliers: suppliersReducer,
+    users: usersReducer, // thêm
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
