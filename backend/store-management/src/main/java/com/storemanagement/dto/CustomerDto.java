@@ -1,7 +1,8 @@
 package com.storemanagement.dto;
 
 import com.storemanagement.utils.CustomerType;
-import jakarta.validation.constraints.Pattern;
+import com.storemanagement.validation.ValidEmail;
+import com.storemanagement.validation.ValidPhone;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,17 +17,17 @@ public class CustomerDto {
     private Integer idUser;
     private String username;
 
-    @Pattern(regexp = "^[A-Za-z0-9._%+-]+@gmail\\.com$", message = "Email phải có định dạng @gmail.com")
+    @ValidEmail
     private String email;
 
     private String customerName;
 
-    @Pattern(regexp = "^0\\d{9}$", message = "Số điện thoại phải có 10 số và bắt đầu bằng 0")
+    @ValidPhone
     private String phoneNumber;
 
     private String address;
     private CustomerType customerType;
     private Boolean isActive;
-    private String createdAt;
-    private String updatedAt;
+    private java.time.LocalDateTime createdAt;
+    private java.time.LocalDateTime updatedAt;
 }

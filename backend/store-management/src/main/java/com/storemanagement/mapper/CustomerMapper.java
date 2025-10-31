@@ -8,6 +8,12 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
+/**
+ * CustomerMapper - MapStruct mapper cho Customer entity
+ *
+ * Note: Date formatting được xử lý tự động bởi JacksonConfig (global config)
+ * Không cần custom formatDate method nữa
+ */
 @Mapper(componentModel = "spring", uses = {UserMapper.class})
 public interface CustomerMapper {
     // AuthenticationDto → Customer
@@ -19,8 +25,6 @@ public interface CustomerMapper {
     @Mapping(target = "username", source = "user.username")
     @Mapping(target = "email", source = "user.email")
     @Mapping(target = "isActive", source = "user.isActive")
-    @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "formatDate")
-    @Mapping(target = "updatedAt", source = "updatedAt", qualifiedByName = "formatDate")
     CustomerDto toDto(Customer entity);
 
     List<CustomerDto> toDtoList(List<Customer> entities);

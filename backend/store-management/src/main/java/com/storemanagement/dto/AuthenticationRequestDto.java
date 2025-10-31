@@ -1,7 +1,8 @@
 package com.storemanagement.dto;
 
+import com.storemanagement.validation.ValidEmail;
+import com.storemanagement.validation.ValidPhone;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,14 +23,14 @@ public class AuthenticationRequestDto {
     private String password;
 
     @NotBlank(message = "Email không được để trống")
-    @Pattern(regexp = "^[A-Za-z0-9._%+-]+@gmail\\.com$", message = "Email phải có định dạng @gmail.com")
+    @ValidEmail
     private String email;
 
     @NotBlank(message = "Tên khách hàng không được để trống")
     private String customerName;
 
     @NotBlank(message = "Số điện thoại không được để trống")
-    @Pattern(regexp = "^0\\d{9}$", message = "Số điện thoại phải có 10 số và bắt đầu bằng 0")
+    @ValidPhone
     private String phoneNumber;
 
     private String address;

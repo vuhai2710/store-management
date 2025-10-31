@@ -79,7 +79,7 @@ CREATE TABLE products (
   description TEXT,
   price DECIMAL(12,2) NOT NULL CHECK (price >= 0),
   stock_quantity INT DEFAULT 0 CHECK (stock_quantity >= 0),
-  status VARCHAR(50) DEFAULT 'available' COMMENT 'Trạng thái: available, out_of_stock, discontinued',
+  status ENUM('IN_STOCK','OUT_OF_STOCK') DEFAULT 'IN_STOCK' COMMENT 'Trạng thái: IN_STOCK (còn hàng), OUT_OF_STOCK (hết hàng)',
   image_url VARCHAR(500) DEFAULT NULL COMMENT 'Hình ảnh sản phẩm',
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id_product),
@@ -252,6 +252,33 @@ AFTER created_at;
 ALTER TABLE customers
 ADD COLUMN created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
 ADD COLUMN updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+-- =====================================================
+-- ALTER BẢNG PRODUCTS - THÊM MÃ SẢN PHẨM ĐẶC TRƯNG
+-- =====================================================
+ALTER TABLE products
+ADD COLUMN product_code VARCHAR(100) NOT NULL DEFAULT '' COMMENT 'Mã sản phẩm: IMEI/Serial/SKU',
+ADD COLUMN code_type ENUM('IMEI','SERIAL','SKU','BARCODE') DEFAULT 'SKU' COMMENT 'Loại mã',
+ADD COLUMN sku VARCHAR(50) UNIQUE COMMENT 'SKU theo quy tắc: CAT_PREFIX-XXXX',
+ADD UNIQUE KEY unique_product_code (product_code),
+ADD INDEX idx_code_type (code_type),
+ADD INDEX idx_sku (sku);
+
+-- Cập nhật categories với PREFIX cho SKU
+ALTER TABLE categories
+ADD COLUMN code_prefix VARCHAR(10) DEFAULT '' COMMENT 'Prefix cho SKU: SP, LT, AO...';
+
+-- -------------------------------------------------
+-- Thêm cột id_supplier (brand) vào products
+-- -------------------------------------------------
+ALTER TABLE products
+    ADD COLUMN id_supplier INT NULL COMMENT 'Nhà cung cấp = Brand (Apple, Samsung, Sony...)',
+    ADD CONSTRAINT fk_product_supplier
+        FOREIGN KEY (id_supplier) REFERENCES suppliers(id_supplier)
+        ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Index để tìm kiếm nhanh theo brand
+CREATE INDEX idx_product_supplier ON products(id_supplier);
 
 -- ============================================================
 -- KẾT THÚC SCRIPT

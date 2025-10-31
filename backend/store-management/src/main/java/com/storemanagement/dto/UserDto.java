@@ -1,7 +1,7 @@
 package com.storemanagement.dto;
 
 import com.storemanagement.utils.Role;
-import jakarta.validation.constraints.Pattern;
+import com.storemanagement.validation.ValidEmail;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,11 +18,11 @@ public class UserDto {
     @Size(min = 4, message = "Tên đăng nhập phải có ít nhất 4 ký tự")
     private String username;
 
-    @Pattern(regexp = "^[A-Za-z0-9._%+-]+@gmail\\.com$", message = "Email phải có định dạng @gmail.com")
+    @ValidEmail
     private String email;
 
     private Role role;
     private Boolean isActive;
-    private String createdAt;
-    private String updatedAt;
+    private java.time.LocalDateTime createdAt;
+    private java.time.LocalDateTime updatedAt;
 }
