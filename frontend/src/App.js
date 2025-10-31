@@ -6,21 +6,24 @@
  */
 
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "antd";
-import { useAuth } from "./hooks/useAuth";
+import { Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "./components/common/ProtectedRoute";
+import { USER_ROLES } from "./constants";
+import { useAuth } from "./hooks";
 
 // Layout Components
 import AppHeader from "./components/layout/AppHeader";
 import AppSidebar from "./components/layout/AppSidebar";
 
 // Common Components
-import ProtectedRoute from "./components/common/ProtectedRoute";
+// giữ 1 dòng import duy nhất
 
 // Pages
+import Users from "./pages/Users";
+import Unauthorized from "./pages/Unauthorized";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Unauthorized from "./pages/Unauthorized";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Orders from "./pages/Orders";
@@ -36,10 +39,17 @@ import EmployeeDetail from "./pages/EmployeeDetail";
 import Finance from "./pages/Finance";
 import Reports from "./pages/Reports";
 
-// Constants
-import { USER_ROLES } from "./constants";
-
 const { Content } = Layout;
+
+// Thêm block này
+const PublicRoutes = () => (
+  <Routes>
+    <Route path="/login" element={<Login />} />
+    <Route path="/register" element={<Register />} />
+    <Route path="/unauthorized" element={<Unauthorized />} />
+    <Route path="*" element={<Navigate to="/login" replace />} />
+  </Routes>
+);
 
 function App() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -59,18 +69,13 @@ function App() {
     );
   }
 
-  // Public routes (không cần authentication)
-  const PublicRoutes = () => (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/unauthorized" element={<Unauthorized />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
-  );
+  // Nếu chưa đăng nhập → render PublicRoutes
+  if (!isAuthenticated) {
+    return <PublicRoutes />;
+  }
 
-  // Protected routes (cần authentication)
-  const ProtectedRoutes = () => (
+  // Protected routes (đã đăng nhập)
+  return (
     <Layout style={{ minHeight: "100vh" }}>
       <AppSidebar />
       <Layout>
@@ -221,6 +226,16 @@ function App() {
               }
             />
 
+            {/* Trang quản lý người dùng - chỉ ADMIN */}
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                  <Users />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Catch all - redirect to dashboard */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
@@ -228,9 +243,6 @@ function App() {
       </Layout>
     </Layout>
   );
-
-  // Return appropriate routes based on authentication
-  return isAuthenticated ? <ProtectedRoutes /> : <PublicRoutes />;
 }
 
 export default App;

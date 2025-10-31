@@ -13,11 +13,12 @@ export const API_ENDPOINTS = {
   // Users
   USERS: {
     BASE: "/users",
+    STATUS: "/users/status",
     BY_ID: (id) => `/users/${id}`,
-    DEACTIVATE: (id) => `/users/${id}/deactivate`,
     ACTIVATE: (id) => `/users/${id}/activate`,
+    DEACTIVATE: (id) => `/users/${id}/deactivate`,
     CHANGE_ROLE: (id) => `/users/${id}/role`,
-    PROFILE: "/users/profile", // Get current user profile
+    PROFILE: "/users/profile",
   },
 
   // Customers
@@ -95,3 +96,5 @@ export const API_ENDPOINTS = {
     },
   },
 };
+
+
