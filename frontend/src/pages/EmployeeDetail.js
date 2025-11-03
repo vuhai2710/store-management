@@ -1,11 +1,16 @@
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, Typography, Descriptions, Table, Tag, Button, Avatar } from 'antd';
+import { Card, Typography, Descriptions, Tag, Button, Avatar } from 'antd';
 import { EditOutlined, UserOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEmployeeById } from '../store/slices/employeesSlice';
+import dayjs from 'dayjs';
 
 const { Title } = Typography;
+
+const fmtDate = (v) => (v ? dayjs(v).format('DD/MM/YYYY') : '-');
+const fmtDateTime = (v) => (v ? dayjs(v).format('DD/MM/YYYY HH:mm') : '-');
+const fmtMoney = (v) => (v != null ? Number(v).toLocaleString('vi-VN') : '-');
 
 const EmployeeDetail = () => {
   const { id } = useParams();
@@ -18,25 +23,6 @@ const EmployeeDetail = () => {
     }
   }, [dispatch, id]);
 
-  const activityColumns = [
-    {
-      title: 'Hoạt động',
-      dataIndex: 'action',
-      key: 'action',
-    },
-    {
-      title: 'Thời gian',
-      dataIndex: 'timestamp',
-      key: 'timestamp',
-      render: (date) => new Date(date).toLocaleString('vi-VN'),
-    },
-    {
-      title: 'Mô tả',
-      dataIndex: 'description',
-      key: 'description',
-    },
-  ];
-
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -44,6 +30,19 @@ const EmployeeDetail = () => {
   if (!currentEmployee) {
     return <div>Không tìm thấy nhân viên</div>;
   }
+
+  const {
+    employeeName,
+    email,
+    phoneNumber,
+    address,
+    hireDate,
+    baseSalary,
+    username,
+    isActive,
+    createdAt,
+    updatedAt,
+  } = currentEmployee;
 
   return (
     <div>
@@ -55,48 +54,47 @@ const EmployeeDetail = () => {
       <Card title="Thông tin cá nhân" style={{ marginBottom: '16px' }}>
         <Descriptions column={2}>
           <Descriptions.Item label="Avatar">
-            <Avatar 
+            <Avatar
               size={64}
-              src={currentEmployee.avatar} 
               icon={<UserOutlined />}
               style={{ backgroundColor: '#1890ff' }}
             >
-              {currentEmployee.name?.charAt(0)}
+              {employeeName?.charAt(0)}
             </Avatar>
           </Descriptions.Item>
           <Descriptions.Item label="Tên nhân viên">
-            {currentEmployee.name}
+            {employeeName}
+          </Descriptions.Item>
+          <Descriptions.Item label="Username">
+            {username}
           </Descriptions.Item>
           <Descriptions.Item label="Email">
-            {currentEmployee.email}
+            {email}
           </Descriptions.Item>
           <Descriptions.Item label="Số điện thoại">
-            {currentEmployee.phone}
-          </Descriptions.Item>
-          <Descriptions.Item label="Phòng ban">
-            <Tag color="blue">{currentEmployee.department}</Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="Chức vụ">
-            {currentEmployee.position}
+            {phoneNumber}
           </Descriptions.Item>
           <Descriptions.Item label="Trạng thái">
-            <Tag color={currentEmployee.status === 'active' ? 'success' : 'default'}>
-              {currentEmployee.status === 'active' ? 'Hoạt động' : 'Nghỉ việc'}
+            <Tag color={isActive ? 'success' : 'default'}>
+              {isActive ? 'Hoạt động' : 'Vô hiệu'}
             </Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Ngày vào làm">
-            {new Date(currentEmployee.hireDate).toLocaleDateString('vi-VN')}
+            {fmtDate(hireDate)}
+          </Descriptions.Item>
+          <Descriptions.Item label="Lương cơ bản">
+            {fmtMoney(baseSalary)}
+          </Descriptions.Item>
+          <Descriptions.Item label="Ngày tạo">
+            {fmtDateTime(createdAt)}
+          </Descriptions.Item>
+          <Descriptions.Item label="Cập nhật">
+            {fmtDateTime(updatedAt)}
+          </Descriptions.Item>
+          <Descriptions.Item label="Địa chỉ" span={2}>
+            {address || '-'}
           </Descriptions.Item>
         </Descriptions>
-      </Card>
-
-      <Card title="Hoạt động gần đây">
-        <Table
-          columns={activityColumns}
-          dataSource={currentEmployee.activities || []}
-          rowKey="id"
-          pagination={{ pageSize: 5 }}
-        />
       </Card>
     </div>
   );
