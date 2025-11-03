@@ -25,6 +25,7 @@ public interface CustomerMapper {
     @Mapping(target = "username", source = "user.username")
     @Mapping(target = "email", source = "user.email")
     @Mapping(target = "isActive", source = "user.isActive")
+    // createdAt và updatedAt được map tự động từ BaseEntity của Customer
     CustomerDto toDto(Customer entity);
 
     List<CustomerDto> toDtoList(List<Customer> entities);

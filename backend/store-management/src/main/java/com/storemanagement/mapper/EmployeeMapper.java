@@ -16,9 +16,8 @@ public interface EmployeeMapper {
     @Mapping(source = "user.username", target = "username")
     @Mapping(source = "user.email", target = "email")
     @Mapping(source = "user.isActive", target = "isActive")
-    @Mapping(source = "user.createdAt", target = "createdAt")
-    @Mapping(source = "user.updatedAt", target = "updatedAt")
     @Mapping(target = "password", ignore = true)
+    // createdAt và updatedAt được map tự động từ BaseEntity của Employee
     EmployeeDto toDto(Employee entity);
 
     List<EmployeeDto> toDtoList(List<Employee> entities);
