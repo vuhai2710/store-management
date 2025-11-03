@@ -18,16 +18,21 @@ public class Product extends BaseEntity {
     @Column(name = "id_product")
     private Integer idProduct;
 
+    // JOIN để lấy category name
+    // Fetch type LAZY để tối ưu performance, JOIN FETCH khi cần
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_category")
     private Category category;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_supplier")
-    private Supplier supplier;
-
     @Column(name = "product_name", nullable = false)
     private String productName;
+    
+    @Column(name = "brand", length = 100)
+    private String brand;  // Thương hiệu: Apple, Samsung, Dell, Sony, ...
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_supplier")
+    private Supplier supplier;  // Nhà cung cấp thực sự (optional)
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;

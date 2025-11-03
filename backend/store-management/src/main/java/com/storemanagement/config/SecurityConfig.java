@@ -44,8 +44,7 @@ public class SecurityConfig {
     };
 
     private static final String[] ADMIN_URLS = {
-            "/api/v1/admin/**",
-            "/api/v1/employees/**"
+            "/api/v1/admin/**"
     };
 
     private static final String[] EMPLOYEE_URLS = {
@@ -59,6 +58,14 @@ public class SecurityConfig {
             "/api/v1/orders/customer/**",
             "/api/v1/products/customer/**",
             "/api/v1/customers/me"
+    };
+
+    private static final String[] EMPLOYEE_SELF_SERVICE_URLS = {
+            "/api/v1/employees/me"
+    };
+
+    private static final String[] ADMIN_EMPLOYEE_MANAGEMENT_URLS = {
+            "/api/v1/employees/**"
     };
 
     @Bean
@@ -92,6 +99,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/public/**").permitAll()
                         // Customer-specific endpoints (phải đặt trước)
                         .requestMatchers(CUSTOMER_URLS).hasRole("CUSTOMER")
+                        // Employee self-service endpoints (employee xem/sửa thông tin của chính mình)
+                        .requestMatchers(EMPLOYEE_SELF_SERVICE_URLS).hasRole("EMPLOYEE")
+                        // Admin employee management endpoints (admin quản lý nhân viên)
+                        .requestMatchers(ADMIN_EMPLOYEE_MANAGEMENT_URLS).hasRole("ADMIN")
                         // Admin & Employee endpoints cho /api/v1/customers/** (trừ /me)
                         .requestMatchers("/api/v1/customers/**").hasAnyRole("ADMIN", "EMPLOYEE")
                         .requestMatchers(ADMIN_URLS).hasRole("ADMIN")

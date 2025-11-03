@@ -280,6 +280,30 @@ ALTER TABLE products
 -- Index để tìm kiếm nhanh theo brand
 CREATE INDEX idx_product_supplier ON products(id_supplier);
 
+-- Thêm column brand vào products
+ALTER TABLE products
+    ADD COLUMN brand VARCHAR(100) NULL COMMENT 'Thương hiệu sản phẩm: Apple, Samsung, Dell, Sony, LG, ...'
+    AFTER product_name;
+
+-- Tạo index cho brand để tìm kiếm nhanh
+CREATE INDEX idx_brand ON products(brand);
+
+-- Đặt not null và unique cho phone-customer
+ALTER TABLE customers
+MODIFY COLUMN phone_number VARCHAR(20) NOT NULL;
+
+UPDATE customers c1
+LEFT JOIN (
+    SELECT phone_number, MIN(id_customer) as min_id
+    FROM customers
+    GROUP BY phone_number
+    HAVING COUNT(*) > 1
+) c2 ON c1.phone_number = c2.phone_number AND c1.id_customer != c2.min_id
+SET c1.phone_number = CONCAT(c1.phone_number, '_', c1.id_customer)
+WHERE c2.phone_number IS NOT NULL;
+
+ALTER TABLE customers
+ADD UNIQUE KEY unique_phone_number (phone_number);
 -- ============================================================
 -- KẾT THÚC SCRIPT
 -- ============================================================

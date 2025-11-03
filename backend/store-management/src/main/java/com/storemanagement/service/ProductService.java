@@ -30,12 +30,22 @@ public interface ProductService {
     // Lọc theo categoryId
     PageResponse<ProductDto> getProductsByCategory(Integer idCategory, Pageable pageable);
 
-    // Lọc theo supplierId
+    // Lọc theo brand (thương hiệu)
+    PageResponse<ProductDto> getProductsByBrand(String brand, Pageable pageable);
+    
+    // Lọc theo supplierId (nhà cung cấp) - nếu cần
     PageResponse<ProductDto> getProductsBySupplier(Integer idSupplier, Pageable pageable);
 
-    // Tìm kiếm và lọc kết hợp (productCode, name, categoryId, supplierId)
+    // Tìm kiếm và lọc kết hợp (productCode, name, categoryId, brand, price range)
     PageResponse<ProductDto> searchProducts(String productCode, String productName,
-                                           Integer idCategory, Integer idSupplier,
+                                           Integer idCategory, String brand,
+                                           Double minPrice, Double maxPrice,
                                            Pageable pageable);
+    
+    // Lọc sản phẩm theo khoảng giá
+    PageResponse<ProductDto> getProductsByPriceRange(Double minPrice, Double maxPrice, Pageable pageable);
+    
+    // Lấy sản phẩm bán chạy (best sellers)
+    PageResponse<ProductDto> getBestSellingProducts(String orderStatus, Pageable pageable);
 }
 

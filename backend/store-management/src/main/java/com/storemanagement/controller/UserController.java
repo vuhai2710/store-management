@@ -31,7 +31,6 @@ public class UserController {
             @RequestParam(defaultValue = "ASC") String sortDirection) {
 
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
-        // Chuyển từ base-1 (FE) sang base-0 (Spring)
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
         PageResponse<UserDto> userPage = userService.getAllUsersPaginated(pageable);

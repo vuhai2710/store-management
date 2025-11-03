@@ -108,6 +108,15 @@ public class CustomerController {
         return ResponseEntity.ok(ApiResponse.success("Xóa customer thành công", null));
     }
 
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<CustomerDto>> getMyCustomerInfo() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        CustomerDto customer = customerService.getCustomerByUsername(username);
+        return ResponseEntity.ok(ApiResponse.success("Lấy thông tin thành công", customer));
+    }
+
     @PutMapping("/me")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<CustomerDto>> updateMyCustomerInfo(

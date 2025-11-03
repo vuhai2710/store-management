@@ -23,7 +23,7 @@ public class ProductController {
     /**
      * Lấy danh sách sản phẩm (có phân trang, lọc, tìm kiếm)
      * GET /api/v1/products
-     * Params: pageNo, pageSize, sortBy, sortDirection, code, name, categoryId, supplierId
+     * Params: pageNo, pageSize, sortBy, sortDirection, code, name, categoryId, brand, minPrice, maxPrice
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
@@ -35,7 +35,9 @@ public class ProductController {
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Integer categoryId,
-            @RequestParam(required = false) Integer supplierId) {
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice) {
 
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
@@ -43,8 +45,8 @@ public class ProductController {
         PageResponse<ProductDto> productPage;
 
         // Nếu có bất kỳ tham số tìm kiếm/lọc nào, dùng searchProducts
-        if (code != null || name != null || categoryId != null || supplierId != null) {
-            productPage = productService.searchProducts(code, name, categoryId, supplierId, pageable);
+        if (code != null || name != null || categoryId != null || brand != null || minPrice != null || maxPrice != null) {
+            productPage = productService.searchProducts(code, name, categoryId, brand, minPrice, maxPrice, pageable);
         } else {
             productPage = productService.getAllProductsPaginated(pageable);
         }
@@ -115,7 +117,27 @@ public class ProductController {
     }
 
     /**
-     * Lọc sản phẩm theo supplierId
+     * Lọc sản phẩm theo brand (thương hiệu)
+     * GET /api/v1/products/brand/{brand}
+     */
+    @GetMapping("/brand/{brand}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getProductsByBrand(
+            @PathVariable String brand,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "idProduct") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
+
+        PageResponse<ProductDto> productPage = productService.getProductsByBrand(brand, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách sản phẩm theo thương hiệu thành công", productPage));
+    }
+    
+    /**
+     * Lọc sản phẩm theo supplierId (nhà cung cấp)
      * GET /api/v1/products/supplier/{supplierId}
      */
     @GetMapping("/supplier/{supplierId}")
@@ -132,6 +154,45 @@ public class ProductController {
 
         PageResponse<ProductDto> productPage = productService.getProductsBySupplier(supplierId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách sản phẩm theo nhà cung cấp thành công", productPage));
+    }
+
+    /**
+     * Lọc sản phẩm theo khoảng giá
+     * GET /api/v1/products/price?minPrice=1000000&maxPrice=5000000
+     */
+    @GetMapping("/price")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getProductsByPriceRange(
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "price") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
+
+        PageResponse<ProductDto> productPage = productService.getProductsByPriceRange(minPrice, maxPrice, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách sản phẩm theo khoảng giá thành công", productPage));
+    }
+
+    /**
+     * Lấy sản phẩm bán chạy (best sellers)
+     * GET /api/v1/products/best-sellers?status=COMPLETED&pageNo=1&pageSize=10
+     */
+    @GetMapping("/best-sellers")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getBestSellingProducts(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
+
+        // Best sellers đã được sort sẵn theo số lượng bán, không cần sortBy
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
+
+        PageResponse<ProductDto> productPage = productService.getBestSellingProducts(status, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách sản phẩm bán chạy thành công", productPage));
     }
 
     /**
