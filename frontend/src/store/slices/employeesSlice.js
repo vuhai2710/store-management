@@ -8,7 +8,7 @@ export const fetchEmployees = createAsyncThunk(
       const response = await employeesService.getEmployees(params);
       return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Lỗi khi tải danh sách nhân viên');
+      return rejectWithValue(error.message || 'Lỗi khi tải danh sách nhân viên');
     }
   }
 );
@@ -20,7 +20,7 @@ export const fetchEmployeeById = createAsyncThunk(
       const response = await employeesService.getEmployeeById(id);
       return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Lỗi khi tải chi tiết nhân viên');
+      return rejectWithValue(error.message || 'Lỗi khi tải chi tiết nhân viên');
     }
   }
 );
@@ -32,7 +32,7 @@ export const createEmployee = createAsyncThunk(
       const response = await employeesService.createEmployee(employeeData);
       return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Lỗi khi tạo nhân viên');
+      return rejectWithValue(error.message || 'Lỗi khi tạo nhân viên');
     }
   }
 );
@@ -44,7 +44,7 @@ export const updateEmployee = createAsyncThunk(
       const response = await employeesService.updateEmployee(id, employeeData);
       return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Lỗi khi cập nhật nhân viên');
+      return rejectWithValue(error.message || 'Lỗi khi cập nhật nhân viên');
     }
   }
 );
@@ -56,7 +56,7 @@ export const deleteEmployee = createAsyncThunk(
       await employeesService.deleteEmployee(id);
       return id;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Lỗi khi xóa nhân viên');
+      return rejectWithValue(error.message || 'Lỗi khi xóa nhân viên');
     }
   }
 );
@@ -71,11 +71,11 @@ const initialState = {
     pageSize: 10,
     total: 0,
   },
-  filters: {
-    department: null,
-    position: null,
-    status: null,
+  sort: {
+    sortBy: 'idEmployee',
+    sortDirection: 'DESC',
   },
+  filters: {},
 };
 
 const employeesSlice = createSlice({
@@ -94,6 +94,9 @@ const employeesSlice = createSlice({
     setPagination: (state, action) => {
       state.pagination = { ...state.pagination, ...action.payload };
     },
+    setSort: (state, action) => {
+      state.sort = { ...state.sort, ...action.payload };
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -105,6 +108,9 @@ const employeesSlice = createSlice({
         state.loading = false;
         state.employees = action.payload.data;
         state.pagination.total = action.payload.total;
+        // Nếu BE trả về page/pageSize đã chuẩn hóa, có thể sync current/pageSize:
+        if (action.payload.page) state.pagination.current = action.payload.page;
+        if (action.payload.pageSize) state.pagination.pageSize = action.payload.pageSize;
         state.error = null;
       })
       .addCase(fetchEmployees.rejected, (state, action) => {
@@ -129,22 +135,28 @@ const employeesSlice = createSlice({
         state.pagination.total += 1;
       })
       .addCase(updateEmployee.fulfilled, (state, action) => {
-        const index = state.employees.findIndex(employee => employee.id === action.payload.id);
-        if (index !== -1) {
-          state.employees[index] = action.payload;
-        }
-        if (state.currentEmployee && state.currentEmployee.id === action.payload.id) {
-          state.currentEmployee = action.payload;
+        const updated = action.payload;
+        const idx = state.employees.findIndex((e) => e.idEmployee === updated.idEmployee);
+        if (idx !== -1) state.employees[idx] = updated;
+        if (state.currentEmployee?.idEmployee === updated.idEmployee) {
+          state.currentEmployee = updated;
         }
       })
       .addCase(deleteEmployee.fulfilled, (state, action) => {
-        state.employees = state.employees.filter(employee => employee.id !== action.payload);
-        state.pagination.total -= 1;
+        const removedId = action.payload;
+        state.employees = state.employees.filter((e) => e.idEmployee !== removedId);
+        state.pagination.total = Math.max(0, state.pagination.total - 1);
       });
   },
 });
 
-export const { clearError, clearCurrentEmployee, setFilters, setPagination } = employeesSlice.actions;
+export const {
+  clearError,
+  clearCurrentEmployee,
+  setFilters,
+  setPagination,
+  setSort,
+} = employeesSlice.actions;
 export default employeesSlice.reducer;
 
 
