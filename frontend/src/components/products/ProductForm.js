@@ -1,292 +1,228 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Form,
-  Input,
-  InputNumber,
-  Select,
-  Button,
-  Space,
-  Card,
-  Typography,
-  message,
-  Upload,
-  Row,
-  Col,
-} from 'antd';
-import { UploadOutlined } from '@ant-design/icons';
-import { useDispatch } from 'react-redux';
-import { createProduct, updateProduct } from '../../store/slices/productsSlice';
-import { productsService } from '../../services/productsService';
+import React, { useEffect, useMemo, useState } from "react";
+import { Form, Input, InputNumber, Select, Button, Space, Typography, message } from "antd";
+import { useDispatch } from "react-redux";
+import { createProduct, updateProduct } from "../../store/slices/productsSlice";
+import { categoriesService } from "../../services/categoriesService";
+import { suppliersService } from "../../services/suppliersService";
 
-const { Option } = Select;
 const { TextArea } = Input;
 const { Text } = Typography;
+
+// const { Option } = Select; // remove for antd v5
+
+const CODE_TYPES = ["SKU", "IMEI", "SERIAL", "BARCODE"];
+const STATUSES = ["IN_STOCK", "OUT_OF_STOCK"];
 
 const ProductForm = ({ product, onSuccess }) => {
   const dispatch = useDispatch();
   const [form] = Form.useForm();
-  const [fileList, setFileList] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [loadingMeta, setLoadingMeta] = useState(false);
+
+  const codeType = Form.useWatch("codeType", form);
+
+  const isProductCodeRequired = useMemo(() => codeType && codeType !== "SKU", [codeType]);
+
+  useEffect(() => {
+    const loadMeta = async () => {
+      setLoadingMeta(true);
+      try {
+        const [cats, sups] = await Promise.all([
+          categoriesService.getAll(),
+          suppliersService.getAllSuppliers(),
+        ]);
+        // Normalize
+        setCategories(Array.isArray(cats?.content) ? cats.content : Array.isArray(cats) ? cats : []);
+        const supsData = Array.isArray(sups?.content) ? sups.content : Array.isArray(sups) ? sups : [];
+        setSuppliers(supsData);
+      } catch {
+        // ignore
+      } finally {
+        setLoadingMeta(false);
+      }
+    };
+    loadMeta();
+  }, []);
 
   useEffect(() => {
     if (product) {
       form.setFieldsValue({
-        name: product.name,
-        sku: product.sku,
-        category: product.category,
-        price: product.price,
-        cost: product.cost,
-        stock: product.stock,
-        minStock: product.minStock,
+        idCategory: product.idCategory,
+        productName: product.productName,
+        brand: product.brand,
+        idSupplier: product.idSupplier,
         description: product.description,
-        specifications: product.specifications,
+        price: product.price,
+        stockQuantity: product.stockQuantity,
         status: product.status,
+        imageUrl: product.imageUrl,
+        productCode: product.productCode,
+        codeType: product.codeType || "SKU",
+        sku: product.sku,
       });
-
-      // Prefill image preview if existing
-      if (product.image) {
-        setFileList([
-          {
-            uid: '-1',
-            name: 'current-image',
-            status: 'done',
-            url: product.image,
-          },
-        ]);
-      } else {
-        setFileList([]);
-      }
+    } else {
+      form.resetFields();
+      form.setFieldsValue({ codeType: "SKU", status: "IN_STOCK", stockQuantity: 0 });
     }
   }, [product, form]);
 
   const handleSubmit = async (values) => {
+    const payload = {
+      idCategory: values.idCategory,
+      productName: values.productName?.trim(),
+      brand: values.brand?.trim() || null,
+      idSupplier: values.idSupplier || null,
+      description: values.description?.trim() || null,
+      price: Number(values.price),
+      stockQuantity: values.stockQuantity != null ? Number(values.stockQuantity) : 0,
+      status: values.status || null,
+      imageUrl: values.imageUrl?.trim() || null,
+      productCode: values.productCode?.trim() || null,
+      codeType: values.codeType,
+      sku: values.sku?.trim() || null,
+    };
+
     try {
-      const productData = {
-        ...values,
-        image: product?.image || null,
-      };
-
-      // Update or create the product first
-      let savedProduct = null;
-      if (product) {
-        savedProduct = await dispatch(updateProduct({ id: product.id, productData })).unwrap();
-        message.success('Cập nhật sản phẩm thành công!');
+      if (product?.idProduct) {
+        await dispatch(updateProduct({ id: product.idProduct, data: payload })).unwrap();
+        message.success("Cập nhật sản phẩm thành công!");
       } else {
-        savedProduct = await dispatch(createProduct(productData)).unwrap();
-        message.success('Tạo sản phẩm thành công!');
+        await dispatch(createProduct(payload)).unwrap();
+        message.success("Thêm sản phẩm thành công!");
       }
-
-      // If a new local file is selected, upload it
-      const hasLocalFile = fileList.some(f => !!f.originFileObj);
-      if (hasLocalFile && savedProduct?.id) {
-        const rawFiles = fileList
-          .filter(f => !!f.originFileObj)
-          .map(f => f.originFileObj);
-        try {
-          await productsService.uploadImages(savedProduct.id, rawFiles);
-          message.success('Upload hình ảnh thành công!');
-        } catch (e) {
-          message.error('Upload hình ảnh thất bại');
-        }
+      onSuccess && onSuccess();
+    } catch (e) {
+      const errs = e?.errors;
+      if (errs && typeof errs === "object") {
+        form.setFields(
+          Object.entries(errs).map(([name, errMsg]) => ({
+            name,
+            errors: [String(errMsg)],
+          }))
+        );
       }
-
-      onSuccess();
-    } catch (error) {
-      message.error('Có lỗi xảy ra khi lưu sản phẩm');
+      message.error(e?.message || "Dữ liệu không hợp lệ");
     }
   };
 
-  const handleImageChange = ({ fileList: nextList }) => {
-    setFileList(nextList);
-  };
+  const categoryOptions = categories.map((c) => ({
+    value: c.idCategory,
+    label: c.categoryName,
+  }));
 
-  const beforeUpload = (file) => {
-    const isAllowedType = ['image/jpeg', 'image/png', 'image/gif'].includes(file.type);
-    if (!isAllowedType) {
-      message.error('Chỉ chấp nhận JPG/PNG/GIF');
-      return Upload.LIST_IGNORE;
-    }
-    const isLt5M = file.size / 1024 / 1024 < 5;
-    if (!isLt5M) {
-      message.error('Hình ảnh phải nhỏ hơn 5MB');
-      return Upload.LIST_IGNORE;
-    }
-    // Prevent auto upload, keep in list for manual submit
-    return false;
-  };
+  const supplierOptions = suppliers.map((s) => ({
+    value: s.idSupplier,
+    label: s.supplierName,
+  }));
 
   return (
-    <Form
-      form={form}
-      layout="vertical"
-      onFinish={handleSubmit}
-    >
-      <Row gutter={16}>
-        <Col span={16}>
-          <Card title="Thông tin cơ bản" style={{ marginBottom: '16px' }}>
-            <Form.Item
-              name="name"
-              label="Tên sản phẩm"
-              rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm' }]}
-            >
-              <Input placeholder="Nhập tên sản phẩm" />
-            </Form.Item>
+    <Form form={form} layout="vertical" onFinish={handleSubmit}>
+      <Form.Item
+        name="idCategory"
+        label="Danh mục"
+        rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
+      >
+        <Select
+          placeholder="Chọn danh mục"
+          loading={loadingMeta}
+          showSearch
+          optionFilterProp="label"
+          options={categoryOptions}
+        />
+      </Form.Item>
 
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="sku"
-                  label="Mã sản phẩm (SKU)"
-                  rules={[{ required: true, message: 'Vui lòng nhập mã sản phẩm' }]}
-                >
-                  <Input placeholder="Nhập mã sản phẩm" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="category"
-                  label="Danh mục"
-                  rules={[{ required: true, message: 'Vui lòng chọn danh mục' }]}
-                >
-                  <Select placeholder="Chọn danh mục">
-                    <Option value="smartphone">Điện thoại</Option>
-                    <Option value="laptop">Laptop</Option>
-                    <Option value="tablet">Máy tính bảng</Option>
-                    <Option value="accessories">Phụ kiện</Option>
-                    <Option value="audio">Âm thanh</Option>
-                    <Option value="gaming">Gaming</Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-            </Row>
+      <Form.Item
+        name="productName"
+        label="Tên sản phẩm"
+        rules={[
+          { required: true, message: "Vui lòng nhập tên sản phẩm" },
+          { max: 255, message: "Tối đa 255 ký tự" },
+        ]}
+      >
+        <Input placeholder="Nhập tên sản phẩm" />
+      </Form.Item>
 
-            <Form.Item
-              name="description"
-              label="Mô tả sản phẩm"
-            >
-              <TextArea rows={4} placeholder="Nhập mô tả sản phẩm" />
-            </Form.Item>
+      <Form.Item name="brand" label="Thương hiệu">
+        <Input placeholder="VD: Apple, Samsung, Dell..." />
+      </Form.Item>
 
-            <Form.Item
-              name="specifications"
-              label="Thông số kỹ thuật"
-            >
-              <TextArea rows={6} placeholder="Nhập thông số kỹ thuật (JSON format)" />
-            </Form.Item>
-          </Card>
+      <Form.Item name="idSupplier" label="Nhà cung cấp (optional)">
+        <Select
+          placeholder="Chọn nhà cung cấp"
+          loading={loadingMeta}
+          allowClear
+          showSearch
+          optionFilterProp="label"
+          options={supplierOptions}
+        />
+      </Form.Item>
 
-          <Card title="Giá và tồn kho">
-            <Row gutter={16}>
-              <Col span={8}>
-                <Form.Item
-                  name="cost"
-                  label="Giá nhập (VNĐ)"
-                  rules={[{ required: true, message: 'Vui lòng nhập giá nhập' }]}
-                >
-                  <InputNumber
-                    style={{ width: '100%' }}
-                    formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                    placeholder="Nhập giá nhập"
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item
-                  name="price"
-                  label="Giá bán (VNĐ)"
-                  rules={[{ required: true, message: 'Vui lòng nhập giá bán' }]}
-                >
-                  <InputNumber
-                    style={{ width: '100%' }}
-                    formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                    placeholder="Nhập giá bán"
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item
-                  name="stock"
-                  label="Số lượng tồn kho"
-                  rules={[{ required: true, message: 'Vui lòng nhập số lượng tồn kho' }]}
-                >
-                  <InputNumber
-                    style={{ width: '100%' }}
-                    min={0}
-                    placeholder="Nhập số lượng"
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
+      <Form.Item name="description" label="Mô tả">
+        <TextArea rows={3} placeholder="Mô tả sản phẩm" />
+      </Form.Item>
 
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="minStock"
-                  label="Số lượng tồn kho tối thiểu"
-                >
-                  <InputNumber
-                    style={{ width: '100%' }}
-                    min={0}
-                    placeholder="Nhập số lượng tối thiểu"
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="status"
-                  label="Trạng thái"
-                  rules={[{ required: true, message: 'Vui lòng chọn trạng thái' }]}
-                >
-                  <Select placeholder="Chọn trạng thái">
-                    <Option value="active">Đang bán</Option>
-                    <Option value="inactive">Ngừng bán</Option>
-                    <Option value="out-of-stock">Hết hàng</Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-            </Row>
-          </Card>
-        </Col>
+      <Form.Item
+        name="price"
+        label="Giá"
+        rules={[{ required: true, message: "Vui lòng nhập giá" }]}
+      >
+        <InputNumber min={0} step={1000} style={{ width: "100%" }} placeholder="Nhập giá" />
+      </Form.Item>
 
-        <Col span={8}>
-          <Card title="Hình ảnh sản phẩm">
-            <Form.Item
-              name="image"
-              label="Upload hình ảnh"
-            >
-              <Upload
-                name="image"
-                listType="picture-card"
-                showUploadList={true}
-                fileList={fileList}
-                maxCount={1}
-                onChange={handleImageChange}
-                beforeUpload={beforeUpload}
-              >
-                <div>
-                  <UploadOutlined />
-                  <div style={{ marginTop: 8 }}>Upload</div>
-                </div>
-              </Upload>
-            </Form.Item>
+      <Form.Item name="stockQuantity" label="Tồn kho">
+        <InputNumber min={0} step={1} style={{ width: "100%" }} placeholder="Số lượng tồn kho" />
+      </Form.Item>
 
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              Hỗ trợ định dạng: JPG, PNG, GIF
-              <br />
-              Kích thước tối đa: 5MB
+      <Form.Item name="status" label="Trạng thái">
+        <Select options={STATUSES.map((st) => ({ value: st, label: st }))} />
+      </Form.Item>
+
+      <Form.Item name="imageUrl" label="Ảnh (URL)">
+        <Input placeholder="https://..." />
+      </Form.Item>
+
+      <Form.Item
+        name="codeType"
+        label="Loại mã"
+        rules={[{ required: true, message: "Vui lòng chọn loại mã" }]}
+      >
+        <Select options={CODE_TYPES.map((ct) => ({ value: ct, label: ct }))} />
+      </Form.Item>
+
+      <Form.Item
+        name="productCode"
+        label={
+          <span>
+            Mã sản phẩm{" "}
+            <Text type="secondary">
+              {codeType === "SKU" ? "(có thể bỏ trống để tự sinh)" : "(bắt buộc)"}
             </Text>
-          </Card>
-        </Col>
-      </Row>
+          </span>
+        }
+        rules={[
+          {
+            validator: (_, val) => {
+              if (isProductCodeRequired && (!val || !String(val).trim())) {
+                return Promise.reject(new Error("Vui lòng nhập mã sản phẩm"));
+              }
+              return Promise.resolve();
+            },
+          },
+        ]}
+      >
+        <Input placeholder={codeType === "SKU" ? "Bỏ trống để tự sinh SKU" : "Nhập mã theo loại đã chọn"} />
+      </Form.Item>
 
-      <div style={{ textAlign: 'right', marginTop: '16px' }}>
+      <Form.Item name="sku" label="SKU (optional)">
+        <Input placeholder="SKU tùy chọn (nếu dùng song song với mã khác)" />
+      </Form.Item>
+
+      <div style={{ textAlign: "right", marginTop: 12 }}>
         <Space>
-          <Button onClick={() => onSuccess()}>
-            Hủy
-          </Button>
+          <Button onClick={() => onSuccess && onSuccess()}>Hủy</Button>
           <Button type="primary" htmlType="submit">
-            {product ? 'Cập nhật' : 'Tạo'} sản phẩm
+            {product?.idProduct ? "Cập nhật" : "Thêm"} sản phẩm
           </Button>
         </Space>
       </div>

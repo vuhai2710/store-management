@@ -36,12 +36,14 @@ export const API_ENDPOINTS = {
   PRODUCTS: {
     BASE: "/products",
     BY_ID: (id) => `/products/${id}`,
-    CATEGORIES: "/products/categories",
-    LOW_STOCK: "/products/low-stock",
-    STOCK: (id) => `/products/${id}/stock`,
-    IMAGES: (id) => `/products/${id}/images`,
-    DELETE_IMAGE: (productId, imageId) =>
-      `/products/${productId}/images/${imageId}`,
+    CODE: (code) => `/products/code/${encodeURIComponent(code)}`,
+    SEARCH_BY_NAME: "/products/search/name",
+    BY_CATEGORY: (categoryId) => `/products/category/${categoryId}`,
+    BY_BRAND: (brand) => `/products/brand/${encodeURIComponent(brand)}`,
+    BY_SUPPLIER: (supplierId) => `/products/supplier/${supplierId}`,
+    BY_PRICE: "/products/price",
+    BEST_SELLERS: "/products/best-sellers",
+    // PUBLIC: "/products/public" // nếu có dùng listing public
   },
 
   // Orders
@@ -99,6 +101,14 @@ export const API_ENDPOINTS = {
       PROFIT: "/finance/reports/profit",
       EXPORT: "/finance/reports/export",
     },
+  },
+
+  // Categories
+  CATEGORIES: {
+    BASE: "/categories",
+    GET_ALL: "/categories/all",
+    BY_ID: (id) => `/categories/${id}`,
+    // SEARCH: "/categories/search", // nếu backend có
   },
 };
 
