@@ -10,12 +10,13 @@ import com.storemanagement.service.ImportOrderService;
 import com.storemanagement.service.PdfService;
 import com.storemanagement.utils.PageUtils;
 import com.storemanagement.utils.ProductStatus;
+import com.storemanagement.utils.ReferenceType;
+import com.storemanagement.utils.TransactionType;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,8 +37,8 @@ public class ImportOrderServiceImpl implements ImportOrderService {
     private final ImportOrderMapper importOrderMapper;
     private final SupplierRepository supplierRepository;
     private final ProductRepository productRepository;
-    private final UserRepository userRepository;
     private final EmployeeRepository employeeRepository;
+    private final InventoryTransactionRepository inventoryTransactionRepository;
     private final PdfService pdfService;
 
     @Override
@@ -99,11 +100,17 @@ public class ImportOrderServiceImpl implements ImportOrderService {
         ImportOrder savedOrder = importOrderRepository.save(importOrder);
         log.info("Import order created with ID: {}, Total: {}", savedOrder.getIdImportOrder(), savedOrder.getTotalAmount());
 
-        // Cập nhật inventory (stock quantity) cho từng sản phẩm
+        // Lấy employee entity nếu có employeeId
+        Employee employee = null;
+        if (employeeId != null) {
+            employee = employeeRepository.findById(employeeId).orElse(null);
+        }
+
+        // Cập nhật inventory (stock quantity) và tạo inventory_transactions cho từng sản phẩm
         for (ImportOrderDetail detail : savedOrder.getImportOrderDetails()) {
             Product product = detail.getProduct();
-            Integer newStockQuantity = (product.getStockQuantity() == null ? 0 : product.getStockQuantity())
-                    + detail.getQuantity();
+            Integer oldStockQuantity = product.getStockQuantity() == null ? 0 : product.getStockQuantity();
+            Integer newStockQuantity = oldStockQuantity + detail.getQuantity();
             
             product.setStockQuantity(newStockQuantity);
             
@@ -114,7 +121,26 @@ public class ImportOrderServiceImpl implements ImportOrderService {
             
             productRepository.save(product);
             log.info("Updated stock for product {}: {} -> {}", 
-                    product.getIdProduct(), product.getStockQuantity() - detail.getQuantity(), newStockQuantity);
+                    product.getIdProduct(), oldStockQuantity, newStockQuantity);
+
+            // Tạo inventory_transaction cho mỗi sản phẩm
+            String notes = String.format("Nhập hàng từ NCC %s - Đơn nhập #%d", 
+                    supplier.getSupplierName(), savedOrder.getIdImportOrder());
+            
+            InventoryTransaction transaction = InventoryTransaction.builder()
+                    .product(product)
+                    .transactionType(TransactionType.IN)
+                    .quantity(detail.getQuantity())
+                    .referenceType(ReferenceType.PURCHASE_ORDER)
+                    .referenceId(savedOrder.getIdImportOrder())
+                    .employee(employee)
+                    .notes(notes)
+                    .transactionDate(LocalDateTime.now())
+                    .build();
+            
+            inventoryTransactionRepository.save(transaction);
+            log.info("Created inventory transaction for product {}: IN {} units (PO #{})", 
+                    product.getIdProduct(), detail.getQuantity(), savedOrder.getIdImportOrder());
         }
 
         // Map và trả về DTO
@@ -242,7 +268,6 @@ public class ImportOrderServiceImpl implements ImportOrderService {
 
     private String generateImportOrderHtmlContent(ImportOrderDto dto) {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-        DateTimeFormatter dateOnlyFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         
         StringBuilder html = new StringBuilder();
         
