@@ -21,6 +21,14 @@ spring:
         format_sql: true
     database-platform: org.hibernate.dialect.MySQL8Dialect
 
+  # Flyway Configuration
+  flyway:
+    enabled: true
+    baseline-on-migrate: true # Tự động baseline nếu database đã có dữ liệu
+    locations: classpath:db/migration
+    baseline-version: 0
+    validate-on-migrate: true
+
   # File upload configuration
   servlet:
     multipart:
