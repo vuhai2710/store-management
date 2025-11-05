@@ -3,14 +3,21 @@ package com.storemanagement.service;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.dto.ProductDto;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ProductService {
 
     // Thêm sản phẩm mới
     ProductDto createProduct(ProductDto productDto);
+    
+    // Thêm sản phẩm mới với upload ảnh
+    ProductDto createProduct(ProductDto productDto, MultipartFile image);
 
     // Sửa thông tin sản phẩm
     ProductDto updateProduct(Integer id, ProductDto productDto);
+    
+    // Sửa thông tin sản phẩm với upload ảnh
+    ProductDto updateProduct(Integer id, ProductDto productDto, MultipartFile image);
 
     // Xóa sản phẩm
     void deleteProduct(Integer id);

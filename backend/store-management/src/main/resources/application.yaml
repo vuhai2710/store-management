@@ -35,6 +35,11 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
+# File storage configuration
+file:
+  upload:
+    directory: uploads
+
 # JWT Configuration
 jwt:
   secret: storeManagementSecretKey12345678901234567890

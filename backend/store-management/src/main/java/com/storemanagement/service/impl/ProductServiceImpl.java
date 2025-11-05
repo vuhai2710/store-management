@@ -9,6 +9,7 @@ import com.storemanagement.model.Supplier;
 import com.storemanagement.repository.CategoryRepository;
 import com.storemanagement.repository.ProductRepository;
 import com.storemanagement.repository.SupplierRepository;
+import com.storemanagement.service.FileStorageService;
 import com.storemanagement.service.ProductService;
 import com.storemanagement.utils.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -18,9 +19,28 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+/**
+ * Service implementation cho Product (Sản phẩm)
+ * 
+ * Chức năng chính:
+ * 1. CRUD operations cho sản phẩm
+ * 2. Upload và quản lý ảnh sản phẩm
+ * 3. Xử lý product code và SKU (tự động sinh hoặc validate)
+ * 4. Tìm kiếm và lọc sản phẩm (theo category, brand, price, etc.)
+ * 5. Quản lý stock quantity và status
+ * 
+ * Business Logic quan trọng:
+ * - Product Code: Có thể là SKU (tự sinh) hoặc MANUAL (tự nhập)
+ * - SKU: Tự động sinh theo format: {category_prefix}-{sequence}
+ * - Image: Upload vào thư mục uploads/products/, lưu URL vào database
+ * - Stock: Tự động cập nhật khi có đơn nhập hàng (ImportOrderService)
+ * 
+ * @author Store Management Team
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -31,51 +51,99 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final SupplierRepository supplierRepository;
     private final ProductMapper productMapper;
+    private final FileStorageService fileStorageService;
 
+    /**
+     * Overload method - tạo sản phẩm không có ảnh
+     */
     @Override
     public ProductDto createProduct(ProductDto productDto) {
+        return createProduct(productDto, null);
+    }
+    
+    /**
+     * Tạo sản phẩm mới
+     * 
+     * Flow xử lý:
+     * 1. Upload ảnh nếu có (lưu vào uploads/products/)
+     * 2. Validate category tồn tại
+     * 3. Xử lý productCode và SKU:
+     *    - Nếu codeType = SKU: có thể tự sinh hoặc tự nhập
+     *    - Nếu codeType = MANUAL: bắt buộc phải có productCode
+     * 4. Validate productCode/SKU chưa tồn tại
+     * 5. Validate supplier (nếu có)
+     * 6. Tạo và lưu Product entity
+     * 
+     * @param productDto DTO chứa thông tin sản phẩm
+     * @param image File ảnh (optional) - multipart/form-data
+     * @return ProductDto đã được tạo với ID
+     */
+    @Override
+    public ProductDto createProduct(ProductDto productDto, MultipartFile image) {
         log.info("Creating product: {}", productDto.getProductName());
         
-        // Validate codeType
+        // Bước 1: Xử lý upload ảnh nếu có
+        // Ảnh được lưu vào thư mục: uploads/products/{filename}
+        // URL được lưu vào database: /uploads/products/{filename}
+        if (image != null && !image.isEmpty()) {
+            try {
+                // FileStorageService sẽ:
+                // - Validate file type (chỉ cho phép image)
+                // - Validate file size (max 10MB)
+                // - Generate unique filename để tránh conflict
+                // - Lưu vào thư mục uploads/products/
+                // - Trả về URL để lưu vào database
+                String imageUrl = fileStorageService.saveImage(image, "products");
+                productDto.setImageUrl(imageUrl);
+                log.info("Image uploaded successfully: {}", imageUrl);
+            } catch (Exception e) {
+                log.error("Error uploading image: {}", e.getMessage(), e);
+                throw new RuntimeException("Không thể upload ảnh: " + e.getMessage());
+            }
+        }
+        
+        // Bước 2: Validate codeType (bắt buộc)
         if (productDto.getCodeType() == null) {
             throw new RuntimeException("Loại mã không hợp lệ");
         }
         
-        // Kiểm tra category tồn tại
+        // Bước 3: Kiểm tra category tồn tại
         Category category = categoryRepository.findById(productDto.getIdCategory())
                 .orElseThrow(() -> new EntityNotFoundException("Danh mục không tồn tại với ID: " + productDto.getIdCategory()));
         
-        // Xử lý productCode và SKU theo codeType
+        // Bước 4: Xử lý productCode và SKU theo codeType
+        // Có 2 loại: SKU (tự động sinh) và MANUAL (tự nhập)
         String productCode = productDto.getProductCode();
         String sku = productDto.getSku();
         
-        // Nếu codeType = SKU và không có productCode, tự sinh SKU
         if (productDto.getCodeType() == CodeType.SKU) {
+            // CodeType = SKU: có thể tự sinh hoặc tự nhập
             if (productCode == null || productCode.trim().isEmpty()) {
-                // Tự sinh SKU theo category.code_prefix
+                // Tự sinh SKU theo format: {category_prefix}-{sequence}
+                // Ví dụ: "DT-001", "DT-002" (nếu category prefix = "DT")
                 sku = generateUniqueSku(category);
-                productCode = sku; // productCode = SKU
+                productCode = sku; // productCode = SKU trong trường hợp này
                 log.info("Auto-generated SKU: {}", sku);
             } else {
-                // Có productCode, validate nó
+                // User tự nhập productCode, validate format
                 ProductCodeValidator.validate(productCode, CodeType.SKU);
-                sku = productCode; // SKU = productCode
+                sku = productCode; // SKU = productCode khi user tự nhập
             }
         } else {
-            // Các loại code khác (IMEI, SERIAL, BARCODE): bắt buộc phải có productCode
+            // CodeType = MANUAL: bắt buộc phải có productCode
             if (productCode == null || productCode.trim().isEmpty()) {
                 throw new RuntimeException("Mã sản phẩm không được để trống");
             }
-            // Validate productCode theo codeType
+            // Validate productCode theo format của codeType
             ProductCodeValidator.validate(productCode, productDto.getCodeType());
         }
         
-        // Kiểm tra productCode đã tồn tại chưa
+        // Bước 5: Kiểm tra productCode chưa tồn tại (unique constraint)
         if (productRepository.findByProductCode(productCode).isPresent()) {
             throw new RuntimeException("Mã sản phẩm đã tồn tại: " + productCode);
         }
         
-        // Kiểm tra SKU đã tồn tại chưa (nếu có)
+        // Bước 6: Kiểm tra SKU chưa tồn tại (nếu có)
         if (sku != null && !sku.isEmpty()) {
             if (productRepository.findBySku(sku).isPresent()) {
                 throw new RuntimeException("SKU đã tồn tại: " + sku);
@@ -129,6 +197,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDto updateProduct(Integer id, ProductDto productDto) {
+        return updateProduct(id, productDto, null);
+    }
+    
+    @Override
+    public ProductDto updateProduct(Integer id, ProductDto productDto, MultipartFile image) {
         log.info("Updating product ID: {}", id);
         
         // Tìm product theo ID
@@ -218,7 +291,25 @@ public class ProductServiceImpl implements ProductService {
             }
         }
         
-        if (productDto.getImageUrl() != null) {
+        // Xử lý upload ảnh mới nếu có
+        if (image != null && !image.isEmpty()) {
+            try {
+                // Xóa ảnh cũ nếu có
+                if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+                    fileStorageService.deleteImage(product.getImageUrl());
+                    log.info("Deleted old image: {}", product.getImageUrl());
+                }
+                
+                // Upload ảnh mới
+                String imageUrl = fileStorageService.saveImage(image, "products");
+                product.setImageUrl(imageUrl);
+                log.info("New image uploaded successfully: {}", imageUrl);
+            } catch (Exception e) {
+                log.error("Error uploading image: {}", e.getMessage(), e);
+                throw new RuntimeException("Không thể upload ảnh: " + e.getMessage());
+            }
+        } else if (productDto.getImageUrl() != null) {
+            // Nếu không có file mới nhưng có imageUrl trong DTO, giữ nguyên hoặc cập nhật URL
             product.setImageUrl(productDto.getImageUrl());
         }
         
@@ -236,6 +327,17 @@ public class ProductServiceImpl implements ProductService {
         
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + id));
+        
+        // Xóa ảnh sản phẩm nếu có
+        if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+            try {
+                fileStorageService.deleteImage(product.getImageUrl());
+                log.info("Deleted product image: {}", product.getImageUrl());
+            } catch (Exception e) {
+                log.warn("Error deleting product image: {}", e.getMessage());
+                // Không throw exception để không ảnh hưởng đến việc xóa sản phẩm
+            }
+        }
         
         productRepository.delete(product);
         log.info("Product deleted successfully: {}", id);

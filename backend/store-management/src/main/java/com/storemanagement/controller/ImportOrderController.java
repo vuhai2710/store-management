@@ -3,11 +3,8 @@ package com.storemanagement.controller;
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.ImportOrderDto;
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.model.Employee;
-import com.storemanagement.model.User;
-import com.storemanagement.repository.EmployeeRepository;
-import com.storemanagement.repository.UserRepository;
 import com.storemanagement.service.ImportOrderService;
+import com.storemanagement.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -17,8 +14,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -29,8 +24,6 @@ import java.time.LocalDateTime;
 public class ImportOrderController {
 
     private final ImportOrderService importOrderService;
-    private final UserRepository userRepository;
-    private final EmployeeRepository employeeRepository;
 
     /**
      * Tạo đơn nhập hàng mới
@@ -41,8 +34,8 @@ public class ImportOrderController {
     public ResponseEntity<ApiResponse<ImportOrderDto>> createImportOrder(
             @RequestBody @Valid ImportOrderDto importOrderDto) {
         
-        // Lấy employee ID từ authentication
-        Integer employeeId = getCurrentEmployeeId();
+        // Lấy employee ID từ JWT token (không cần query database)
+        Integer employeeId = SecurityUtils.getCurrentEmployeeId().orElse(null);
         
         ImportOrderDto createdOrder = importOrderService.createImportOrder(importOrderDto, employeeId);
         return ResponseEntity.ok(ApiResponse.success("Tạo đơn nhập hàng thành công", createdOrder));
@@ -149,21 +142,5 @@ public class ImportOrderController {
                 .body(pdfBytes);
     }
 
-    /**
-     * Lấy Employee ID từ authentication context
-     */
-    private Integer getCurrentEmployeeId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User không tồn tại: " + username));
-
-        Employee employee = employeeRepository.findByUser(user)
-                .orElse(null);
-
-        // Nếu không phải employee, trả về null (có thể là ADMIN)
-        return employee != null ? employee.getIdEmployee() : null;
-    }
 }
 

@@ -32,6 +32,10 @@ build/
 ### VS Code ###
 .vscode/
 
+### Uploaded files ###
+uploads/
+!uploads/.gitkeep
+
 ### Phân chia công việc ###
 EMPLOYEE_TESTING_GUIDE.md
 CATEGORY_SUPPLIER_PRODUCT_GUIDE.md
@@ -39,4 +43,5 @@ EMPLOYEE_MODULE_API.md
 IMPORT_ORDER_FEATURES.md
 PRODUCT_FILTER_FEATURES.md
 BASE_ENTITY_AUDIT_REPORT.md
+DATA_SYNC_GUIDE.md
 Phân chia công việc BE.pdf

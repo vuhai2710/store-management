@@ -16,6 +16,18 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 
+/**
+ * Controller xử lý các API liên quan đến Khách hàng (Customer)
+ * Base URL: /api/v1/customers
+ * 
+ * Các endpoint yêu cầu authentication:
+ * - ADMIN, EMPLOYEE: có thể quản lý tất cả customers
+ * - CUSTOMER: chỉ có thể xem/sửa thông tin của chính mình qua /me endpoints
+ * 
+ * Header: Authorization: Bearer {JWT_TOKEN}
+ * 
+ * @author Store Management Team
+ */
 @RestController
 @RequestMapping("/api/v1/customers")
 @RequiredArgsConstructor

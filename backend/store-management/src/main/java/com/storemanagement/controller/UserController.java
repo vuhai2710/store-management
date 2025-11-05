@@ -15,6 +15,18 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Controller xử lý các API liên quan đến User (Tài khoản người dùng)
+ * Base URL: /api/v1/users
+ * 
+ * Phân quyền:
+ * - ADMIN: có thể quản lý tất cả users (CRUD, activate/deactivate, change role)
+ * - Authenticated users: có thể xem profile của chính mình qua /profile
+ * 
+ * Header: Authorization: Bearer {JWT_TOKEN}
+ * 
+ * @author Store Management Team
+ */
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor

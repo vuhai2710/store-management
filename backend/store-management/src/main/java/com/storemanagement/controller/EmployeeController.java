@@ -18,6 +18,18 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Controller xử lý các API liên quan đến Nhân viên (Employee)
+ * Base URL: /api/v1/employees
+ * 
+ * Phân quyền:
+ * - ADMIN: có thể quản lý tất cả employees (CRUD)
+ * - EMPLOYEE: chỉ có thể xem/sửa thông tin của chính mình qua /me endpoints
+ * 
+ * Header: Authorization: Bearer {JWT_TOKEN}
+ * 
+ * @author Store Management Team
+ */
 @RestController
 @RequestMapping("/api/v1/employees")
 @RequiredArgsConstructor

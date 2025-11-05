@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/products")
@@ -198,24 +199,31 @@ public class ProductController {
     /**
      * Thêm sản phẩm mới
      * POST /api/v1/products
+     * Content-Type: multipart/form-data
+     * Body: productDto (JSON string) và image (file, optional)
      */
-    @PostMapping
+    @PostMapping(consumes = {"multipart/form-data"})
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<ProductDto>> createProduct(@RequestBody @Valid ProductDto productDto) {
-        ProductDto createdProduct = productService.createProduct(productDto);
+    public ResponseEntity<ApiResponse<ProductDto>> createProduct(
+            @RequestPart("productDto") @Valid ProductDto productDto,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        ProductDto createdProduct = productService.createProduct(productDto, image);
         return ResponseEntity.ok(ApiResponse.success("Thêm sản phẩm thành công", createdProduct));
     }
 
     /**
      * Sửa thông tin sản phẩm
      * PUT /api/v1/products/{id}
+     * Content-Type: multipart/form-data
+     * Body: productDto (JSON string) và image (file, optional)
      */
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<ProductDto>> updateProduct(
             @PathVariable Integer id,
-            @RequestBody @Valid ProductDto productDto) {
-        ProductDto updatedProduct = productService.updateProduct(id, productDto);
+            @RequestPart("productDto") @Valid ProductDto productDto,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        ProductDto updatedProduct = productService.updateProduct(id, productDto, image);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật sản phẩm thành công", updatedProduct));
     }
 

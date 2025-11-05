@@ -7,7 +7,9 @@ import com.storemanagement.dto.AuthenticationRequestDto;
 import com.storemanagement.dto.AuthenticationResponseDto;
 import com.storemanagement.dto.LoginRequestDto;
 import com.storemanagement.dto.UserDto;
+import com.storemanagement.model.Employee;
 import com.storemanagement.model.User;
+import com.storemanagement.repository.EmployeeRepository;
 import com.storemanagement.repository.UserRepository;
 import com.storemanagement.service.AuthenticationService;
 import com.storemanagement.service.UserService;
@@ -18,12 +20,14 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserService userService;
     private final UserRepository userRepository;
+    private final EmployeeRepository employeeRepository;
 
     @Value("${jwt.signerKey}")
     private String SIGNER_KEY;
@@ -54,13 +58,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     public String generateToken(User user) throws JOSEException {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS256);
-        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+        
+        // Lấy employeeId nếu user là employee
+        Optional<Integer> employeeIdOpt = Optional.empty();
+        if ("EMPLOYEE".equals(user.getRole().name())) {
+            employeeIdOpt = employeeRepository.findByUser_IdUser(user.getIdUser())
+                    .map(Employee::getIdEmployee);
+        }
+        
+        JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
                 .issuer("store-management.com")
                 .expirationTime(Date.from(Instant.now().plus(24, ChronoUnit.HOURS)))
                 .claim("role", user.getRole().name())
-                .claim("idUser", user.getIdUser())
-                .build();
+                .claim("idUser", user.getIdUser());
+        
+        // Chỉ thêm employeeId nếu user là employee
+        employeeIdOpt.ifPresent(employeeId -> claimsBuilder.claim("employeeId", employeeId));
+        
+        JWTClaimsSet jwtClaimsSet = claimsBuilder.build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
         JWSSigner signer = new MACSigner(SIGNER_KEY.getBytes());
