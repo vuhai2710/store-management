@@ -1,7 +1,7 @@
 package com.storemanagement.mapper;
 
-import com.storemanagement.dto.ImportOrderDetailDto;
-import com.storemanagement.dto.ImportOrderDto;
+import com.storemanagement.dto.response.ImportOrderDetailDto;
+import com.storemanagement.dto.response.ImportOrderDto;
 import com.storemanagement.model.ImportOrder;
 import com.storemanagement.model.ImportOrderDetail;
 import org.mapstruct.Mapper;
@@ -44,6 +44,12 @@ public interface ImportOrderMapper {
     List<ImportOrderDetailDto> detailListToDto(List<ImportOrderDetail> details);
     List<ImportOrderDto> toDtoList(List<ImportOrder> entities);
 }
+
+
+
+
+
+
 
 
 

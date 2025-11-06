@@ -29,6 +29,7 @@ Authorization: Bearer {JWT_TOKEN}
 | DELETE | `/api/v1/customers/{id}` | ADMIN | Xóa khách hàng |
 | GET | `/api/v1/customers/me` | CUSTOMER | Lấy thông tin của chính mình |
 | PUT | `/api/v1/customers/me` | CUSTOMER | Cập nhật thông tin của chính mình |
+| PUT | `/api/v1/customers/me/change-password` | CUSTOMER | Đổi mật khẩu |
 
 ---
 
@@ -307,6 +308,63 @@ GET /api/v1/customers/type/VIP?pageNo=1&pageSize=5
 
 ---
 
+## 11. Customer đổi mật khẩu
+
+### Thông tin Endpoint
+
+- **URL:** `PUT /api/v1/customers/me/change-password`
+- **Authentication:** Required (**CUSTOMER role**)
+- **Content-Type:** `application/json`
+
+### Request Body
+
+```json
+{
+  "currentPassword": "string (required)",
+  "newPassword": "string (required)"
+}
+```
+
+### Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "code": 200,
+  "message": "Đổi mật khẩu thành công",
+  "data": null
+}
+```
+
+### Logic xử lý
+
+1. **Kiểm tra user tồn tại:** Lấy user từ username trong JWT token
+2. **Verify mật khẩu hiện tại:** So sánh với mật khẩu đã hash trong database
+3. **Encode mật khẩu mới:** Hash bằng BCrypt trước khi lưu
+4. **Cập nhật:** Lưu mật khẩu mới vào database
+
+### Lỗi có thể xảy ra
+
+- **400 Bad Request:** Mật khẩu hiện tại không đúng
+- **401 Unauthorized:** Không có token hoặc token không hợp lệ
+- **403 Forbidden:** Không phải CUSTOMER role
+
+### Ví dụ Request
+
+```json
+PUT /api/v1/customers/me/change-password
+Authorization: Bearer {customer_token}
+Content-Type: application/json
+
+{
+  "currentPassword": "oldPassword123",
+  "newPassword": "newPassword456"
+}
+```
+
+---
+
 ## Hướng dẫn Test bằng Postman
 
 ### Bước 1: Test Lấy danh sách khách hàng (ADMIN/EMPLOYEE)
@@ -377,6 +435,22 @@ GET /api/v1/customers/type/VIP?pageNo=1&pageSize=5
 }
 ```
 
+### Bước 7: Test Customer đổi mật khẩu
+
+**Request:**
+- Method: `PUT`
+- URL: `{{base_url}}/customers/me/change-password`
+- Headers:
+  - `Authorization: Bearer {{customer_token}}`
+  - `Content-Type: application/json`
+- Body (raw JSON):
+```json
+{
+  "currentPassword": "oldPassword123",
+  "newPassword": "newPassword456"
+}
+```
+
 ---
 
 ## Error Handling
@@ -407,6 +481,9 @@ GET /api/v1/customers/type/VIP?pageNo=1&pageSize=5
 ## Liên hệ
 
 Nếu có thắc mắc về Customer Module, vui lòng liên hệ team Backend.
+
+
+
 
 
 

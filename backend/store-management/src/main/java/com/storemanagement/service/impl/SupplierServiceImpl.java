@@ -1,7 +1,7 @@
 package com.storemanagement.service.impl;
 
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.SupplierDto;
+import com.storemanagement.dto.response.SupplierDto;
 import com.storemanagement.mapper.SupplierMapper;
 import com.storemanagement.model.Supplier;
 import com.storemanagement.repository.SupplierRepository;
@@ -118,6 +118,12 @@ public class SupplierServiceImpl implements SupplierService {
         return PageUtils.toPageResponse(supplierPage, supplierDtos);
     }
 }
+
+
+
+
+
+
 
 
 

@@ -1,6 +1,6 @@
 package com.storemanagement.service;
 
-import com.storemanagement.dto.CategoryDto;
+import com.storemanagement.dto.response.CategoryDto;
 import com.storemanagement.dto.PageResponse;
 import org.springframework.data.domain.Pageable;
 
@@ -16,6 +16,12 @@ public interface CategoryService {
     PageResponse<CategoryDto> getAllCategoriesPaginated(Pageable pageable);
     PageResponse<CategoryDto> searchCategoriesByName(String name, Pageable pageable);
 }
+
+
+
+
+
+
 
 
 

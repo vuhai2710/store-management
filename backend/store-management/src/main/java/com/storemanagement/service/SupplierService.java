@@ -1,7 +1,7 @@
 package com.storemanagement.service;
 
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.SupplierDto;
+import com.storemanagement.dto.response.SupplierDto;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -29,6 +29,12 @@ public interface SupplierService {
     // Tìm kiếm nhà cung cấp theo tên (gần đúng)
     PageResponse<SupplierDto> searchSuppliersByName(String name, Pageable pageable);
 }
+
+
+
+
+
+
 
 
 

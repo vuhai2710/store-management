@@ -1,7 +1,7 @@
 package com.storemanagement.service.impl;
 
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.ProductDto;
+import com.storemanagement.dto.response.ProductDto;
 import com.storemanagement.mapper.ProductMapper;
 import com.storemanagement.model.Category;
 import com.storemanagement.model.Product;
@@ -535,6 +535,108 @@ public class ProductServiceImpl implements ProductService {
             .hasPrevious(pageNo > 0)
             .isEmpty(productDtos.isEmpty())
             .build();
+    }
+    
+    /**
+     * Lấy sản phẩm mới (sắp xếp theo createdAt DESC)
+     * 
+     * Logic:
+     * - Lấy sản phẩm có status = IN_STOCK
+     * - Sắp xếp theo createdAt DESC (mới nhất trước)
+     * - Nếu có limit, giới hạn số lượng kết quả
+     * - Dùng cho trang chủ, banner "Sản phẩm mới"
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<ProductDto> getNewProducts(Pageable pageable, Integer limit) {
+        // Nếu có limit, tạo Pageable mới với limit làm pageSize
+        Pageable queryPageable = pageable;
+        if (limit != null && limit > 0) {
+            queryPageable = org.springframework.data.domain.PageRequest.of(
+                pageable.getPageNumber(),
+                Math.min(limit, pageable.getPageSize()),
+                pageable.getSort()
+            );
+        }
+        
+        // Query products với status = IN_STOCK, sắp xếp theo createdAt DESC
+        Page<Product> productPage = productRepository.findNewProductsByStatus(queryPageable);
+        
+        List<ProductDto> productDtos = productMapper.toDtoList(productPage.getContent());
+        
+        // Nếu có limit và số lượng kết quả > limit, cắt danh sách
+        if (limit != null && limit > 0 && productDtos.size() > limit) {
+            List<ProductDto> limitedDtos = productDtos.subList(0, limit);
+            return PageResponse.<ProductDto>builder()
+                .content(limitedDtos)
+                .pageNo(pageable.getPageNumber())
+                .pageSize(pageable.getPageSize())
+                .totalElements((long) limitedDtos.size())
+                .totalPages(1)
+                .isFirst(true)
+                .isLast(true)
+                .hasNext(false)
+                .hasPrevious(false)
+                .isEmpty(false)
+                .build();
+        }
+        
+        return PageUtils.toPageResponse(productPage, productDtos);
+    }
+    
+    /**
+     * Lấy sản phẩm liên quan (cùng category, khác productId)
+     * 
+     * Logic:
+     * - Lấy product hiện tại để lấy categoryId
+     * - Query products cùng categoryId, khác productId, status = IN_STOCK
+     * - Giới hạn số lượng theo limit (default: 8)
+     * - Dùng cho trang chi tiết sản phẩm - hiển thị "Sản phẩm liên quan"
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductDto> getRelatedProducts(Integer productId, Integer limit) {
+        // Lấy product hiện tại để lấy categoryId
+        Product currentProduct = productRepository.findById(productId)
+            .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + productId));
+        
+        if (currentProduct.getCategory() == null) {
+            // Không có category → không có sản phẩm liên quan
+            return List.of();
+        }
+        
+        Integer categoryId = currentProduct.getCategory().getIdCategory();
+        
+        // Tạo Pageable với limit
+        int limitValue = (limit != null && limit > 0) ? limit : 8;
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limitValue);
+        
+        // Query products cùng category, khác productId, status = IN_STOCK
+        List<Product> relatedProducts = productRepository.findByCategoryIdAndStatusAndIdProductNot(
+            categoryId, productId, pageable
+        );
+        
+        return productMapper.toDtoList(relatedProducts);
+    }
+    
+    /**
+     * Lấy danh sách tất cả thương hiệu (brands) - unique
+     * 
+     * Logic:
+     * - Query distinct brands từ products có status = IN_STOCK
+     * - Loại bỏ null và trống
+     * - Sắp xếp theo tên thương hiệu
+     * - Dùng cho dropdown/bộ lọc thương hiệu trong trang sản phẩm
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getAllBrands() {
+        List<String> brands = productRepository.findDistinctBrandsByStatus();
+        // Filter và sort để đảm bảo không có null hoặc empty
+        return brands.stream()
+            .filter(brand -> brand != null && !brand.trim().isEmpty())
+            .sorted()
+            .toList();
     }
     
     /**

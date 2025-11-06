@@ -1,6 +1,6 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.InventoryTransactionDto;
+import com.storemanagement.dto.response.InventoryTransactionDto;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.InventoryTransactionMapper;
 import com.storemanagement.model.InventoryTransaction;
@@ -94,6 +94,12 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
                 inventoryTransactionMapper.toDtoList(transactionPage.getContent()));
     }
 }
+
+
+
+
+
+
 
 
 

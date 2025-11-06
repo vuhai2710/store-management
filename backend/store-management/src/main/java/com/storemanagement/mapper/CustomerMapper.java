@@ -1,7 +1,7 @@
 package com.storemanagement.mapper;
 
-import com.storemanagement.dto.AuthenticationRequestDto;
-import com.storemanagement.dto.CustomerDto;
+import com.storemanagement.dto.request.AuthenticationRequestDto;
+import com.storemanagement.dto.response.CustomerDto;
 import com.storemanagement.model.Customer;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

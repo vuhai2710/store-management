@@ -53,6 +53,13 @@ public class Order extends BaseEntity {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_shipping_address")
+    private ShippingAddress shippingAddress;
+
+    @Column(name = "shipping_address_snapshot", columnDefinition = "TEXT")
+    private String shippingAddressSnapshot; // Snapshot của địa chỉ tại thời điểm đặt hàng
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<OrderDetail> orderDetails = new ArrayList<>();

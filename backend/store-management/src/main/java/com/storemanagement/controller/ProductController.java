@@ -2,7 +2,7 @@ package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.ProductDto;
+import com.storemanagement.dto.response.ProductDto;
 import com.storemanagement.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/products")
@@ -27,7 +29,7 @@ public class ProductController {
      * Params: pageNo, pageSize, sortBy, sortDirection, code, name, categoryId, brand, minPrice, maxPrice
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getAllProducts(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
@@ -60,7 +62,7 @@ public class ProductController {
      * GET /api/v1/products/{id}
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<ProductDto>> getProductById(@PathVariable Integer id) {
         ProductDto product = productService.getProductById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin sản phẩm thành công", product));
@@ -82,7 +84,7 @@ public class ProductController {
      * GET /api/v1/products/search/name
      */
     @GetMapping("/search/name")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> searchProductsByName(
             @RequestParam String name,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
@@ -102,7 +104,7 @@ public class ProductController {
      * GET /api/v1/products/category/{categoryId}
      */
     @GetMapping("/category/{categoryId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getProductsByCategory(
             @PathVariable Integer categoryId,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
@@ -120,9 +122,10 @@ public class ProductController {
     /**
      * Lọc sản phẩm theo brand (thương hiệu)
      * GET /api/v1/products/brand/{brand}
+     * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
      */
     @GetMapping("/brand/{brand}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getProductsByBrand(
             @PathVariable String brand,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
@@ -160,9 +163,10 @@ public class ProductController {
     /**
      * Lọc sản phẩm theo khoảng giá
      * GET /api/v1/products/price?minPrice=1000000&maxPrice=5000000
+     * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
      */
     @GetMapping("/price")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getProductsByPriceRange(
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
@@ -181,9 +185,10 @@ public class ProductController {
     /**
      * Lấy sản phẩm bán chạy (best sellers)
      * GET /api/v1/products/best-sellers?status=COMPLETED&pageNo=1&pageSize=10
+     * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
      */
     @GetMapping("/best-sellers")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getBestSellingProducts(
             @RequestParam(required = false) String status,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
@@ -194,6 +199,59 @@ public class ProductController {
 
         PageResponse<ProductDto> productPage = productService.getBestSellingProducts(status, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách sản phẩm bán chạy thành công", productPage));
+    }
+
+    /**
+     * Lấy sản phẩm mới (sắp xếp theo createdAt DESC)
+     * GET /api/v1/products/new?pageNo=1&pageSize=10&limit=20
+     * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
+     * 
+     * Logic: Lấy sản phẩm có status = IN_STOCK, sắp xếp theo createdAt DESC
+     * Dùng cho: Trang chủ, banner "Sản phẩm mới"
+     */
+    @GetMapping("/new")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
+    public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getNewProducts(
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) Integer limit) {
+
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        PageResponse<ProductDto> productPage = productService.getNewProducts(pageable, limit);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách sản phẩm mới thành công", productPage));
+    }
+
+    /**
+     * Lấy sản phẩm liên quan (cùng category)
+     * GET /api/v1/products/{id}/related?limit=8
+     * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
+     * 
+     * Logic: Lấy sản phẩm cùng categoryId, khác productId, status = IN_STOCK, giới hạn số lượng
+     * Dùng cho: Trang chi tiết sản phẩm - hiển thị "Sản phẩm liên quan"
+     */
+    @GetMapping("/{id}/related")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
+    public ResponseEntity<ApiResponse<List<ProductDto>>> getRelatedProducts(
+            @PathVariable Integer id,
+            @RequestParam(required = false, defaultValue = "8") Integer limit) {
+
+        List<ProductDto> relatedProducts = productService.getRelatedProducts(id, limit);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách sản phẩm liên quan thành công", relatedProducts));
+    }
+
+    /**
+     * Lấy danh sách tất cả thương hiệu (brands)
+     * GET /api/v1/products/brands
+     * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
+     * 
+     * Logic: Lấy danh sách brand names unique từ products có status = IN_STOCK
+     * Dùng cho: Dropdown/bộ lọc thương hiệu trong trang sản phẩm
+     */
+    @GetMapping("/brands")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
+    public ResponseEntity<ApiResponse<List<String>>> getAllBrands() {
+        List<String> brands = productService.getAllBrands();
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách thương hiệu thành công", brands));
     }
 
     /**

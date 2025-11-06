@@ -1,4 +1,4 @@
-package com.storemanagement.dto;
+package com.storemanagement.dto.response;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -38,26 +38,4 @@ public class ImportOrderDto {
     @Valid
     private List<ImportOrderDetailDto> importOrderDetails;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

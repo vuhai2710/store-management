@@ -1,6 +1,6 @@
 package com.storemanagement.mapper;
 
-import com.storemanagement.dto.InventoryTransactionDto;
+import com.storemanagement.dto.response.InventoryTransactionDto;
 import com.storemanagement.model.InventoryTransaction;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

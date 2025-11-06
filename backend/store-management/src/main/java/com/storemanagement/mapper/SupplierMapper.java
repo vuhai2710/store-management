@@ -1,6 +1,6 @@
 package com.storemanagement.mapper;
 
-import com.storemanagement.dto.SupplierDto;
+import com.storemanagement.dto.response.SupplierDto;
 import com.storemanagement.model.Supplier;
 import org.mapstruct.Mapper;
 
@@ -18,6 +18,12 @@ public interface SupplierMapper {
     // List mapping
     List<SupplierDto> toDtoList(List<Supplier> entities);
 }
+
+
+
+
+
+
 
 
 

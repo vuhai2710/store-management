@@ -1,6 +1,8 @@
 package com.storemanagement.repository;
 
 import com.storemanagement.model.Order;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,5 +21,11 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
            "LEFT JOIN FETCH od.product " +
            "WHERE o.idOrder = :id")
     Optional<Order> findByIdWithDetails(@Param("id") Integer id);
+    
+    // Lấy danh sách đơn hàng của customer
+    Page<Order> findByCustomerIdCustomerOrderByOrderDateDesc(Integer customerId, Pageable pageable);
 }
+
+
+
 

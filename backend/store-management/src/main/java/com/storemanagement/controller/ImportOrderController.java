@@ -1,7 +1,7 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.ImportOrderDto;
+import com.storemanagement.dto.response.ImportOrderDto;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.service.ImportOrderService;
 import com.storemanagement.utils.SecurityUtils;

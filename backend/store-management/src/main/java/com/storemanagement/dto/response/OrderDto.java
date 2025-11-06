@@ -1,4 +1,4 @@
-package com.storemanagement.dto;
+package com.storemanagement.dto.response;
 
 import com.storemanagement.model.Order;
 import lombok.AllArgsConstructor;
@@ -34,6 +34,9 @@ public class OrderDto {
 
     private Order.PaymentMethod paymentMethod;
     private String notes;
+    
+    private Integer idShippingAddress;
+    private String shippingAddressSnapshot; // Snapshot của địa chỉ tại thời điểm đặt hàng
 
     private List<OrderDetailDto> orderDetails;
 }

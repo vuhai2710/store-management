@@ -1,4 +1,4 @@
-package com.storemanagement.dto;
+package com.storemanagement.dto.request;
 
 import com.storemanagement.validation.ValidEmail;
 import com.storemanagement.validation.ValidPhone;
@@ -35,3 +35,5 @@ public class AuthenticationRequestDto {
 
     private String address;
 }
+
+

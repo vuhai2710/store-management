@@ -1,7 +1,7 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.InventoryTransactionDto;
+import com.storemanagement.dto.response.InventoryTransactionDto;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.service.InventoryTransactionService;
 import com.storemanagement.utils.ReferenceType;
@@ -117,6 +117,12 @@ public class InventoryTransactionController {
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử nhập/xuất kho thành công", transactions));
     }
 }
+
+
+
+
+
+
 
 
 

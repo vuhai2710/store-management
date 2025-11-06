@@ -1,4 +1,4 @@
-package com.storemanagement.dto;
+package com.storemanagement.dto.response;
 
 import com.storemanagement.utils.CodeType;
 import com.storemanagement.utils.ProductStatus;
@@ -59,3 +59,5 @@ public class ProductDto {
 
     private LocalDateTime updatedAt;
 }
+
+

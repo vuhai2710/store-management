@@ -206,3 +206,6 @@ Giống như Bước 2, nhưng:
 - Truy cập trực tiếp URL: `http://localhost:8080/uploads/products/{filename}`
 - Kiểm tra thư mục `uploads/products/` có file không
 
+
+
+

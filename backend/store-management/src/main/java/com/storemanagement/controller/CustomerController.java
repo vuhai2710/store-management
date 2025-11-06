@@ -1,9 +1,11 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.CustomerDto;
 import com.storemanagement.dto.PageResponse;
+import com.storemanagement.dto.request.ChangePasswordRequestDto;
+import com.storemanagement.dto.response.CustomerDto;
 import com.storemanagement.service.CustomerService;
+import com.storemanagement.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +36,7 @@ import org.springframework.web.bind.annotation.*;
 public class CustomerController {
 
     private final CustomerService customerService;
+    private final UserService userService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
@@ -137,6 +140,16 @@ public class CustomerController {
         String username = authentication.getName();
         CustomerDto updatedCustomer = customerService.updateMyCustomerInfo(username, customerDto);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin thành công", updatedCustomer));
+    }
+
+    @PutMapping("/me/change-password")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @RequestBody @Valid ChangePasswordRequestDto request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        userService.changePassword(username, request.getCurrentPassword(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.success("Đổi mật khẩu thành công", null));
     }
 }
 

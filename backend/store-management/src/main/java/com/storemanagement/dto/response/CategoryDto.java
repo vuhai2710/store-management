@@ -1,4 +1,4 @@
-package com.storemanagement.dto;
+package com.storemanagement.dto.response;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -25,33 +25,5 @@ public class CategoryDto {
 
     private LocalDateTime createdAt;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

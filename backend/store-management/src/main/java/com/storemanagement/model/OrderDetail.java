@@ -31,5 +31,17 @@ public class OrderDetail {
 
     @Column(name = "price", precision = 12, scale = 2, nullable = false)
     private BigDecimal price; // Giá tại thời điểm mua
+
+    @Column(name = "product_name_snapshot", length = 255)
+    private String productNameSnapshot; // Tên sản phẩm tại thời điểm mua
+
+    @Column(name = "product_code_snapshot", length = 100)
+    private String productCodeSnapshot; // Mã sản phẩm tại thời điểm mua
+
+    @Column(name = "product_image_snapshot", length = 500)
+    private String productImageSnapshot; // URL ảnh tại thời điểm mua
 }
+
+
+
 

@@ -2,7 +2,9 @@
 
 ## Tổng quan
 
-Module quản lý danh mục sản phẩm (Category). Tất cả endpoints yêu cầu authentication với role **ADMIN** hoặc **EMPLOYEE**.
+Module quản lý danh mục sản phẩm (Category). Phân quyền:
+- **ADMIN, EMPLOYEE:** Có thể quản lý tất cả danh mục (CRUD)
+- **CUSTOMER:** Chỉ có thể xem danh mục (không thể tạo/sửa/xóa)
 
 **Base URL:** `/api/v1/categories`
 
@@ -15,11 +17,18 @@ Authorization: Bearer {JWT_TOKEN}
 
 ## Danh sách Endpoints
 
+### Endpoints cho Customer (xem danh mục)
+
 | Method | Endpoint | Authentication | Mô tả |
 |--------|----------|----------------|-------|
-| GET | `/api/v1/categories/all` | ADMIN, EMPLOYEE | Lấy tất cả danh mục (không phân trang) |
+| GET | `/api/v1/categories/all` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy tất cả danh mục (không phân trang) |
+| GET | `/api/v1/categories/{id}` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy chi tiết danh mục theo ID |
+
+### Endpoints chỉ cho Admin/Employee (quản lý)
+
+| Method | Endpoint | Authentication | Mô tả |
+|--------|----------|----------------|-------|
 | GET | `/api/v1/categories` | ADMIN, EMPLOYEE | Lấy danh sách danh mục (có phân trang, tìm kiếm) |
-| GET | `/api/v1/categories/{id}` | ADMIN, EMPLOYEE | Lấy chi tiết danh mục theo ID |
 | GET | `/api/v1/categories/search` | ADMIN, EMPLOYEE | Tìm kiếm danh mục theo tên |
 | POST | `/api/v1/categories` | ADMIN, EMPLOYEE | Tạo danh mục mới |
 | PUT | `/api/v1/categories/{id}` | ADMIN, EMPLOYEE | Cập nhật danh mục |
@@ -32,7 +41,11 @@ Authorization: Bearer {JWT_TOKEN}
 ### Thông tin Endpoint
 
 - **URL:** `GET /api/v1/categories/all`
-- **Authentication:** Required (ADMIN, EMPLOYEE)
+- **Authentication:** Required (ADMIN, EMPLOYEE, **CUSTOMER**)
+
+### Mục đích cho Customer
+
+Khách hàng có thể xem danh sách tất cả danh mục để điều hướng website và lọc sản phẩm theo danh mục.
 
 ### Request
 
@@ -134,7 +147,11 @@ GET /api/v1/categories?pageNo=1&pageSize=10&sortBy=name&sortDirection=ASC&name=�
 ### Thông tin Endpoint
 
 - **URL:** `GET /api/v1/categories/{id}`
-- **Authentication:** Required (ADMIN, EMPLOYEE)
+- **Authentication:** Required (ADMIN, EMPLOYEE, **CUSTOMER**)
+
+### Mục đích cho Customer
+
+Khách hàng có thể xem chi tiết danh mục (tên, mô tả) để hiểu thêm về danh mục trước khi xem sản phẩm.
 
 ### Path Parameters
 
@@ -493,6 +510,12 @@ if (pm.response.code === 200) {
 ## Liên hệ
 
 Nếu có thắc mắc về Category Module, vui lòng liên hệ team Backend.
+
+
+
+
+
+
 
 
 

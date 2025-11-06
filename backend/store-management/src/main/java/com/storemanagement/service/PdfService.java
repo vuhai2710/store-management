@@ -2,10 +2,10 @@ package com.storemanagement.service;
 
 import com.itextpdf.html2pdf.ConverterProperties;
 import com.itextpdf.html2pdf.HtmlConverter;
-import com.storemanagement.dto.ImportOrderDetailDto;
-import com.storemanagement.dto.ImportOrderDto;
-import com.storemanagement.dto.OrderDetailDto;
-import com.storemanagement.dto.OrderDto;
+import com.storemanagement.dto.response.ImportOrderDetailDto;
+import com.storemanagement.dto.response.ImportOrderDto;
+import com.storemanagement.dto.response.OrderDetailDto;
+import com.storemanagement.dto.response.OrderDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

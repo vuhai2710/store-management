@@ -1,7 +1,7 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.CategoryDto;
+import com.storemanagement.dto.response.CategoryDto;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.service.CategoryService;
 import jakarta.validation.Valid;
@@ -35,7 +35,9 @@ public class CategoryController {
      * Lấy tất cả danh mục (không phân trang)
      * 
      * Endpoint: GET /api/v1/categories/all
-     * Authentication: Required (ADMIN hoặc EMPLOYEE)
+     * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
+     * 
+     * Dùng cho: Khách hàng xem danh sách danh mục để điều hướng website
      * 
      * Response:
      * {
@@ -47,7 +49,7 @@ public class CategoryController {
      * @return ApiResponse chứa danh sách tất cả categories
      */
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<List<CategoryDto>>> getAllCategories() {
         List<CategoryDto> categories = categoryService.getAllCategories();
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách danh mục thành công", categories));
@@ -120,7 +122,9 @@ public class CategoryController {
      * Lấy thông tin chi tiết một danh mục theo ID
      * 
      * Endpoint: GET /api/v1/categories/{id}
-     * Authentication: Required (ADMIN hoặc EMPLOYEE)
+     * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
+     * 
+     * Dùng cho: Khách hàng xem chi tiết danh mục để hiểu thêm về danh mục
      * 
      * Path Parameters:
      * - id: ID của category (integer)
@@ -138,7 +142,7 @@ public class CategoryController {
      * @return ApiResponse chứa CategoryDto
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<CategoryDto>> getCategoryById(@PathVariable Integer id) {
         CategoryDto category = categoryService.getCategoryById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin danh mục thành công", category));

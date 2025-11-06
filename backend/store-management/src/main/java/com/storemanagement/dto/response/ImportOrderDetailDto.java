@@ -1,4 +1,4 @@
-package com.storemanagement.dto;
+package com.storemanagement.dto.response;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -33,26 +33,5 @@ public class ImportOrderDetailDto {
 
     private BigDecimal subtotal;  // quantity * importPrice
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

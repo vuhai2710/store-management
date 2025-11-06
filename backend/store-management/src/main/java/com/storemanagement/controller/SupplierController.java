@@ -2,7 +2,7 @@ package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.SupplierDto;
+import com.storemanagement.dto.response.SupplierDto;
 import com.storemanagement.service.SupplierService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

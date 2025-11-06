@@ -77,5 +77,31 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             WHERE (:status IS NULL OR o.status = :status)
             """, nativeQuery = true)
     Long countBestSellingProducts(@Param("status") String status);
+    
+    // Lấy danh sách brands unique (chỉ sản phẩm có status = IN_STOCK)
+    @Query("SELECT DISTINCT p.brand FROM Product p WHERE p.status = 'IN_STOCK' AND p.brand IS NOT NULL ORDER BY p.brand")
+    List<String> findDistinctBrandsByStatus();
+    
+    // Lấy sản phẩm liên quan: cùng category, khác productId, status = IN_STOCK
+    @Query("""
+            SELECT p FROM Product p
+            WHERE p.category.idCategory = :categoryId
+            AND p.idProduct != :productId
+            AND p.status = 'IN_STOCK'
+            ORDER BY p.createdAt DESC
+            """)
+    List<Product> findByCategoryIdAndStatusAndIdProductNot(
+            @Param("categoryId") Integer categoryId,
+            @Param("productId") Integer productId,
+            Pageable pageable
+    );
+    
+    // Lấy sản phẩm mới: status = IN_STOCK, sắp xếp theo createdAt DESC
+    @Query("""
+            SELECT p FROM Product p
+            WHERE p.status = 'IN_STOCK'
+            ORDER BY p.createdAt DESC
+            """)
+    Page<Product> findNewProductsByStatus(Pageable pageable);
 }
 

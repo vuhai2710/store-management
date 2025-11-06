@@ -1,6 +1,6 @@
 package com.storemanagement.service;
 
-import com.storemanagement.dto.ImportOrderDto;
+import com.storemanagement.dto.response.ImportOrderDto;
 import com.storemanagement.dto.PageResponse;
 import org.springframework.data.domain.Pageable;
 

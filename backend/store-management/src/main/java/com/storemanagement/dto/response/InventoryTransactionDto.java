@@ -1,4 +1,4 @@
-package com.storemanagement.dto;
+package com.storemanagement.dto.response;
 
 import com.storemanagement.utils.ReferenceType;
 import com.storemanagement.utils.TransactionType;
@@ -34,19 +34,5 @@ public class InventoryTransactionDto {
     
     private String notes;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

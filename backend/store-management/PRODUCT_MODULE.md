@@ -2,7 +2,9 @@
 
 ## Tổng quan
 
-Module quản lý sản phẩm (Product). Tất cả endpoints yêu cầu authentication với role **ADMIN** hoặc **EMPLOYEE**.
+Module quản lý sản phẩm (Product). Phân quyền:
+- **ADMIN, EMPLOYEE:** Có thể quản lý tất cả sản phẩm (CRUD)
+- **CUSTOMER:** Chỉ có thể xem, tìm kiếm và lọc sản phẩm (không thể tạo/sửa/xóa)
 
 **Base URL:** `/api/v1/products`
 
@@ -17,17 +19,27 @@ Authorization: Bearer {JWT_TOKEN}
 
 ## Danh sách Endpoints
 
+### Endpoints cho Customer (xem, tìm kiếm, lọc)
+
 | Method | Endpoint | Authentication | Mô tả |
 |--------|----------|----------------|-------|
-| GET | `/api/v1/products` | ADMIN, EMPLOYEE | Lấy danh sách sản phẩm (có phân trang, lọc, tìm kiếm) |
-| GET | `/api/v1/products/{id}` | ADMIN, EMPLOYEE | Lấy chi tiết sản phẩm theo ID |
+| GET | `/api/v1/products` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy danh sách sản phẩm (có phân trang, lọc, tìm kiếm) |
+| GET | `/api/v1/products/{id}` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy chi tiết sản phẩm theo ID |
+| GET | `/api/v1/products/search/name` | ADMIN, EMPLOYEE, **CUSTOMER** | Tìm kiếm sản phẩm theo tên |
+| GET | `/api/v1/products/category/{categoryId}` | ADMIN, EMPLOYEE, **CUSTOMER** | Lọc sản phẩm theo danh mục |
+| GET | `/api/v1/products/brand/{brand}` | ADMIN, EMPLOYEE, **CUSTOMER** | Lọc sản phẩm theo thương hiệu |
+| GET | `/api/v1/products/price` | ADMIN, EMPLOYEE, **CUSTOMER** | Lọc sản phẩm theo khoảng giá |
+| GET | `/api/v1/products/best-sellers` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy sản phẩm bán chạy |
+| GET | `/api/v1/products/new` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy sản phẩm mới (mới nhất) |
+| GET | `/api/v1/products/{id}/related` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy sản phẩm liên quan (cùng category) |
+| GET | `/api/v1/products/brands` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy danh sách tất cả thương hiệu |
+
+### Endpoints chỉ cho Admin/Employee (quản lý)
+
+| Method | Endpoint | Authentication | Mô tả |
+|--------|----------|----------------|-------|
 | GET | `/api/v1/products/code/{code}` | ADMIN, EMPLOYEE | Tìm sản phẩm theo mã (chính xác) |
-| GET | `/api/v1/products/search/name` | ADMIN, EMPLOYEE | Tìm kiếm sản phẩm theo tên |
-| GET | `/api/v1/products/category/{categoryId}` | ADMIN, EMPLOYEE | Lọc sản phẩm theo danh mục |
-| GET | `/api/v1/products/brand/{brand}` | ADMIN, EMPLOYEE | Lọc sản phẩm theo thương hiệu |
 | GET | `/api/v1/products/supplier/{supplierId}` | ADMIN, EMPLOYEE | Lọc sản phẩm theo nhà cung cấp |
-| GET | `/api/v1/products/price` | ADMIN, EMPLOYEE | Lọc sản phẩm theo khoảng giá |
-| GET | `/api/v1/products/best-sellers` | ADMIN, EMPLOYEE | Lấy sản phẩm bán chạy |
 | POST | `/api/v1/products` | ADMIN, EMPLOYEE | Tạo sản phẩm mới (với upload ảnh) |
 | PUT | `/api/v1/products/{id}` | ADMIN, EMPLOYEE | Cập nhật sản phẩm (với upload ảnh) |
 | DELETE | `/api/v1/products/{id}` | ADMIN | Xóa sản phẩm |
@@ -284,7 +296,7 @@ GET /api/v1/products/price?minPrice=1000000&maxPrice=5000000&pageNo=1&pageSize=1
 ### Thông tin Endpoint
 
 - **URL:** `GET /api/v1/products/best-sellers?status={status}`
-- **Authentication:** Required (ADMIN, EMPLOYEE)
+- **Authentication:** Required (ADMIN, EMPLOYEE, **CUSTOMER**)
 
 ### Query Parameters
 
@@ -301,7 +313,166 @@ GET /api/v1/products/price?minPrice=1000000&maxPrice=5000000&pageNo=1&pageSize=1
 
 ---
 
-## 10. Tạo sản phẩm mới (với upload ảnh)
+## 10. Lấy sản phẩm mới
+
+### Thông tin Endpoint
+
+- **URL:** `GET /api/v1/products/new?pageNo=1&pageSize=10&limit=20`
+- **Authentication:** Required (ADMIN, EMPLOYEE, **CUSTOMER**)
+
+### Query Parameters
+
+| Parameter | Type | Required | Mô tả |
+|-----------|------|----------|-------|
+| pageNo | Integer | No | 1 | Số trang |
+| pageSize | Integer | No | 10 | Số lượng item mỗi trang |
+| limit | Integer | No | - | Giới hạn số lượng kết quả (optional) |
+
+### Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "code": 200,
+  "message": "Lấy danh sách sản phẩm mới thành công",
+  "data": {
+    "content": [
+      {
+        "idProduct": 1,
+        "productName": "iPhone 15 Pro",
+        "price": 25000000,
+        "status": "IN_STOCK",
+        /* ... các field khác */
+      }
+    ],
+    "pageNo": 1,
+    "pageSize": 10,
+    "totalElements": 50,
+    "totalPages": 5
+  }
+}
+```
+
+### Logic xử lý
+
+- Lấy sản phẩm có `status = IN_STOCK`
+- Sắp xếp theo `createdAt DESC` (mới nhất trước)
+- Nếu có `limit`, giới hạn số lượng kết quả
+- Dùng cho: Trang chủ, banner "Sản phẩm mới"
+
+### Ví dụ Request
+
+```
+GET /api/v1/products/new?pageNo=1&pageSize=10&limit=20
+```
+
+---
+
+## 11. Lấy sản phẩm liên quan
+
+### Thông tin Endpoint
+
+- **URL:** `GET /api/v1/products/{id}/related?limit=8`
+- **Authentication:** Required (ADMIN, EMPLOYEE, **CUSTOMER**)
+
+### Path Parameters
+
+| Parameter | Type | Required | Mô tả |
+|-----------|------|----------|-------|
+| id | Integer | Yes | ID của sản phẩm |
+
+### Query Parameters
+
+| Parameter | Type | Required | Mô tả |
+|-----------|------|----------|-------|
+| limit | Integer | No | 8 | Số lượng sản phẩm liên quan (default: 8) |
+
+### Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "code": 200,
+  "message": "Lấy danh sách sản phẩm liên quan thành công",
+  "data": [
+    {
+      "idProduct": 2,
+      "productName": "iPhone 15",
+      "price": 22000000,
+      "status": "IN_STOCK",
+      /* ... các field khác */
+    },
+    {
+      "idProduct": 3,
+      "productName": "iPhone 14 Pro",
+      "price": 20000000,
+      "status": "IN_STOCK",
+      /* ... các field khác */
+    }
+  ]
+}
+```
+
+### Logic xử lý
+
+- Lấy sản phẩm cùng `categoryId` với sản phẩm hiện tại
+- Loại trừ sản phẩm hiện tại (`idProduct != {id}`)
+- Chỉ lấy sản phẩm có `status = IN_STOCK`
+- Giới hạn số lượng theo `limit` (mặc định: 8)
+- Sắp xếp theo `createdAt DESC`
+- Dùng cho: Trang chi tiết sản phẩm - hiển thị "Sản phẩm liên quan"
+
+### Ví dụ Request
+
+```
+GET /api/v1/products/1/related?limit=8
+```
+
+---
+
+## 12. Lấy danh sách tất cả thương hiệu
+
+### Thông tin Endpoint
+
+- **URL:** `GET /api/v1/products/brands`
+- **Authentication:** Required (ADMIN, EMPLOYEE, **CUSTOMER**)
+
+### Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "code": 200,
+  "message": "Lấy danh sách thương hiệu thành công",
+  "data": [
+    "Apple",
+    "Samsung",
+    "Xiaomi",
+    "Oppo"
+  ]
+}
+```
+
+### Logic xử lý
+
+- Lấy danh sách brand names **unique** từ products
+- Chỉ lấy brands của sản phẩm có `status = IN_STOCK`
+- Loại bỏ `null` và empty strings
+- Sắp xếp theo tên thương hiệu (A-Z)
+- Dùng cho: Dropdown/bộ lọc thương hiệu trong trang sản phẩm
+
+### Ví dụ Request
+
+```
+GET /api/v1/products/brands
+```
+
+---
+
+## 13. Tạo sản phẩm mới (với upload ảnh)
 
 ### Thông tin Endpoint
 
@@ -383,7 +554,7 @@ GET /api/v1/products/price?minPrice=1000000&maxPrice=5000000&pageNo=1&pageSize=1
 
 ---
 
-## 11. Cập nhật sản phẩm (với upload ảnh)
+## 14. Cập nhật sản phẩm (với upload ảnh)
 
 ### Thông tin Endpoint
 
@@ -408,7 +579,7 @@ Giống như tạo mới (form-data với productDto và image)
 
 ---
 
-## 12. Xóa sản phẩm
+## 15. Xóa sản phẩm
 
 ### Thông tin Endpoint
 
@@ -574,6 +745,12 @@ if (pm.response.code === 200) {
 ## Liên hệ
 
 Nếu có thắc mắc về Product Module, vui lòng liên hệ team Backend.
+
+
+
+
+
+
 
 
 

@@ -1,9 +1,11 @@
 package com.storemanagement.service;
 
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.ProductDto;
+import com.storemanagement.dto.response.ProductDto;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 public interface ProductService {
 
@@ -54,5 +56,14 @@ public interface ProductService {
     
     // Lấy sản phẩm bán chạy (best sellers)
     PageResponse<ProductDto> getBestSellingProducts(String orderStatus, Pageable pageable);
+    
+    // Lấy sản phẩm mới (sắp xếp theo createdAt DESC)
+    PageResponse<ProductDto> getNewProducts(Pageable pageable, Integer limit);
+    
+    // Lấy sản phẩm liên quan (cùng category, khác productId)
+    List<ProductDto> getRelatedProducts(Integer productId, Integer limit);
+    
+    // Lấy danh sách tất cả thương hiệu (brands) - unique
+    List<String> getAllBrands();
 }
 

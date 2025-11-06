@@ -2,9 +2,9 @@ package com.storemanagement.controller;
 
 import com.nimbusds.jose.JOSEException;
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.AuthenticationRequestDto;
-import com.storemanagement.dto.AuthenticationResponseDto;
-import com.storemanagement.dto.LoginRequestDto;
+import com.storemanagement.dto.request.AuthenticationRequestDto;
+import com.storemanagement.dto.request.LoginRequestDto;
+import com.storemanagement.dto.response.AuthenticationResponseDto;
 import com.storemanagement.service.AuthenticationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

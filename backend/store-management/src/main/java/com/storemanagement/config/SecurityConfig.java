@@ -95,9 +95,11 @@ public class SecurityConfig {
      */
     private static final String[] CUSTOMER_URLS = {
             "/api/v1/cart/**",
-            "/api/v1/orders/customer/**",
-            "/api/v1/products/customer/**",
-            "/api/v1/customers/me"
+            "/api/v1/orders/checkout",
+            "/api/v1/orders/buy-now",
+            "/api/v1/orders/my-orders/**",
+            "/api/v1/shipping-addresses/**",
+            "/api/v1/customers/me/**"
     };
 
     /**
@@ -198,8 +200,14 @@ public class SecurityConfig {
                         .requestMatchers(EMPLOYEE_SELF_SERVICE_URLS).hasRole("EMPLOYEE")
                         // Admin employee management endpoints (admin quản lý nhân viên)
                         .requestMatchers(ADMIN_EMPLOYEE_MANAGEMENT_URLS).hasRole("ADMIN")
-                        // Admin & Employee endpoints cho /api/v1/customers/** (trừ /me)
+                        // Admin & Employee endpoints cho /api/v1/customers/** (trừ /me/**)
                         .requestMatchers("/api/v1/customers/**").hasAnyRole("ADMIN", "EMPLOYEE")
+                        // Customer endpoints cho orders
+                        .requestMatchers("/api/v1/orders/checkout").hasRole("CUSTOMER")
+                        .requestMatchers("/api/v1/orders/buy-now").hasRole("CUSTOMER")
+                        .requestMatchers("/api/v1/orders/my-orders/**").hasRole("CUSTOMER")
+                        // Admin/Employee endpoints cho orders
+                        .requestMatchers("/api/v1/orders/create-for-customer").hasAnyRole("ADMIN", "EMPLOYEE")
                         .requestMatchers(ADMIN_URLS).hasRole("ADMIN")
                         .requestMatchers(EMPLOYEE_URLS).hasAnyRole("ADMIN", "EMPLOYEE")
                         // Tất cả request khác đều cần authenticated

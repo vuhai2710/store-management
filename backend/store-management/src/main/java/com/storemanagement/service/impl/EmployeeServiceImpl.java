@@ -1,6 +1,6 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.EmployeeDto;
+import com.storemanagement.dto.response.EmployeeDto;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.EmployeeMapper;
 import com.storemanagement.model.Employee;

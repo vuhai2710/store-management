@@ -1,7 +1,7 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.EmployeeDto;
+import com.storemanagement.dto.response.EmployeeDto;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.service.EmployeeService;
 import jakarta.validation.Valid;

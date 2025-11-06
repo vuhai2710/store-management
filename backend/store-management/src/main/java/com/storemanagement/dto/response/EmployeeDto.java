@@ -1,4 +1,4 @@
-package com.storemanagement.dto;
+package com.storemanagement.dto.response;
 
 import com.storemanagement.validation.ValidEmail;
 import com.storemanagement.validation.ValidPhone;
@@ -49,6 +49,5 @@ public class EmployeeDto {
     @ValidEmail
     private String email;
 }
-
 
 

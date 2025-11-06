@@ -1,8 +1,8 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.AuthenticationRequestDto;
+import com.storemanagement.dto.request.AuthenticationRequestDto;
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.UserDto;
+import com.storemanagement.dto.response.UserDto;
 import com.storemanagement.mapper.UserMapper;
 import com.storemanagement.model.User;
 import com.storemanagement.repository.UserRepository;
@@ -146,5 +146,35 @@ public class UserServiceImpl implements UserService {
         }
         
         userRepository.delete(user);
+    }
+
+    /**
+     * Đổi mật khẩu cho user
+     * 
+     * Logic xử lý:
+     * 1. Kiểm tra user tồn tại
+     * 2. Verify mật khẩu hiện tại bằng passwordEncoder.matches()
+     * 3. Encode mật khẩu mới bằng BCrypt
+     * 4. Cập nhật mật khẩu mới vào database
+     * 
+     * Security:
+     * - Mật khẩu được hash bằng BCrypt trước khi lưu
+     * - So sánh mật khẩu hiện tại bằng passwordEncoder.matches() (an toàn)
+     */
+    @Override
+    public void changePassword(String username, String currentPassword, String newPassword) {
+        // Kiểm tra user tồn tại
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        
+        // Verify mật khẩu hiện tại
+        // Sử dụng passwordEncoder.matches() để so sánh plain text với hash
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RuntimeException("Mật khẩu hiện tại không đúng");
+        }
+        
+        // Encode mật khẩu mới bằng BCrypt và cập nhật
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 }

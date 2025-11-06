@@ -1,4 +1,4 @@
-package com.storemanagement.dto;
+package com.storemanagement.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,3 +13,5 @@ public class AuthenticationResponseDto {
     private String token;
     private boolean authenticated;
 }
+
+

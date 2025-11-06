@@ -1,6 +1,6 @@
 package com.storemanagement.mapper;
 
-import com.storemanagement.dto.CategoryDto;
+import com.storemanagement.dto.response.CategoryDto;
 import com.storemanagement.model.Category;
 import org.mapstruct.Mapper;
 
@@ -18,6 +18,12 @@ public interface CategoryMapper {
     // List mapping
     List<CategoryDto> toDtoList(List<Category> entities);
 }
+
+
+
+
+
+
 
 
 

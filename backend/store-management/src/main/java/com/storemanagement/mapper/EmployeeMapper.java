@@ -1,6 +1,6 @@
 package com.storemanagement.mapper;
 
-import com.storemanagement.dto.EmployeeDto;
+import com.storemanagement.dto.response.EmployeeDto;
 import com.storemanagement.model.Employee;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

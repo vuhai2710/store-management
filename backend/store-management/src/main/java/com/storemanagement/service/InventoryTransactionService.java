@@ -1,6 +1,6 @@
 package com.storemanagement.service;
 
-import com.storemanagement.dto.InventoryTransactionDto;
+import com.storemanagement.dto.response.InventoryTransactionDto;
 import com.storemanagement.dto.PageResponse;
 import org.springframework.data.domain.Pageable;
 
@@ -47,6 +47,12 @@ public interface InventoryTransactionService {
             Pageable pageable
     );
 }
+
+
+
+
+
+
 
 
 

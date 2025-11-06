@@ -1,7 +1,7 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.ImportOrderDetailDto;
-import com.storemanagement.dto.ImportOrderDto;
+import com.storemanagement.dto.response.ImportOrderDetailDto;
+import com.storemanagement.dto.response.ImportOrderDto;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.ImportOrderMapper;
 import com.storemanagement.model.*;

@@ -1,6 +1,6 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.CategoryDto;
+import com.storemanagement.dto.response.CategoryDto;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.CategoryMapper;
 import com.storemanagement.model.Category;
@@ -110,6 +110,12 @@ public class CategoryServiceImpl implements CategoryService {
         return PageUtils.toPageResponse(categoryPage, categoryDtos);
     }
 }
+
+
+
+
+
+
 
 
 
