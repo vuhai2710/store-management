@@ -38,6 +38,8 @@ public class OrderDto {
     private Integer idShippingAddress;
     private String shippingAddressSnapshot; // Snapshot của địa chỉ tại thời điểm đặt hàng
 
+    private LocalDateTime deliveredAt; // Thời điểm customer xác nhận đã nhận hàng
+
     private List<OrderDetailDto> orderDetails;
 }
 

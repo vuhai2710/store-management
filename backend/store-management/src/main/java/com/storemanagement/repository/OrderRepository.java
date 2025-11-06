@@ -24,6 +24,9 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     
     // Lấy danh sách đơn hàng của customer
     Page<Order> findByCustomerIdCustomerOrderByOrderDateDesc(Integer customerId, Pageable pageable);
+    
+    // Lấy danh sách đơn hàng của customer theo status
+    Page<Order> findByCustomerIdCustomerAndStatusOrderByOrderDateDesc(Integer customerId, Order.OrderStatus status, Pageable pageable);
 }
 
 

@@ -6,6 +6,7 @@ import com.storemanagement.dto.request.BuyNowRequestDto;
 import com.storemanagement.dto.request.CreateOrderForCustomerRequestDto;
 import com.storemanagement.dto.request.CreateOrderRequestDto;
 import com.storemanagement.dto.response.OrderDto;
+import com.storemanagement.model.Order;
 import com.storemanagement.service.CustomerService;
 import com.storemanagement.service.EmployeeService;
 import com.storemanagement.service.OrderService;
@@ -163,11 +164,25 @@ public class OrderController {
      * Endpoint: GET /api/v1/orders/my-orders
      * Authentication: Required (CUSTOMER role)
      * 
+     * Query Parameters:
+     * - pageNo: Số trang (mặc định: 1)
+     * - pageSize: Số lượng đơn hàng mỗi trang (mặc định: 10)
+     * - sortBy: Trường sắp xếp (mặc định: orderDate)
+     * - sortDirection: Hướng sắp xếp ASC/DESC (mặc định: DESC)
+     * - status: Lọc theo trạng thái đơn hàng (PENDING, CONFIRMED, COMPLETED, CANCELED) - optional
+     * 
      * Logic:
      * - Lấy customerId từ JWT token
      * - Chỉ trả về đơn hàng của customer hiện tại
+     * - Nếu có status parameter → Filter đơn hàng theo status
+     * - Nếu không có status parameter → Lấy tất cả đơn hàng
      * - Sắp xếp mặc định theo orderDate DESC (mới nhất trước)
      * - Có phân trang và sorting
+     * 
+     * Ví dụ sử dụng:
+     * - GET /api/v1/orders/my-orders → Lấy tất cả đơn hàng
+     * - GET /api/v1/orders/my-orders?status=PENDING → Lấy đơn hàng đang chờ xử lý
+     * - GET /api/v1/orders/my-orders?status=COMPLETED → Lấy đơn hàng đã hoàn thành
      */
     @GetMapping("/my-orders")
     @PreAuthorize("hasRole('CUSTOMER')")
@@ -175,7 +190,8 @@ public class OrderController {
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "orderDate") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDirection) {
+            @RequestParam(defaultValue = "DESC") String sortDirection,
+            @RequestParam(required = false) String status) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
@@ -183,7 +199,17 @@ public class OrderController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
         
-        PageResponse<OrderDto> orders = orderService.getMyOrders(customerId, pageable);
+        // Parse status string thành Order.OrderStatus enum (nếu có)
+        Order.OrderStatus orderStatus = null;
+        if (status != null && !status.isEmpty()) {
+            try {
+                orderStatus = Order.OrderStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Trạng thái đơn hàng không hợp lệ: " + status + ". Các giá trị hợp lệ: PENDING, CONFIRMED, COMPLETED, CANCELED");
+            }
+        }
+        
+        PageResponse<OrderDto> orders = orderService.getMyOrders(customerId, orderStatus, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đơn hàng thành công", orders));
     }
 
@@ -233,6 +259,43 @@ public class OrderController {
         
         OrderDto order = orderService.cancelOrder(customerId, orderId);
         return ResponseEntity.ok(ApiResponse.success("Hủy đơn hàng thành công", order));
+    }
+
+    /**
+     * Customer: Xác nhận đã nhận hàng
+     * 
+     * Endpoint: PUT /api/v1/orders/my-orders/{orderId}/confirm-delivery
+     * Authentication: Required (CUSTOMER role)
+     * 
+     * Logic xử lý (trong OrderService):
+     * 1. VALIDATION PHASE:
+     *    - Kiểm tra order tồn tại và thuộc về customer hiện tại
+     *    - Kiểm tra order status phải là CONFIRMED (chỉ cho phép confirm khi CONFIRMED)
+     *    - Tìm shipment theo orderId (nếu không có thì tạo mới với status PREPARING)
+     * 
+     * 2. UPDATE PHASE:
+     *    - Cập nhật order.status = COMPLETED (từ CONFIRMED)
+     *    - Set order.deliveredAt = LocalDateTime.now()
+     *    - Cập nhật shipment.shippingStatus = DELIVERED
+     *    - Lưu cả order và shipment
+     * 
+     * 3. RETURN PHASE:
+     *    - Trả về OrderDto đã được cập nhật
+     * 
+     * Lưu ý:
+     * - Chỉ cho phép confirm khi order.status = CONFIRMED
+     * - Tự động tạo shipment nếu chưa có (trường hợp đơn hàng cũ)
+     * - Cập nhật cả Order và Shipment để đồng bộ trạng thái
+     */
+    @PutMapping("/my-orders/{orderId}/confirm-delivery")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<OrderDto>> confirmDelivery(@PathVariable Integer orderId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
+        
+        OrderDto order = orderService.confirmDelivery(customerId, orderId);
+        return ResponseEntity.ok(ApiResponse.success("Xác nhận nhận hàng thành công", order));
     }
 }
 

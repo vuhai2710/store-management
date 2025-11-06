@@ -34,6 +34,7 @@ Authorization: Bearer {JWT_TOKEN}
 | GET | `/api/v1/orders/my-orders` | CUSTOMER | Lấy danh sách đơn hàng của tôi |
 | GET | `/api/v1/orders/my-orders/{orderId}` | CUSTOMER | Xem chi tiết đơn hàng của tôi |
 | PUT | `/api/v1/orders/my-orders/{orderId}/cancel` | CUSTOMER | Hủy đơn hàng |
+| PUT | `/api/v1/orders/my-orders/{orderId}/confirm-delivery` | CUSTOMER | Xác nhận đã nhận hàng |
 
 ---
 
@@ -691,6 +692,76 @@ Authorization: Bearer {customer_token}
 
 ---
 
+## 9. Customer: Xác nhận đã nhận hàng
+
+### Thông tin Endpoint
+
+- **URL:** `PUT /api/v1/orders/my-orders/{orderId}/confirm-delivery`
+- **Authentication:** Required (CUSTOMER)
+
+### Path Parameters
+
+| Parameter | Type | Required | Mô tả |
+|-----------|------|----------|-------|
+| orderId | Integer | Yes | ID của đơn hàng cần xác nhận nhận hàng |
+
+### Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "code": 200,
+  "message": "Xác nhận nhận hàng thành công",
+  "data": {
+    "idOrder": 1,
+    "status": "COMPLETED",
+    "deliveredAt": "2025-01-01T15:30:00",
+    /* ... các field khác */
+  }
+}
+```
+
+### Logic xử lý chi tiết
+
+1. **Kiểm tra đơn hàng tồn tại:** Nếu không tìm thấy → 404 Not Found
+2. **Kiểm tra quyền:** Đơn hàng phải thuộc về customer hiện tại
+3. **Kiểm tra trạng thái:**
+   - Chỉ cho phép xác nhận khi `status = CONFIRMED`
+   - Nếu đã PENDING, COMPLETED, CANCELED → Không cho phép xác nhận
+4. **Xử lý Shipment:**
+   - Tìm shipment theo orderId
+   - Nếu không có shipment → Tự động tạo mới với status = PREPARING (trường hợp đơn hàng cũ)
+5. **Cập nhật trạng thái đơn hàng:**
+   - Đặt `status = COMPLETED`
+   - Set `deliveredAt = LocalDateTime.now()` (thời điểm xác nhận nhận hàng)
+6. **Cập nhật trạng thái shipment:**
+   - Đặt `shippingStatus = DELIVERED`
+7. **Lưu dữ liệu:** Lưu cả Order và Shipment để đồng bộ trạng thái
+
+### Lưu ý
+
+- **Chỉ xác nhận được khi CONFIRMED:** Đơn hàng phải đã được xác nhận (CONFIRMED) trước khi customer có thể xác nhận nhận hàng
+- **Tự động tạo shipment:** Nếu đơn hàng chưa có shipment (đơn hàng cũ), hệ thống sẽ tự động tạo mới
+- **Đồng bộ trạng thái:** Cả Order và Shipment đều được cập nhật để đảm bảo tính nhất quán
+- **Thời điểm nhận hàng:** `deliveredAt` được set tại thời điểm customer xác nhận, không phải thời điểm giao hàng thực tế
+
+### Ví dụ Request
+
+```
+PUT /api/v1/orders/my-orders/1/confirm-delivery
+Authorization: Bearer {customer_token}
+```
+
+### Lỗi có thể xảy ra
+
+- **400 Bad Request:**
+  - Chỉ có thể xác nhận nhận hàng khi đơn hàng ở trạng thái CONFIRMED
+  - Không có quyền xác nhận đơn hàng này
+- **404 Not Found:** Đơn hàng không tồn tại
+
+---
+
 ## Order Status
 
 | Status | Mô tả |
@@ -768,7 +839,17 @@ if (pm.response.code === 200) {
 
 **Lưu ý:** Chỉ hủy được khi status = PENDING
 
-### Bước 5: Test Xem chi tiết đơn hàng (Admin/Employee)
+### Bước 5: Test Xác nhận nhận hàng (Customer)
+
+**Request:**
+- Method: `PUT`
+- URL: `{{base_url}}/orders/my-orders/{{order_id}}/confirm-delivery`
+- Headers:
+  - `Authorization: Bearer {{customer_token}}`
+
+**Lưu ý:** Chỉ xác nhận được khi status = CONFIRMED
+
+### Bước 6: Test Xem chi tiết đơn hàng (Admin/Employee)
 
 **Request:**
 - Method: `GET`
@@ -776,7 +857,7 @@ if (pm.response.code === 200) {
 - Headers:
   - `Authorization: Bearer {{admin_token}}`
 
-### Bước 6: Test Xuất PDF hóa đơn (Admin/Employee)
+### Bước 7: Test Xuất PDF hóa đơn (Admin/Employee)
 
 **Request:**
 - Method: `GET`
@@ -795,6 +876,7 @@ if (pm.response.code === 200) {
   - Sản phẩm không còn khả dụng
   - Số lượng không đủ
   - Chỉ có thể hủy đơn hàng ở trạng thái PENDING
+  - Chỉ có thể xác nhận nhận hàng khi đơn hàng ở trạng thái CONFIRMED
   - Validation fail
 - **401 Unauthorized:** Không có token hoặc token không hợp lệ
 - **403 Forbidden:** Không đủ quyền

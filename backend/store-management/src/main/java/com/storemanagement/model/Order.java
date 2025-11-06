@@ -64,6 +64,12 @@ public class Order extends BaseEntity {
     @Builder.Default
     private List<OrderDetail> orderDetails = new ArrayList<>();
 
+    @OneToOne(mappedBy = "order", fetch = FetchType.LAZY)
+    private Shipment shipment;
+
+    @Column(name = "delivered_at")
+    private LocalDateTime deliveredAt; // Thời điểm customer xác nhận đã nhận hàng
+
     @PrePersist
     protected void onCreate() {
         if (orderDate == null) {

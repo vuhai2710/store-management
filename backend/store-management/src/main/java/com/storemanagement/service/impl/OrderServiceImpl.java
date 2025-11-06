@@ -46,6 +46,7 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
     private final ShippingAddressRepository shippingAddressRepository;
     private final InventoryTransactionRepository inventoryTransactionRepository;
+    private final ShipmentRepository shipmentRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -407,12 +408,30 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDto(savedOrder);
     }
 
+    /**
+     * Lấy danh sách đơn hàng của customer (có thể filter theo status)
+     * 
+     * Logic xử lý:
+     * - Nếu status != null → Filter đơn hàng theo status cụ thể
+     * - Nếu status == null → Lấy tất cả đơn hàng (không filter)
+     * - Sắp xếp mặc định theo orderDate DESC (mới nhất trước)
+     * - Có phân trang
+     */
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<OrderDto> getMyOrders(Integer customerId, Pageable pageable) {
-        log.info("Getting orders for customer: {}", customerId);
+    public PageResponse<OrderDto> getMyOrders(Integer customerId, Order.OrderStatus status, Pageable pageable) {
+        log.info("Getting orders for customer: {}, status filter: {}", customerId, status);
         
-        Page<Order> orderPage = orderRepository.findByCustomerIdCustomerOrderByOrderDateDesc(customerId, pageable);
+        Page<Order> orderPage;
+        
+        // Nếu có status filter → Gọi method filter theo status
+        if (status != null) {
+            orderPage = orderRepository.findByCustomerIdCustomerAndStatusOrderByOrderDateDesc(customerId, status, pageable);
+        } else {
+            // Nếu không có status filter → Lấy tất cả đơn hàng
+            orderPage = orderRepository.findByCustomerIdCustomerOrderByOrderDateDesc(customerId, pageable);
+        }
+        
         return PageUtils.toPageResponse(orderPage, orderMapper.toDtoList(orderPage.getContent()));
     }
 
@@ -729,6 +748,83 @@ public class OrderServiceImpl implements OrderService {
      */
     private String buildAddressSnapshot(ShippingAddress address) {
         return address.getRecipientName() + ", " + address.getAddress() + ", " + address.getPhoneNumber();
+    }
+
+    /**
+     * Customer xác nhận đã nhận hàng
+     * 
+     * Logic xử lý chi tiết:
+     * 
+     * 1. VALIDATION PHASE:
+     *    - Kiểm tra order tồn tại và thuộc về customer hiện tại
+     *    - Kiểm tra order status phải là CONFIRMED (chỉ cho phép confirm khi CONFIRMED)
+     *    - Tìm shipment theo orderId (nếu không có thì tạo mới với status PREPARING)
+     * 
+     * 2. UPDATE PHASE:
+     *    - Cập nhật order.status = COMPLETED (từ CONFIRMED)
+     *    - Set order.deliveredAt = LocalDateTime.now()
+     *    - Cập nhật shipment.shippingStatus = DELIVERED
+     *    - Lưu cả order và shipment
+     * 
+     * 3. RETURN PHASE:
+     *    - Trả về OrderDto đã được cập nhật
+     * 
+     * Lưu ý:
+     * - Chỉ cho phép confirm khi order.status = CONFIRMED
+     * - Tự động tạo shipment nếu chưa có (trường hợp đơn hàng cũ)
+     * - Cập nhật cả Order và Shipment để đồng bộ trạng thái
+     */
+    @Override
+    public OrderDto confirmDelivery(Integer customerId, Integer orderId) {
+        log.info("Confirming delivery for order {} by customer: {}", orderId, customerId);
+        
+        // ========== PHASE 1: VALIDATION ==========
+        
+        // Bước 1.1: Kiểm tra order tồn tại
+        Order order = orderRepository.findByIdWithDetails(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng"));
+        
+        // Bước 1.2: Kiểm tra quyền - Đơn hàng phải thuộc về customer hiện tại
+        if (!order.getCustomer().getIdCustomer().equals(customerId)) {
+            throw new RuntimeException("Không có quyền xác nhận đơn hàng này");
+        }
+        
+        // Bước 1.3: Kiểm tra trạng thái - Chỉ cho phép confirm khi CONFIRMED
+        if (order.getStatus() != Order.OrderStatus.CONFIRMED) {
+            throw new RuntimeException("Chỉ có thể xác nhận nhận hàng khi đơn hàng ở trạng thái CONFIRMED");
+        }
+        
+        // Bước 1.4: Tìm shipment theo orderId (nếu không có thì tạo mới)
+        Shipment shipment = shipmentRepository.findByOrder_IdOrder(orderId)
+                .orElseGet(() -> {
+                    // Tạo shipment mới nếu chưa có (trường hợp đơn hàng cũ)
+                    log.info("Creating new shipment for order: {}", orderId);
+                    return Shipment.builder()
+                            .order(order)
+                            .shippingStatus(Shipment.ShippingStatus.PREPARING)
+                            .build();
+                });
+        
+        // ========== PHASE 2: UPDATE ORDER & SHIPMENT ==========
+        
+        // Bước 2.1: Cập nhật order.status = COMPLETED
+        order.setStatus(Order.OrderStatus.COMPLETED);
+        
+        // Bước 2.2: Set order.deliveredAt = hiện tại
+        order.setDeliveredAt(LocalDateTime.now());
+        
+        // Bước 2.3: Cập nhật shipment.shippingStatus = DELIVERED
+        shipment.setShippingStatus(Shipment.ShippingStatus.DELIVERED);
+        
+        // Bước 2.4: Lưu cả order và shipment
+        Order savedOrder = orderRepository.save(order);
+        shipmentRepository.save(shipment);
+        
+        log.info("Delivery confirmed successfully for order: {}", orderId);
+        
+        // ========== PHASE 3: RETURN ==========
+        
+        return orderMapper.toDto(savedOrder);
     }
 }
 
