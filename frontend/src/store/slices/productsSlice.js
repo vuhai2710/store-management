@@ -1,178 +1,162 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { productsService } from "../../services/productsService";
+import { handleApiError } from "../../utils/apiHelper";
 
-// Async thunks
+// List (pageable)
 export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
   async (params, { rejectWithValue }) => {
     try {
-      const response = await productsService.getProducts(params);
-      return response;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi tải danh sách sản phẩm"
-      );
+      const res = await productsService.getProductsPaginated(params);
+      return res;
+    } catch (err) {
+      return rejectWithValue(handleApiError(err));
     }
   }
 );
 
+// List theo nhà cung cấp
+export const fetchProductsBySupplier = createAsyncThunk(
+  "products/fetchProductsBySupplier",
+  async ({ supplierId, pageNo = 1, pageSize = 10, sortBy = "idProduct", sortDirection = "ASC" }, { rejectWithValue }) => {
+    try {
+      const res = await productsService.getProductsBySupplier(supplierId, { pageNo, pageSize, sortBy, sortDirection });
+      return res;
+    } catch (err) {
+      return rejectWithValue(handleApiError(err));
+    }
+  }
+);
+
+// GET by id
 export const fetchProductById = createAsyncThunk(
   "products/fetchProductById",
   async (id, { rejectWithValue }) => {
     try {
-      const response = await productsService.getProductById(id);
-      return response;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi tải chi tiết sản phẩm"
-      );
+      const res = await productsService.getProductById(id);
+      return res;
+    } catch (err) {
+      return rejectWithValue(handleApiError(err));
     }
   }
 );
 
+// CREATE
 export const createProduct = createAsyncThunk(
   "products/createProduct",
-  async (productData, { rejectWithValue }) => {
+  async (payload, { rejectWithValue }) => {
     try {
-      const response = await productsService.createProduct(productData);
-      return response;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi tạo sản phẩm"
-      );
+      const res = await productsService.createProduct(payload);
+      return res;
+    } catch (err) {
+      return rejectWithValue(handleApiError(err));
     }
   }
 );
 
+// UPDATE
 export const updateProduct = createAsyncThunk(
   "products/updateProduct",
-  async ({ id, productData }, { rejectWithValue }) => {
+  async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await productsService.updateProduct(id, productData);
-      return response;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi cập nhật sản phẩm"
-      );
+      const res = await productsService.updateProduct(id, data);
+      return res;
+    } catch (err) {
+      return rejectWithValue(handleApiError(err));
     }
   }
 );
 
+// DELETE
 export const deleteProduct = createAsyncThunk(
   "products/deleteProduct",
   async (id, { rejectWithValue }) => {
     try {
       await productsService.deleteProduct(id);
       return id;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi xóa sản phẩm"
-      );
+    } catch (err) {
+      return rejectWithValue(handleApiError(err));
     }
   }
 );
 
 const initialState = {
-  products: [],
-  currentProduct: null,
+  list: [],
+  pagination: { pageNo: 1, pageSize: 10, totalElements: 0, totalPages: 0 },
+  current: null,
   loading: false,
   error: null,
-  pagination: {
-    current: 1,
-    pageSize: 12,
-    total: 0,
-  },
-  filters: {
-    category: null,
-    priceRange: null,
-    stockStatus: null,
-  },
 };
 
 const productsSlice = createSlice({
   name: "products",
   initialState,
   reducers: {
-    clearError: (state) => {
-      state.error = null;
-    },
-    clearCurrentProduct: (state) => {
-      state.currentProduct = null;
-    },
-    setFilters: (state, action) => {
-      state.filters = { ...state.filters, ...action.payload };
-    },
-    setPagination: (state, action) => {
-      state.pagination = { ...state.pagination, ...action.payload };
-    },
+    clearProductError: (state) => { state.error = null; },
+    clearCurrentProduct: (state) => { state.current = null; },
   },
   extraReducers: (builder) => {
+    const fulfillPage = (state, action) => {
+      state.loading = false;
+      const page = action.payload || {};
+      state.list = page.content || [];
+      state.pagination = {
+        pageNo: ((page.pageNo ?? 0) + 1),
+        pageSize: page.pageSize ?? 10,
+        totalElements: page.totalElements ?? 0,
+        totalPages: page.totalPages ?? 0,
+      };
+    };
+    const rejectPage = (state, action) => {
+      state.loading = false;
+      state.error = action.payload || action.error;
+    };
+
     builder
-      // Fetch products
-      .addCase(fetchProducts.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+      // list
+      .addCase(fetchProducts.pending, (s) => { s.loading = true; s.error = null; })
+      .addCase(fetchProducts.fulfilled, fulfillPage)
+      .addCase(fetchProducts.rejected, rejectPage)
+
+      .addCase(fetchProductsBySupplier.pending, (s) => { s.loading = true; s.error = null; })
+      .addCase(fetchProductsBySupplier.fulfilled, fulfillPage)
+      .addCase(fetchProductsBySupplier.rejected, rejectPage)
+
+      // get by id
+      .addCase(fetchProductById.pending, (s) => { s.loading = true; s.error = null; s.current = null; })
+      .addCase(fetchProductById.fulfilled, (s, a) => { s.loading = false; s.current = a.payload; })
+      .addCase(fetchProductById.rejected, (s, a) => { s.loading = false; s.error = a.payload || a.error; })
+
+      // create
+      .addCase(createProduct.pending, (s) => { s.loading = true; s.error = null; })
+      .addCase(createProduct.fulfilled, (s, a) => {
+        s.loading = false;
+        if (a.payload) s.list.unshift(a.payload);
       })
-      .addCase(fetchProducts.fulfilled, (state, action) => {
-        state.loading = false;
-        // Response trực tiếp là array hoặc object, không có .data wrapper
-        if (Array.isArray(action.payload)) {
-          state.products = action.payload;
-          state.pagination.total = action.payload.length;
-        } else {
-          state.products = [];
-        }
-        state.error = null;
+      .addCase(createProduct.rejected, (s, a) => { s.loading = false; s.error = a.payload || a.error; })
+
+      // update
+      .addCase(updateProduct.pending, (s) => { s.loading = true; s.error = null; })
+      .addCase(updateProduct.fulfilled, (s, a) => {
+        s.loading = false;
+        const updated = a.payload;
+        const idx = s.list.findIndex((p) => p.idProduct === updated?.idProduct);
+        if (idx !== -1) s.list[idx] = updated;
+        if (s.current && s.current.idProduct === updated?.idProduct) s.current = updated;
       })
-      .addCase(fetchProducts.rejected, (state, action) => {
-        state.loading = false;
-        state.products = []; // Set to empty array on error
-        state.error = action.payload;
+      .addCase(updateProduct.rejected, (s, a) => { s.loading = false; s.error = a.payload || a.error; })
+
+      // delete
+      .addCase(deleteProduct.pending, (s) => { s.loading = true; s.error = null; })
+      .addCase(deleteProduct.fulfilled, (s, a) => {
+        s.loading = false;
+        const id = a.payload;
+        s.list = s.list.filter((p) => p.idProduct !== id);
+        if (s.current?.idProduct === id) s.current = null;
       })
-      // Fetch product by ID
-      .addCase(fetchProductById.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchProductById.fulfilled, (state, action) => {
-        state.loading = false;
-        state.currentProduct = action.payload;
-        state.error = null;
-      })
-      .addCase(fetchProductById.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      // Create product
-      .addCase(createProduct.fulfilled, (state, action) => {
-        state.products.unshift(action.payload);
-        state.pagination.total += 1;
-      })
-      // Update product
-      .addCase(updateProduct.fulfilled, (state, action) => {
-        const index = state.products.findIndex(
-          (product) => product.id === action.payload.id
-        );
-        if (index !== -1) {
-          state.products[index] = action.payload;
-        }
-        if (
-          state.currentProduct &&
-          state.currentProduct.id === action.payload.id
-        ) {
-          state.currentProduct = action.payload;
-        }
-      })
-      // Delete product
-      .addCase(deleteProduct.fulfilled, (state, action) => {
-        state.products = state.products.filter(
-          (product) => product.id !== action.payload
-        );
-        state.pagination.total -= 1;
-      });
+      .addCase(deleteProduct.rejected, (s, a) => { s.loading = false; s.error = a.payload || a.error; });
   },
 });
 
-export const { clearError, clearCurrentProduct, setFilters, setPagination } =
-  productsSlice.actions;
+export const { clearProductError, clearCurrentProduct } = productsSlice.actions;
 export default productsSlice.reducer;

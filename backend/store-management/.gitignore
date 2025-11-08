@@ -32,11 +32,9 @@ build/
 ### VS Code ###
 .vscode/
 
+### Uploaded files ###
+uploads/
+!uploads/.gitkeep
+
 ### Phân chia công việc ###
-API_ENDPOINTS.md
-PRODUCT_MODULE_API.md
-PRODUCT_MODULE_SUMMARY.md
-REFACTORING_SUMMARY.md
-VALIDATION_GUIDE.md
-REFACTORING_COMPLETE.md
 Phân chia công việc BE.pdf

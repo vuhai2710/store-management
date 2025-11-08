@@ -1,8 +1,8 @@
 package com.storemanagement.service;
 
-import com.storemanagement.dto.AuthenticationRequestDto;
+import com.storemanagement.dto.request.AuthenticationRequestDto;
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.UserDto;
+import com.storemanagement.dto.response.UserDto;
 import com.storemanagement.model.User;
 import org.springframework.data.domain.Pageable;
 
@@ -22,4 +22,5 @@ public interface UserService {
     void activateUser(Integer id);
     UserDto changeUserRole(Integer id, String role);
     void deleteUser(Integer id);
+    void changePassword(String username, String currentPassword, String newPassword);
 }

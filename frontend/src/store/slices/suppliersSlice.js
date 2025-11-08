@@ -1,57 +1,57 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { suppliersService } from '../../services/suppliersService';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { suppliersService } from "../../services/suppliersService";
+import { handleApiError } from "../../utils/apiHelper";
 
-// Async thunks
 export const fetchSuppliers = createAsyncThunk(
-  'suppliers/fetchSuppliers',
+  "suppliers/fetchSuppliers",
   async (_, { rejectWithValue }) => {
     try {
       const response = await suppliersService.getAllSuppliers();
       return response;
     } catch (error) {
-      return rejectWithValue(error.message || 'Lỗi khi lấy danh sách nhà cung cấp');
+      return rejectWithValue(error.message || "Lỗi khi lấy danh sách nhà cung cấp");
     }
   }
 );
 
 export const createSupplier = createAsyncThunk(
-  'suppliers/createSupplier',
+  "suppliers/createSupplier",
   async (supplierData, { rejectWithValue }) => {
     try {
-      const response = await suppliersService.createSupplier(supplierData);
-      return response;
-    } catch (error) {
-      return rejectWithValue(error.message || 'Lỗi khi tạo nhà cung cấp');
+      const res = await suppliersService.createSupplier(supplierData);
+      return res;
+    } catch (err) {
+      return rejectWithValue(handleApiError(err)); // serializable
     }
   }
 );
 
 export const updateSupplier = createAsyncThunk(
-  'suppliers/updateSupplier',
+  "suppliers/updateSupplier",
   async ({ id, supplierData }, { rejectWithValue }) => {
     try {
-      const response = await suppliersService.updateSupplier(id, supplierData);
-      return response;
-    } catch (error) {
-      return rejectWithValue(error.message || 'Lỗi khi cập nhật nhà cung cấp');
+      const res = await suppliersService.updateSupplier(id, supplierData);
+      return res;
+    } catch (err) {
+      return rejectWithValue(handleApiError(err)); // serializable
     }
   }
 );
 
 export const deleteSupplier = createAsyncThunk(
-  'suppliers/deleteSupplier',
+  "suppliers/deleteSupplier",
   async (supplierId, { rejectWithValue }) => {
     try {
       await suppliersService.deleteSupplier(supplierId);
       return supplierId;
     } catch (error) {
-      return rejectWithValue(error.message || 'Lỗi khi xóa nhà cung cấp');
+      return rejectWithValue(error.message || "Lỗi khi xóa nhà cung cấp");
     }
   }
 );
 
 const suppliersSlice = createSlice({
-  name: 'suppliers',
+  name: "suppliers",
   initialState: {
     suppliers: [],
     loading: false,
@@ -64,60 +64,56 @@ const suppliersSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch suppliers
       .addCase(fetchSuppliers.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchSuppliers.fulfilled, (state, action) => {
         state.loading = false;
-        state.suppliers = action.payload;
+        state.suppliers = action.payload || [];
       })
       .addCase(fetchSuppliers.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
-      // Create supplier
       .addCase(createSupplier.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(createSupplier.fulfilled, (state, action) => {
         state.loading = false;
-        state.suppliers.push(action.payload);
+        if (action.payload) state.suppliers.unshift(action.payload);
       })
       .addCase(createSupplier.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
-      // Update supplier
       .addCase(updateSupplier.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(updateSupplier.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.suppliers.findIndex(supplier => supplier.id === action.payload.id);
-        if (index !== -1) {
-          state.suppliers[index] = action.payload;
-        }
+        const updated = action.payload;
+        const idx = state.suppliers.findIndex((s) => s.idSupplier === updated.idSupplier);
+        if (idx !== -1) state.suppliers[idx] = updated;
       })
       .addCase(updateSupplier.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
-      // Delete supplier
       .addCase(deleteSupplier.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(deleteSupplier.fulfilled, (state, action) => {
         state.loading = false;
-        state.suppliers = state.suppliers.filter(supplier => supplier.id !== action.payload);
+        const removedId = action.payload;
+        state.suppliers = state.suppliers.filter((s) => s.idSupplier !== removedId);
       })
       .addCase(deleteSupplier.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       });
   },
 });

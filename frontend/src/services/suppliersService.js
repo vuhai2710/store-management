@@ -1,66 +1,34 @@
-import api from './api';
-import { API_ENDPOINTS } from '../constants/apiEndpoints';
+import api from "./api";
+import { API_ENDPOINTS } from "../constants/apiEndpoints";
+
+const unwrap = (resp) => resp?.data?.data ?? resp?.data;
 
 export const suppliersService = {
-  // Lấy danh sách tất cả suppliers
   getAllSuppliers: async () => {
     try {
-      const response = await api.get(API_ENDPOINTS.SUPPLIERS.GET_ALL);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Lấy thông tin supplier theo ID
-  getSupplierById: async (id) => {
-    try {
-      const response = await api.get(API_ENDPOINTS.SUPPLIERS.GET_BY_ID(id));
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Tạo supplier mới
-  createSupplier: async (supplierData) => {
-    try {
-      const response = await api.post(API_ENDPOINTS.SUPPLIERS.CREATE, supplierData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Cập nhật thông tin supplier
-  updateSupplier: async (id, supplierData) => {
-    try {
-      const response = await api.put(API_ENDPOINTS.SUPPLIERS.UPDATE(id), supplierData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Xóa supplier
-  deleteSupplier: async (id) => {
-    try {
-      const response = await api.delete(API_ENDPOINTS.SUPPLIERS.DELETE(id));
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Tìm kiếm suppliers
-  searchSuppliers: async (keyword) => {
-    try {
-      const response = await api.get(API_ENDPOINTS.SUPPLIERS.SEARCH, {
-        params: { keyword }
+      const resp = await api.get(API_ENDPOINTS.SUPPLIERS.GET_ALL);
+      return unwrap(resp); // -> array
+    } catch {
+      const resp = await api.get(API_ENDPOINTS.SUPPLIERS.BASE, {
+        params: { pageNo: 1, pageSize: 1000, sortBy: "idSupplier", sortDirection: "ASC" },
       });
-      return response.data;
-    } catch (error) {
-      throw error;
+      const data = unwrap(resp);
+      return Array.isArray(data?.content) ? data.content : (Array.isArray(data) ? data : []);
     }
-  }
+  },
+
+  createSupplier: async (supplierData) => {
+    const resp = await api.post(API_ENDPOINTS.SUPPLIERS.BASE, supplierData);
+    return unwrap(resp);
+  },
+
+  updateSupplier: async (id, supplierData) => {
+    const resp = await api.put(API_ENDPOINTS.SUPPLIERS.BY_ID(id), supplierData);
+    return unwrap(resp);
+  },
+
+  deleteSupplier: async (id) => {
+    const resp = await api.delete(API_ENDPOINTS.SUPPLIERS.BY_ID(id));
+    return unwrap(resp);
+  },
 };

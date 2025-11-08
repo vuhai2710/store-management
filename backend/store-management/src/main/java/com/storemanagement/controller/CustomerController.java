@@ -1,9 +1,11 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.CustomerDto;
 import com.storemanagement.dto.PageResponse;
+import com.storemanagement.dto.request.ChangePasswordRequestDto;
+import com.storemanagement.dto.response.CustomerDto;
 import com.storemanagement.service.CustomerService;
+import com.storemanagement.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -16,12 +18,25 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 
+/**
+ * Controller xử lý các API liên quan đến Khách hàng (Customer)
+ * Base URL: /api/v1/customers
+ * 
+ * Các endpoint yêu cầu authentication:
+ * - ADMIN, EMPLOYEE: có thể quản lý tất cả customers
+ * - CUSTOMER: chỉ có thể xem/sửa thông tin của chính mình qua /me endpoints
+ * 
+ * Header: Authorization: Bearer {JWT_TOKEN}
+ * 
+ * @author Store Management Team
+ */
 @RestController
 @RequestMapping("/api/v1/customers")
 @RequiredArgsConstructor
 public class CustomerController {
 
     private final CustomerService customerService;
+    private final UserService userService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
@@ -108,6 +123,15 @@ public class CustomerController {
         return ResponseEntity.ok(ApiResponse.success("Xóa customer thành công", null));
     }
 
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<CustomerDto>> getMyCustomerInfo() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        CustomerDto customer = customerService.getCustomerByUsername(username);
+        return ResponseEntity.ok(ApiResponse.success("Lấy thông tin thành công", customer));
+    }
+
     @PutMapping("/me")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<CustomerDto>> updateMyCustomerInfo(
@@ -116,6 +140,16 @@ public class CustomerController {
         String username = authentication.getName();
         CustomerDto updatedCustomer = customerService.updateMyCustomerInfo(username, customerDto);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin thành công", updatedCustomer));
+    }
+
+    @PutMapping("/me/change-password")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @RequestBody @Valid ChangePasswordRequestDto request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        userService.changePassword(username, request.getCurrentPassword(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.success("Đổi mật khẩu thành công", null));
     }
 }
 

@@ -1,16 +1,25 @@
 package com.storemanagement.service;
 
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.ProductDto;
+import com.storemanagement.dto.response.ProductDto;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 public interface ProductService {
 
     // Thêm sản phẩm mới
     ProductDto createProduct(ProductDto productDto);
+    
+    // Thêm sản phẩm mới với upload ảnh
+    ProductDto createProduct(ProductDto productDto, MultipartFile image);
 
     // Sửa thông tin sản phẩm
     ProductDto updateProduct(Integer id, ProductDto productDto);
+    
+    // Sửa thông tin sản phẩm với upload ảnh
+    ProductDto updateProduct(Integer id, ProductDto productDto, MultipartFile image);
 
     // Xóa sản phẩm
     void deleteProduct(Integer id);
@@ -30,12 +39,31 @@ public interface ProductService {
     // Lọc theo categoryId
     PageResponse<ProductDto> getProductsByCategory(Integer idCategory, Pageable pageable);
 
-    // Lọc theo supplierId
+    // Lọc theo brand (thương hiệu)
+    PageResponse<ProductDto> getProductsByBrand(String brand, Pageable pageable);
+    
+    // Lọc theo supplierId (nhà cung cấp) - nếu cần
     PageResponse<ProductDto> getProductsBySupplier(Integer idSupplier, Pageable pageable);
 
-    // Tìm kiếm và lọc kết hợp (productCode, name, categoryId, supplierId)
+    // Tìm kiếm và lọc kết hợp (productCode, name, categoryId, brand, price range)
     PageResponse<ProductDto> searchProducts(String productCode, String productName,
-                                           Integer idCategory, Integer idSupplier,
+                                           Integer idCategory, String brand,
+                                           Double minPrice, Double maxPrice,
                                            Pageable pageable);
+    
+    // Lọc sản phẩm theo khoảng giá
+    PageResponse<ProductDto> getProductsByPriceRange(Double minPrice, Double maxPrice, Pageable pageable);
+    
+    // Lấy sản phẩm bán chạy (best sellers)
+    PageResponse<ProductDto> getBestSellingProducts(String orderStatus, Pageable pageable);
+    
+    // Lấy sản phẩm mới (sắp xếp theo createdAt DESC)
+    PageResponse<ProductDto> getNewProducts(Pageable pageable, Integer limit);
+    
+    // Lấy sản phẩm liên quan (cùng category, khác productId)
+    List<ProductDto> getRelatedProducts(Integer productId, Integer limit);
+    
+    // Lấy danh sách tất cả thương hiệu (brands) - unique
+    List<String> getAllBrands();
 }
 

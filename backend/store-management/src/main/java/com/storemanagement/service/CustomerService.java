@@ -1,7 +1,7 @@
 package com.storemanagement.service;
 
-import com.storemanagement.dto.AuthenticationRequestDto;
-import com.storemanagement.dto.CustomerDto;
+import com.storemanagement.dto.request.AuthenticationRequestDto;
+import com.storemanagement.dto.response.CustomerDto;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.model.User;
 import org.springframework.data.domain.Page;
@@ -26,4 +26,7 @@ public interface CustomerService {
     void deleteCustomer(Integer id);
     void deleteCustomerByUser(User user);
     CustomerDto updateMyCustomerInfo(String username, CustomerDto customerDto);
+    
+    // Tạo customer không có user account (cho walk-in customers)
+    CustomerDto createCustomerWithoutUser(String customerName, String phoneNumber, String address);
 }
