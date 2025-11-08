@@ -22,11 +22,10 @@ const { Title } = Typography;
 
 const Dashboard = () => {
   const dispatch = useDispatch();
-  const { orders, loading: ordersLoading } = useSelector(
-    (state) => state.orders
-  );
-  const { products, loading: productsLoading } = useSelector(
-    (state) => state.products
+  const { orders, loading: ordersLoading } = useSelector((state) => state.orders);
+  // Lấy đúng pagination từ slice products
+  const { pagination, loading: productsLoading } = useSelector(
+    (state) => state.products || {}
   );
   const { customers, loading: customersLoading } = useSelector(
     (state) => state.customers
@@ -38,7 +37,8 @@ const Dashboard = () => {
   useEffect(() => {
     // Fetch dashboard data
     dispatch(fetchOrders({ limit: 5 }));
-    dispatch(fetchProducts({ limit: 10 }));
+    // Gọi products với pageSize nhỏ để lấy tổng số sản phẩm từ totalElements
+    dispatch(fetchProducts({ pageNo: 1, pageSize: 1, sortBy: "idProduct", sortDirection: "ASC" }));
     dispatch(fetchCustomers({ limit: 10 }));
     dispatch(fetchFinancialData());
   }, [dispatch]);
@@ -46,11 +46,11 @@ const Dashboard = () => {
   const isLoading =
     ordersLoading || productsLoading || customersLoading || financeLoading;
 
-  // Calculate statistics - handle undefined/null cases
+  // Thống kê
   const totalOrders = orders?.length || 0;
-  const totalProducts = products?.length || 0;
+  const totalProducts = pagination?.totalElements || 0; // lấy từ totalElements
   const totalCustomers = customers?.length || 0;
-  const totalRevenue = financialData?.revenue || 0;
+  const totalRevenue = (financialData?.revenue || 0);
 
   const statsCards = [
     {
@@ -58,7 +58,6 @@ const Dashboard = () => {
       value: totalOrders,
       icon: <ShoppingCartOutlined />,
       color: "#1890ff",
-      trend: "+12%",
       trendUp: true,
     },
     {
@@ -66,7 +65,6 @@ const Dashboard = () => {
       value: totalProducts,
       icon: <AppstoreOutlined />,
       color: "#52c41a",
-      trend: "+8%",
       trendUp: true,
     },
     {
@@ -74,7 +72,6 @@ const Dashboard = () => {
       value: totalCustomers,
       icon: <UserOutlined />,
       color: "#fa8c16",
-      trend: "+15%",
       trendUp: true,
     },
     {
@@ -82,7 +79,6 @@ const Dashboard = () => {
       value: totalRevenue.toLocaleString("vi-VN"),
       icon: <DollarOutlined />,
       color: "#eb2f96",
-      trend: "+23%",
       trendUp: true,
     },
   ];

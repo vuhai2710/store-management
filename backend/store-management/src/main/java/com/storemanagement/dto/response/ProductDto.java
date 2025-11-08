@@ -1,4 +1,4 @@
-package com.storemanagement.dto;
+package com.storemanagement.dto.response;
 
 import com.storemanagement.utils.CodeType;
 import com.storemanagement.utils.ProductStatus;
@@ -23,13 +23,15 @@ public class ProductDto {
     private Integer idCategory;
     
     private String categoryName;
-    
-    private Integer idSupplier;
-    
-    private String supplierName;
 
     @NotBlank(message = "Tên sản phẩm không được để trống")
     private String productName;
+    
+    private String brand;  // Thương hiệu sản phẩm
+    
+    private Integer idSupplier;  // Optional - nhà cung cấp
+    
+    private String supplierName;  // Optional
 
     private String description;
 
@@ -44,14 +46,29 @@ public class ProductDto {
 
     private String imageUrl;
 
-    @NotBlank(message = "Mã sản phẩm không được để trống")
+    // productCode: có thể để trống nếu codeType = SKU (sẽ tự sinh)
     private String productCode;
 
+    @NotNull(message = "Loại mã sản phẩm không được để trống")
     private CodeType codeType;
 
+    // SKU: tự động sinh hoặc tự nhập
     private String sku;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

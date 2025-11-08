@@ -1,83 +1,56 @@
-import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, Typography, Descriptions, Image, Tag, Space, Button } from 'antd';
-import { EditOutlined, UploadOutlined } from '@ant-design/icons';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchProductById } from '../store/slices/productsSlice';
+import React, { useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { Card, Descriptions, Typography, Spin, message } from "antd";
+import { fetchProductById, clearCurrentProduct } from "../store/slices/productsSlice";
 
 const { Title } = Typography;
 
 const ProductDetail = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
-  const { currentProduct, loading } = useSelector((state) => state.products);
+  const { current, loading, error } = useSelector((s) => s.products || {});
 
   useEffect(() => {
-    if (id) {
-      dispatch(fetchProductById(id));
-    }
-  }, [dispatch, id]);
+    if (id) dispatch(fetchProductById(Number(id)));
+    return () => dispatch(clearCurrentProduct());
+  }, [id, dispatch]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  useEffect(() => {
+    if (error?.message) message.error(error.message);
+  }, [error]);
 
-  if (!currentProduct) {
-    return <div>Không tìm thấy sản phẩm</div>;
-  }
+  if (loading && !current) return <Spin />;
 
   return (
     <div>
-      <div className="page-header">
-        <Title level={1}>{currentProduct.name}</Title>
-        <Space>
-          <Button icon={<EditOutlined />}>Chỉnh sửa</Button>
-          <Button icon={<UploadOutlined />}>Upload hình ảnh</Button>
-        </Space>
+      <div className="page-header" style={{ marginBottom: 12 }}>
+        <Title level={3}>Chi tiết sản phẩm</Title>
       </div>
 
-      <Card title="Thông tin sản phẩm">
-        <Descriptions column={2}>
-          <Descriptions.Item label="Tên sản phẩm">
-            {currentProduct.name}
+      <Card>
+        <Descriptions bordered column={1} size="middle">
+          <Descriptions.Item label="ID">{current?.idProduct}</Descriptions.Item>
+          <Descriptions.Item label="Tên">{current?.productName}</Descriptions.Item>
+          <Descriptions.Item label="Danh mục">{current?.categoryName}</Descriptions.Item>
+          <Descriptions.Item label="Thương hiệu">{current?.brand}</Descriptions.Item>
+          <Descriptions.Item label="Nhà cung cấp">{current?.supplierName}</Descriptions.Item>
+          <Descriptions.Item label="Giá">{current?.price?.toLocaleString("vi-VN")}</Descriptions.Item>
+          <Descriptions.Item label="Tồn kho">{current?.stockQuantity}</Descriptions.Item>
+          <Descriptions.Item label="Trạng thái">{current?.status}</Descriptions.Item>
+          <Descriptions.Item label="Mã sản phẩm">{current?.productCode}</Descriptions.Item>
+          <Descriptions.Item label="Loại mã">{current?.codeType}</Descriptions.Item>
+          <Descriptions.Item label="SKU">{current?.sku}</Descriptions.Item>
+          <Descriptions.Item label="Ảnh">
+            {current?.imageUrl ? (
+              <img src={current.imageUrl} alt={current.productName} style={{ maxWidth: 240 }} />
+            ) : (
+              "N/A"
+            )}
           </Descriptions.Item>
-          <Descriptions.Item label="Mã sản phẩm">
-            {currentProduct.sku}
-          </Descriptions.Item>
-          <Descriptions.Item label="Danh mục">
-            <Tag color="blue">{currentProduct.category}</Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="Giá bán">
-            <strong>{currentProduct.price?.toLocaleString('vi-VN')} VNĐ</strong>
-          </Descriptions.Item>
-          <Descriptions.Item label="Giá nhập">
-            {currentProduct.cost?.toLocaleString('vi-VN')} VNĐ
-          </Descriptions.Item>
-          <Descriptions.Item label="Tồn kho">
-            <Tag color={currentProduct.stock > 10 ? 'success' : 'warning'}>
-              {currentProduct.stock}
-            </Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="Trạng thái">
-            <Tag color={currentProduct.status === 'active' ? 'success' : 'default'}>
-              {currentProduct.status === 'active' ? 'Hoạt động' : 'Ngừng bán'}
-            </Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="Mô tả" span={2}>
-            {currentProduct.description || 'Không có mô tả'}
-          </Descriptions.Item>
+          <Descriptions.Item label="Mô tả">{current?.description}</Descriptions.Item>
         </Descriptions>
       </Card>
-
-      {currentProduct.image && (
-        <Card title="Hình ảnh sản phẩm" style={{ marginTop: '16px' }}>
-          <Image
-            width={200}
-            src={currentProduct.image}
-            alt={currentProduct.name}
-          />
-        </Card>
-      )}
     </div>
   );
 };

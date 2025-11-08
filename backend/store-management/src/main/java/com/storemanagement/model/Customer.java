@@ -32,5 +32,6 @@ public class Customer extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "customer_type")
+    @Builder.Default
     private CustomerType customerType = CustomerType.REGULAR;
 }

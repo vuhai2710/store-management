@@ -1,47 +1,51 @@
 import axios from 'axios';
 
-// Spring Boot API URL - thay đổi port thành 8080 (hoặc port của Spring Boot)
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
 
-// Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  withCredentials: true, // Cho phép gửi cookies và credentials
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
-// Request interceptor to add auth token
+// Request interceptor + logging
 api.interceptors.request.use(
   (config) => {
+    // attach token
     const token = localStorage.getItem('token');
     if (token) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Thêm log để thấy request/response trong Console
-    api.interceptors.request.use(
-      (config) => {
-        const fullUrl = (config.baseURL || "") + (config.url || "");
-        console.debug("[API] ->", config.method?.toUpperCase(), fullUrl, { params: config.params, data: config.data });
-        config.headers = { ...(config.headers || {}), "Cache-Control": "no-cache", Pragma: "no-cache" };
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
+    // mark start time for timing
+    config.metadata = { start: Date.now() };
+
+    const method = (config.method || 'get').toUpperCase();
+    const fullUrl = `${config.baseURL || ''}${config.url || ''}`;
+    console.log(`[API] -> ${method} ${fullUrl}`, {
+      params: config.params,
+      data: config.data,
+    });
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle Spring Boot ApiResponse format
+// Response interceptor + unwrapping ApiResponse + logging
 api.interceptors.response.use(
   (response) => {
-    console.debug("[API] <-", response.status, response.config?.url, response.data);
-    if (response.data && response.data.data !== undefined) {
+    const duration = response.config?.metadata?.start
+      ? `${Date.now() - response.config.metadata.start}ms`
+      : 'n/a';
+    console.log(
+      `[API] <- ${response.status} ${response.config?.url} (${duration})`,
+      response.data
+    );
+
+    // Unwrap ApiResponse { code, message, data }
+    if (response?.data && Object.prototype.hasOwnProperty.call(response.data, 'data')) {
       return {
         ...response,
         data: response.data.data,
@@ -52,21 +56,23 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
+    const status = error.response?.status;
+    const url = error.config?.url;
+    const msg = error.response?.data?.message || error.message || 'API Error';
+    console.error(`[API] x- ${status || 'ERR'} ${url || ''}`, {
+      message: msg,
+      data: error.response?.data,
+    });
+
+    if (status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
     }
-    
-    // Xử lý error message từ Spring Boot
-    const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra';
-    const errorData = error.response?.data?.errors || null;
-    
+
     return Promise.reject({
-      message: errorMessage,
-      errors: errorData,
-      status: error.response?.status,
+      message: msg,
+      errors: error.response?.data?.errors || null,
+      status,
       originalError: error,
     });
   }

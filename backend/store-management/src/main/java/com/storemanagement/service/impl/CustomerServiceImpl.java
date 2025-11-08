@@ -1,7 +1,7 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.AuthenticationRequestDto;
-import com.storemanagement.dto.CustomerDto;
+import com.storemanagement.dto.request.AuthenticationRequestDto;
+import com.storemanagement.dto.response.CustomerDto;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.CustomerMapper;
 import com.storemanagement.model.Customer;
@@ -222,5 +222,52 @@ public class CustomerServiceImpl implements CustomerService {
 
         Customer updatedCustomer = customerRepository.save(customer);
         return customerMapper.toDto(updatedCustomer);
+    }
+
+    /**
+     * Tạo customer không có user account (cho walk-in customers)
+     * 
+     * Walk-in customers là khách hàng mua trực tiếp tại cửa hàng mà không có tài khoản đăng nhập.
+     * Customer này sẽ có:
+     * - id_user = NULL (không có User account)
+     * - Chỉ lưu thông tin cơ bản: tên, số điện thoại, địa chỉ
+     * - Vẫn có thể theo dõi lịch sử mua hàng qua Customer record
+     * 
+     * Logic:
+     * 1. Kiểm tra số điện thoại đã tồn tại chưa (phone number là unique)
+     * 2. Nếu đã tồn tại → Throw exception (không tạo trùng)
+     * 3. Nếu chưa tồn tại → Tạo customer mới với user = null
+     * 
+     * Lưu ý: Method này được gọi từ OrderService khi tạo đơn cho walk-in customer.
+     * Nếu customer đã tồn tại với số điện thoại, OrderService sẽ sử dụng customer hiện tại.
+     * 
+     * @param customerName Tên khách hàng (required)
+     * @param phoneNumber Số điện thoại (required, unique)
+     * @param address Địa chỉ (optional)
+     * @return CustomerDto của customer vừa tạo
+     * @throws RuntimeException nếu số điện thoại đã được sử dụng
+     */
+    @Override
+    public CustomerDto createCustomerWithoutUser(String customerName, String phoneNumber, String address) {
+        // Kiểm tra phone number đã tồn tại chưa
+        // Phone number là unique trong database, không được trùng
+        customerRepository.findByPhoneNumber(phoneNumber)
+                .ifPresent(c -> {
+                    throw new RuntimeException("Số điện thoại đã được sử dụng");
+                });
+
+        // Tạo customer mới không có user account (cho walk-in customers)
+        // Customer này sẽ có id_user = NULL, không thể đăng nhập vào hệ thống
+        // Nhưng vẫn có thể theo dõi lịch sử mua hàng
+        Customer customer = Customer.builder()
+                .user(null) // Không có user account - đây là điểm khác biệt với customer thông thường
+                .customerName(customerName)
+                .phoneNumber(phoneNumber)
+                .address(address)
+                .customerType(CustomerType.REGULAR) // Mặc định là REGULAR, có thể nâng cấp lên VIP sau
+                .build();
+
+        Customer savedCustomer = customerRepository.save(customer);
+        return customerMapper.toDto(savedCustomer);
     }
 }

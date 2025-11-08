@@ -1,6 +1,6 @@
 package com.storemanagement.mapper;
 
-import com.storemanagement.dto.ProductDto;
+import com.storemanagement.dto.response.ProductDto;
 import com.storemanagement.model.Product;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -19,6 +19,7 @@ public interface ProductMapper {
     // Product → ProductDto
     @Mapping(target = "idCategory", source = "category.idCategory")
     @Mapping(target = "categoryName", source = "category.categoryName")
+    @Mapping(target = "brand", source = "brand")
     @Mapping(target = "idSupplier", source = "supplier.idSupplier")
     @Mapping(target = "supplierName", source = "supplier.supplierName")
     ProductDto toDto(Product entity);

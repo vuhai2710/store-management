@@ -31,5 +31,6 @@ public class User extends BaseEntity {
     private Role role;
 
     @Column(name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
 }

@@ -2,7 +2,7 @@ package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.UserDto;
+import com.storemanagement.dto.response.UserDto;
 import com.storemanagement.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +15,18 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Controller xử lý các API liên quan đến User (Tài khoản người dùng)
+ * Base URL: /api/v1/users
+ * 
+ * Phân quyền:
+ * - ADMIN: có thể quản lý tất cả users (CRUD, activate/deactivate, change role)
+ * - Authenticated users: có thể xem profile của chính mình qua /profile
+ * 
+ * Header: Authorization: Bearer {JWT_TOKEN}
+ * 
+ * @author Store Management Team
+ */
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
@@ -31,7 +43,6 @@ public class UserController {
             @RequestParam(defaultValue = "ASC") String sortDirection) {
 
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
-        // Chuyển từ base-1 (FE) sang base-0 (Spring)
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
         PageResponse<UserDto> userPage = userService.getAllUsersPaginated(pageable);
