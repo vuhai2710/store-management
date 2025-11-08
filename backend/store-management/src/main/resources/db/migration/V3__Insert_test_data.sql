@@ -36,7 +36,7 @@ SET NAMES utf8mb4;
 --
 -- Cách 2: Sử dụng online tool: https://bcrypt-generator.com/
 --   - Rounds: 12
---   - Plain text: 123456
+--   - Plain text: 123456 - Mật khẩu này đăng nhập không đúng
 --   - Copy hash và paste vào đây
 --
 -- Hash mẫu cho "123456" (đã được generate):
@@ -45,8 +45,6 @@ SET NAMES utf8mb4;
 -- Nếu hash này không hoạt động, hãy generate hash mới bằng một trong các cách trên
 
 INSERT INTO users (username, password, email, role, is_active) VALUES
--- Admin user (đã được tạo bởi AppInitConfig, nhưng thêm để đảm bảo)
-('admin', '$2a$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 'admin@store.com', 'ADMIN', 1),
 
 -- Employee users
 ('employee1', '$2a$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 'employee1@store.com', 'EMPLOYEE', 1),

@@ -23,6 +23,7 @@ public interface UserMapper {
     User toEntity(AuthenticationRequestDto dto);
 
     // User → UserDto
+    @Mapping(target = "idUser", source = "idUser")
     UserDto toDto(User entity);
 
     List<UserDto> toDtoList(List<User> entities);

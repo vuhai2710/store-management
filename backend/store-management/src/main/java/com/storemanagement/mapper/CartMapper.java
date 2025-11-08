@@ -17,6 +17,8 @@ public interface CartMapper {
     @Mapping(target = "cartItems", expression = "java(mapCartItems(cart.getCartItems()))")
     @Mapping(target = "totalAmount", expression = "java(calculateTotalAmount(cart.getCartItems()))")
     @Mapping(target = "totalItems", expression = "java(calculateTotalItems(cart.getCartItems()))")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     CartDto toDto(Cart cart);
 
     @Mapping(target = "idProduct", source = "product.idProduct")

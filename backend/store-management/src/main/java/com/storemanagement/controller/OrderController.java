@@ -5,6 +5,7 @@ import com.storemanagement.dto.PageResponse;
 import com.storemanagement.dto.request.BuyNowRequestDto;
 import com.storemanagement.dto.request.CreateOrderForCustomerRequestDto;
 import com.storemanagement.dto.request.CreateOrderRequestDto;
+import com.storemanagement.dto.request.UpdateOrderStatusRequestDto;
 import com.storemanagement.dto.response.OrderDto;
 import com.storemanagement.model.Order;
 import com.storemanagement.service.CustomerService;
@@ -296,6 +297,100 @@ public class OrderController {
         
         OrderDto order = orderService.confirmDelivery(customerId, orderId);
         return ResponseEntity.ok(ApiResponse.success("Xác nhận nhận hàng thành công", order));
+    }
+
+    /**
+     * Admin/Employee: Lấy tất cả đơn hàng (có filter)
+     *
+     * Endpoint: GET /api/v1/orders
+     * Authentication: Required (ADMIN, EMPLOYEE role)
+     *
+     * Query Parameters:
+     * - pageNo: Số trang (mặc định: 1)
+     * - pageSize: Số lượng đơn hàng mỗi trang (mặc định: 10)
+     * - sortBy: Trường sắp xếp (mặc định: orderDate)
+     * - sortDirection: Hướng sắp xếp ASC/DESC (mặc định: DESC)
+     * - status: Lọc theo trạng thái đơn hàng (PENDING, CONFIRMED, COMPLETED, CANCELED) - optional
+     * - customerId: Lọc theo khách hàng - optional
+     *
+     * Logic:
+     * - Nếu có cả customerId và status → Lọc theo cả 2
+     * - Nếu chỉ có customerId → Lọc theo customerId
+     * - Nếu chỉ có status → Lọc theo status
+     * - Nếu không có filter → Lấy tất cả đơn hàng
+     * - Sắp xếp mặc định theo orderDate DESC (mới nhất trước)
+     * - Có phân trang và sorting
+     *
+     * Ví dụ sử dụng:
+     * - GET /api/v1/orders → Lấy tất cả đơn hàng
+     * - GET /api/v1/orders?status=PENDING → Lấy đơn hàng đang chờ xử lý
+     * - GET /api/v1/orders?customerId=5 → Lấy đơn hàng của customer ID 5
+     * - GET /api/v1/orders?status=CONFIRMED&customerId=5 → Lấy đơn hàng CONFIRMED của customer ID 5
+     */
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<PageResponse<OrderDto>>> getAllOrders(
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "orderDate") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer customerId) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
+
+        // Parse status string thành Order.OrderStatus enum (nếu có)
+        Order.OrderStatus orderStatus = null;
+        if (status != null && !status.isEmpty()) {
+            try {
+                orderStatus = Order.OrderStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Trạng thái đơn hàng không hợp lệ: " + status +
+                        ". Các giá trị hợp lệ: PENDING, CONFIRMED, COMPLETED, CANCELED");
+            }
+        }
+
+        PageResponse<OrderDto> orders = orderService.getAllOrders(orderStatus, customerId, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đơn hàng thành công", orders));
+    }
+
+    /**
+     * Admin/Employee: Cập nhật trạng thái đơn hàng
+     *
+     * Endpoint: PUT /api/v1/orders/{id}/status
+     * Authentication: Required (ADMIN, EMPLOYEE role)
+     *
+     * Request Body:
+     * {
+     *   "status": "CONFIRMED" // PENDING, CONFIRMED, COMPLETED, CANCELED
+     * }
+     *
+     * Logic xử lý:
+     * 1. Validate order tồn tại
+     * 2. Validate business rules:
+     *    - Không thể update order đã CANCELED hoặc COMPLETED
+     *    - Không thể quay lại PENDING từ CONFIRMED/COMPLETED
+     *    - CANCELED chỉ được set từ PENDING
+     * 3. Nếu chuyển sang CANCELED:
+     *    - Hoàn trả hàng vào kho
+     *    - Tạo inventory transactions
+     * 4. Cập nhật order.status
+     *
+     * Ví dụ sử dụng:
+     * - PUT /api/v1/orders/10/status với body {"status": "CONFIRMED"}
+     *   → Xác nhận đơn hàng
+     * - PUT /api/v1/orders/10/status với body {"status": "CANCELED"}
+     *   → Hủy đơn hàng (chỉ từ PENDING)
+     */
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<OrderDto>> updateOrderStatus(
+            @PathVariable Integer id,
+            @RequestBody @Valid UpdateOrderStatusRequestDto request) {
+
+        OrderDto order = orderService.updateOrderStatus(id, request.getStatus());
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái đơn hàng thành công", order));
     }
 }
 

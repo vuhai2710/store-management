@@ -21,6 +21,7 @@ public interface CustomerMapper {
     Customer toEntity(AuthenticationRequestDto dto);
 
     // Customer → CustomerDto
+    @Mapping(target = "idCustomer", source = "idCustomer")
     @Mapping(target = "idUser", source = "user.idUser")
     @Mapping(target = "username", source = "user.username")
     @Mapping(target = "email", source = "user.email")

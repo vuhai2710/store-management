@@ -41,10 +41,12 @@ public class Product extends BaseEntity {
     private Double price;
 
     @Column(name = "stock_quantity")
+    @Builder.Default
     private Integer stockQuantity = 0;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
+    @Builder.Default
     private ProductStatus status = ProductStatus.IN_STOCK;
 
     @Column(name = "image_url", length = 500)
@@ -55,6 +57,7 @@ public class Product extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "code_type")
+    @Builder.Default
     private CodeType codeType = CodeType.SKU;
 
     @Column(name = "sku", unique = true, length = 50)

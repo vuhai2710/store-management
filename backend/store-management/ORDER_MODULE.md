@@ -20,25 +20,105 @@ Authorization: Bearer {JWT_TOKEN}
 - Địa chỉ giao hàng được snapshot để không bị ảnh hưởng nếu địa chỉ bị xóa
 - Hỗ trợ hủy đơn hàng (chỉ khi status = PENDING)
 
+> Lưu ý: Các trường LocalDateTime trả về theo định dạng `dd/MM/yyyy HH:mm:ss` và LocalDate theo `dd/MM/yyyy` (cấu hình tại `JacksonConfig`).
+
 ---
 
 ## Danh sách Endpoints
 
 | Method | Endpoint | Authentication | Mô tả |
 |--------|----------|----------------|-------|
+| GET | `/api/v1/orders` | ADMIN, EMPLOYEE | Lấy tất cả đơn hàng (có filter theo status, customerId) |
 | GET | `/api/v1/orders/{id}` | ADMIN, EMPLOYEE | Xem chi tiết đơn hàng |
 | GET | `/api/v1/orders/{id}/pdf` | ADMIN, EMPLOYEE | Xuất PDF hóa đơn |
+| PUT | `/api/v1/orders/{id}/status` | ADMIN, EMPLOYEE | Cập nhật trạng thái đơn hàng |
 | POST | `/api/v1/orders/checkout` | CUSTOMER | Tạo đơn hàng từ giỏ hàng (checkout) |
 | POST | `/api/v1/orders/buy-now` | CUSTOMER | Tạo đơn hàng trực tiếp từ sản phẩm (Buy Now) |
 | POST | `/api/v1/orders/create-for-customer` | ADMIN, EMPLOYEE | Tạo đơn hàng cho khách hàng (có thể không có tài khoản) |
-| GET | `/api/v1/orders/my-orders` | CUSTOMER | Lấy danh sách đơn hàng của tôi |
+| GET | `/api/v1/orders/my-orders` | CUSTOMER | Lấy danh sách đơn hàng của tôi (có filter theo status) |
 | GET | `/api/v1/orders/my-orders/{orderId}` | CUSTOMER | Xem chi tiết đơn hàng của tôi |
 | PUT | `/api/v1/orders/my-orders/{orderId}/cancel` | CUSTOMER | Hủy đơn hàng |
 | PUT | `/api/v1/orders/my-orders/{orderId}/confirm-delivery` | CUSTOMER | Xác nhận đã nhận hàng |
 
 ---
 
-## 1. Admin/Employee: Xem chi tiết đơn hàng
+## 1. Admin/Employee: Lấy tất cả đơn hàng
+
+### Thông tin Endpoint
+
+- **URL:** `GET /api/v1/orders`
+- **Authentication:** Required (ADMIN, EMPLOYEE)
+
+### Query Parameters
+
+| Parameter | Type | Required | Default | Mô tả |
+|-----------|------|----------|---------|-------|
+| pageNo | Integer | No | 1 | Số trang |
+| pageSize | Integer | No | 10 | Số lượng item mỗi trang |
+| sortBy | String | No | "orderDate" | Trường sắp xếp |
+| sortDirection | String | No | "DESC" | Hướng sắp xếp (ASC/DESC) |
+| status | String | No | null | Lọc theo trạng thái: PENDING, CONFIRMED, COMPLETED, CANCELED |
+| customerId | Integer | No | null | Lọc theo khách hàng |
+
+### Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "code": 200,
+  "message": "Lấy danh sách đơn hàng thành công",
+  "data": {
+    "content": [
+      {
+        "idOrder": 1,
+        "idCustomer": 1,
+        "customerName": "Nguyễn Văn A",
+        "idEmployee": 1,
+        "employeeName": "Nguyễn Văn B",
+        "orderDate": "01/01/2025 10:00:00",
+        "status": "PENDING",
+        "totalAmount": 50000000,
+        "discount": 0,
+        "finalAmount": 50000000,
+        "paymentMethod": "CASH"
+      }
+    ],
+    "pageNo": 1,
+    "pageSize": 10,
+    "totalElements": 50,
+    "totalPages": 5,
+    "isFirst": true,
+    "isLast": false
+  }
+}
+```
+
+### Logic xử lý
+
+1. **Filter Phase:**
+   - Nếu có cả `customerId` và `status` → Lọc theo cả 2
+   - Nếu chỉ có `customerId` → Lọc theo customerId
+   - Nếu chỉ có `status` → Lọc theo status
+   - Nếu không có filter → Lấy tất cả đơn hàng
+
+2. **Sort & Pagination:**
+   - Sắp xếp theo orderDate DESC (mới nhất trước)
+   - Có phân trang
+
+### Ví dụ Request
+
+```
+GET /api/v1/orders?pageNo=1&pageSize=10
+GET /api/v1/orders?status=PENDING
+GET /api/v1/orders?customerId=5
+GET /api/v1/orders?status=CONFIRMED&customerId=5
+Authorization: Bearer {admin_token}
+```
+
+---
+
+## 2. Admin/Employee: Xem chi tiết đơn hàng
 
 ### Thông tin Endpoint
 
@@ -67,7 +147,7 @@ Authorization: Bearer {JWT_TOKEN}
     "customerPhone": "0912345678",
     "idEmployee": null,
     "employeeName": null,
-    "orderDate": "2025-01-01T10:00:00",
+    "orderDate": "01/01/2025 10:00:00",
     "status": "PENDING",
     "totalAmount": 50000000,
     "discount": 0,
@@ -97,7 +177,110 @@ Authorization: Bearer {JWT_TOKEN}
 
 ---
 
-## 2. Admin/Employee: Xuất PDF hóa đơn
+## 3. Admin/Employee: Cập nhật trạng thái đơn hàng
+
+### Thông tin Endpoint
+
+- **URL:** `PUT /api/v1/orders/{id}/status`
+- **Authentication:** Required (ADMIN, EMPLOYEE)
+- **Content-Type:** `application/json`
+
+### Path Parameters
+
+| Parameter | Type | Required | Mô tả |
+|-----------|------|----------|-------|
+| id | Integer | Yes | ID của đơn hàng |
+
+### Request Body
+
+```json
+{
+  "status": "CONFIRMED"
+}
+```
+
+| Field | Type | Required | Mô tả |
+|-------|------|----------|-------|
+| status | String | Yes | Trạng thái mới: PENDING, CONFIRMED, COMPLETED, CANCELED |
+
+### Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "code": 200,
+  "message": "Cập nhật trạng thái đơn hàng thành công",
+  "data": {
+    "idOrder": 1,
+    "status": "CONFIRMED",
+    /* ... các field khác */
+  }
+}
+```
+
+### Logic xử lý
+
+1. **Validation Phase:**
+   - Kiểm tra order tồn tại
+   - Validate business rules:
+     - Không thể update order đã CANCELED hoặc COMPLETED
+     - Không thể quay lại PENDING từ CONFIRMED/COMPLETED
+     - CANCELED chỉ được set từ PENDING
+
+2. **Update Phase:**
+   - Nếu chuyển sang CANCELED:
+     - Hoàn trả hàng vào kho
+     - Cộng lại số lượng vào `product.stockQuantity`
+     - Tạo inventory transactions (IN)
+     - Cập nhật product status nếu có hàng lại
+   - Cập nhật order.status
+
+### Business Rules
+
+| Trạng thái hiện tại | Trạng thái có thể chuyển |
+|---------------------|-------------------------|
+| PENDING | CONFIRMED, CANCELED |
+| CONFIRMED | COMPLETED |
+| COMPLETED | Không thể thay đổi |
+| CANCELED | Không thể thay đổi |
+
+### Ví dụ Request
+
+**Xác nhận đơn hàng:**
+```json
+PUT /api/v1/orders/10/status
+Authorization: Bearer {admin_token}
+Content-Type: application/json
+
+{
+  "status": "CONFIRMED"
+}
+```
+
+**Hủy đơn hàng:**
+```json
+PUT /api/v1/orders/10/status
+Authorization: Bearer {admin_token}
+Content-Type: application/json
+
+{
+  "status": "CANCELED"
+}
+```
+
+### Lỗi có thể xảy ra
+
+- **400 Bad Request:**
+  - Không thể cập nhật đơn hàng đã bị hủy
+  - Không thể cập nhật đơn hàng đã hoàn thành
+  - Không thể chuyển đơn hàng từ CONFIRMED về PENDING
+  - Chỉ có thể hủy đơn hàng ở trạng thái PENDING
+- **404 Not Found:** Đơn hàng không tồn tại
+
+---
+
+## 4. Admin/Employee: Xuất PDF hóa đơn
 
 ### Thông tin Endpoint
 
@@ -119,7 +302,7 @@ File PDF hóa đơn sẽ được download tự động.
 
 ---
 
-## 3. Customer: Tạo đơn hàng từ giỏ hàng (Checkout)
+## 5. Customer: Tạo đơn hàng từ giỏ hàng (Checkout)
 
 ### Thông tin Endpoint
 
@@ -140,7 +323,7 @@ File PDF hóa đơn sẽ được download tự động.
 | Field | Type | Required | Mô tả |
 |-------|------|----------|-------|
 | shippingAddressId | Integer | No | ID địa chỉ giao hàng (nếu không có thì dùng default hoặc customer.address) |
-| paymentMethod | String | Yes | Phương thức thanh toán: CASH, TRANSFER, ZALOPAY |
+| paymentMethod | String | Yes | Phương thức thanh toán: CASH, TRANSFER, ZALOPAY, PAYOS |
 | notes | String | No | Ghi chú đơn hàng |
 
 ### Response
@@ -154,7 +337,7 @@ File PDF hóa đơn sẽ được download tự động.
   "data": {
     "idOrder": 1,
     "idCustomer": 1,
-    "orderDate": "2025-01-01T10:00:00",
+    "orderDate": "01/01/2025 10:00:00",
     "status": "PENDING",
     "totalAmount": 50000000,
     "paymentMethod": "CASH",
@@ -241,7 +424,7 @@ Content-Type: application/json
 
 ---
 
-## 4. Customer: Tạo đơn hàng trực tiếp từ sản phẩm (Buy Now)
+## 6. Customer: Tạo đơn hàng trực tiếp từ sản phẩm (Buy Now)
 
 ### Thông tin Endpoint
 
@@ -266,7 +449,7 @@ Content-Type: application/json
 | productId | Integer | Yes | ID của sản phẩm cần mua |
 | quantity | Integer | Yes | Số lượng (phải >= 1) |
 | shippingAddressId | Integer | No | ID địa chỉ giao hàng (nếu không có thì dùng default hoặc customer.address) |
-| paymentMethod | String | Yes | Phương thức thanh toán: CASH, TRANSFER, ZALOPAY |
+| paymentMethod | String | Yes | Phương thức thanh toán: CASH, TRANSFER, ZALOPAY, PAYOS |
 | notes | String | No | Ghi chú đơn hàng |
 
 ### Response
@@ -280,7 +463,7 @@ Content-Type: application/json
   "data": {
     "idOrder": 1,
     "idCustomer": 1,
-    "orderDate": "2025-01-01T10:00:00",
+    "orderDate": "01/01/2025 10:00:00",
     "status": "PENDING",
     "totalAmount": 50000000,
     "paymentMethod": "CASH",
@@ -353,7 +536,7 @@ Content-Type: application/json
 
 ---
 
-## 5. Admin/Employee: Tạo đơn hàng cho khách hàng (Walk-in Customers)
+## 7. Admin/Employee: Tạo đơn hàng cho khách hàng (Walk-in Customers)
 
 ### Thông tin Endpoint
 
@@ -412,7 +595,7 @@ Content-Type: application/json
 | orderItems | Array | Yes | Danh sách sản phẩm trong đơn hàng |
 | orderItems[].productId | Integer | Yes | ID của sản phẩm |
 | orderItems[].quantity | Integer | Yes | Số lượng (phải >= 1) |
-| paymentMethod | String | Yes | Phương thức thanh toán: CASH, TRANSFER, ZALOPAY |
+| paymentMethod | String | Yes | Phương thức thanh toán: CASH, TRANSFER, ZALOPAY, PAYOS |
 | discount | Decimal | No | Giảm giá (mặc định 0, không được lớn hơn totalAmount) |
 | notes | String | No | Ghi chú đơn hàng |
 
@@ -429,7 +612,7 @@ Content-Type: application/json
     "idCustomer": 1,
     "idEmployee": 1,
     "employeeName": "Nguyễn Văn B",
-    "orderDate": "2025-01-01T10:00:00",
+    "orderDate": "01/01/2025 10:00:00",
     "status": "PENDING",
     "totalAmount": 50000000,
     "discount": 100000,
@@ -543,7 +726,7 @@ Content-Type: application/json
 
 ---
 
-## 6. Customer: Lấy danh sách đơn hàng của tôi
+## 8. Customer: Lấy danh sách đơn hàng của tôi
 
 ### Thông tin Endpoint
 
@@ -558,6 +741,7 @@ Content-Type: application/json
 | pageSize | Integer | No | 10 | Số lượng item mỗi trang |
 | sortBy | String | No | "orderDate" | Trường sắp xếp |
 | sortDirection | String | No | "DESC" | Hướng sắp xếp (ASC/DESC) |
+| status | String | No | null | Lọc theo trạng thái: PENDING, CONFIRMED, COMPLETED, CANCELED |
 
 ### Response
 
@@ -571,7 +755,7 @@ Content-Type: application/json
     "content": [
       {
         "idOrder": 1,
-        "orderDate": "2025-01-01T10:00:00",
+        "orderDate": "01/01/2025 10:00:00",
         "status": "PENDING",
         "totalAmount": 50000000,
         "finalAmount": 50000000,
@@ -591,11 +775,22 @@ Content-Type: application/json
 ### Logic xử lý
 
 - Chỉ lấy đơn hàng của customer hiện tại (từ JWT token)
+- Nếu có status parameter → Filter đơn hàng theo status
+- Nếu không có status parameter → Lấy tất cả đơn hàng
 - Sắp xếp mặc định theo `orderDate DESC` (mới nhất trước)
+
+### Ví dụ Request
+
+```
+GET /api/v1/orders/my-orders?pageNo=1&pageSize=10
+GET /api/v1/orders/my-orders?status=PENDING
+GET /api/v1/orders/my-orders?status=COMPLETED
+Authorization: Bearer {customer_token}
+```
 
 ---
 
-## 7. Customer: Xem chi tiết đơn hàng của tôi
+## 9. Customer: Xem chi tiết đơn hàng của tôi
 
 ### Thông tin Endpoint
 
@@ -627,7 +822,7 @@ Trả về OrderDto đầy đủ với order details (giống như endpoint admi
 
 ---
 
-## 8. Customer: Hủy đơn hàng
+## 10. Customer: Hủy đơn hàng
 
 ### Thông tin Endpoint
 
@@ -692,7 +887,7 @@ Authorization: Bearer {customer_token}
 
 ---
 
-## 9. Customer: Xác nhận đã nhận hàng
+## 11. Customer: Xác nhận đã nhận hàng
 
 ### Thông tin Endpoint
 
@@ -716,7 +911,7 @@ Authorization: Bearer {customer_token}
   "data": {
     "idOrder": 1,
     "status": "COMPLETED",
-    "deliveredAt": "2025-01-01T15:30:00",
+    "deliveredAt": "01/01/2025 15:30:00",
     /* ... các field khác */
   }
 }
@@ -780,6 +975,7 @@ Authorization: Bearer {customer_token}
 | CASH | Thanh toán bằng tiền mặt |
 | TRANSFER | Chuyển khoản |
 | ZALOPAY | Thanh toán qua ZaloPay |
+| PAYOS | Thanh toán online qua PayOS |
 
 ---
 

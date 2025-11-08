@@ -341,6 +341,7 @@ public class PdfService {
                 case CASH -> "Tiền mặt";
                 case TRANSFER -> "Chuyển khoản";
                 case ZALOPAY -> "ZaloPay";
+                case PAYOS -> "PayOS";
             };
             html.append("""
                 <div class="total-row">

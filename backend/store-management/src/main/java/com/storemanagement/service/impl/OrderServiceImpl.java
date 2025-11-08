@@ -11,12 +11,14 @@ import com.storemanagement.model.*;
 import com.storemanagement.repository.*;
 import com.storemanagement.service.CartService;
 import com.storemanagement.service.CustomerService;
+import com.storemanagement.service.GHNService;
 import com.storemanagement.service.OrderService;
 import com.storemanagement.service.PdfService;
 import com.storemanagement.utils.PageUtils;
 import com.storemanagement.utils.ProductStatus;
 import com.storemanagement.utils.ReferenceType;
 import com.storemanagement.utils.TransactionType;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +49,8 @@ public class OrderServiceImpl implements OrderService {
     private final ShippingAddressRepository shippingAddressRepository;
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final ShipmentRepository shipmentRepository;
+    private final EntityManager entityManager;
+    private final GHNService ghnService;
 
     @Override
     @Transactional(readOnly = true)
@@ -54,14 +58,7 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new EntityNotFoundException("Đơn hàng không tồn tại với ID: " + id));
 
-        OrderDto dto = orderMapper.toDto(order);
-
-        // Set employee name nếu có (đã có trong mapper, nhưng để đảm bảo)
-        if (order.getEmployee() != null && dto.getEmployeeName() == null) {
-            dto.setEmployeeName(order.getEmployee().getEmployeeName());
-        }
-
-        return dto;
+        return orderMapper.toDto(order);
     }
 
     @Override
@@ -227,38 +224,58 @@ public class OrderServiceImpl implements OrderService {
             order.getOrderDetails().add(orderDetail);
             
             // Cập nhật tồn kho: Trừ số lượng đã bán
-            product.setStockQuantity(product.getStockQuantity() - cartItem.getQuantity());
-            
-            // Nếu hết hàng → Cập nhật status
-            if (product.getStockQuantity() == 0) {
-                product.setStatus(ProductStatus.OUT_OF_STOCK);
+            // LƯU Ý: Nếu paymentMethod = PAYOS, KHÔNG trừ stock ngay
+            // Stock sẽ được trừ khi webhook xác nhận thanh toán thành công
+            if (request.getPaymentMethod() != Order.PaymentMethod.PAYOS) {
+                product.setStockQuantity(product.getStockQuantity() - cartItem.getQuantity());
+                
+                // Nếu hết hàng → Cập nhật status
+                if (product.getStockQuantity() == 0) {
+                    product.setStatus(ProductStatus.OUT_OF_STOCK);
+                }
+                
+                // Lưu product với số lượng mới
+                productRepository.save(product);
+            } else {
+                log.info("Payment method is PAYOS. Stock will be deducted when payment is confirmed via webhook.");
             }
-            
-            // Lưu product với số lượng mới
-            productRepository.save(product);
         }
         
         // Lưu order vào database (có cascade nên order details cũng được lưu)
         Order savedOrder = orderRepository.save(order);
         
+        // Refresh entity để load finalAmount (generated column từ database)
+        entityManager.refresh(savedOrder);
+        
         // ========== PHASE 6: INVENTORY TRANSACTION ==========
         
         // Tạo inventory transaction sau khi order được lưu (để có order ID)
         // Ghi lại lịch sử xuất kho để theo dõi
-        for (OrderDetail orderDetail : savedOrder.getOrderDetails()) {
-            InventoryTransaction transaction = InventoryTransaction.builder()
-                    .product(orderDetail.getProduct())
-                    .transactionType(TransactionType.OUT) // Xuất kho
-                    .quantity(orderDetail.getQuantity())
-                    .referenceType(ReferenceType.SALE_ORDER) // Reference đến đơn bán hàng
-                    .referenceId(savedOrder.getIdOrder()) // ID của order
-                    .notes("Đơn hàng từ khách hàng")
-                    .transactionDate(LocalDateTime.now())
-                    .build();
-            inventoryTransactionRepository.save(transaction);
+        // LƯU Ý: Nếu paymentMethod = PAYOS, KHÔNG tạo transaction ngay
+        // Transaction sẽ được tạo khi webhook xác nhận thanh toán thành công
+        if (request.getPaymentMethod() != Order.PaymentMethod.PAYOS) {
+            for (OrderDetail orderDetail : savedOrder.getOrderDetails()) {
+                InventoryTransaction transaction = InventoryTransaction.builder()
+                        .product(orderDetail.getProduct())
+                        .transactionType(TransactionType.OUT) // Xuất kho
+                        .quantity(orderDetail.getQuantity())
+                        .referenceType(ReferenceType.SALE_ORDER) // Reference đến đơn bán hàng
+                        .referenceId(savedOrder.getIdOrder()) // ID của order
+                        .notes("Đơn hàng từ khách hàng")
+                        .transactionDate(LocalDateTime.now())
+                        .build();
+                inventoryTransactionRepository.save(transaction);
+            }
+        } else {
+            log.info("Payment method is PAYOS. Inventory transactions will be created when payment is confirmed via webhook.");
         }
         
-        // ========== PHASE 7: CLEANUP ==========
+        // ========== PHASE 7: GHN INTEGRATION ==========
+        
+        // Tạo Shipment và tích hợp GHN (nếu có shipping address và GHN enabled)
+        createShipmentAndIntegrateGHN(savedOrder, shippingAddress, totalAmount);
+        
+        // ========== PHASE 8: CLEANUP ==========
         
         // Xóa giỏ hàng sau khi tạo order thành công
         cartService.clearCart(customerId);
@@ -381,27 +398,47 @@ public class OrderServiceImpl implements OrderService {
         order.getOrderDetails().add(orderDetail);
         
         // Cập nhật tồn kho
-        product.setStockQuantity(product.getStockQuantity() - request.getQuantity());
-        if (product.getStockQuantity() == 0) {
-            product.setStatus(ProductStatus.OUT_OF_STOCK);
+        // LƯU Ý: Nếu paymentMethod = PAYOS, KHÔNG trừ stock ngay
+        // Stock sẽ được trừ khi webhook xác nhận thanh toán thành công
+        if (request.getPaymentMethod() != Order.PaymentMethod.PAYOS) {
+            product.setStockQuantity(product.getStockQuantity() - request.getQuantity());
+            if (product.getStockQuantity() == 0) {
+                product.setStatus(ProductStatus.OUT_OF_STOCK);
+            }
+            productRepository.save(product);
+        } else {
+            log.info("Payment method is PAYOS. Stock will be deducted when payment is confirmed via webhook.");
         }
-        productRepository.save(product);
         
         // Lưu order
         Order savedOrder = orderRepository.save(order);
         
+        // Refresh entity để load finalAmount (generated column từ database)
+        entityManager.refresh(savedOrder);
+        
         // ========== PHASE 6: INVENTORY TRANSACTION ==========
         
-        InventoryTransaction transaction = InventoryTransaction.builder()
-                .product(product)
-                .transactionType(TransactionType.OUT)
-                .quantity(request.getQuantity())
-                .referenceType(ReferenceType.SALE_ORDER)
-                .referenceId(savedOrder.getIdOrder())
-                .notes("Đơn hàng từ khách hàng (Buy Now)")
-                .transactionDate(LocalDateTime.now())
-                .build();
-        inventoryTransactionRepository.save(transaction);
+        // LƯU Ý: Nếu paymentMethod = PAYOS, KHÔNG tạo transaction ngay
+        // Transaction sẽ được tạo khi webhook xác nhận thanh toán thành công
+        if (request.getPaymentMethod() != Order.PaymentMethod.PAYOS) {
+            InventoryTransaction transaction = InventoryTransaction.builder()
+                    .product(product)
+                    .transactionType(TransactionType.OUT)
+                    .quantity(request.getQuantity())
+                    .referenceType(ReferenceType.SALE_ORDER)
+                    .referenceId(savedOrder.getIdOrder())
+                    .notes("Đơn hàng từ khách hàng (Buy Now)")
+                    .transactionDate(LocalDateTime.now())
+                    .build();
+            inventoryTransactionRepository.save(transaction);
+        } else {
+            log.info("Payment method is PAYOS. Inventory transactions will be created when payment is confirmed via webhook.");
+        }
+        
+        // ========== PHASE 7: GHN INTEGRATION ==========
+        
+        // Tạo Shipment và tích hợp GHN (nếu có shipping address và GHN enabled)
+        createShipmentAndIntegrateGHN(savedOrder, shippingAddress, totalAmount);
         
         log.info("Order created successfully (Buy Now): {}", savedOrder.getIdOrder());
         
@@ -719,6 +756,9 @@ public class OrderServiceImpl implements OrderService {
         // Lưu order
         Order savedOrder = orderRepository.save(order);
         
+        // Refresh entity để load finalAmount (generated column từ database)
+        entityManager.refresh(savedOrder);
+        
         // ========== PHASE 7: INVENTORY TRANSACTION ==========
         
         for (OrderDetail orderDetail : savedOrder.getOrderDetails()) {
@@ -732,6 +772,15 @@ public class OrderServiceImpl implements OrderService {
                     .transactionDate(LocalDateTime.now())
                     .build();
             inventoryTransactionRepository.save(transaction);
+        }
+        
+        // ========== PHASE 8: GHN INTEGRATION ==========
+        
+        // Tạo Shipment và tích hợp GHN (nếu có shipping address và GHN enabled)
+        // Note: createOrderForCustomer thường không có shippingAddress entity, nên skip GHN
+        // Chỉ tạo Shipment cơ bản nếu cần
+        if (savedOrder.getShippingAddress() != null) {
+            createShipmentAndIntegrateGHN(savedOrder, savedOrder.getShippingAddress(), totalAmount);
         }
         
         log.info("Order created successfully for customer by employee: {}", savedOrder.getIdOrder());
@@ -823,8 +872,204 @@ public class OrderServiceImpl implements OrderService {
         log.info("Delivery confirmed successfully for order: {}", orderId);
         
         // ========== PHASE 3: RETURN ==========
-        
+
         return orderMapper.toDto(savedOrder);
+    }
+
+    /**
+     * Admin/Employee: Lấy tất cả đơn hàng
+     *
+     * Logic xử lý:
+     *
+     * 1. FILTER PHASE:
+     *    - Nếu có cả customerId và status → Lọc theo cả 2
+     *    - Nếu chỉ có customerId → Lọc theo customerId
+     *    - Nếu chỉ có status → Lọc theo status
+     *    - Nếu không có filter → Lấy tất cả
+     *
+     * 2. SORT & PAGINATION:
+     *    - Sắp xếp theo orderDate DESC (mới nhất trước)
+     *    - Có phân trang
+     *
+     * 3. MAPPING PHASE:
+     *    - Convert Order entities sang OrderDto
+     *    - Trả về PageResponse
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<OrderDto> getAllOrders(Order.OrderStatus status, Integer customerId, Pageable pageable) {
+        log.info("Getting all orders with filters - status: {}, customerId: {}", status, customerId);
+
+        Page<Order> orderPage;
+
+        // Áp dụng filters
+        if (customerId != null || status != null) {
+            // Có ít nhất 1 filter
+            orderPage = orderRepository.findByFilters(customerId, status, pageable);
+        } else {
+            // Không có filter → Lấy tất cả
+            orderPage = orderRepository.findAllOrdersByOrderDateDesc(pageable);
+        }
+
+        return PageUtils.toPageResponse(orderPage, orderMapper.toDtoList(orderPage.getContent()));
+    }
+
+    /**
+     * Admin/Employee: Cập nhật trạng thái đơn hàng
+     *
+     * Logic xử lý:
+     *
+     * 1. VALIDATION PHASE:
+     *    - Kiểm tra order tồn tại
+     *    - Validate trạng thái hợp lệ
+     *    - Kiểm tra business rules:
+     *      - Không thể update order đã CANCELED
+     *      - Không thể quay lại PENDING từ CONFIRMED/COMPLETED
+     *      - CANCELED chỉ được set từ PENDING
+     *
+     * 2. UPDATE PHASE:
+     *    - Cập nhật order.status
+     *    - Nếu status = CANCELED và order đang ở PENDING:
+     *      - Hoàn trả hàng vào kho (giống logic cancelOrder)
+     *      - Tạo inventory transactions
+     *
+     * 3. RETURN PHASE:
+     *    - Trả về OrderDto đã cập nhật
+     */
+    @Override
+    public OrderDto updateOrderStatus(Integer orderId, Order.OrderStatus newStatus) {
+        log.info("Updating order status: orderId={}, newStatus={}", orderId, newStatus);
+
+        // ========== PHASE 1: VALIDATION ==========
+
+        Order order = orderRepository.findByIdWithDetails(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        Order.OrderStatus currentStatus = order.getStatus();
+
+        // Business rules validation
+        if (currentStatus == Order.OrderStatus.CANCELED) {
+            throw new RuntimeException("Không thể cập nhật đơn hàng đã bị hủy");
+        }
+
+        if (currentStatus == Order.OrderStatus.COMPLETED) {
+            throw new RuntimeException("Không thể cập nhật đơn hàng đã hoàn thành");
+        }
+
+        // Không cho phép quay lại PENDING từ CONFIRMED/COMPLETED
+        if (newStatus == Order.OrderStatus.PENDING &&
+            (currentStatus == Order.OrderStatus.CONFIRMED || currentStatus == Order.OrderStatus.COMPLETED)) {
+            throw new RuntimeException("Không thể chuyển đơn hàng từ " + currentStatus + " về PENDING");
+        }
+
+        // CANCELED chỉ được set từ PENDING
+        if (newStatus == Order.OrderStatus.CANCELED && currentStatus != Order.OrderStatus.PENDING) {
+            throw new RuntimeException("Chỉ có thể hủy đơn hàng ở trạng thái PENDING");
+        }
+
+        // ========== PHASE 2: UPDATE ==========
+
+        // Nếu chuyển sang CANCELED → Hoàn trả hàng vào kho
+        if (newStatus == Order.OrderStatus.CANCELED) {
+            for (OrderDetail detail : order.getOrderDetails()) {
+                Product product = detail.getProduct();
+
+                // Cộng lại số lượng vào kho
+                product.setStockQuantity(product.getStockQuantity() + detail.getQuantity());
+
+                // Nếu product đang OUT_OF_STOCK và có hàng lại → Cập nhật status = IN_STOCK
+                if (product.getStatus() == ProductStatus.OUT_OF_STOCK && product.getStockQuantity() > 0) {
+                    product.setStatus(ProductStatus.IN_STOCK);
+                }
+
+                productRepository.save(product);
+
+                // Tạo inventory transaction (IN) để ghi lại lịch sử hoàn trả
+                InventoryTransaction transaction = InventoryTransaction.builder()
+                        .product(product)
+                        .transactionType(TransactionType.IN)
+                        .quantity(detail.getQuantity())
+                        .referenceType(ReferenceType.SALE_ORDER)
+                        .referenceId(order.getIdOrder())
+                        .notes("Hủy đơn hàng bởi Admin/Employee - hoàn trả hàng vào kho")
+                        .transactionDate(LocalDateTime.now())
+                        .build();
+                inventoryTransactionRepository.save(transaction);
+            }
+        }
+
+        // Cập nhật status
+        order.setStatus(newStatus);
+        Order savedOrder = orderRepository.save(order);
+
+        log.info("Order status updated successfully: orderId={}, oldStatus={}, newStatus={}",
+                orderId, currentStatus, newStatus);
+
+        return orderMapper.toDto(savedOrder);
+    }
+    
+    /**
+     * Tạo Shipment và tích hợp GHN
+     * 
+     * Logic:
+     * 1. Kiểm tra GHN enabled và có shipping address không
+     * 2. Tạo Shipment entity với shippingMethod = GHN
+     * 3. Nếu có đủ thông tin (districtId, wardCode), tính phí vận chuyển và tạo đơn GHN
+     * 4. Lưu thông tin GHN vào Shipment (ghnOrderCode, ghnShippingFee, ghnExpectedDeliveryTime)
+     * 5. Lưu Shipment
+     * 
+     * Lưu ý:
+     * - Nếu không có đủ thông tin hoặc GHN disabled, chỉ tạo Shipment cơ bản
+     * - ShippingAddress hiện tại không có districtId và wardCode, nên sẽ skip tính phí và tạo đơn GHN
+     * - Có thể mở rộng sau để parse address hoặc thêm fields vào ShippingAddress
+     * 
+     * @param order Order đã được lưu
+     * @param shippingAddress Shipping address (có thể null)
+     * @param orderTotalAmount Tổng tiền đơn hàng (để tính phí vận chuyển)
+     */
+    private void createShipmentAndIntegrateGHN(Order order, ShippingAddress shippingAddress, BigDecimal orderTotalAmount) {
+        log.info("Creating shipment and integrating GHN for order ID: {}", order.getIdOrder());
+        
+        // Kiểm tra đã có shipment chưa (tránh tạo duplicate)
+        if (shipmentRepository.findByOrder_IdOrder(order.getIdOrder()).isPresent()) {
+            log.info("Shipment already exists for order ID: {}. Skipping.", order.getIdOrder());
+            return;
+        }
+        
+        // Tạo Shipment entity cơ bản
+        Shipment shipment = Shipment.builder()
+                .order(order)
+                .shippingStatus(Shipment.ShippingStatus.PREPARING)
+                .shippingMethod(Shipment.ShippingMethod.GHN) // Mặc định sử dụng GHN
+                .build();
+        
+        // Nếu GHN enabled và có shipping address, thử tích hợp GHN
+        if (ghnService.isEnabled() && shippingAddress != null) {
+            try {
+                // TODO: ShippingAddress hiện tại không có districtId và wardCode
+                // Cần thêm fields này vào ShippingAddress hoặc parse từ address text
+                // Hiện tại sẽ skip tính phí và tạo đơn GHN
+                // Chỉ tạo Shipment cơ bản
+                
+                log.info("GHN integration skipped: ShippingAddress does not have districtId/wardCode. " +
+                    "Creating basic shipment only.");
+                
+            } catch (Exception e) {
+                log.error("Error integrating GHN for order ID: {}. Creating basic shipment only.", 
+                    order.getIdOrder(), e);
+                // Tiếp tục tạo Shipment cơ bản nếu GHN integration fail
+            }
+        } else {
+            if (!ghnService.isEnabled()) {
+                log.info("GHN integration is disabled. Creating basic shipment only.");
+            } else {
+                log.info("No shipping address. Creating basic shipment only.");
+            }
+        }
+        
+        // Lưu Shipment
+        shipmentRepository.save(shipment);
+        log.info("Shipment created successfully for order ID: {}", order.getIdOrder());
     }
 }
 

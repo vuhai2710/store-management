@@ -40,6 +40,19 @@ public class OrderDto {
 
     private LocalDateTime deliveredAt; // Thời điểm customer xác nhận đã nhận hàng
 
+    /**
+     * PayOS payment link ID
+     * Được set khi tạo payment link thành công từ PayOS API
+     */
+    private String paymentLinkId;
+    
+    /**
+     * PayOS payment link URL
+     * URL để user thanh toán trên PayOS
+     * Chỉ có giá trị khi paymentMethod = PAYOS và đã tạo payment link
+     */
+    private String paymentLinkUrl;
+
     private List<OrderDetailDto> orderDetails;
 }
 

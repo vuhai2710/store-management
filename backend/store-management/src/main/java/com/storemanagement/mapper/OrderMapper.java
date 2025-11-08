@@ -18,9 +18,10 @@ public interface OrderMapper {
     @Mapping(target = "customerAddress", source = "customer.address")
     @Mapping(target = "customerPhone", source = "customer.phoneNumber")
     @Mapping(target = "idEmployee", source = "employee.idEmployee")
-    @Mapping(target = "employeeName", ignore = true) // Sẽ set trong service
+    @Mapping(target = "employeeName", source = "employee.employeeName")
     @Mapping(target = "idShippingAddress", expression = "java(entity.getShippingAddress() != null ? entity.getShippingAddress().getIdShippingAddress() : null)")
     @Mapping(target = "shippingAddressSnapshot", source = "shippingAddressSnapshot")
+    @Mapping(target = "paymentLinkUrl", ignore = true)
     OrderDto toDto(Order entity);
 
     /**

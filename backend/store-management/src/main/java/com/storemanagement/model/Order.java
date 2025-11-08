@@ -14,8 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(callSuper = false)
-public class Order extends BaseEntity {
+public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_order")
@@ -70,6 +69,15 @@ public class Order extends BaseEntity {
     @Column(name = "delivered_at")
     private LocalDateTime deliveredAt; // Thời điểm customer xác nhận đã nhận hàng
 
+    /**
+     * PayOS payment link ID
+     * Được set khi tạo payment link thành công từ PayOS API
+     * Sử dụng để tìm order khi nhận webhook callback từ PayOS
+     * PayOS webhook sẽ gửi payment_link_id trong request body
+     */
+    @Column(name = "payment_link_id", length = 255)
+    private String paymentLinkId;
+
     @PrePersist
     protected void onCreate() {
         if (orderDate == null) {
@@ -81,8 +89,15 @@ public class Order extends BaseEntity {
         PENDING, CONFIRMED, COMPLETED, CANCELED
     }
 
+    /**
+     * Phương thức thanh toán
+     * - CASH: Thanh toán tiền mặt
+     * - TRANSFER: Chuyển khoản ngân hàng
+     * - ZALOPAY: Thanh toán qua ZaloPay
+     * - PAYOS: Thanh toán online qua PayOS payment gateway
+     */
     public enum PaymentMethod {
-        CASH, TRANSFER, ZALOPAY
+        CASH, TRANSFER, ZALOPAY, PAYOS
     }
 }
 

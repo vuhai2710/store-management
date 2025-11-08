@@ -27,6 +27,29 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     
     // Lấy danh sách đơn hàng của customer theo status
     Page<Order> findByCustomerIdCustomerAndStatusOrderByOrderDateDesc(Integer customerId, Order.OrderStatus status, Pageable pageable);
+    
+    /**
+     * Tìm order theo PayOS payment link ID
+     * Sử dụng khi nhận webhook từ PayOS
+     * PayOS webhook gửi payment_link_id, cần tìm order tương ứng
+     */
+    Optional<Order> findByPaymentLinkId(String paymentLinkId);
+
+    // Admin/Employee: Lấy tất cả đơn hàng
+    @Query("SELECT o FROM Order o ORDER BY o.orderDate DESC")
+    Page<Order> findAllOrdersByOrderDateDesc(Pageable pageable);
+
+    // Admin/Employee: Lấy đơn hàng theo status
+    Page<Order> findByStatusOrderByOrderDateDesc(Order.OrderStatus status, Pageable pageable);
+
+    // Admin/Employee: Lấy đơn hàng theo customerId và status
+    @Query("SELECT o FROM Order o WHERE " +
+           "(:customerId IS NULL OR o.customer.idCustomer = :customerId) AND " +
+           "(:status IS NULL OR o.status = :status) " +
+           "ORDER BY o.orderDate DESC")
+    Page<Order> findByFilters(@Param("customerId") Integer customerId,
+                              @Param("status") Order.OrderStatus status,
+                              Pageable pageable);
 }
 
 

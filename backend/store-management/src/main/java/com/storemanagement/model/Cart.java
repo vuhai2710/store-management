@@ -9,11 +9,10 @@ import java.util.List;
 @Entity
 @Table(name = "carts")
 @Data
-@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Cart extends BaseEntity {
+public class Cart {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_cart")
@@ -27,6 +26,15 @@ public class Cart extends BaseEntity {
     @Builder.Default
     private List<CartItem> cartItems = new ArrayList<>();
 }
+
+
+
+
+
+
+
+
+
 
 
 

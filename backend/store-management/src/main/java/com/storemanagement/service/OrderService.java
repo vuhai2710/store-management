@@ -36,6 +36,12 @@ public interface OrderService {
     
     // Customer: Xác nhận đã nhận hàng
     OrderDto confirmDelivery(Integer customerId, Integer orderId);
+
+    // Admin/Employee: Lấy tất cả đơn hàng (có filter theo status, customerId, dateRange)
+    PageResponse<OrderDto> getAllOrders(Order.OrderStatus status, Integer customerId, Pageable pageable);
+
+    // Admin/Employee: Cập nhật trạng thái đơn hàng
+    OrderDto updateOrderStatus(Integer orderId, Order.OrderStatus newStatus);
 }
 
 
