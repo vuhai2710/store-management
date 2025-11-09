@@ -768,13 +768,18 @@ public class OrderServiceImpl implements OrderService {
         // ========== PHASE 7: INVENTORY TRANSACTION ==========
 
         for (OrderDetail orderDetail : savedOrder.getOrderDetails()) {
+            // Tạo notes phân biệt ADMIN và EMPLOYEE
+            String transactionNote = employee != null
+                    ? "Đơn hàng từ nhân viên cho khách hàng"
+                    : "Đơn hàng từ admin cho khách hàng";
+
             InventoryTransaction transaction = InventoryTransaction.builder()
                     .product(orderDetail.getProduct())
                     .transactionType(TransactionType.OUT)
                     .quantity(orderDetail.getQuantity())
                     .referenceType(ReferenceType.SALE_ORDER)
                     .referenceId(savedOrder.getIdOrder())
-                    .notes("Đơn hàng từ nhân viên cho khách hàng")
+                    .notes(transactionNote)
                     .transactionDate(LocalDateTime.now())
                     .build();
             inventoryTransactionRepository.save(transaction);
