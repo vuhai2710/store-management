@@ -146,8 +146,16 @@ public class OrderController {
         // Employee này là người tạo đơn hàng (được lưu vào order.employee)
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        Integer employeeId = employeeService.getMyProfile(username).getIdEmployee();
-        
+
+        //Chỉ lây employeeId nếu user có role EMPLOYEE
+        Integer employeeId = null;
+        boolean isEmployee = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"));
+
+        if (isEmployee) { //ADMIN -> employeeId = null
+            employeeId = employeeService.getMyProfile(username).getIdEmployee();
+        }
+
         // Tạo đơn hàng cho khách hàng (có thể là walk-in customer)
         // Method này sẽ:
         // - Xử lý customer: sử dụng customerId có sẵn hoặc tạo customer mới (walk-in)
