@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Controller xử lý các API liên quan đến User (Tài khoản người dùng)
@@ -118,5 +119,54 @@ public class UserController {
         String username = authentication.getName();
         UserDto user = userService.getUserByUsername(username);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin profile thành công", user));
+    }
+
+    /**
+     * Upload ảnh đại diện cho user hiện tại
+     * POST /api/v1/users/avatar
+     * Content-Type: multipart/form-data
+     * Body: avatar (file)
+     * 
+     * Chỉ user đã đăng nhập mới có thể upload avatar cho chính mình
+     */
+    @PostMapping(value = "/avatar", consumes = {"multipart/form-data"})
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<UserDto>> uploadAvatar(
+            @RequestParam("avatar") MultipartFile avatar) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        UserDto updatedUser = userService.uploadAvatar(username, avatar);
+        return ResponseEntity.ok(ApiResponse.success("Upload ảnh đại diện thành công", updatedUser));
+    }
+
+    /**
+     * Cập nhật ảnh đại diện cho user hiện tại
+     * PUT /api/v1/users/avatar
+     * Content-Type: multipart/form-data
+     * Body: avatar (file)
+     * 
+     * Sẽ xóa ảnh cũ (nếu có) và upload ảnh mới
+     */
+    @PutMapping(value = "/avatar", consumes = {"multipart/form-data"})
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<UserDto>> updateAvatar(
+            @RequestParam("avatar") MultipartFile avatar) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        UserDto updatedUser = userService.updateAvatar(username, avatar);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật ảnh đại diện thành công", updatedUser));
+    }
+
+    /**
+     * Xóa ảnh đại diện của user hiện tại
+     * DELETE /api/v1/users/avatar
+     */
+    @DeleteMapping("/avatar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> deleteAvatar() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        userService.deleteAvatar(username);
+        return ResponseEntity.ok(ApiResponse.success("Xóa ảnh đại diện thành công", null));
     }
 }

@@ -23,9 +23,11 @@ public class UserDto {
 
     private Role role;
     private Boolean isActive;
+    private String avatarUrl;
     private java.time.LocalDateTime createdAt;
     private java.time.LocalDateTime updatedAt;
 }
+
 
 
 

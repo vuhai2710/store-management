@@ -171,26 +171,14 @@ public class ProductServiceImpl implements ProductService {
             product.setImageUrl(productDto.getImageUrl());
         }
         
-        // Set default values và kiểm tra inventory
-        if (product.getStockQuantity() == null) {
-            product.setStockQuantity(0);
-        } else if (product.getStockQuantity() < 0) {
-            throw new RuntimeException("Số lượng tồn kho không được âm");
-        }
+        // QUAN TRỌNG: Stock quantity KHÔNG được set từ DTO khi tạo/sửa sản phẩm
+        // Stock quantity chỉ được cập nhật thông qua inventory transactions (ImportOrder, Order)
+        // Khi tạo mới, luôn set stockQuantity = 0 và status = OUT_OF_STOCK
+        product.setStockQuantity(0);
+        product.setStatus(ProductStatus.OUT_OF_STOCK);
         
-        // Cập nhật status dựa trên stock quantity
-        if (product.getStatus() == null) {
-            product.setStatus(product.getStockQuantity() > 0 
-                    ? ProductStatus.IN_STOCK 
-                    : ProductStatus.OUT_OF_STOCK);
-        } else {
-            // Đồng bộ status với stock quantity
-            if (product.getStockQuantity() > 0 && product.getStatus() == ProductStatus.OUT_OF_STOCK) {
-                product.setStatus(ProductStatus.IN_STOCK);
-            } else if (product.getStockQuantity() == 0 && product.getStatus() == ProductStatus.IN_STOCK) {
-                product.setStatus(ProductStatus.OUT_OF_STOCK);
-            }
-        }
+        log.info("New product will be created with stockQuantity=0 and status=OUT_OF_STOCK. " +
+                "Use ImportOrder to add stock to inventory.");
         
         // Lưu vào DB
         Product savedProduct = productRepository.save(product);
@@ -277,27 +265,22 @@ public class ProductServiceImpl implements ProductService {
         if (productDto.getPrice() != null) {
             product.setPrice(productDto.getPrice());
         }
-        // Cập nhật stock quantity và kiểm tra inventory
-        if (productDto.getStockQuantity() != null) {
-            if (productDto.getStockQuantity() < 0) {
-                throw new RuntimeException("Số lượng tồn kho không được âm");
-            }
-            product.setStockQuantity(productDto.getStockQuantity());
+        
+        // QUAN TRỌNG: Stock quantity KHÔNG được cập nhật từ DTO
+        // Stock quantity chỉ được cập nhật thông qua inventory transactions (ImportOrder, Order)
+        // Nếu cố gắng update stockQuantity từ DTO, bỏ qua và log warning
+        if (productDto.getStockQuantity() != null && 
+            !productDto.getStockQuantity().equals(product.getStockQuantity())) {
+            log.warn("Attempted to update stockQuantity from DTO (productId={}, oldStock={}, attemptedStock={}). " +
+                    "This operation is ignored. Use ImportOrder or InventoryTransaction to update stock.",
+                    id, product.getStockQuantity(), productDto.getStockQuantity());
         }
         
-        // Đồng bộ status với stock quantity (ưu tiên logic tự động hơn manual set)
-        if (productDto.getStatus() != null && productDto.getStockQuantity() == null) {
-            // Chỉ cập nhật status nếu không thay đổi stock quantity
+        // Status có thể được cập nhật thủ công (ví dụ: DISCONTINUED), 
+        // nhưng không tự động đồng bộ với stock quantity khi update
+        // Status chỉ được tự động cập nhật khi có inventory transaction
+        if (productDto.getStatus() != null) {
             product.setStatus(productDto.getStatus());
-        } else {
-            // Tự động cập nhật status dựa trên stock quantity
-            if (product.getStockQuantity() != null) {
-                if (product.getStockQuantity() > 0) {
-                    product.setStatus(ProductStatus.IN_STOCK);
-                } else {
-                    product.setStatus(ProductStatus.OUT_OF_STOCK);
-                }
-            }
         }
         
         // Xử lý upload ảnh mới nếu có
