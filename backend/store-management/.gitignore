@@ -1,40 +1,114 @@
-HELP.md
+# Maven
 target/
+!**/src/main/**/target/
+!**/src/test/**/target/
 .mvn/wrapper/maven-wrapper.jar
+HELP.md
 
-### STS ###
+# Gradle
+.gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# IDE Files
+## IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+## Eclipse
 .apt_generated
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
 .sts4-cache
+.recommenders/
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
+## NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
+## VS Code
 .vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+*.code-workspace
 
-### Uploaded files ###
+## Other IDEs
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# OS Files
+## macOS
+.DS_Store
+.DS_Store?
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+
+## Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+## Linux
+*~
+.directory
+.Trash-*
+
+# Application Specific
+## Uploaded files
 uploads/
 !uploads/.gitkeep
 !uploads/*/.gitkeep
 
-### Phân chia công việc và file cá nhân ###
+## Logs
+logs/
+*.log
+*.log.*
+
+## Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Security - Configuration files with sensitive data
+application.yaml
+!application.yaml.example
+application.yml
+!application.yml.example
+application.properties
+!application.properties.example
+application-prod.properties
+application-prod.yaml
+application-prod.yml
+*.pem
+*.key
+*.cert
+*.p12
+*.jks
+secrets.yaml
+secrets.json
+
+# Documentation (personal notes - optional)
 *.pdf
 !**/documentation/**/*.pdf

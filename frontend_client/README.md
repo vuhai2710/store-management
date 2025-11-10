@@ -1,42 +1,23 @@
-# 🎨 Hướng Dẫn Setup Frontend
+# 🛍️ Customer Frontend
 
-Hướng dẫn setup và chạy frontend. **Không cần tạo file .env, có thể chạy ngay!**
+Frontend dành cho khách hàng mua sắm online.
 
 ## ✅ Prerequisites
 
 - **Node.js 16+** và **npm 8+**
 - **Git**
 
-## 📦 Cài Đặt Dependencies
-
-### Admin Panel (Port 3000)
+## 🚀 Quick Start
 
 ```bash
-cd frontend
-npm install
-npm start
-```
-
-Frontend sẽ tự động mở tại `http://localhost:3000`
-
-### Customer Frontend (Port 3003)
-
-```bash
-cd client-frontend
+cd frontend_client
 npm install
 npm start
 ```
 
 Frontend sẽ tự động mở tại `http://localhost:3003`
 
-## 🔐 Default Login Credentials
-
-```
-Username: admin
-Password: admin123
-```
-
-## ⚙️ Cấu Hình (Optional)
+## ⚙️ Cấu Hình
 
 **⚠️ QUAN TRỌNG:** Frontend đã có default API URL là `http://localhost:8080/api/v1`, nên **KHÔNG CẦN** tạo file `.env` nếu backend chạy ở `localhost:8080`.
 
@@ -49,7 +30,7 @@ Chỉ cần tạo file `.env` nếu:
 
 ### Cách tạo .env (nếu cần)
 
-Tạo file `frontend/.env` với nội dung:
+Tạo file `frontend_client/.env` với nội dung:
 
 ```env
 REACT_APP_API_URL=http://localhost:8080/api/v1
@@ -62,47 +43,41 @@ Restart frontend sau khi thay đổi.
 ### "npm install" bị lỗi
 
 ```bash
-cd frontend
+cd frontend_client
 rm -rf node_modules package-lock.json  # Linux/Mac
 rmdir /s /q node_modules & del package-lock.json  # Windows
 npm cache clean --force
 npm install
 ```
 
-### "Port 3000 already in use"
+### "Port 3003 already in use"
 
 ```bash
 # Windows
-netstat -ano | findstr :3000
+netstat -ano | findstr :3003
 taskkill /PID <PID> /F
 
 # Linux/Mac
-lsof -i :3000
+lsof -i :3003
 kill -9 <PID>
 ```
 
-Hoặc chạy ở port khác: `PORT=3001 npm start`
+Hoặc chạy ở port khác: `PORT=3004 npm start`
 
 ### "Network Error" hoặc "Cannot connect to backend"
 
 1. Kiểm tra backend đang chạy: `http://localhost:8080/api/v1`
-2. Kiểm tra API URL trong code: `frontend/src/services/api.js`
+2. Kiểm tra API URL trong code
 3. Kiểm tra file `.env` (nếu có)
 4. Restart frontend sau khi thay đổi
 
 ### "Module not found"
 
 ```bash
-cd frontend
+cd frontend_client
 rm -rf node_modules package-lock.json
 npm install
 ```
-
-### Frontend chạy nhưng không hiển thị gì
-
-1. Mở Developer Tools (F12) → Xem tab Console và Network
-2. Kiểm tra backend đang chạy tại `http://localhost:8080`
-3. Clear browser cache: Ctrl+Shift+Delete
 
 ## 📚 Build Production
 
@@ -110,13 +85,12 @@ npm install
 npm run build
 ```
 
-File build sẽ được tạo trong thư mục `frontend/build/`
+File build sẽ được tạo trong thư mục `frontend_client/build/`
 
 ## 🎯 Quick Reference
 
 ### URLs
 
-- **Admin Panel:** http://localhost:3000
 - **Customer Frontend:** http://localhost:3003
 - **Backend API:** http://localhost:8080/api/v1
 
@@ -136,4 +110,20 @@ npm test       # Run tests
 - [ ] Frontend chạy được (`npm start`)
 - [ ] Backend đang chạy tại `http://localhost:8080`
 - [ ] Frontend kết nối được với backend
-- [ ] Có thể login với `admin` / `admin123`
+
+## 📋 Tính Năng
+
+- **Trang chủ**: Hiển thị sản phẩm nổi bật
+- **Danh mục sản phẩm**: Duyệt và tìm kiếm sản phẩm
+- **Chi tiết sản phẩm**: Xem thông tin chi tiết sản phẩm
+- **Giỏ hàng**: Thêm, xóa, cập nhật sản phẩm trong giỏ hàng
+- **Thanh toán**: Đặt hàng và thanh toán
+- **Tài khoản**: Đăng ký, đăng nhập, quản lý tài khoản
+- **Wishlist**: Lưu sản phẩm yêu thích
+
+## 🛠 Tech Stack
+
+- **React 18**: Framework chính
+- **Material-UI / Ant Design**: UI Component Library
+- **CSS3**: Styling
+- **Axios**: HTTP Client

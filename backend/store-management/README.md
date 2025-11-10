@@ -1,4 +1,4 @@
-# 🚀 Hướng Dẫn Setup Backend
+# 🚀 Backend - Store Management System
 
 Hướng dẫn setup và chạy backend trong IntelliJ IDEA. **Chỉ cần thay đổi MySQL password là có thể chạy được!**
 
@@ -37,7 +37,7 @@ EXIT;
 
 1. Mở IntelliJ IDEA
 2. Chọn `File` → `Open`
-3. Navigate đến: `D:\project1\store_management\backend\store-management`
+3. Navigate đến: `backend/store-management`
 4. Chọn folder `store-management` (KHÔNG phải thư mục root!)
 5. Click `OK` → `Open as Project`
 6. Đợi IntelliJ index và download Maven dependencies (2-5 phút)
@@ -189,3 +189,36 @@ mvnw.cmd clean compile  # Windows
 mvnw.cmd spring-boot:run  # Windows
 ./mvnw spring-boot:run    # Linux/Mac
 ```
+
+## 📚 API Documentation
+
+Chi tiết API cho từng module:
+- **Auth:** `AUTH_MODULE.md`
+- **Products:** `PRODUCT_MODULE.md`
+- **Orders:** `ORDER_MODULE.md`
+- **Customers:** `CUSTOMER_MODULE.md`
+- **Users:** `USER_MODULE.md`
+- **Inventory:** `INVENTORY_TRANSACTION_MODULE.md`
+- **Import Orders:** `IMPORT_ORDER_MODULE.md`
+- **Chat:** `CHAT_MODULE.md`
+- Và các module khác...
+
+## 🔗 Integration Guides
+
+- **PayOS Payment:** `PAYOS_INTEGRATION_GUIDE.md`
+- **GHN Shipping:** `GHN_INTEGRATION_GUIDE.md`
+
+## 🛠 Tech Stack
+
+- **Spring Boot 3.5.5**
+- **Java 17**
+- **MySQL 8.0**
+- **Spring Security + JWT**
+- **WebSocket (STOMP)** - Real-time chat
+- **Hibernate/JPA**
+- **Flyway** - Database migration
+- **MapStruct** - Object mapping
+- **Maven**
+
+
+
