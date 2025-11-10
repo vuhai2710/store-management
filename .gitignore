@@ -154,9 +154,13 @@ logs/
 # SECURITY
 # ============================================
 # Don't commit sensitive files
+# Note: application.yaml.example is allowed (it's a template without real credentials)
 **/application.yaml
+!**/application.yaml.example
 **/application.yml
+!**/application.yml.example
 **/application.properties
+!**/application.properties.example
 **/application-prod.properties
 **/application-prod.yaml
 **/application-prod.yml

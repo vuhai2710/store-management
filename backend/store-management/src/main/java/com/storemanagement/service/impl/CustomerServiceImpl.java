@@ -159,6 +159,12 @@ public class CustomerServiceImpl implements CustomerService {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer không tồn tại với ID: " + id));
 
+        // Email KHÔNG được phép cập nhật - chỉ được set 1 lần khi tạo user
+        // Email là unique constraint, không cho phép thay đổi sau khi tạo
+        if (customerDto.getEmail() != null) {
+            throw new RuntimeException("Email không được phép cập nhật. Email chỉ được set khi tạo tài khoản.");
+        }
+
         // Cập nhật thông tin customer (tên, phone, address, type)
         if (customerDto.getCustomerName() != null) {
             customer.setCustomerName(customerDto.getCustomerName());
@@ -225,6 +231,12 @@ public class CustomerServiceImpl implements CustomerService {
                 .orElseThrow(() -> new RuntimeException("User không tồn tại với username: " + username));
         Customer customer = customerRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Customer không tồn tại cho user: " + username));
+
+        // Email KHÔNG được phép cập nhật - chỉ được set 1 lần khi tạo user
+        // Email là unique constraint, không cho phép thay đổi sau khi tạo
+        if (customerDto.getEmail() != null) {
+            throw new RuntimeException("Email không được phép cập nhật. Email chỉ được set khi tạo tài khoản.");
+        }
 
         // Customer chỉ được cập nhật một số thông tin cơ bản, không được thay đổi customerType
         if (customerDto.getCustomerName() != null) {

@@ -1,10 +1,15 @@
 # ============================================
-# APPLICATION CONFIGURATION TEMPLATE
+# APPLICATION CONFIGURATION - EXAMPLE FILE
 # ============================================
-# Copy this file to application.yaml and fill in your sensitive information
-# DO NOT commit application.yaml with real credentials to git
-#
-# For production, use environment variables or external config server
+# 
+# 🚀 CÁCH SỬ DỤNG ĐƠN GIẢN:
+# 1. Tạo file application.yaml và copy file này sang
+# 
+# 2. CHỈ CẦN THAY ĐỔI MỘT THỨ DUY NHẤT:
+#    - Mở file application.yaml
+#    - Tìm dòng: password: 
+#    - Điền MySQL password của bạn vào sau dấu hai chấm
+#    - Ví dụ: password: your_mysql_password
 # ============================================
 
 server:
@@ -18,9 +23,9 @@ spring:
   # DATABASE CONFIGURATION
   # ============================================
   datasource:
-    url: jdbc:mysql://localhost:3306/store_management
-    username: root          # CHANGE THIS: Your MySQL username
-    password: your_password # CHANGE THIS: Your MySQL password
+    url: jdbc:mysql://localhost:3306/store_management?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: # ⬅️ ĐIỀN MySQL PASSWORD CỦA BẠN VÀO ĐÂY (ví dụ: password: mypassword123)
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -52,18 +57,20 @@ spring:
       max-request-size: 10MB
 
   # ============================================
-  # EMAIL CONFIGURATION (Gmail)
+  # EMAIL CONFIGURATION (Optional - chỉ cần nếu dùng tính năng gửi email)
   # ============================================
   # Setup Instructions:
   # 1. Go to https://myaccount.google.com/security
   # 2. Enable "2-Step Verification"
   # 3. Create "App Password" at https://myaccount.google.com/apppasswords
   # 4. Use App Password (not your regular password)
+  # 
+  # Nếu không dùng email, có thể bỏ qua hoặc để giá trị mặc định
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${EMAIL_USERNAME:your-email@gmail.com}  # CHANGE THIS or set environment variable
-    password: ${EMAIL_PASSWORD:your-app-password}     # CHANGE THIS or set environment variable
+    username: ${EMAIL_USERNAME:}
+    password: ${EMAIL_PASSWORD:}
     properties:
       mail:
         smtp:
@@ -85,12 +92,9 @@ file:
 # ============================================
 # JWT CONFIGURATION
 # ============================================
-# IMPORTANT: Change these values for production!
-# Generate secure random keys using: 
-# - openssl rand -base64 64
 jwt:
-  secret: CHANGE_THIS_TO_YOUR_SECRET_KEY_MIN_32_CHARS
-  signerKey: "CHANGE_THIS_TO_YOUR_SIGNER_KEY_BASE64_ENCODED"
+  secret: dev-secret-key-for-store-management-min-32-chars-change-in-production
+  signerKey: "dev-signer-key-base64-encoded-for-store-management-change-in-production-min-32-chars"
   expiration: 86400000 # 24 hours in milliseconds
 
 # ============================================
@@ -100,9 +104,10 @@ logging:
   level:
     com.storemanagement: DEBUG
     org.springframework.security: INFO
+    org.springframework.web: INFO
 
 # ============================================
-# PAYOS PAYMENT GATEWAY
+# PAYOS PAYMENT GATEWAY (Optional - chỉ cần nếu dùng thanh toán PayOS)
 # ============================================
 # Setup Instructions:
 # 1. Register at https://my.payos.vn
@@ -110,17 +115,17 @@ logging:
 # 3. Setup ngrok for webhook: ngrok http 8080
 # 4. Update webhook URL in PayOS dashboard
 payos:
-  client-id: "YOUR_CLIENT_ID"           # CHANGE THIS
-  api-key: "YOUR_API_KEY"                # CHANGE THIS
-  checksum-key: "YOUR_CHECKSUM_KEY"      # CHANGE THIS
-  webhook-url: "https://your-ngrok-url.ngrok.io/api/v1/payments/payos/webhook"  # CHANGE THIS
+  client-id: "${PAYOS_CLIENT_ID:}" # Điền Client ID từ PayOS dashboard
+  api-key: "${PAYOS_API_KEY:}" # Điền API Key từ PayOS dashboard
+  checksum-key: "${PAYOS_CHECKSUM_KEY:}" # Điền Checksum Key từ PayOS dashboard
+  webhook-url: "${PAYOS_WEBHOOK_URL:https://your-ngrok-url.ngrok.io/api/v1/payments/payos/webhook}" # Điền webhook URL (cần HTTPS)
   return-url: "http://localhost:3000/payment/success"
   cancel-url: "http://localhost:3000/payment/cancel"
-  environment: "sandbox"  # Options: sandbox, production
+  environment: "sandbox" # Options: sandbox, production
   base-url: "https://api-merchant.payos.vn"
 
 # ============================================
-# GHN (Giao Hàng Nhanh) SHIPPING
+# GHN (Giao Hàng Nhanh) SHIPPING (Optional - chỉ cần nếu dùng vận chuyển GHN)
 # ============================================
 # Setup Instructions:
 # 1. Register at https://khachhang.ghn.vn
@@ -129,11 +134,10 @@ payos:
 # 4. Setup ngrok for webhook: ngrok http 8080
 # 5. Update webhook URL in GHN dashboard
 ghn:
-  token: "YOUR_GHN_TOKEN"               # CHANGE THIS
-  shop-id: 0                             # CHANGE THIS
+  token: "${GHN_TOKEN:}" # Điền Token API từ GHN dashboard
+  shop-id: ${GHN_SHOP_ID:0} # Điền Shop ID từ GHN dashboard
   base-url: "https://dev-online-gateway.ghn.vn"
-  webhook-url: "https://your-ngrok-url.ngrok.io/api/v1/ghn/webhook"  # CHANGE THIS
-  enabled: true
-  environment: "sandbox"  # Options: sandbox, production
-
+  webhook-url: "${GHN_WEBHOOK_URL:https://your-ngrok-url.ngrok.io/api/v1/ghn/webhook}" # Điền webhook URL (cần HTTPS)
+  enabled: false # Đặt true khi đã có token và muốn sử dụng GHN
+  environment: "sandbox" # Options: sandbox, production
 

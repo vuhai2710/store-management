@@ -30,6 +30,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeDto createEmployee(EmployeeDto request) {
+        // Validate email khi tạo (email là bắt buộc khi create)
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new RuntimeException("Email không được để trống");
+        }
+
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new RuntimeException("Username đã tồn tại: " + request.getUsername());
         }
@@ -97,17 +102,20 @@ public class EmployeeServiceImpl implements EmployeeService {
         User user = employee.getUser();
 
         if (request.getUsername() != null && !user.getUsername().equals(request.getUsername())) {
-            if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-                throw new RuntimeException("Username đã tồn tại: " + request.getUsername());
-            }
+            // Chỉ validate username unique khi username thay đổi và đã được sử dụng bởi user khác
+            userRepository.findByUsername(request.getUsername())
+                    .ifPresent(existingUser -> {
+                        if (!existingUser.getIdUser().equals(user.getIdUser())) {
+                            throw new RuntimeException("Username đã được sử dụng: " + request.getUsername());
+                        }
+                    });
             user.setUsername(request.getUsername());
         }
 
-        if (request.getEmail() != null && !user.getEmail().equals(request.getEmail())) {
-            if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-                throw new RuntimeException("Email đã tồn tại: " + request.getEmail());
-            }
-            user.setEmail(request.getEmail());
+        // Email KHÔNG được phép cập nhật - chỉ được set 1 lần khi tạo user
+        // Email là unique constraint, không cho phép thay đổi sau khi tạo
+        if (request.getEmail() != null) {
+            throw new RuntimeException("Email không được phép cập nhật. Email chỉ được set khi tạo tài khoản.");
         }
 
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
@@ -162,18 +170,18 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Thông tin nhân viên không tồn tại"));
 
-        if (request.getEmail() != null && !user.getEmail().equals(request.getEmail())) {
-            if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-                throw new RuntimeException("Email đã tồn tại: " + request.getEmail());
-            }
-            user.setEmail(request.getEmail());
-            userRepository.save(user);
+        // Email KHÔNG được phép cập nhật - chỉ được set 1 lần khi tạo user
+        // Email là unique constraint, không cho phép thay đổi sau khi tạo
+        if (request.getEmail() != null) {
+            throw new RuntimeException("Email không được phép cập nhật. Email chỉ được set khi tạo tài khoản.");
         }
 
         if (request.getPhoneNumber() != null && !employee.getPhoneNumber().equals(request.getPhoneNumber())) {
+            // Chỉ validate phone number unique khi phone number thay đổi
             if (employeeRepository.existsByPhoneNumber(request.getPhoneNumber())) {
-                throw new RuntimeException("Số điện thoại đã tồn tại: " + request.getPhoneNumber());
+                throw new RuntimeException("Số điện thoại đã được sử dụng: " + request.getPhoneNumber());
             }
+            employee.setPhoneNumber(request.getPhoneNumber());
         }
 
         if (request.getEmployeeName() != null) {
@@ -181,9 +189,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
         if (request.getHireDate() != null) {
             employee.setHireDate(request.getHireDate());
-        }
-        if (request.getPhoneNumber() != null) {
-            employee.setPhoneNumber(request.getPhoneNumber());
         }
         if (request.getAddress() != null) {
             employee.setAddress(request.getAddress());

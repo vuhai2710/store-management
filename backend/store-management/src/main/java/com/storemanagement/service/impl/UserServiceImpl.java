@@ -93,9 +93,18 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + id));
         
-        if (userDto.getEmail() != null) {
+        // Chỉ validate email unique khi email thay đổi
+        if (userDto.getEmail() != null && !user.getEmail().equals(userDto.getEmail())) {
+            // Kiểm tra email đã được sử dụng bởi user khác chưa
+            userRepository.findByEmail(userDto.getEmail())
+                    .ifPresent(existingUser -> {
+                        if (!existingUser.getIdUser().equals(id)) {
+                            throw new RuntimeException("Email đã được sử dụng: " + userDto.getEmail());
+                        }
+                    });
             user.setEmail(userDto.getEmail());
         }
+        
         if (userDto.getRole() != null) {
             user.setRole(userDto.getRole());
         }
