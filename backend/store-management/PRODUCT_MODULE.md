@@ -3,17 +3,20 @@
 ## Tổng quan
 
 Module quản lý sản phẩm (Product). Phân quyền:
+
 - **ADMIN, EMPLOYEE:** Có thể quản lý tất cả sản phẩm (CRUD)
 - **CUSTOMER:** Chỉ có thể xem, tìm kiếm và lọc sản phẩm (không thể tạo/sửa/xóa)
 
 **Base URL:** `/api/v1/products`
 
 **Authentication:** Required
+
 ```
 Authorization: Bearer {JWT_TOKEN}
 ```
 
-**Đặc biệt:** 
+**Đặc biệt:**
+
 - API tạo/cập nhật sản phẩm sử dụng `application/json` (không upload ảnh trong cùng request)
 - Để upload ảnh, sử dụng endpoint riêng: `POST /api/v1/products/{id}/images`
 - Cách này tách biệt việc quản lý thông tin sản phẩm và upload ảnh, dễ sử dụng hơn
@@ -24,33 +27,33 @@ Authorization: Bearer {JWT_TOKEN}
 
 ### Endpoints cho Customer (xem, tìm kiếm, lọc)
 
-| Method | Endpoint | Authentication | Mô tả |
-|--------|----------|----------------|-------|
-| GET | `/api/v1/products` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy danh sách sản phẩm (có phân trang, lọc, tìm kiếm) |
-| GET | `/api/v1/products/{id}` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy chi tiết sản phẩm theo ID |
-| GET | `/api/v1/products/search/name` | ADMIN, EMPLOYEE, **CUSTOMER** | Tìm kiếm sản phẩm theo tên |
-| GET | `/api/v1/products/category/{categoryId}` | ADMIN, EMPLOYEE, **CUSTOMER** | Lọc sản phẩm theo danh mục |
-| GET | `/api/v1/products/brand/{brand}` | ADMIN, EMPLOYEE, **CUSTOMER** | Lọc sản phẩm theo thương hiệu |
-| GET | `/api/v1/products/price` | ADMIN, EMPLOYEE, **CUSTOMER** | Lọc sản phẩm theo khoảng giá |
-| GET | `/api/v1/products/best-sellers` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy sản phẩm bán chạy |
-| GET | `/api/v1/products/new` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy sản phẩm mới (mới nhất) |
-| GET | `/api/v1/products/{id}/related` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy sản phẩm liên quan (cùng category) |
-| GET | `/api/v1/products/brands` | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy danh sách tất cả thương hiệu |
+| Method | Endpoint                                 | Authentication                | Mô tả                                                 |
+| ------ | ---------------------------------------- | ----------------------------- | ----------------------------------------------------- |
+| GET    | `/api/v1/products`                       | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy danh sách sản phẩm (có phân trang, lọc, tìm kiếm) |
+| GET    | `/api/v1/products/{id}`                  | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy chi tiết sản phẩm theo ID                         |
+| GET    | `/api/v1/products/search/name`           | ADMIN, EMPLOYEE, **CUSTOMER** | Tìm kiếm sản phẩm theo tên                            |
+| GET    | `/api/v1/products/category/{categoryId}` | ADMIN, EMPLOYEE, **CUSTOMER** | Lọc sản phẩm theo danh mục                            |
+| GET    | `/api/v1/products/brand/{brand}`         | ADMIN, EMPLOYEE, **CUSTOMER** | Lọc sản phẩm theo thương hiệu                         |
+| GET    | `/api/v1/products/price`                 | ADMIN, EMPLOYEE, **CUSTOMER** | Lọc sản phẩm theo khoảng giá                          |
+| GET    | `/api/v1/products/best-sellers`          | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy sản phẩm bán chạy                                 |
+| GET    | `/api/v1/products/new`                   | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy sản phẩm mới (mới nhất)                           |
+| GET    | `/api/v1/products/{id}/related`          | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy sản phẩm liên quan (cùng category)                |
+| GET    | `/api/v1/products/brands`                | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy danh sách tất cả thương hiệu                      |
 
 ### Endpoints chỉ cho Admin/Employee (quản lý)
 
-| Method | Endpoint | Authentication | Mô tả |
-|--------|----------|----------------|-------|
-| GET | `/api/v1/products/code/{code}` | ADMIN, EMPLOYEE | Tìm sản phẩm theo mã (chính xác) |
-| GET | `/api/v1/products/supplier/{supplierId}` | ADMIN, EMPLOYEE | Lọc sản phẩm theo nhà cung cấp |
-| POST | `/api/v1/products` | ADMIN, EMPLOYEE | Tạo sản phẩm mới (JSON only) |
-| PUT | `/api/v1/products/{id}` | ADMIN, EMPLOYEE | Cập nhật sản phẩm (JSON only) |
-| DELETE | `/api/v1/products/{id}` | ADMIN | Xóa sản phẩm |
-| POST | `/api/v1/products/{id}/images` | ADMIN, EMPLOYEE | Upload nhiều ảnh cho sản phẩm |
-| POST | `/api/v1/products/{id}/images/single` | ADMIN, EMPLOYEE | Upload một ảnh cho sản phẩm |
-| GET | `/api/v1/products/{id}/images` | ADMIN, EMPLOYEE, CUSTOMER | Lấy danh sách ảnh của sản phẩm |
-| DELETE | `/api/v1/products/images/{imageId}` | ADMIN, EMPLOYEE | Xóa một ảnh của sản phẩm |
-| PUT | `/api/v1/products/images/{imageId}/primary` | ADMIN, EMPLOYEE | Đặt một ảnh làm ảnh chính |
+| Method | Endpoint                                    | Authentication            | Mô tả                            |
+| ------ | ------------------------------------------- | ------------------------- | -------------------------------- |
+| GET    | `/api/v1/products/code/{code}`              | ADMIN, EMPLOYEE           | Tìm sản phẩm theo mã (chính xác) |
+| GET    | `/api/v1/products/supplier/{supplierId}`    | ADMIN, EMPLOYEE           | Lọc sản phẩm theo nhà cung cấp   |
+| POST   | `/api/v1/products`                          | ADMIN, EMPLOYEE           | Tạo sản phẩm mới (JSON only)     |
+| PUT    | `/api/v1/products/{id}`                     | ADMIN, EMPLOYEE           | Cập nhật sản phẩm (JSON only)    |
+| DELETE | `/api/v1/products/{id}`                     | ADMIN                     | Xóa sản phẩm                     |
+| POST   | `/api/v1/products/{id}/images`              | ADMIN, EMPLOYEE           | Upload nhiều ảnh cho sản phẩm    |
+| POST   | `/api/v1/products/{id}/images/single`       | ADMIN, EMPLOYEE           | Upload một ảnh cho sản phẩm      |
+| GET    | `/api/v1/products/{id}/images`              | ADMIN, EMPLOYEE, CUSTOMER | Lấy danh sách ảnh của sản phẩm   |
+| DELETE | `/api/v1/products/images/{imageId}`         | ADMIN, EMPLOYEE           | Xóa một ảnh của sản phẩm         |
+| PUT    | `/api/v1/products/images/{imageId}/primary` | ADMIN, EMPLOYEE           | Đặt một ảnh làm ảnh chính        |
 
 ---
 
@@ -63,18 +66,18 @@ Authorization: Bearer {JWT_TOKEN}
 
 ### Query Parameters
 
-| Parameter | Type | Required | Default | Mô tả |
-|-----------|------|----------|---------|-------|
-| pageNo | Integer | No | 1 | Số trang |
-| pageSize | Integer | No | 10 | Số lượng item mỗi trang |
-| sortBy | String | No | "idProduct" | Trường sắp xếp |
-| sortDirection | String | No | "ASC" | Hướng sắp xếp (ASC/DESC) |
-| code | String | No | - | Tìm theo mã sản phẩm |
-| name | String | No | - | Tìm theo tên sản phẩm |
-| categoryId | Integer | No | - | Lọc theo danh mục |
-| brand | String | No | - | Lọc theo thương hiệu |
-| minPrice | Double | No | - | Giá tối thiểu |
-| maxPrice | Double | No | - | Giá tối đa |
+| Parameter     | Type    | Required | Default     | Mô tả                    |
+| ------------- | ------- | -------- | ----------- | ------------------------ |
+| pageNo        | Integer | No       | 1           | Số trang                 |
+| pageSize      | Integer | No       | 10          | Số lượng item mỗi trang  |
+| sortBy        | String  | No       | "idProduct" | Trường sắp xếp           |
+| sortDirection | String  | No       | "ASC"       | Hướng sắp xếp (ASC/DESC) |
+| code          | String  | No       | -           | Tìm theo mã sản phẩm     |
+| name          | String  | No       | -           | Tìm theo tên sản phẩm    |
+| categoryId    | Integer | No       | -           | Lọc theo danh mục        |
+| brand         | String  | No       | -           | Lọc theo thương hiệu     |
+| minPrice      | Double  | No       | -           | Giá tối thiểu            |
+| maxPrice      | Double  | No       | -           | Giá tối đa               |
 
 ### Ví dụ Request
 
@@ -142,9 +145,9 @@ GET /api/v1/products?pageNo=1&pageSize=10&categoryId=1&brand=Apple&minPrice=1000
 
 ### Path Parameters
 
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| id | Integer | Yes | ID của sản phẩm |
+| Parameter | Type    | Required | Mô tả           |
+| --------- | ------- | -------- | --------------- |
+| id        | Integer | Yes      | ID của sản phẩm |
 
 ### Response
 
@@ -185,9 +188,9 @@ GET /api/v1/products?pageNo=1&pageSize=10&categoryId=1&brand=Apple&minPrice=1000
 
 ### Path Parameters
 
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| code | String | Yes | Mã sản phẩm (chính xác) |
+| Parameter | Type   | Required | Mô tả                   |
+| --------- | ------ | -------- | ----------------------- |
+| code      | String | Yes      | Mã sản phẩm (chính xác) |
 
 ### Ví dụ Request
 
@@ -212,13 +215,13 @@ Trả về ProductDto object (giống như lấy chi tiết)
 
 ### Query Parameters
 
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| name | String | **Yes** | Tên sản phẩm để tìm kiếm (gần đúng) |
-| pageNo | Integer | No | 1 |
-| pageSize | Integer | No | 10 |
-| sortBy | String | No | "idProduct" |
-| sortDirection | String | No | "ASC" |
+| Parameter     | Type    | Required | Mô tả                               |
+| ------------- | ------- | -------- | ----------------------------------- |
+| name          | String  | **Yes**  | Tên sản phẩm để tìm kiếm (gần đúng) |
+| pageNo        | Integer | No       | 1                                   |
+| pageSize      | Integer | No       | 10                                  |
+| sortBy        | String  | No       | "idProduct"                         |
+| sortDirection | String  | No       | "ASC"                               |
 
 ### Ví dụ Request
 
@@ -237,9 +240,9 @@ GET /api/v1/products/search/name?name=iPhone&pageNo=1&pageSize=10
 
 ### Path Parameters
 
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| categoryId | Integer | Yes | ID của danh mục |
+| Parameter  | Type    | Required | Mô tả           |
+| ---------- | ------- | -------- | --------------- |
+| categoryId | Integer | Yes      | ID của danh mục |
 
 ---
 
@@ -252,9 +255,9 @@ GET /api/v1/products/search/name?name=iPhone&pageNo=1&pageSize=10
 
 ### Path Parameters
 
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| brand | String | Yes | Tên thương hiệu |
+| Parameter | Type   | Required | Mô tả           |
+| --------- | ------ | -------- | --------------- |
+| brand     | String | Yes      | Tên thương hiệu |
 
 ---
 
@@ -267,9 +270,9 @@ GET /api/v1/products/search/name?name=iPhone&pageNo=1&pageSize=10
 
 ### Path Parameters
 
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| supplierId | Integer | Yes | ID của nhà cung cấp |
+| Parameter  | Type    | Required | Mô tả               |
+| ---------- | ------- | -------- | ------------------- |
+| supplierId | Integer | Yes      | ID của nhà cung cấp |
 
 ---
 
@@ -282,14 +285,14 @@ GET /api/v1/products/search/name?name=iPhone&pageNo=1&pageSize=10
 
 ### Query Parameters
 
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| minPrice | Double | No | Giá tối thiểu |
-| maxPrice | Double | No | Giá tối đa |
-| pageNo | Integer | No | 1 |
-| pageSize | Integer | No | 10 |
-| sortBy | String | No | "price" |
-| sortDirection | String | No | "ASC" |
+| Parameter     | Type    | Required | Mô tả         |
+| ------------- | ------- | -------- | ------------- |
+| minPrice      | Double  | No       | Giá tối thiểu |
+| maxPrice      | Double  | No       | Giá tối đa    |
+| pageNo        | Integer | No       | 1             |
+| pageSize      | Integer | No       | 10            |
+| sortBy        | String  | No       | "price"       |
+| sortDirection | String  | No       | "ASC"         |
 
 ### Ví dụ Request
 
@@ -308,11 +311,11 @@ GET /api/v1/products/price?minPrice=1000000&maxPrice=5000000&pageNo=1&pageSize=1
 
 ### Query Parameters
 
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| status | String | No | Trạng thái đơn hàng (COMPLETED, etc.) |
-| pageNo | Integer | No | 1 |
-| pageSize | Integer | No | 10 |
+| Parameter | Type    | Required | Mô tả                                 |
+| --------- | ------- | -------- | ------------------------------------- |
+| status    | String  | No       | Trạng thái đơn hàng (COMPLETED, etc.) |
+| pageNo    | Integer | No       | 1                                     |
+| pageSize  | Integer | No       | 10                                    |
 
 ### Lưu ý
 
@@ -330,11 +333,11 @@ GET /api/v1/products/price?minPrice=1000000&maxPrice=5000000&pageNo=1&pageSize=1
 
 ### Query Parameters
 
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| pageNo | Integer | No | 1 | Số trang |
-| pageSize | Integer | No | 10 | Số lượng item mỗi trang |
-| limit | Integer | No | - | Giới hạn số lượng kết quả (optional) |
+| Parameter | Type    | Required | Mô tả |
+| --------- | ------- | -------- | ----- | ------------------------------------ |
+| pageNo    | Integer | No       | 1     | Số trang                             |
+| pageSize  | Integer | No       | 10    | Số lượng item mỗi trang              |
+| limit     | Integer | No       | -     | Giới hạn số lượng kết quả (optional) |
 
 ### Response
 
@@ -350,7 +353,7 @@ GET /api/v1/products/price?minPrice=1000000&maxPrice=5000000&pageNo=1&pageSize=1
         "idProduct": 1,
         "productName": "iPhone 15 Pro",
         "price": 25000000,
-        "status": "IN_STOCK",
+        "status": "IN_STOCK"
         /* ... các field khác */
       }
     ],
@@ -386,15 +389,15 @@ GET /api/v1/products/new?pageNo=1&pageSize=10&limit=20
 
 ### Path Parameters
 
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| id | Integer | Yes | ID của sản phẩm |
+| Parameter | Type    | Required | Mô tả           |
+| --------- | ------- | -------- | --------------- |
+| id        | Integer | Yes      | ID của sản phẩm |
 
 ### Query Parameters
 
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| limit | Integer | No | 8 | Số lượng sản phẩm liên quan (default: 8) |
+| Parameter | Type    | Required | Mô tả |
+| --------- | ------- | -------- | ----- | ---------------------------------------- |
+| limit     | Integer | No       | 8     | Số lượng sản phẩm liên quan (default: 8) |
 
 ### Response
 
@@ -409,14 +412,14 @@ GET /api/v1/products/new?pageNo=1&pageSize=10&limit=20
       "idProduct": 2,
       "productName": "iPhone 15",
       "price": 22000000,
-      "status": "IN_STOCK",
+      "status": "IN_STOCK"
       /* ... các field khác */
     },
     {
       "idProduct": 3,
       "productName": "iPhone 14 Pro",
       "price": 20000000,
-      "status": "IN_STOCK",
+      "status": "IN_STOCK"
       /* ... các field khác */
     }
   ]
@@ -455,12 +458,7 @@ GET /api/v1/products/1/related?limit=8
 {
   "code": 200,
   "message": "Lấy danh sách thương hiệu thành công",
-  "data": [
-    "Apple",
-    "Samsung",
-    "Xiaomi",
-    "Oppo"
-  ]
+  "data": ["Apple", "Samsung", "Xiaomi", "Oppo"]
 }
 ```
 
@@ -503,18 +501,18 @@ GET /api/v1/products/brands
 }
 ```
 
-| Field | Type | Required | Mô tả |
-|-------|------|----------|-------|
-| idCategory | Integer | **Yes** | ID danh mục sản phẩm |
-| productName | String | **Yes** | Tên sản phẩm |
-| brand | String | No | Thương hiệu (Apple, Samsung, ...) |
-| idSupplier | Integer | No | ID nhà cung cấp |
-| description | String | No | Mô tả sản phẩm |
-| price | Double | **Yes** | Giá sản phẩm (>= 0) |
-| stockQuantity | Integer | No | Số lượng tồn kho (>= 0, mặc định: 0) |
-| codeType | Enum | **Yes** | Loại mã: SKU, MANUAL |
-| productCode | String | No | Mã sản phẩm (nếu codeType = SKU và để trống sẽ tự sinh) |
-| sku | String | No | SKU (nếu codeType = SKU và để trống sẽ tự sinh) |
+| Field         | Type    | Required | Mô tả                                                   |
+| ------------- | ------- | -------- | ------------------------------------------------------- |
+| idCategory    | Integer | **Yes**  | ID danh mục sản phẩm                                    |
+| productName   | String  | **Yes**  | Tên sản phẩm                                            |
+| brand         | String  | No       | Thương hiệu (Apple, Samsung, ...)                       |
+| idSupplier    | Integer | No       | ID nhà cung cấp                                         |
+| description   | String  | No       | Mô tả sản phẩm                                          |
+| price         | Double  | **Yes**  | Giá sản phẩm (>= 0)                                     |
+| stockQuantity | Integer | No       | Số lượng tồn kho (>= 0, mặc định: 0)                    |
+| codeType      | Enum    | **Yes**  | Loại mã: SKU, MANUAL                                    |
+| productCode   | String  | No       | Mã sản phẩm (nếu codeType = SKU và để trống sẽ tự sinh) |
+| sku           | String  | No       | SKU (nếu codeType = SKU và để trống sẽ tự sinh)         |
 
 ### Response
 
@@ -565,9 +563,9 @@ GET /api/v1/products/brands
 
 ### Path Parameters
 
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| id | Integer | Yes | ID của sản phẩm cần cập nhật |
+| Parameter | Type    | Required | Mô tả                        |
+| --------- | ------- | -------- | ---------------------------- |
+| id        | Integer | Yes      | ID của sản phẩm cần cập nhật |
 
 ### Request Body (JSON)
 
@@ -634,9 +632,9 @@ GET /api/v1/products/brands
 
 ### Path Parameters
 
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| id | Integer | Yes | ID của sản phẩm cần xóa |
+| Parameter | Type    | Required | Mô tả                   |
+| --------- | ------- | -------- | ----------------------- |
+| id        | Integer | Yes      | ID của sản phẩm cần xóa |
 
 ### Response
 
@@ -657,6 +655,7 @@ GET /api/v1/products/brands
 ### Bước 1: Test Lấy danh sách sản phẩm
 
 **Request:**
+
 - Method: `GET`
 - URL: `{{base_url}}/products?pageNo=1&pageSize=10&categoryId=1&brand=Apple`
 - Headers:
@@ -665,9 +664,11 @@ GET /api/v1/products/brands
 ### Bước 2: Test Tạo sản phẩm mới
 
 **Request:**
+
 - Method: `POST`
 - URL: `{{base_url}}/products`
 - Headers:
+
   - `Authorization: Bearer {{token}}`
   - `Content-Type: application/json`
 
@@ -686,22 +687,25 @@ GET /api/v1/products/brands
   ```
 
 **Test Script:**
+
 ```javascript
 if (pm.response.code === 200) {
-    const jsonData = pm.response.json();
-    if (jsonData.data && jsonData.data.idProduct) {
-        pm.environment.set("product_id", jsonData.data.idProduct);
-        console.log("Product ID saved:", jsonData.data.idProduct);
-    }
+  const jsonData = pm.response.json();
+  if (jsonData.data && jsonData.data.idProduct) {
+    pm.environment.set("product_id", jsonData.data.idProduct);
+    console.log("Product ID saved:", jsonData.data.idProduct);
+  }
 }
 ```
 
 ### Bước 3: Test Upload ảnh cho sản phẩm
 
 **Request:**
+
 - Method: `POST`
 - URL: `{{base_url}}/products/{{product_id}}/images`
 - Headers:
+
   - `Authorization: Bearer {{token}}`
   - **KHÔNG SET Content-Type header** (Postman sẽ tự động set `multipart/form-data`)
 
@@ -712,6 +716,7 @@ if (pm.response.code === 200) {
 ### Bước 4: Test Lấy chi tiết sản phẩm
 
 **Request:**
+
 - Method: `GET`
 - URL: `{{base_url}}/products/{{product_id}}`
 - Headers:
@@ -720,6 +725,7 @@ if (pm.response.code === 200) {
 ### Bước 5: Test Tìm kiếm theo tên
 
 **Request:**
+
 - Method: `GET`
 - URL: `{{base_url}}/products/search/name?name=iPhone&pageNo=1&pageSize=10`
 - Headers:
@@ -728,6 +734,7 @@ if (pm.response.code === 200) {
 ### Bước 5: Test Lọc theo khoảng giá
 
 **Request:**
+
 - Method: `GET`
 - URL: `{{base_url}}/products/price?minPrice=1000000&maxPrice=50000000&pageNo=1&pageSize=10`
 - Headers:
@@ -736,6 +743,7 @@ if (pm.response.code === 200) {
 ### Bước 6: Test Cập nhật sản phẩm
 
 **Request:**
+
 - Method: `PUT`
 - URL: `{{base_url}}/products/{{product_id}}`
 - Headers:
@@ -745,6 +753,7 @@ if (pm.response.code === 200) {
 ### Bước 7: Test Xóa sản phẩm (chỉ ADMIN)
 
 **Request:**
+
 - Method: `DELETE`
 - URL: `{{base_url}}/products/{{product_id}}`
 - Headers:
@@ -766,7 +775,7 @@ if (pm.response.code === 200) {
 
 1. **Upload ảnh:** Luôn sử dụng `form-data`, không phải `raw` JSON
 2. **Validate trước:** Kiểm tra price >= 0, stockQuantity >= 0
-3. **CodeType:** 
+3. **CodeType:**
    - `SKU`: Tự động sinh hoặc tự nhập SKU
    - `MANUAL`: Tự nhập productCode
 4. **Image URL:** Sau khi upload, imageUrl sẽ là đường dẫn tương đối, cần thêm base URL khi hiển thị
@@ -779,11 +788,13 @@ if (pm.response.code === 200) {
 ### Issue: 400 Bad Request khi tạo sản phẩm
 
 **Nguyên nhân:**
+
 - Sử dụng `raw` JSON thay vì `form-data`
 - `productDto` là File thay vì Text
 - JSON string trong `productDto` bị lỗi format
 
 **Giải pháp:**
+
 - Chọn tab **form-data** trong Body
 - Đảm bảo `productDto` là **Text** (không phải File)
 - Kiểm tra JSON string hợp lệ
@@ -799,14 +810,3 @@ if (pm.response.code === 200) {
 ## Liên hệ
 
 Nếu có thắc mắc về Product Module, vui lòng liên hệ team Backend.
-
-
-
-
-
-
-
-
-
-
-

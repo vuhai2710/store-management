@@ -42,6 +42,8 @@ public class ProductDto {
     @Min(value = 0, message = "Giá phải lớn hơn hoặc bằng 0")
     private BigDecimal price;
 
+    // READ ONLY - Stock quantity chỉ được cập nhật từ inventory transactions (ImportOrder, Order)
+    // Không cho phép set giá trị này khi tạo/sửa sản phẩm
     @Min(value = 0, message = "Số lượng tồn kho phải lớn hơn hoặc bằng 0")
     private Integer stockQuantity;
 

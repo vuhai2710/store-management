@@ -33,4 +33,7 @@ public class User extends BaseEntity {
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
 }

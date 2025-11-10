@@ -154,6 +154,9 @@ logs/
 # SECURITY
 # ============================================
 # Don't commit sensitive files
+**/application.yaml
+**/application.yml
+**/application.properties
 **/application-prod.properties
 **/application-prod.yaml
 **/application-prod.yml

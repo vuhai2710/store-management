@@ -8,25 +8,30 @@ import com.storemanagement.model.User;
 import com.storemanagement.repository.UserRepository;
 import com.storemanagement.service.CustomerService;
 import com.storemanagement.service.UserService;
+import com.storemanagement.service.FileStorageService;
 import com.storemanagement.utils.PageUtils;
 import com.storemanagement.utils.Role;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final CustomerService customerService;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final FileStorageService fileStorageService;
 
     @Override
     public UserDto createCustomerUser(AuthenticationRequestDto request) {
@@ -176,5 +181,107 @@ public class UserServiceImpl implements UserService {
         // Encode mật khẩu mới bằng BCrypt và cập nhật
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+    }
+
+    /**
+     * Upload ảnh đại diện cho user
+     * 
+     * Logic:
+     * 1. Kiểm tra user tồn tại
+     * 2. Upload ảnh vào thư mục uploads/users/
+     * 3. Lưu URL vào database
+     * 
+     * @param username Username của user
+     * @param avatar File ảnh
+     * @return UserDto đã được cập nhật
+     */
+    @Override
+    public UserDto uploadAvatar(String username, MultipartFile avatar) {
+        log.info("Uploading avatar for user: {}", username);
+        
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        
+        try {
+            // Upload ảnh vào thư mục uploads/users/
+            String avatarUrl = fileStorageService.saveImage(avatar, "users");
+            user.setAvatarUrl(avatarUrl);
+            User savedUser = userRepository.save(user);
+            
+            log.info("Avatar uploaded successfully: {}", avatarUrl);
+            return userMapper.toDto(savedUser);
+            
+        } catch (Exception e) {
+            log.error("Error uploading avatar: {}", e.getMessage(), e);
+            throw new RuntimeException("Không thể upload ảnh đại diện: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Cập nhật ảnh đại diện cho user
+     * Sẽ xóa ảnh cũ (nếu có) và upload ảnh mới
+     * 
+     * @param username Username của user
+     * @param avatar File ảnh mới
+     * @return UserDto đã được cập nhật
+     */
+    @Override
+    public UserDto updateAvatar(String username, MultipartFile avatar) {
+        log.info("Updating avatar for user: {}", username);
+        
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        
+        try {
+            // Xóa ảnh cũ nếu có
+            if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
+                fileStorageService.deleteImage(user.getAvatarUrl());
+                log.info("Deleted old avatar: {}", user.getAvatarUrl());
+            }
+            
+            // Upload ảnh mới
+            String avatarUrl = fileStorageService.saveImage(avatar, "users");
+            user.setAvatarUrl(avatarUrl);
+            User savedUser = userRepository.save(user);
+            
+            log.info("Avatar updated successfully: {}", avatarUrl);
+            return userMapper.toDto(savedUser);
+            
+        } catch (Exception e) {
+            log.error("Error updating avatar: {}", e.getMessage(), e);
+            throw new RuntimeException("Không thể cập nhật ảnh đại diện: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Xóa ảnh đại diện của user
+     * 
+     * @param username Username của user
+     */
+    @Override
+    public void deleteAvatar(String username) {
+        log.info("Deleting avatar for user: {}", username);
+        
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        
+        if (user.getAvatarUrl() == null || user.getAvatarUrl().isEmpty()) {
+            throw new RuntimeException("User không có ảnh đại diện");
+        }
+        
+        try {
+            // Xóa file ảnh
+            fileStorageService.deleteImage(user.getAvatarUrl());
+            
+            // Xóa URL trong database
+            user.setAvatarUrl(null);
+            userRepository.save(user);
+            
+            log.info("Avatar deleted successfully");
+            
+        } catch (Exception e) {
+            log.error("Error deleting avatar: {}", e.getMessage(), e);
+            throw new RuntimeException("Không thể xóa ảnh đại diện: " + e.getMessage());
+        }
     }
 }
