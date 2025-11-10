@@ -1,0 +1,7 @@
+# Ignore frontend & client-frontend dependencies
+frontend/node_modules/
+client-frontend/node_modules/
+**/node_modules/
+**/.cache/
+build/
+dist/
