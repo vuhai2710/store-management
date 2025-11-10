@@ -13,7 +13,10 @@ Module quản lý sản phẩm (Product). Phân quyền:
 Authorization: Bearer {JWT_TOKEN}
 ```
 
-**Đặc biệt:** API tạo/cập nhật sản phẩm sử dụng `multipart/form-data` để upload ảnh, không phải `application/json`.
+**Đặc biệt:** 
+- API tạo/cập nhật sản phẩm sử dụng `application/json` (không upload ảnh trong cùng request)
+- Để upload ảnh, sử dụng endpoint riêng: `POST /api/v1/products/{id}/images`
+- Cách này tách biệt việc quản lý thông tin sản phẩm và upload ảnh, dễ sử dụng hơn
 
 ---
 
@@ -40,9 +43,14 @@ Authorization: Bearer {JWT_TOKEN}
 |--------|----------|----------------|-------|
 | GET | `/api/v1/products/code/{code}` | ADMIN, EMPLOYEE | Tìm sản phẩm theo mã (chính xác) |
 | GET | `/api/v1/products/supplier/{supplierId}` | ADMIN, EMPLOYEE | Lọc sản phẩm theo nhà cung cấp |
-| POST | `/api/v1/products` | ADMIN, EMPLOYEE | Tạo sản phẩm mới (với upload ảnh) |
-| PUT | `/api/v1/products/{id}` | ADMIN, EMPLOYEE | Cập nhật sản phẩm (với upload ảnh) |
+| POST | `/api/v1/products` | ADMIN, EMPLOYEE | Tạo sản phẩm mới (JSON only) |
+| PUT | `/api/v1/products/{id}` | ADMIN, EMPLOYEE | Cập nhật sản phẩm (JSON only) |
 | DELETE | `/api/v1/products/{id}` | ADMIN | Xóa sản phẩm |
+| POST | `/api/v1/products/{id}/images` | ADMIN, EMPLOYEE | Upload nhiều ảnh cho sản phẩm |
+| POST | `/api/v1/products/{id}/images/single` | ADMIN, EMPLOYEE | Upload một ảnh cho sản phẩm |
+| GET | `/api/v1/products/{id}/images` | ADMIN, EMPLOYEE, CUSTOMER | Lấy danh sách ảnh của sản phẩm |
+| DELETE | `/api/v1/products/images/{imageId}` | ADMIN, EMPLOYEE | Xóa một ảnh của sản phẩm |
+| PUT | `/api/v1/products/images/{imageId}/primary` | ADMIN, EMPLOYEE | Đặt một ảnh làm ảnh chính |
 
 ---
 
@@ -472,60 +480,41 @@ GET /api/v1/products/brands
 
 ---
 
-## 13. Tạo sản phẩm mới (với upload ảnh)
+## 13. Tạo sản phẩm mới
 
 ### Thông tin Endpoint
 
 - **URL:** `POST /api/v1/products`
 - **Authentication:** Required (ADMIN, EMPLOYEE)
-- **Content-Type:** `multipart/form-data` ⚠️ **QUAN TRỌNG**
+- **Content-Type:** `application/json` ⚠️ **QUAN TRỌNG**
 
-### Request Body (form-data)
-
-| Key | Type | Required | Mô tả |
-|-----|------|----------|-------|
-| productDto | Text (JSON string) | **Yes** | Thông tin sản phẩm (JSON string) |
-| image | File | No | Hình ảnh sản phẩm |
-
-### productDto (JSON string)
+### Request Body (JSON)
 
 ```json
 {
-  "idCategory": "integer (required)",
-  "productName": "string (required)",
-  "brand": "string (optional)",
-  "idSupplier": "integer (optional)",
-  "description": "string (optional)",
-  "price": "number (required, >= 0)",
-  "stockQuantity": "integer (optional, >= 0)",
-  "productCode": "string (optional)",
-  "codeType": "enum (required: SKU, MANUAL)",
-  "sku": "string (optional)"
+  "idCategory": 1,
+  "productName": "iPhone 15 Pro",
+  "brand": "Apple",
+  "idSupplier": 1,
+  "description": "Điện thoại cao cấp",
+  "price": 25000000,
+  "stockQuantity": 10,
+  "codeType": "SKU"
 }
 ```
 
-### Ví dụ Request Body trong Postman
-
-**Body tab:** Chọn `form-data` (KHÔNG phải raw JSON)
-
-- Key: `productDto` (Type: **Text**)
-  Value:
-  ```json
-  {
-    "idCategory": 1,
-    "productName": "iPhone 15 Pro",
-    "brand": "Apple",
-    "idSupplier": 1,
-    "description": "Điện thoại cao cấp",
-    "price": 25000000,
-    "stockQuantity": 10,
-    "codeType": "SKU",
-    "sku": "IP15PRO-001"
-  }
-  ```
-
-- Key: `image` (Type: **File**)
-  Value: Chọn file ảnh từ máy tính (optional)
+| Field | Type | Required | Mô tả |
+|-------|------|----------|-------|
+| idCategory | Integer | **Yes** | ID danh mục sản phẩm |
+| productName | String | **Yes** | Tên sản phẩm |
+| brand | String | No | Thương hiệu (Apple, Samsung, ...) |
+| idSupplier | Integer | No | ID nhà cung cấp |
+| description | String | No | Mô tả sản phẩm |
+| price | Double | **Yes** | Giá sản phẩm (>= 0) |
+| stockQuantity | Integer | No | Số lượng tồn kho (>= 0, mặc định: 0) |
+| codeType | Enum | **Yes** | Loại mã: SKU, MANUAL |
+| productCode | String | No | Mã sản phẩm (nếu codeType = SKU và để trống sẽ tự sinh) |
+| sku | String | No | SKU (nếu codeType = SKU và để trống sẽ tự sinh) |
 
 ### Response
 
@@ -537,30 +526,42 @@ GET /api/v1/products/brands
   "message": "Thêm sản phẩm thành công",
   "data": {
     "idProduct": 1,
+    "idCategory": 1,
+    "categoryName": "Điện thoại",
     "productName": "iPhone 15 Pro",
-    "imageUrl": "/uploads/products/iphone15pro.jpg",
-    /* ... các field khác */
+    "brand": "Apple",
+    "idSupplier": 1,
+    "supplierName": "Công ty ABC",
+    "description": "Điện thoại cao cấp",
+    "price": 25000000,
+    "stockQuantity": 10,
+    "status": "IN_STOCK",
+    "imageUrl": null,
+    "images": [],
+    "productCode": "IP15PRO-001",
+    "codeType": "SKU",
+    "sku": "IP15PRO-001",
+    "createdAt": "10/11/2025 12:47:35",
+    "updatedAt": "10/11/2025 12:47:35"
   }
 }
 ```
 
-### Lưu ý QUAN TRỌNG
+### Lưu ý
 
-⚠️ **KHÔNG** chọn `raw` JSON trong Body tab  
-⚠️ Chọn tab **form-data** thay vì raw  
-⚠️ `productDto` phải là **Text** (không phải File) và chứa JSON string  
-⚠️ `image` là **File** và có thể để trống (optional)  
-⚠️ File size tối đa: 10MB
+- Sau khi tạo sản phẩm, có thể upload ảnh qua endpoint: `POST /api/v1/products/{id}/images`
+- Nếu `codeType = SKU` và không có `productCode`, hệ thống sẽ tự động sinh SKU theo format: `{category_prefix}-{sequence}`
+- Nếu `codeType = MANUAL`, bắt buộc phải có `productCode`
 
 ---
 
-## 14. Cập nhật sản phẩm (với upload ảnh)
+## 14. Cập nhật sản phẩm
 
 ### Thông tin Endpoint
 
 - **URL:** `PUT /api/v1/products/{id}`
 - **Authentication:** Required (ADMIN, EMPLOYEE)
-- **Content-Type:** `multipart/form-data` ⚠️ **QUAN TRỌNG**
+- **Content-Type:** `application/json` ⚠️ **QUAN TRỌNG**
 
 ### Path Parameters
 
@@ -568,14 +569,59 @@ GET /api/v1/products/brands
 |-----------|------|----------|-------|
 | id | Integer | Yes | ID của sản phẩm cần cập nhật |
 
-### Request Body
+### Request Body (JSON)
 
-Giống như tạo mới (form-data với productDto và image)
+```json
+{
+  "idCategory": 1,
+  "productName": "iPhone 15 Pro Max",
+  "brand": "Apple",
+  "idSupplier": 1,
+  "description": "Điện thoại cao cấp nhất",
+  "price": 30000000,
+  "stockQuantity": 5,
+  "codeType": "SKU"
+}
+```
+
+**Lưu ý:** Chỉ gửi các field cần cập nhật. Các field không gửi sẽ giữ nguyên giá trị cũ.
+
+### Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "code": 200,
+  "message": "Cập nhật sản phẩm thành công",
+  "data": {
+    "idProduct": 1,
+    "idCategory": 1,
+    "categoryName": "Điện thoại",
+    "productName": "iPhone 15 Pro Max",
+    "brand": "Apple",
+    "idSupplier": 1,
+    "supplierName": "Công ty ABC",
+    "description": "Điện thoại cao cấp nhất",
+    "price": 30000000,
+    "stockQuantity": 5,
+    "status": "IN_STOCK",
+    "imageUrl": "/uploads/products/iphone15promax.jpg",
+    "images": [...],
+    "productCode": "IP15PRO-001",
+    "codeType": "SKU",
+    "sku": "IP15PRO-001",
+    "createdAt": "10/11/2025 12:47:35",
+    "updatedAt": "10/11/2025 13:00:00"
+  }
+}
+```
 
 ### Lưu ý
 
-- Nếu không gửi `image`, ảnh cũ sẽ được giữ nguyên
-- Nếu gửi `image` mới, ảnh cũ sẽ bị thay thế
+- Để upload ảnh mới, sử dụng endpoint riêng: `POST /api/v1/products/{id}/images`
+- Để xóa ảnh, sử dụng: `DELETE /api/v1/products/images/{imageId}`
+- Để đặt ảnh chính, sử dụng: `PUT /api/v1/products/images/{imageId}/primary`
 
 ---
 
@@ -616,33 +662,28 @@ Giống như tạo mới (form-data với productDto và image)
 - Headers:
   - `Authorization: Bearer {{token}}`
 
-### Bước 2: Test Tạo sản phẩm mới (với upload ảnh) ⚠️
+### Bước 2: Test Tạo sản phẩm mới
 
 **Request:**
 - Method: `POST`
 - URL: `{{base_url}}/products`
 - Headers:
   - `Authorization: Bearer {{token}}`
-  - **KHÔNG SET Content-Type header** (Postman sẽ tự động set `multipart/form-data`)
+  - `Content-Type: application/json`
 
-- **Body tab:** Chọn **form-data** (KHÔNG phải raw JSON)
-  - Key: `productDto` (Type: **Text**)
-    Value:
-    ```json
-    {
-      "idCategory": 1,
-      "productName": "iPhone 15 Pro",
-      "brand": "Apple",
-      "idSupplier": 1,
-      "description": "Điện thoại cao cấp",
-      "price": 25000000,
-      "stockQuantity": 10,
-      "codeType": "SKU",
-      "sku": "IP15PRO-001"
-    }
-    ```
-  - Key: `image` (Type: **File**)
-    Value: Chọn file ảnh từ máy tính (có thể để trống)
+- **Body tab:** Chọn **raw** và **JSON**
+  ```json
+  {
+    "idCategory": 1,
+    "productName": "iPhone 15 Pro",
+    "brand": "Apple",
+    "idSupplier": 1,
+    "description": "Điện thoại cao cấp",
+    "price": 25000000,
+    "stockQuantity": 10,
+    "codeType": "SKU"
+  }
+  ```
 
 **Test Script:**
 ```javascript
@@ -655,7 +696,20 @@ if (pm.response.code === 200) {
 }
 ```
 
-### Bước 3: Test Lấy chi tiết sản phẩm
+### Bước 3: Test Upload ảnh cho sản phẩm
+
+**Request:**
+- Method: `POST`
+- URL: `{{base_url}}/products/{{product_id}}/images`
+- Headers:
+  - `Authorization: Bearer {{token}}`
+  - **KHÔNG SET Content-Type header** (Postman sẽ tự động set `multipart/form-data`)
+
+- **Body tab:** Chọn **form-data**
+  - Key: `images` (Type: **File**)
+    Value: Chọn một hoặc nhiều file ảnh (tối đa 5 ảnh)
+
+### Bước 4: Test Lấy chi tiết sản phẩm
 
 **Request:**
 - Method: `GET`
@@ -663,7 +717,7 @@ if (pm.response.code === 200) {
 - Headers:
   - `Authorization: Bearer {{token}}`
 
-### Bước 4: Test Tìm kiếm theo tên
+### Bước 5: Test Tìm kiếm theo tên
 
 **Request:**
 - Method: `GET`

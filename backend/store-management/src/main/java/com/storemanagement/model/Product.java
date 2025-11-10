@@ -5,6 +5,9 @@ import com.storemanagement.utils.ProductStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "products")
 @Data
@@ -37,8 +40,8 @@ public class Product extends BaseEntity {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "price", nullable = false)
-    private Double price;
+    @Column(name = "price", precision = 12, scale = 2, nullable = false)
+    private java.math.BigDecimal price;
 
     @Column(name = "stock_quantity")
     @Builder.Default
@@ -49,8 +52,14 @@ public class Product extends BaseEntity {
     @Builder.Default
     private ProductStatus status = ProductStatus.IN_STOCK;
 
+    // Giữ lại để backward compatibility - lưu ảnh chính
     @Column(name = "image_url", length = 500)
     private String imageUrl;
+    
+    // Relationship với ProductImage - một sản phẩm có nhiều ảnh
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<ProductImage> images = new ArrayList<>();
 
     @Column(name = "product_code", nullable = false, unique = true, length = 100)
     private String productCode;

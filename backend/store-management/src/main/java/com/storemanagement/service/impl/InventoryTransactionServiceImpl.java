@@ -7,6 +7,7 @@ import com.storemanagement.model.InventoryTransaction;
 import com.storemanagement.repository.InventoryTransactionRepository;
 import com.storemanagement.service.InventoryTransactionService;
 import com.storemanagement.utils.PageUtils;
+import com.storemanagement.utils.TransactionType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -89,6 +90,39 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
         
         Page<InventoryTransaction> transactionPage = 
                 inventoryTransactionRepository.findByProductAndDateRange(productId, startDate, endDate, pageable);
+        
+        return PageUtils.toPageResponse(transactionPage, 
+                inventoryTransactionMapper.toDtoList(transactionPage.getContent()));
+    }
+
+    @Override
+    public PageResponse<InventoryTransactionDto> getTransactionsByType(
+            TransactionType transactionType,
+            Pageable pageable) {
+        
+        log.info("Getting inventory transactions by type: {}", transactionType);
+        
+        Page<InventoryTransaction> transactionPage = 
+                inventoryTransactionRepository.findByTransactionType(transactionType, pageable);
+        
+        return PageUtils.toPageResponse(transactionPage, 
+                inventoryTransactionMapper.toDtoList(transactionPage.getContent()));
+    }
+
+    @Override
+    public PageResponse<InventoryTransactionDto> getTransactionsByMultipleCriteria(
+            TransactionType transactionType,
+            Integer productId,
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            Pageable pageable) {
+        
+        log.info("Getting inventory transactions by multiple criteria - type: {}, productId: {}, from: {} to: {}", 
+                transactionType, productId, startDate, endDate);
+        
+        Page<InventoryTransaction> transactionPage = 
+                inventoryTransactionRepository.findByMultipleCriteria(
+                        transactionType, productId, startDate, endDate, pageable);
         
         return PageUtils.toPageResponse(transactionPage, 
                 inventoryTransactionMapper.toDtoList(transactionPage.getContent()));

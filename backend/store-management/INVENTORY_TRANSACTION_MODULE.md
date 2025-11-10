@@ -26,6 +26,8 @@ Authorization: Bearer {JWT_TOKEN}
 | GET | `/api/v1/inventory-transactions/product/{productId}` | ADMIN, EMPLOYEE | Lấy lịch sử của một sản phẩm |
 | GET | `/api/v1/inventory-transactions/reference` | ADMIN, EMPLOYEE | Lấy transactions theo reference |
 | GET | `/api/v1/inventory-transactions/history` | ADMIN, EMPLOYEE | Lấy lịch sử trong khoảng thời gian |
+| GET | `/api/v1/inventory-transactions/by-type` | ADMIN, EMPLOYEE | **MỚI** - Lấy lịch sử theo loại giao dịch (IN/OUT) |
+| GET | `/api/v1/inventory-transactions/filter` | ADMIN, EMPLOYEE | **MỚI** - Lọc lịch sử theo nhiều criteria |
 
 ---
 
@@ -201,6 +203,200 @@ Danh sách transactions trong khoảng thời gian (có thể kèm productId)
 
 ---
 
+## 5. Lấy lịch sử theo loại giao dịch (IN/OUT)
+
+### Thông tin Endpoint
+
+- **URL:** `GET /api/v1/inventory-transactions/by-type`
+- **Authentication:** Required (ADMIN, EMPLOYEE)
+
+### Query Parameters
+
+| Parameter | Type | Required | Mô tả |
+|-----------|------|----------|-------|
+| transactionType | String | **Yes** | Loại giao dịch: **IN** (nhập kho) hoặc **OUT** (xuất kho) |
+| pageNo | Integer | No | Số trang (default: 1) |
+| pageSize | Integer | No | Số lượng item mỗi trang (default: 10) |
+| sortBy | String | No | Trường sắp xếp (default: "transactionDate") |
+| sortDirection | String | No | Hướng sắp xếp: ASC/DESC (default: "DESC") |
+
+### Ví dụ Request
+
+**Lấy tất cả giao dịch NHẬP KHO:**
+```
+GET /api/v1/inventory-transactions/by-type?transactionType=IN&pageNo=1&pageSize=10
+```
+
+**Lấy tất cả giao dịch XUẤT KHO:**
+```
+GET /api/v1/inventory-transactions/by-type?transactionType=OUT&pageNo=1&pageSize=10
+```
+
+### Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "code": 200,
+  "message": "Lấy lịch sử nhập kho thành công",
+  "data": {
+    "content": [
+      {
+        "idTransaction": 1,
+        "idProduct": 1,
+        "productName": "iPhone 15 Pro",
+        "productCode": "SP001",
+        "transactionType": "IN",
+        "quantity": 10,
+        "referenceType": "PURCHASE_ORDER",
+        "referenceId": 1,
+        "transactionDate": "2025-01-01T10:00:00",
+        "notes": "Nhập hàng từ đơn nhập hàng #1"
+      }
+    ],
+    "pageNo": 1,
+    "pageSize": 10,
+    "totalElements": 50,
+    "totalPages": 5,
+    "isFirst": true,
+    "isLast": false,
+    "hasNext": true,
+    "hasPrevious": false,
+    "isEmpty": false
+  }
+}
+```
+
+### Use Cases
+
+- **Báo cáo nhập kho:** Lấy tất cả transactions với `transactionType=IN`
+- **Báo cáo xuất kho:** Lấy tất cả transactions với `transactionType=OUT`
+- **Phân tích xu hướng:** So sánh số lượng nhập/xuất trong một khoảng thời gian
+
+---
+
+## 6. Lọc lịch sử theo nhiều criteria
+
+### Thông tin Endpoint
+
+- **URL:** `GET /api/v1/inventory-transactions/filter`
+- **Authentication:** Required (ADMIN, EMPLOYEE)
+- **Mô tả:** Endpoint mạnh mẽ cho phép lọc theo nhiều tiêu chí cùng lúc
+
+### Query Parameters
+
+| Parameter | Type | Required | Default | Mô tả |
+|-----------|------|----------|---------|-------|
+| transactionType | String | No | - | Loại giao dịch: IN hoặc OUT |
+| productId | Integer | No | - | ID sản phẩm |
+| startDate | String | No | 1 tháng trước | Ngày bắt đầu (format: YYYY-MM-DDTHH:mm:ss) |
+| endDate | String | No | Hiện tại | Ngày kết thúc (format: YYYY-MM-DDTHH:mm:ss) |
+| pageNo | Integer | No | 1 | Số trang |
+| pageSize | Integer | No | 10 | Số lượng item mỗi trang |
+| sortBy | String | No | "transactionDate" | Trường sắp xếp |
+| sortDirection | String | No | "DESC" | Hướng sắp xếp |
+
+### Ví dụ Request
+
+**1. Lọc giao dịch NHẬP KHO của sản phẩm #1 trong tháng 1/2025:**
+```
+GET /api/v1/inventory-transactions/filter?transactionType=IN&productId=1&startDate=2025-01-01T00:00:00&endDate=2025-01-31T23:59:59
+```
+
+**2. Lọc tất cả giao dịch XUẤT KHO trong tháng 1/2025:**
+```
+GET /api/v1/inventory-transactions/filter?transactionType=OUT&startDate=2025-01-01T00:00:00&endDate=2025-01-31T23:59:59
+```
+
+**3. Lọc tất cả giao dịch của sản phẩm #5 (không phân biệt IN/OUT):**
+```
+GET /api/v1/inventory-transactions/filter?productId=5&startDate=2025-01-01T00:00:00&endDate=2025-01-31T23:59:59
+```
+
+**4. Lọc tất cả giao dịch NHẬP KHO trong 7 ngày gần nhất:**
+```
+GET /api/v1/inventory-transactions/filter?transactionType=IN&startDate=2025-01-25T00:00:00&endDate=2025-02-01T23:59:59
+```
+
+### Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "code": 200,
+  "message": "Lọc lịch sử nhập/xuất kho thành công",
+  "data": {
+    "content": [
+      {
+        "idTransaction": 15,
+        "idProduct": 1,
+        "productName": "iPhone 15 Pro",
+        "productCode": "SP001",
+        "transactionType": "IN",
+        "quantity": 20,
+        "referenceType": "PURCHASE_ORDER",
+        "referenceId": 5,
+        "transactionDate": "2025-01-15T14:30:00",
+        "notes": "Nhập hàng lô mới"
+      }
+    ],
+    "pageNo": 1,
+    "pageSize": 10,
+    "totalElements": 8,
+    "totalPages": 1,
+    "isFirst": true,
+    "isLast": true,
+    "hasNext": false,
+    "hasPrevious": false,
+    "isEmpty": false
+  }
+}
+```
+
+### Use Cases
+
+**1. Báo cáo chi tiết theo sản phẩm:**
+```
+filter?productId=1&startDate=2025-01-01T00:00:00&endDate=2025-01-31T23:59:59
+```
+→ Xem tất cả giao dịch (IN + OUT) của sản phẩm trong tháng
+
+**2. Báo cáo nhập hàng theo nhà cung cấp:**
+- Bước 1: Lọc transactions nhập kho
+- Bước 2: Group theo referenceId để tổng hợp theo đơn nhập hàng
+
+**3. Phân tích xu hướng bán hàng:**
+```
+filter?transactionType=OUT&startDate=2025-01-01T00:00:00&endDate=2025-01-31T23:59:59
+```
+→ Tổng số lượng xuất kho = Tổng sản phẩm đã bán
+
+**4. Kiểm tra biến động tồn kho của một sản phẩm:**
+```
+filter?productId=5&startDate=2025-01-01T00:00:00&endDate=2025-01-31T23:59:59
+```
+→ Xem chi tiết từng lần nhập/xuất của sản phẩm #5
+
+### So sánh với các endpoints khác
+
+| Endpoint | Use Case |
+|----------|----------|
+| `/filter` | **Linh hoạt nhất** - Lọc theo nhiều tiêu chí cùng lúc |
+| `/by-type` | Đơn giản - Chỉ lọc theo IN/OUT |
+| `/history` | Lọc theo thời gian (có thể kèm productId) |
+| `/product/{id}` | Xem tất cả transactions của 1 sản phẩm |
+
+### Lưu ý
+
+- Tất cả params đều **optional** (trừ startDate/endDate có default)
+- Nếu không truyền `transactionType` → Lấy cả IN và OUT
+- Nếu không truyền `productId` → Lấy tất cả sản phẩm
+- Endpoint này tối ưu cho báo cáo và phân tích dữ liệu
+
+---
+
 ## Hướng dẫn Test bằng Postman
 
 ### Bước 1: Test Lấy tất cả lịch sử
@@ -257,6 +453,7 @@ Danh sách transactions trong khoảng thời gian (có thể kèm productId)
 ## Liên hệ
 
 Nếu có thắc mắc về Inventory Transaction Module, vui lòng liên hệ team Backend.
+
 
 
 

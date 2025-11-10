@@ -3,6 +3,7 @@ package com.storemanagement.controller;
 import com.nimbusds.jose.JOSEException;
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.request.AuthenticationRequestDto;
+import com.storemanagement.dto.request.ForgotPasswordRequestDto;
 import com.storemanagement.dto.request.LoginRequestDto;
 import com.storemanagement.dto.response.AuthenticationResponseDto;
 import com.storemanagement.service.AuthenticationService;
@@ -125,5 +126,49 @@ public class AuthenticationController {
     public ResponseEntity<ApiResponse<Void>> logout() {
         // Với JWT stateless, logout chủ yếu xử lý ở phía client (xóa token)
         return ResponseEntity.ok(ApiResponse.success("Đăng xuất thành công", null));
+    }
+
+    /**
+     * Quên mật khẩu - Gửi mật khẩu mới qua email
+     * 
+     * Endpoint: POST /api/v1/auth/forgot-password
+     * Authentication: Không cần (PUBLIC)
+     * 
+     * Request Body (JSON):
+     * {
+     *   "email": "string (required, valid email)"
+     * }
+     * 
+     * Flow xử lý:
+     * 1. Tìm tài khoản theo email
+     * 2. Generate mật khẩu mới ngẫu nhiên (10 ký tự: chữ + số)
+     * 3. Hash và update mật khẩu vào database
+     * 4. Gửi email chứa mật khẩu mới cho user
+     * 5. Return success message
+     * 
+     * Response thành công:
+     * {
+     *   "code": 200,
+     *   "message": "Mật khẩu mới đã được gửi đến email: user@example.com",
+     *   "data": null
+     * }
+     * 
+     * Response lỗi:
+     * - 404: Không tìm thấy tài khoản với email này
+     * - 500: Không thể gửi email (lỗi SMTP)
+     * 
+     * Lưu ý:
+     * - User nên đổi mật khẩu ngay sau khi đăng nhập
+     * - Mật khẩu mới là random và chỉ gửi 1 lần qua email
+     * - Email có thể mất vài giây để đến hộp thư
+     * 
+     * @param request ForgotPasswordRequestDto chứa email
+     * @return ApiResponse với message thành công
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
+            @RequestBody @Valid ForgotPasswordRequestDto request) {
+        String message = authService.forgotPassword(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.success(message, null));
     }
 }

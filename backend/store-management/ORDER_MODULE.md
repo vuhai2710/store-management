@@ -1098,8 +1098,46 @@ if (pm.response.code === 200) {
 **Khi hiển thị:**
 - Ưu tiên dùng snapshot fields
 - Nếu không có snapshot (đơn hàng cũ) → Fallback về product hiện tại
+- Đảm bảo khi admin chỉnh sửa sản phẩm, đơn hàng đã đặt vẫn hiển thị đúng thông tin tại thời điểm mua
 
-### 2. Shipping Address Snapshot
+### 2. Response Fields
+
+**OrderDto** chứa các trường sau:
+- `idOrder`: ID đơn hàng
+- `idCustomer`: ID khách hàng
+- `customerName`: Tên khách hàng
+- `customerAddress`: Địa chỉ khách hàng
+- `customerPhone`: Số điện thoại khách hàng
+- `idEmployee`: ID nhân viên (nếu có)
+- `employeeName`: Tên nhân viên (nếu có)
+- `orderDate`: Ngày đặt hàng
+- `status`: Trạng thái đơn hàng (PENDING, CONFIRMED, COMPLETED, CANCELED)
+- `totalAmount`: Tổng tiền
+- `discount`: Giảm giá
+- `finalAmount`: Tổng tiền cuối cùng
+- `paymentMethod`: Phương thức thanh toán (CASH, TRANSFER, ZALOPAY, PAYOS)
+- `notes`: Ghi chú
+- `idShippingAddress`: ID địa chỉ giao hàng
+- `shippingAddressSnapshot`: Snapshot địa chỉ giao hàng tại thời điểm đặt hàng
+- `deliveredAt`: Thời điểm customer xác nhận đã nhận hàng
+- `paymentLinkId`: Mã payment link từ PayOS (nếu có)
+- `paymentLinkUrl`: URL thanh toán PayOS (nếu có)
+- `orderDetails`: Danh sách chi tiết đơn hàng
+
+**OrderDetailDto** chứa các trường sau:
+- `idOrderDetail`: ID chi tiết đơn hàng
+- `idProduct`: ID sản phẩm
+- `productName`: Tên sản phẩm (từ product hiện tại, fallback nếu không có snapshot)
+- `productCode`: Mã sản phẩm (từ product hiện tại, fallback nếu không có snapshot)
+- `sku`: SKU sản phẩm
+- `productNameSnapshot`: Tên sản phẩm tại thời điểm mua (ưu tiên hiển thị)
+- `productCodeSnapshot`: Mã sản phẩm tại thời điểm mua (ưu tiên hiển thị)
+- `productImageSnapshot`: URL ảnh tại thời điểm mua (ưu tiên hiển thị)
+- `quantity`: Số lượng
+- `price`: Giá tại thời điểm mua
+- `subtotal`: Tổng tiền (quantity × price)
+
+### 3. Shipping Address Snapshot
 
 **Vấn đề:** Địa chỉ giao hàng có thể bị xóa sau khi đặt hàng.
 
@@ -1111,7 +1149,7 @@ if (pm.response.code === 200) {
 - Ưu tiên dùng `shippingAddressSnapshot`
 - Nếu không có → Fallback về `ShippingAddress` hoặc customer address
 
-### 3. Inventory Management
+### 4. Inventory Management
 
 **Khi checkout:**
 - Trừ số lượng từ `product.stockQuantity`
@@ -1123,7 +1161,7 @@ if (pm.response.code === 200) {
 - Tạo InventoryTransaction (IN) để ghi lại hoàn trả
 - Cập nhật product status nếu có hàng lại
 
-### 4. Transaction Management
+### 5. Transaction Management
 
 - Checkout là một transaction:
   - Nếu bất kỳ bước nào fail → Rollback toàn bộ

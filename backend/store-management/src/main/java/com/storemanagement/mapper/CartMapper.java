@@ -60,11 +60,11 @@ public interface CartMapper {
                 .sum();
     }
 
-    default BigDecimal calculateSubtotal(Double price, Integer quantity) {
+    default BigDecimal calculateSubtotal(java.math.BigDecimal price, Integer quantity) {
         if (price == null || quantity == null) {
             return BigDecimal.ZERO;
         }
-        return BigDecimal.valueOf(price)
+        return price
                 .multiply(BigDecimal.valueOf(quantity))
                 .setScale(2, RoundingMode.HALF_UP);
     }

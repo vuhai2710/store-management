@@ -103,5 +103,14 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             ORDER BY p.createdAt DESC
             """)
     Page<Product> findNewProductsByStatus(Pageable pageable);
+    
+    // Lấy product với đầy đủ thông tin category và supplier (JOIN FETCH)
+    @Query("""
+            SELECT p FROM Product p
+            LEFT JOIN FETCH p.category
+            LEFT JOIN FETCH p.supplier
+            WHERE p.idProduct = :id
+            """)
+    Optional<Product> findByIdWithDetails(@Param("id") Integer id);
 }
 

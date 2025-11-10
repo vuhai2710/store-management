@@ -2,6 +2,7 @@ package com.storemanagement.service;
 
 import com.storemanagement.dto.response.InventoryTransactionDto;
 import com.storemanagement.dto.PageResponse;
+import com.storemanagement.utils.TransactionType;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
@@ -41,6 +42,27 @@ public interface InventoryTransactionService {
      * Lấy transactions của sản phẩm trong khoảng thời gian
      */
     PageResponse<InventoryTransactionDto> getTransactionsByProductAndDateRange(
+            Integer productId,
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            Pageable pageable
+    );
+
+    /**
+     * Lấy transactions theo loại giao dịch (IN/OUT)
+     */
+    PageResponse<InventoryTransactionDto> getTransactionsByType(
+            TransactionType transactionType,
+            Pageable pageable
+    );
+
+    /**
+     * Lấy transactions theo nhiều criteria
+     * Hỗ trợ filter theo: transactionType, productId, dateRange
+     * Tất cả params có thể null (trừ startDate, endDate)
+     */
+    PageResponse<InventoryTransactionDto> getTransactionsByMultipleCriteria(
+            TransactionType transactionType,
             Integer productId,
             LocalDateTime startDate,
             LocalDateTime endDate,

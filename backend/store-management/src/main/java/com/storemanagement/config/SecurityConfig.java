@@ -64,6 +64,7 @@ public class SecurityConfig {
      * - /api/v1/products/public/**: Xem sản phẩm công khai (nếu có)
      * - /swagger-ui/**, /v3/api-docs/**: API documentation
      * - /uploads/**: Truy cập file ảnh đã upload (public)
+     * - /ws/**: WebSocket endpoints for chat
      */
     private static final String[] PUBLIC_URLS = {
             "/api/v1/auth/**",
@@ -71,7 +72,8 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/v3/api-docs/**",
             "/actuator/**",
-            "/uploads/**"  // Allow public access to uploaded images
+            "/uploads/**",  // Allow public access to uploaded images
+            "/ws/**"  // WebSocket endpoints for chat (will check JWT at WebSocket level)
     };
 
     /**
@@ -148,7 +150,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        // Allow both frontend ports: 3000 (Admin/Employee) and 3003 (Customer)
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3003"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

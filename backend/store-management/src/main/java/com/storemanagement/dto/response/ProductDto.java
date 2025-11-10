@@ -10,7 +10,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -37,14 +40,18 @@ public class ProductDto {
 
     @NotNull(message = "Giá không được để trống")
     @Min(value = 0, message = "Giá phải lớn hơn hoặc bằng 0")
-    private Double price;
+    private BigDecimal price;
 
     @Min(value = 0, message = "Số lượng tồn kho phải lớn hơn hoặc bằng 0")
     private Integer stockQuantity;
 
     private ProductStatus status;
 
-    private String imageUrl;
+    private String imageUrl;  // Giữ lại để backward compatibility - ảnh chính
+    
+    // Danh sách tất cả ảnh của sản phẩm (bao gồm cả ảnh chính)
+    @Builder.Default
+    private List<ProductImageDto> images = new ArrayList<>();
 
     // productCode: có thể để trống nếu codeType = SKU (sẽ tự sinh)
     private String productCode;
@@ -59,6 +66,8 @@ public class ProductDto {
 
     private LocalDateTime updatedAt;
 }
+
+
 
 
 

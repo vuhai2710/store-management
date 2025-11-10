@@ -165,6 +165,11 @@ public class ProductServiceImpl implements ProductService {
         product.setSku(sku);
         product.setCodeType(productDto.getCodeType());
         product.setBrand(productDto.getBrand());
+        product.setDescription(productDto.getDescription());
+        // imageUrl đã được set trong productDto ở bước upload ảnh (nếu có)
+        if (productDto.getImageUrl() != null) {
+            product.setImageUrl(productDto.getImageUrl());
+        }
         
         // Set default values và kiểm tra inventory
         if (product.getStockQuantity() == null) {
@@ -192,7 +197,11 @@ public class ProductServiceImpl implements ProductService {
         log.info("Product created successfully with ID: {}, Stock: {}, Status: {}", 
                 savedProduct.getIdProduct(), savedProduct.getStockQuantity(), savedProduct.getStatus());
         
-        return productMapper.toDto(savedProduct);
+        // Fetch lại với JOIN FETCH để có đầy đủ thông tin category và supplier
+        Product productWithDetails = productRepository.findByIdWithDetails(savedProduct.getIdProduct())
+                .orElse(savedProduct);
+        
+        return productMapper.toDto(productWithDetails);
     }
 
     @Override
@@ -318,7 +327,11 @@ public class ProductServiceImpl implements ProductService {
         log.info("Product updated successfully: ID={}, Stock={}, Status={}", 
                 updatedProduct.getIdProduct(), updatedProduct.getStockQuantity(), updatedProduct.getStatus());
         
-        return productMapper.toDto(updatedProduct);
+        // Fetch lại với JOIN FETCH để có đầy đủ thông tin category và supplier
+        Product productWithDetails = productRepository.findByIdWithDetails(updatedProduct.getIdProduct())
+                .orElse(updatedProduct);
+        
+        return productMapper.toDto(productWithDetails);
     }
 
     @Override
@@ -345,7 +358,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDto getProductById(Integer id) {
-        Product product = productRepository.findById(id)
+        Product product = productRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + id));
         return productMapper.toDto(product);
     }
@@ -354,7 +367,10 @@ public class ProductServiceImpl implements ProductService {
     public ProductDto getProductByCode(String productCode) {
         Product product = productRepository.findByProductCode(productCode)
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với mã: " + productCode));
-        return productMapper.toDto(product);
+        // Fetch lại với JOIN FETCH để có đầy đủ thông tin
+        Product productWithDetails = productRepository.findByIdWithDetails(product.getIdProduct())
+                .orElse(product);
+        return productMapper.toDto(productWithDetails);
     }
 
     @Override

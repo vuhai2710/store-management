@@ -11,7 +11,7 @@ import java.util.List;
  * ProductMapper - MapStruct mapper cho Product entity
  *
  * Note: Date formatting được xử lý tự động bởi JacksonConfig (global config)
- * Không cần custom formatDate method nữa
+ * Number formatting (tránh scientific notation) được xử lý bởi JacksonConfig
  */
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
@@ -20,8 +20,8 @@ public interface ProductMapper {
     @Mapping(target = "idCategory", source = "category.idCategory")
     @Mapping(target = "categoryName", source = "category.categoryName")
     @Mapping(target = "brand", source = "brand")
-    @Mapping(target = "idSupplier", source = "supplier.idSupplier")
-    @Mapping(target = "supplierName", source = "supplier.supplierName")
+    @Mapping(target = "idSupplier", expression = "java(entity.getSupplier() != null ? entity.getSupplier().getIdSupplier() : null)")
+    @Mapping(target = "supplierName", expression = "java(entity.getSupplier() != null ? entity.getSupplier().getSupplierName() : null)")
     ProductDto toDto(Product entity);
 
     // ProductDto → Product

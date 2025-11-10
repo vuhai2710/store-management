@@ -5,8 +5,10 @@ import com.storemanagement.dto.response.CustomerDto;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.CustomerMapper;
 import com.storemanagement.model.Customer;
+import com.storemanagement.model.ShippingAddress;
 import com.storemanagement.model.User;
 import com.storemanagement.repository.CustomerRepository;
+import com.storemanagement.repository.ShippingAddressRepository;
 import com.storemanagement.repository.UserRepository;
 import com.storemanagement.service.CustomerService;
 import com.storemanagement.utils.CustomerType;
@@ -27,12 +29,27 @@ public class CustomerServiceImpl implements CustomerService {
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
     private final UserRepository userRepository;
+    private final ShippingAddressRepository shippingAddressRepository;
 
     @Override
     public CustomerDto createCustomerForUser(User user, AuthenticationRequestDto request) {
         Customer customer = customerMapper.toEntity(request);
         customer.setUser(user);
         Customer savedCustomer = customerRepository.save(customer);
+        
+        // Tự động tạo ShippingAddress từ address trong request (nếu có)
+        // Địa chỉ này sẽ được đánh dấu là default
+        if (request.getAddress() != null && !request.getAddress().trim().isEmpty()) {
+            ShippingAddress defaultAddress = ShippingAddress.builder()
+                    .customer(savedCustomer)
+                    .recipientName(request.getCustomerName())
+                    .phoneNumber(request.getPhoneNumber())
+                    .address(request.getAddress())
+                    .isDefault(true)
+                    .build();
+            shippingAddressRepository.save(defaultAddress);
+        }
+        
         return customerMapper.toDto(savedCustomer);
     }
 

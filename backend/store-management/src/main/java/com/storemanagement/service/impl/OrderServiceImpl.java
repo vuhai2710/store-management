@@ -176,7 +176,7 @@ public class OrderServiceImpl implements OrderService {
         // Tính tổng tiền từ giá hiện tại của sản phẩm
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (CartItem item : cart.getCartItems()) {
-            BigDecimal itemTotal = BigDecimal.valueOf(item.getProduct().getPrice())
+            BigDecimal itemTotal = item.getProduct().getPrice()
                     .multiply(BigDecimal.valueOf(item.getQuantity()));
             totalAmount = totalAmount.add(itemTotal);
         }
@@ -207,7 +207,7 @@ public class OrderServiceImpl implements OrderService {
             String productName = product.getProductName();
             String productCode = product.getProductCode();
             String productImage = product.getImageUrl();
-            Double productPrice = product.getPrice();
+            BigDecimal productPrice = product.getPrice();
 
             // Tạo order detail với snapshot
             // Snapshot này đảm bảo khi admin chỉnh sửa sản phẩm, đơn hàng vẫn giữ nguyên thông tin
@@ -215,7 +215,7 @@ public class OrderServiceImpl implements OrderService {
                     .order(order)
                     .product(product) // Vẫn giữ reference để có thể trace
                     .quantity(cartItem.getQuantity())
-                    .price(BigDecimal.valueOf(productPrice)) // Giá tại thời điểm mua
+                    .price(productPrice) // Giá tại thời điểm mua
                     .productNameSnapshot(productName) // Snapshot tên sản phẩm
                     .productCodeSnapshot(productCode) // Snapshot mã sản phẩm
                     .productImageSnapshot(productImage) // Snapshot URL ảnh
@@ -360,7 +360,7 @@ public class OrderServiceImpl implements OrderService {
 
         // ========== PHASE 3: CALCULATION ==========
 
-        BigDecimal totalAmount = BigDecimal.valueOf(product.getPrice())
+        BigDecimal totalAmount = product.getPrice()
                 .multiply(BigDecimal.valueOf(request.getQuantity()));
 
         // ========== PHASE 4: ORDER CREATION ==========
@@ -383,13 +383,13 @@ public class OrderServiceImpl implements OrderService {
         String productName = product.getProductName();
         String productCode = product.getProductCode();
         String productImage = product.getImageUrl();
-        Double productPrice = product.getPrice();
+        BigDecimal productPrice = product.getPrice();
 
         OrderDetail orderDetail = OrderDetail.builder()
                 .order(order)
                 .product(product)
                 .quantity(request.getQuantity())
-                .price(BigDecimal.valueOf(productPrice))
+                .price(productPrice)
                 .productNameSnapshot(productName)
                 .productCodeSnapshot(productCode)
                 .productImageSnapshot(productImage)
@@ -683,7 +683,7 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (com.storemanagement.dto.request.OrderItemDto item : request.getOrderItems()) {
             Product product = productRepository.findById(item.getProductId()).orElseThrow();
-            BigDecimal itemTotal = BigDecimal.valueOf(product.getPrice())
+            BigDecimal itemTotal = product.getPrice()
                     .multiply(BigDecimal.valueOf(item.getQuantity()));
             totalAmount = totalAmount.add(itemTotal);
         }
@@ -737,13 +737,13 @@ public class OrderServiceImpl implements OrderService {
             String productName = product.getProductName();
             String productCode = product.getProductCode();
             String productImage = product.getImageUrl();
-            Double productPrice = product.getPrice();
+            BigDecimal productPrice = product.getPrice();
 
             OrderDetail orderDetail = OrderDetail.builder()
                     .order(order)
                     .product(product)
                     .quantity(item.getQuantity())
-                    .price(BigDecimal.valueOf(productPrice))
+                    .price(productPrice)
                     .productNameSnapshot(productName)
                     .productCodeSnapshot(productCode)
                     .productImageSnapshot(productImage)

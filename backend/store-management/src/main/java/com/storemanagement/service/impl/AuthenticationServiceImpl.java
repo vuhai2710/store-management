@@ -12,11 +12,15 @@ import com.storemanagement.model.User;
 import com.storemanagement.repository.EmployeeRepository;
 import com.storemanagement.repository.UserRepository;
 import com.storemanagement.service.AuthenticationService;
+import com.storemanagement.service.EmailService;
 import com.storemanagement.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -24,10 +28,13 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserService userService;
     private final UserRepository userRepository;
     private final EmployeeRepository employeeRepository;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${jwt.signerKey}")
     private String SIGNER_KEY;
@@ -83,5 +90,87 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         JWSObject jwsObject = new JWSObject(header, payload);
         jwsObject.sign(signer);
         return jwsObject.serialize();
+    }
+    
+    /**
+     * Quên mật khẩu - Generate password mới và gửi qua email
+     * 
+     * Flow:
+     * 1. Tìm user theo email
+     * 2. Generate random password (10 ký tự: chữ + số)
+     * 3. Hash password và update vào DB
+     * 4. Gửi email với password mới
+     * 5. Return success message
+     */
+    @Override
+    public String forgotPassword(String email) {
+        log.info("Processing forgot password for email: {}", email);
+        
+        // Bước 1: Tìm user theo email
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email: " + email));
+        
+        // Bước 2: Generate random password
+        String newPassword = generateRandomPassword(10);
+        log.info("Generated new password for user: {}", user.getUsername());
+        
+        // Bước 3: Hash và update password
+        String hashedPassword = passwordEncoder.encode(newPassword);
+        user.setPassword(hashedPassword);
+        userRepository.save(user);
+        log.info("Updated password for user: {}", user.getUsername());
+        
+        // Bước 4: Gửi email
+        try {
+            emailService.sendForgotPasswordEmail(email, user.getUsername(), newPassword);
+            log.info("Sent forgot password email to: {}", email);
+        } catch (Exception e) {
+            log.error("Error sending forgot password email: {}", e.getMessage(), e);
+            throw new RuntimeException("Không thể gửi email. Vui lòng thử lại sau.");
+        }
+        
+        return "Mật khẩu mới đã được gửi đến email: " + email;
+    }
+    
+    /**
+     * Generate random password với độ dài cho trước
+     * Password gồm chữ hoa, chữ thường, và số
+     * 
+     * @param length Độ dài password (tối thiểu 8)
+     * @return Random password
+     */
+    private String generateRandomPassword(int length) {
+        if (length < 8) {
+            length = 8; // Tối thiểu 8 ký tự để đảm bảo bảo mật
+        }
+        
+        String upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String lowerCase = "abcdefghijklmnopqrstuvwxyz";
+        String numbers = "0123456789";
+        String allChars = upperCase + lowerCase + numbers;
+        
+        SecureRandom random = new SecureRandom();
+        StringBuilder password = new StringBuilder(length);
+        
+        // Đảm bảo có ít nhất 1 ký tự mỗi loại
+        password.append(upperCase.charAt(random.nextInt(upperCase.length())));
+        password.append(lowerCase.charAt(random.nextInt(lowerCase.length())));
+        password.append(numbers.charAt(random.nextInt(numbers.length())));
+        
+        // Fill remaining characters
+        for (int i = 3; i < length; i++) {
+            password.append(allChars.charAt(random.nextInt(allChars.length())));
+        }
+        
+        // Shuffle để random vị trí
+        char[] passwordArray = password.toString().toCharArray();
+        for (int i = passwordArray.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            char temp = passwordArray[i];
+            passwordArray[i] = passwordArray[j];
+            passwordArray[j] = temp;
+        }
+        
+        return new String(passwordArray);
     }
 }

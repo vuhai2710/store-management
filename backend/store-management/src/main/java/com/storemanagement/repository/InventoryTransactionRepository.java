@@ -1,6 +1,7 @@
 package com.storemanagement.repository;
 
 import com.storemanagement.model.InventoryTransaction;
+import com.storemanagement.utils.TransactionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -54,7 +55,49 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
      * Tìm tất cả transactions, sắp xếp theo transaction_date DESC
      */
     Page<InventoryTransaction> findAllByOrderByTransactionDateDesc(Pageable pageable);
+
+    /**
+     * Tìm transactions theo loại giao dịch (IN/OUT)
+     */
+    Page<InventoryTransaction> findByTransactionType(TransactionType transactionType, Pageable pageable);
+
+    /**
+     * Tìm transactions theo loại giao dịch và sản phẩm
+     */
+    Page<InventoryTransaction> findByTransactionTypeAndProduct_IdProduct(
+            TransactionType transactionType,
+            Integer productId,
+            Pageable pageable
+    );
+
+    /**
+     * Tìm transactions theo loại giao dịch trong khoảng thời gian
+     */
+    Page<InventoryTransaction> findByTransactionTypeAndTransactionDateBetween(
+            TransactionType transactionType,
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            Pageable pageable
+    );
+
+    /**
+     * Tìm transactions theo nhiều criteria với query tùy chỉnh
+     * Hỗ trợ filter theo: transactionType, productId, dateRange
+     */
+    @Query("SELECT it FROM InventoryTransaction it " +
+           "WHERE (:transactionType IS NULL OR it.transactionType = :transactionType) " +
+           "AND (:productId IS NULL OR it.product.idProduct = :productId) " +
+           "AND it.transactionDate BETWEEN :startDate AND :endDate " +
+           "ORDER BY it.transactionDate DESC")
+    Page<InventoryTransaction> findByMultipleCriteria(
+            @Param("transactionType") TransactionType transactionType,
+            @Param("productId") Integer productId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
+    );
 }
+
 
 
 

@@ -15,6 +15,7 @@ Module xử lý đăng ký, đăng nhập, đăng xuất. Tất cả endpoints �
 | POST | `/api/v1/auth/register` | Không cần | Đăng ký tài khoản khách hàng mới |
 | POST | `/api/v1/auth/login` | Không cần | Đăng nhập vào hệ thống |
 | POST | `/api/v1/auth/logout` | Không cần | Đăng xuất khỏi hệ thống |
+| POST | `/api/v1/auth/forgot-password` | Không cần | **MỚI** - Quên mật khẩu (gửi mật khẩu mới qua email) |
 
 ---
 
@@ -335,9 +336,90 @@ Khi username hoặc email đã tồn tại:
 
 ---
 
+## 4. Quên mật khẩu
+
+### Thông tin Endpoint
+
+- **URL:** `POST /api/v1/auth/forgot-password`
+- **Authentication:** Không cần
+- **Content-Type:** `application/json`
+
+### Request Body
+
+```json
+{
+  "email": "string (required, valid email format)"
+}
+```
+
+### Ví dụ Request
+
+```json
+{
+  "email": "customer1@example.com"
+}
+```
+
+### Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "code": 200,
+  "message": "Mật khẩu mới đã được gửi đến email: customer1@example.com",
+  "data": null
+}
+```
+
+### Flow xử lý
+
+1. **Nhập email**: User nhập email đã đăng ký
+2. **Tìm tài khoản**: Hệ thống tìm user theo email
+3. **Generate password**: Tạo mật khẩu ngẫu nhiên (10 ký tự: chữ + số)
+4. **Update database**: Hash và lưu mật khẩu mới vào DB
+5. **Gửi email**: Gửi email chứa mật khẩu mới cho user
+6. **Return success**: Trả về thông báo thành công
+
+### Email nhận được
+
+User sẽ nhận được email với nội dung:
+- **Tiêu đề**: "Khôi phục mật khẩu - Store Management System"
+- **Nội dung**: Mật khẩu mới (10 ký tự random)
+- **Hướng dẫn**: Đăng nhập và đổi mật khẩu ngay
+
+### Lưu ý
+
+⚠️ **Quan trọng**:
+- Mật khẩu mới là **ngẫu nhiên** và chỉ gửi 1 lần
+- Nên **đổi mật khẩu ngay** sau khi đăng nhập
+- Email có thể mất **vài giây** để đến hộp thư
+- Kiểm tra cả **hộp thư spam/junk** nếu không thấy email
+
+### Error Responses
+
+**404 Not Found - Không tìm thấy tài khoản**:
+```json
+{
+  "code": 404,
+  "message": "Không tìm thấy tài khoản với email: wrong@example.com"
+}
+```
+
+**500 Internal Server Error - Lỗi gửi email**:
+```json
+{
+  "code": 500,
+  "message": "Không thể gửi email. Vui lòng thử lại sau."
+}
+```
+
+---
+
 ## Liên hệ
 
 Nếu có thắc mắc về Authentication Module, vui lòng liên hệ team Backend.
+
 
 
 

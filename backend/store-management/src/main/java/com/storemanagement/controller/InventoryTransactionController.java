@@ -5,6 +5,7 @@ import com.storemanagement.dto.response.InventoryTransactionDto;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.service.InventoryTransactionService;
 import com.storemanagement.utils.ReferenceType;
+import com.storemanagement.utils.TransactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -115,6 +116,64 @@ public class InventoryTransactionController {
         }
 
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử nhập/xuất kho thành công", transactions));
+    }
+
+    /**
+     * Lấy transactions theo loại giao dịch (IN/OUT)
+     * GET /api/v1/inventory-transactions/by-type?transactionType=IN
+     */
+    @GetMapping("/by-type")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDto>>> getTransactionsByType(
+            @RequestParam TransactionType transactionType,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "transactionDate") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
+
+        PageResponse<InventoryTransactionDto> transactions = 
+                inventoryTransactionService.getTransactionsByType(transactionType, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử " + 
+                (transactionType == TransactionType.IN ? "nhập kho" : "xuất kho") + " thành công", transactions));
+    }
+
+    /**
+     * Lọc transactions theo nhiều criteria (transactionType, productId, dateRange)
+     * GET /api/v1/inventory-transactions/filter?transactionType=IN&productId=1&startDate=2025-01-01T00:00:00&endDate=2025-01-31T23:59:59
+     * 
+     * Params:
+     * - transactionType: IN hoặc OUT (optional)
+     * - productId: ID sản phẩm (optional)
+     * - startDate: Thời gian bắt đầu (optional, default: 1 tháng trước)
+     * - endDate: Thời gian kết thúc (optional, default: hiện tại)
+     * - pageNo, pageSize, sortBy, sortDirection: Phân trang
+     */
+    @GetMapping("/filter")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDto>>> filterTransactions(
+            @RequestParam(required = false) TransactionType transactionType,
+            @RequestParam(required = false) Integer productId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "transactionDate") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
+
+        LocalDateTime start = startDate != null ? LocalDateTime.parse(startDate) : LocalDateTime.now().minusMonths(1);
+        LocalDateTime end = endDate != null ? LocalDateTime.parse(endDate) : LocalDateTime.now();
+
+        PageResponse<InventoryTransactionDto> transactions = 
+                inventoryTransactionService.getTransactionsByMultipleCriteria(
+                        transactionType, productId, start, end, pageable);
+
+        return ResponseEntity.ok(ApiResponse.success("Lọc lịch sử nhập/xuất kho thành công", transactions));
     }
 }
 

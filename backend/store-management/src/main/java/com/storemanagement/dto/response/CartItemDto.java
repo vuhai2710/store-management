@@ -17,11 +17,16 @@ public class CartItemDto {
     private String productName;
     private String productCode;
     private String productImageUrl;
-    private Double productPrice;
+    private BigDecimal productPrice;
     private Integer productStockQuantity;
     private Integer quantity;
     private BigDecimal subtotal; // quantity * productPrice
 }
+
+
+
+
+
 
 
 

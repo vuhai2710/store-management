@@ -3,6 +3,8 @@ package com.storemanagement.controller;
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.dto.response.ProductDto;
+import com.storemanagement.dto.response.ProductImageDto;
+import com.storemanagement.service.ProductImageService;
 import com.storemanagement.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductImageService productImageService;
 
     /**
      * Lấy danh sách sản phẩm (có phân trang, lọc, tìm kiếm)
@@ -255,33 +258,35 @@ public class ProductController {
     }
 
     /**
-     * Thêm sản phẩm mới
+     * Thêm sản phẩm mới (JSON only - không upload ảnh)
      * POST /api/v1/products
-     * Content-Type: multipart/form-data
-     * Body: productDto (JSON string) và image (file, optional)
+     * Content-Type: application/json
+     * Body: ProductDto (JSON object)
+     * 
+     * Đây là cách đơn giản hơn, phù hợp với Postman và frontend React.
+     * Sau khi tạo, có thể upload ảnh qua endpoint POST /api/v1/products/{id}/images
      */
-    @PostMapping(consumes = {"multipart/form-data"})
+    @PostMapping(consumes = {"application/json"})
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<ProductDto>> createProduct(
-            @RequestPart("productDto") @Valid ProductDto productDto,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        ProductDto createdProduct = productService.createProduct(productDto, image);
+    public ResponseEntity<ApiResponse<ProductDto>> createProductJson(@RequestBody @Valid ProductDto productDto) {
+        ProductDto createdProduct = productService.createProduct(productDto);
         return ResponseEntity.ok(ApiResponse.success("Thêm sản phẩm thành công", createdProduct));
     }
 
     /**
-     * Sửa thông tin sản phẩm
+     * Sửa thông tin sản phẩm (JSON only - không upload ảnh)
      * PUT /api/v1/products/{id}
-     * Content-Type: multipart/form-data
-     * Body: productDto (JSON string) và image (file, optional)
+     * Content-Type: application/json
+     * Body: ProductDto (JSON object)
+     * 
+     * Để upload ảnh mới, sử dụng endpoint POST /api/v1/products/{id}/images
      */
-    @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
+    @PutMapping(value = "/{id}", consumes = {"application/json"})
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<ProductDto>> updateProduct(
             @PathVariable Integer id,
-            @RequestPart("productDto") @Valid ProductDto productDto,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        ProductDto updatedProduct = productService.updateProduct(id, productDto, image);
+            @RequestBody @Valid ProductDto productDto) {
+        ProductDto updatedProduct = productService.updateProduct(id, productDto);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật sản phẩm thành công", updatedProduct));
     }
 
@@ -294,6 +299,79 @@ public class ProductController {
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Integer id) {
         productService.deleteProduct(id);
         return ResponseEntity.ok(ApiResponse.success("Xóa sản phẩm thành công", null));
+    }
+    
+    // ============================================================
+    // PRODUCT IMAGE ENDPOINTS - Quản lý nhiều ảnh cho sản phẩm
+    // ============================================================
+    
+    /**
+     * Upload nhiều ảnh cho sản phẩm (tối đa 5 ảnh)
+     * POST /api/v1/products/{id}/images
+     * Content-Type: multipart/form-data
+     * Body: images (array of files)
+     * 
+     * Business Rules:
+     * - Tối đa 5 ảnh mỗi sản phẩm
+     * - Ảnh đầu tiên sẽ là ảnh chính
+     */
+    @PostMapping(value = "/{id}/images", consumes = {"multipart/form-data"})
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<List<ProductImageDto>>> uploadProductImages(
+            @PathVariable Integer id,
+            @RequestParam("images") List<MultipartFile> images) {
+        List<ProductImageDto> uploadedImages = productImageService.uploadProductImages(id, images);
+        return ResponseEntity.ok(ApiResponse.success("Upload ảnh thành công", uploadedImages));
+    }
+    
+    /**
+     * Thêm một ảnh cho sản phẩm
+     * POST /api/v1/products/{id}/images/single
+     * Content-Type: multipart/form-data
+     * Body: image (single file)
+     */
+    @PostMapping(value = "/{id}/images/single", consumes = {"multipart/form-data"})
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<ProductImageDto>> addProductImage(
+            @PathVariable Integer id,
+            @RequestParam("image") MultipartFile image) {
+        ProductImageDto addedImage = productImageService.addProductImage(id, image);
+        return ResponseEntity.ok(ApiResponse.success("Thêm ảnh thành công", addedImage));
+    }
+    
+    /**
+     * Lấy tất cả ảnh của sản phẩm
+     * GET /api/v1/products/{id}/images
+     */
+    @GetMapping("/{id}/images")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
+    public ResponseEntity<ApiResponse<List<ProductImageDto>>> getProductImages(@PathVariable Integer id) {
+        List<ProductImageDto> images = productImageService.getProductImages(id);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách ảnh thành công", images));
+    }
+    
+    /**
+     * Xóa một ảnh của sản phẩm
+     * DELETE /api/v1/products/images/{imageId}
+     * 
+     * Nếu xóa ảnh chính, ảnh tiếp theo sẽ trở thành ảnh chính
+     */
+    @DeleteMapping("/images/{imageId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<Void>> deleteProductImage(@PathVariable Integer imageId) {
+        productImageService.deleteProductImage(imageId);
+        return ResponseEntity.ok(ApiResponse.success("Xóa ảnh thành công", null));
+    }
+    
+    /**
+     * Đặt một ảnh làm ảnh chính
+     * PUT /api/v1/products/images/{imageId}/primary
+     */
+    @PutMapping("/images/{imageId}/primary")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<ProductImageDto>> setImageAsPrimary(@PathVariable Integer imageId) {
+        ProductImageDto updatedImage = productImageService.setImageAsPrimary(imageId);
+        return ResponseEntity.ok(ApiResponse.success("Đặt ảnh chính thành công", updatedImage));
     }
 }
 
