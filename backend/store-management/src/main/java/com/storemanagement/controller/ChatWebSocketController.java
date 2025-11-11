@@ -1,8 +1,8 @@
 package com.storemanagement.controller;
 
-import com.storemanagement.dto.request.ChatMessageRequest;
-import com.storemanagement.dto.response.ChatMessageDto;
-import com.storemanagement.dto.response.WebSocketErrorDto;
+import com.storemanagement.dto.chat.ChatMessageRequest;
+import com.storemanagement.dto.chat.ChatMessageDTO;
+import com.storemanagement.dto.chat.WebSocketErrorDTO;
 import com.storemanagement.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +53,7 @@ public class ChatWebSocketController {
         
         try {
             // Lưu tin nhắn vào database
-            ChatMessageDto savedMessage = chatService.sendMessage(request);
+            ChatMessageDTO savedMessage = chatService.sendMessage(request);
             
             // Broadcast tin nhắn đến tất cả subscribers của conversation này
             String destination = "/topic/chat." + request.getConversationId();
@@ -66,7 +66,7 @@ public class ChatWebSocketController {
                     request.getSenderType(), request.getSenderId(), request.getConversationId(), e.getMessage());
             
             // Gửi error message về cho client qua error topic
-            WebSocketErrorDto error = WebSocketErrorDto.builder()
+            WebSocketErrorDTO error = WebSocketErrorDTO.builder()
                     .error("ACCESS_DENIED")
                     .message(e.getMessage())
                     .conversationId(request.getConversationId())
@@ -80,7 +80,7 @@ public class ChatWebSocketController {
             log.error("Error sending message: {}", e.getMessage(), e);
             
             // Gửi error message về cho client
-            WebSocketErrorDto error = WebSocketErrorDto.builder()
+            WebSocketErrorDTO error = WebSocketErrorDTO.builder()
                     .error("ERROR")
                     .message("Không thể gửi tin nhắn: " + e.getMessage())
                     .conversationId(request.getConversationId())

@@ -1,4 +1,4 @@
-package com.storemanagement.dto.response;
+package com.storemanagement.dto.chat;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class WebSocketErrorDto {
+public class WebSocketErrorDTO {
     
     @JsonProperty("error")
     private String error;
@@ -27,4 +27,3 @@ public class WebSocketErrorDto {
     @JsonProperty("timestamp")
     private Long timestamp;
 }
-

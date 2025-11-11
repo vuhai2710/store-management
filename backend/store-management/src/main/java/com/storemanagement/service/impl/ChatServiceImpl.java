@@ -1,8 +1,8 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.request.ChatMessageRequest;
-import com.storemanagement.dto.response.ChatConversationDto;
-import com.storemanagement.dto.response.ChatMessageDto;
+import com.storemanagement.dto.chat.ChatMessageRequest;
+import com.storemanagement.dto.chat.ChatConversationDTO;
+import com.storemanagement.dto.chat.ChatMessageDTO;
 import com.storemanagement.model.*;
 import com.storemanagement.repository.*;
 import com.storemanagement.service.ChatService;
@@ -43,7 +43,7 @@ public class ChatServiceImpl implements ChatService {
     private final EmployeeRepository employeeRepository;
     
     @Override
-    public ChatConversationDto createConversation(Integer customerId) {
+    public ChatConversationDTO createConversation(Integer customerId) {
         log.info("Creating conversation for customer ID: {}", customerId);
         
         // Validate customer tồn tại
@@ -67,7 +67,7 @@ public class ChatServiceImpl implements ChatService {
     }
     
     @Override
-    public ChatMessageDto sendMessage(ChatMessageRequest request) {
+    public ChatMessageDTO sendMessage(ChatMessageRequest request) {
         log.info("Sending message from {} ID: {} to conversation ID: {}", 
                 request.getSenderType(), request.getSenderId(), request.getConversationId());
         
@@ -107,7 +107,7 @@ public class ChatServiceImpl implements ChatService {
     
     @Override
     @Transactional(readOnly = true)
-    public Page<ChatMessageDto> getConversationMessages(Integer conversationId, Pageable pageable) {
+    public Page<ChatMessageDTO> getConversationMessages(Integer conversationId, Pageable pageable) {
         log.info("Getting messages for conversation ID: {}", conversationId);
         
         // Validate conversation tồn tại
@@ -125,7 +125,7 @@ public class ChatServiceImpl implements ChatService {
     }
     
     @Override
-    public ChatConversationDto getOrCreateCustomerConversation(Integer customerId) {
+    public ChatConversationDTO getOrCreateCustomerConversation(Integer customerId) {
         log.info("Getting or creating conversation for customer ID: {}", customerId);
         
         // Tìm conversation OPEN
@@ -136,7 +136,7 @@ public class ChatServiceImpl implements ChatService {
     
     @Override
     @Transactional(readOnly = true)
-    public Page<ChatConversationDto> getAllConversations(Pageable pageable) {
+    public Page<ChatConversationDTO> getAllConversations(Pageable pageable) {
         log.info("Getting all conversations");
         
         Page<ChatConversation> conversations = conversationRepository.findAllOrderByUpdatedAtDesc(pageable);
@@ -158,7 +158,7 @@ public class ChatServiceImpl implements ChatService {
     
     @Override
     @Transactional(readOnly = true)
-    public ChatConversationDto getConversationById(Integer conversationId) {
+    public ChatConversationDTO getConversationById(Integer conversationId) {
         log.info("Getting conversation by ID: {}", conversationId);
         
         ChatConversation conversation = conversationRepository.findById(conversationId)
@@ -200,14 +200,14 @@ public class ChatServiceImpl implements ChatService {
         }
     }
     
-    private ChatConversationDto toConversationDto(ChatConversation conversation) {
+    private ChatConversationDTO toConversationDto(ChatConversation conversation) {
         // Lấy tin nhắn mới nhất
         ChatMessage lastMessage = messageRepository.findLatestMessageByConversationId(conversation.getIdConversation());
         
         // Tính unread count
         Long unreadCount = calculateUnreadCount(conversation.getIdConversation());
         
-        return ChatConversationDto.builder()
+        return ChatConversationDTO.builder()
                 .idConversation(conversation.getIdConversation())
                 .idCustomer(conversation.getCustomer().getIdCustomer())
                 .customerName(conversation.getCustomer().getCustomerName())
@@ -264,10 +264,10 @@ public class ChatServiceImpl implements ChatService {
         }
     }
     
-    private ChatMessageDto toMessageDto(ChatMessage message) {
+    private ChatMessageDTO toMessageDto(ChatMessage message) {
         String senderName = getSenderName(message.getSenderId(), message.getSenderType());
         
-        return ChatMessageDto.builder()
+        return ChatMessageDTO.builder()
                 .idMessage(message.getIdMessage())
                 .conversationId(message.getConversation().getIdConversation())
                 .senderId(message.getSenderId())
