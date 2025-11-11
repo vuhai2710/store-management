@@ -7,17 +7,20 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Base Response DTO cho GHN API
+ * DTO cho Phường/Xã từ GHN API
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GHNBaseResponseDTO<T> {
-    @JsonProperty("code")
-    private Integer code;
-    @JsonProperty("message")
-    private String message;
-    @JsonProperty("data")
-    private T data;
+public class GHNWardDTO {
+
+    @JsonProperty("WardCode")
+    private String wardCode;
+
+    @JsonProperty("DistrictID")
+    private Integer districtId;
+
+    @JsonProperty("WardName")
+    private String wardName;
 }

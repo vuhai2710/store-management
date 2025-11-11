@@ -18,7 +18,7 @@ public interface ChatService {
      * Nếu customer đã có conversation đang OPEN, trả về conversation đó
      * 
      * @param customerId ID của customer
-     * @return ChatConversationDto
+     * @return ChatConversationDTO
      */
     ChatConversationDTO createConversation(Integer customerId);
     

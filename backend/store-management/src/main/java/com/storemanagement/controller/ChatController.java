@@ -8,6 +8,7 @@ import com.storemanagement.model.Customer;
 import com.storemanagement.repository.CustomerRepository;
 import com.storemanagement.service.ChatService;
 import com.storemanagement.utils.SecurityUtils;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -51,10 +52,9 @@ public class ChatController {
         
         // Lấy customerId từ userId
         Customer customer = customerRepository.findByUser_IdUser(userId)
-                .orElseThrow(() -> new RuntimeException("Customer not found for user ID: " + userId));
-        Integer customerId = customer.getIdCustomer();
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng với user ID: " + userId));
         
-        ChatConversationDTO conversation = chatService.createConversation(customerId);
+        ChatConversationDTO conversation = chatService.createConversation(customer.getIdCustomer());
         return ResponseEntity.ok(ApiResponse.success("Tạo cuộc hội thoại thành công", conversation));
     }
     
@@ -73,10 +73,9 @@ public class ChatController {
         
         // Lấy customerId từ userId
         Customer customer = customerRepository.findByUser_IdUser(userId)
-                .orElseThrow(() -> new RuntimeException("Customer not found for user ID: " + userId));
-        Integer customerId = customer.getIdCustomer();
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng với user ID: " + userId));
         
-        ChatConversationDTO conversation = chatService.getOrCreateCustomerConversation(customerId);
+        ChatConversationDTO conversation = chatService.getOrCreateCustomerConversation(customer.getIdCustomer());
         return ResponseEntity.ok(ApiResponse.success("Lấy cuộc hội thoại thành công", conversation));
     }
     

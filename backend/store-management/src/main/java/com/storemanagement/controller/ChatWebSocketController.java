@@ -2,13 +2,17 @@ package com.storemanagement.controller;
 
 import com.storemanagement.dto.chat.ChatMessageRequest;
 import com.storemanagement.dto.chat.ChatMessageDTO;
+import com.storemanagement.dto.chat.WebSocketErrorDTO;
 import com.storemanagement.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
+
+import java.time.Instant;
 
 /**
  * WebSocket Controller cho Real-time Chat
@@ -57,11 +61,34 @@ public class ChatWebSocketController {
             
             log.info("Message broadcasted to {}", destination);
             
+        } catch (AccessDeniedException e) {
+            log.warn("Access denied for message from {} ID: {} to conversation ID: {} - {}", 
+                    request.getSenderType(), request.getSenderId(), request.getConversationId(), e.getMessage());
+            
+            // Gửi error message về cho client qua error topic
+            WebSocketErrorDTO error = WebSocketErrorDTO.builder()
+                    .error("ACCESS_DENIED")
+                    .message(e.getMessage())
+                    .conversationId(request.getConversationId())
+                    .timestamp(Instant.now().toEpochMilli())
+                    .build();
+            
+            String errorDestination = "/topic/chat." + request.getConversationId() + ".errors";
+            messagingTemplate.convertAndSend(errorDestination, error);
+            
         } catch (Exception e) {
-            // Error handling: Log error và có thể gửi error message về client qua WebSocket
-            // Hiện tại chỉ log error, client sẽ handle timeout/retry
             log.error("Error sending message: {}", e.getMessage(), e);
-            // messagingTemplate.convertAndSendToUser(principal.getName(), "/queue/errors", error);
+            
+            // Gửi error message về cho client
+            WebSocketErrorDTO error = WebSocketErrorDTO.builder()
+                    .error("ERROR")
+                    .message("Không thể gửi tin nhắn: " + e.getMessage())
+                    .conversationId(request.getConversationId())
+                    .timestamp(Instant.now().toEpochMilli())
+                    .build();
+            
+            String errorDestination = "/topic/chat." + request.getConversationId() + ".errors";
+            messagingTemplate.convertAndSend(errorDestination, error);
         }
     }
     
@@ -83,7 +110,6 @@ public class ChatWebSocketController {
     //     log.info("User disconnected: {}", disconnectData);
     // }
 }
-
 
 
 
