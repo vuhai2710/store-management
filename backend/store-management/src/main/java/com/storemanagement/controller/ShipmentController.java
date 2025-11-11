@@ -1,8 +1,8 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.ghn.GHNTrackingDto;
-import com.storemanagement.dto.response.ShipmentDto;
+import com.storemanagement.dto.ghn.GHNTrackingDTO;
+import com.storemanagement.dto.shipment.ShipmentDTO;
 import com.storemanagement.service.ShipmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,13 +35,13 @@ public class ShipmentController {
      * 
      * Logic:
      * 1. Gọi ShipmentService.getShipmentById(id)
-     * 2. Trả về ShipmentDto
+     * 2. Trả về ShipmentDTO
      */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<ShipmentDto>> getShipmentById(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<ShipmentDTO>> getShipmentById(@PathVariable Integer id) {
         log.info("Getting shipment by ID: {}", id);
-        ShipmentDto shipment = shipmentService.getShipmentById(id);
+        ShipmentDTO shipment = shipmentService.getShipmentById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin vận đơn thành công", shipment));
     }
     
@@ -52,13 +52,13 @@ public class ShipmentController {
      * 
      * Logic:
      * 1. Gọi ShipmentService.getShipmentByOrderId(orderId)
-     * 2. Trả về ShipmentDto
+     * 2. Trả về ShipmentDTO
      */
     @GetMapping("/order/{orderId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
-    public ResponseEntity<ApiResponse<ShipmentDto>> getShipmentByOrderId(@PathVariable Integer orderId) {
+    public ResponseEntity<ApiResponse<ShipmentDTO>> getShipmentByOrderId(@PathVariable Integer orderId) {
         log.info("Getting shipment by order ID: {}", orderId);
-        ShipmentDto shipment = shipmentService.getShipmentByOrderId(orderId);
+        ShipmentDTO shipment = shipmentService.getShipmentByOrderId(orderId);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin vận đơn thành công", shipment));
     }
     
@@ -69,7 +69,7 @@ public class ShipmentController {
      * 
      * Logic:
      * 1. Gọi ShipmentService.getShipmentTracking(id)
-     * 2. Trả về GHNTrackingDto với lịch sử cập nhật trạng thái
+     * 2. Trả về GHNTrackingDTO với lịch sử cập nhật trạng thái
      * 
      * Sử dụng:
      * - Hiển thị lịch sử tracking cho khách hàng
@@ -77,9 +77,9 @@ public class ShipmentController {
      */
     @GetMapping("/{id}/track")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
-    public ResponseEntity<ApiResponse<GHNTrackingDto>> trackShipment(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<GHNTrackingDTO>> trackShipment(@PathVariable Integer id) {
         log.info("Tracking shipment: shipmentId={}", id);
-        GHNTrackingDto tracking = shipmentService.getShipmentTracking(id);
+        GHNTrackingDTO tracking = shipmentService.getShipmentTracking(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin tracking thành công", tracking));
     }
     
@@ -94,7 +94,7 @@ public class ShipmentController {
      *    - Gọi GHN API để lấy thông tin mới nhất
      *    - Cập nhật shipment với thông tin từ GHN
      *    - Sync shippingStatus và Order.status
-     * 3. Trả về ShipmentDto đã được cập nhật
+     * 3. Trả về ShipmentDTO đã được cập nhật
      * 
      * Sử dụng:
      * - Đồng bộ thủ công khi cần
@@ -102,12 +102,13 @@ public class ShipmentController {
      */
     @PostMapping("/{id}/sync-ghn")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<ShipmentDto>> syncWithGHN(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<ShipmentDTO>> syncWithGHN(@PathVariable Integer id) {
         log.info("Syncing shipment with GHN: shipmentId={}", id);
-        ShipmentDto shipment = shipmentService.syncWithGHN(id);
+        ShipmentDTO shipment = shipmentService.syncWithGHN(id);
         return ResponseEntity.ok(ApiResponse.success("Đồng bộ với GHN thành công", shipment));
     }
 }
+
 
 
 

@@ -1,6 +1,6 @@
 package com.storemanagement.controller;
 
-import com.storemanagement.dto.ghn.GHNWebhookDto;
+import com.storemanagement.dto.ghn.GHNWebhookDTO;
 import com.storemanagement.model.Order;
 import com.storemanagement.model.Shipment;
 import com.storemanagement.repository.OrderRepository;
@@ -70,12 +70,12 @@ public class GHNWebhookController {
      * 5. Sync Shipment.shippingStatus và Order.status
      * 6. Return 200 OK
      * 
-     * @param webhookDto GHNWebhookDto từ request body
+     * @param webhookDto GHNWebhookDTO từ request body
      * @return 200 OK (luôn luôn, để GHN không retry)
      */
     @PostMapping("/webhook")
     @Transactional
-    public ResponseEntity<Map<String, String>> webhook(@RequestBody GHNWebhookDto webhookDto) {
+    public ResponseEntity<Map<String, String>> webhook(@RequestBody GHNWebhookDTO webhookDto) {
         log.info("Received GHN webhook. OrderCode: {}, Status: {}", 
             webhookDto.getOrderCode(), webhookDto.getStatus());
         

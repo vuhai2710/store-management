@@ -69,8 +69,8 @@ Authorization: Bearer {JWT_TOKEN}
         "address": "123 Đường ABC",
         "customerType": "REGULAR",
         "isActive": true,
-        "createdAt": "2025-01-01T00:00:00",
-        "updatedAt": "2025-01-01T00:00:00"
+        "createdAt": "01/01/2025 00:00:00",
+        "updatedAt": "01/01/2025 00:00:00"
       }
     ],
     "pageNo": 1,

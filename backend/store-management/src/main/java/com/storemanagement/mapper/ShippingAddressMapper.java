@@ -1,8 +1,6 @@
 package com.storemanagement.mapper;
 
-import com.storemanagement.dto.request.CreateShippingAddressRequestDto;
-import com.storemanagement.dto.response.ShippingAddressDto;
-import com.storemanagement.dto.request.UpdateShippingAddressRequestDto;
+import com.storemanagement.dto.shipment.ShippingAddressDTO;
 import com.storemanagement.model.ShippingAddress;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -11,20 +9,23 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ShippingAddressMapper {
+    // ShippingAddress → ShippingAddressDTO
+    @Mapping(target = "idShippingAddress", source = "idShippingAddress")
     @Mapping(target = "idCustomer", source = "customer.idCustomer")
-    ShippingAddressDto toDto(ShippingAddress entity);
+    ShippingAddressDTO toDTO(ShippingAddress entity);
     
-    List<ShippingAddressDto> toDtoList(List<ShippingAddress> entities);
+    List<ShippingAddressDTO> toDTOList(List<ShippingAddress> entities);
     
+    // ShippingAddressDTO → ShippingAddress (for create/update)
     @Mapping(target = "idShippingAddress", ignore = true)
     @Mapping(target = "customer", ignore = true)
-    ShippingAddress toEntity(CreateShippingAddressRequestDto dto);
+    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
+    ShippingAddress toEntity(ShippingAddressDTO dto);
     
+    // Update ShippingAddress from ShippingAddressDTO
     @Mapping(target = "idShippingAddress", ignore = true)
     @Mapping(target = "customer", ignore = true)
-    @Mapping(target = "isDefault", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    void updateEntityFromDto(UpdateShippingAddressRequestDto dto, @org.mapstruct.MappingTarget ShippingAddress entity);
+    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
+    void updateEntityFromDto(ShippingAddressDTO dto, @org.mapstruct.MappingTarget ShippingAddress entity);
 }
 

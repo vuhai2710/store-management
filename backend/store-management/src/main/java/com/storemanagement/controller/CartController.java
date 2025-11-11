@@ -1,9 +1,9 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.request.AddToCartRequestDto;
-import com.storemanagement.dto.request.UpdateCartItemRequestDto;
-import com.storemanagement.dto.response.CartDto;
+import com.storemanagement.dto.cart.AddToCartRequestDto;
+import com.storemanagement.dto.cart.UpdateCartItemRequestDto;
+import com.storemanagement.dto.cart.CartDTO;
 import com.storemanagement.service.CartService;
 import com.storemanagement.service.CustomerService;
 import jakarta.validation.Valid;
@@ -45,16 +45,16 @@ public class CartController {
      * Logic:
      * - Lấy customerId từ JWT token (username)
      * - Lấy hoặc tạo giỏ hàng (nếu chưa có)
-     * - Trả về CartDto với danh sách items và tổng tiền
+     * - Trả về CartDTO với danh sách items và tổng tiền
      */
     @GetMapping
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<CartDto>> getCart() {
+    public ResponseEntity<ApiResponse<CartDTO>> getCart() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
         
-        CartDto cart = cartService.getCart(customerId);
+        CartDTO cart = cartService.getCart(customerId);
         return ResponseEntity.ok(ApiResponse.success("Lấy giỏ hàng thành công", cart));
     }
 
@@ -73,12 +73,12 @@ public class CartController {
      */
     @PostMapping("/items")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<CartDto>> addToCart(@RequestBody @Valid AddToCartRequestDto request) {
+    public ResponseEntity<ApiResponse<CartDTO>> addToCart(@RequestBody @Valid AddToCartRequestDto request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
         
-        CartDto cart = cartService.addToCart(customerId, request);
+        CartDTO cart = cartService.addToCart(customerId, request);
         return ResponseEntity.ok(ApiResponse.success("Thêm sản phẩm vào giỏ hàng thành công", cart));
     }
 
@@ -96,14 +96,14 @@ public class CartController {
      */
     @PutMapping("/items/{itemId}")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<CartDto>> updateCartItem(
+    public ResponseEntity<ApiResponse<CartDTO>> updateCartItem(
             @PathVariable Integer itemId,
             @RequestBody @Valid UpdateCartItemRequestDto request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
         
-        CartDto cart = cartService.updateCartItem(customerId, itemId, request);
+        CartDTO cart = cartService.updateCartItem(customerId, itemId, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật giỏ hàng thành công", cart));
     }
 
@@ -120,12 +120,12 @@ public class CartController {
      */
     @DeleteMapping("/items/{itemId}")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<CartDto>> removeCartItem(@PathVariable Integer itemId) {
+    public ResponseEntity<ApiResponse<CartDTO>> removeCartItem(@PathVariable Integer itemId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
         
-        CartDto cart = cartService.removeCartItem(customerId, itemId);
+        CartDTO cart = cartService.removeCartItem(customerId, itemId);
         return ResponseEntity.ok(ApiResponse.success("Xóa sản phẩm khỏi giỏ hàng thành công", cart));
     }
 

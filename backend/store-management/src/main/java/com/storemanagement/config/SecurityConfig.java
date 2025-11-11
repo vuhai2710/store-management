@@ -38,16 +38,6 @@ public class SecurityConfig {
     @Value("${jwt.signerKey}")
     private String SIGNER_KEY;
 
-    private static final String[] PUBLIC_URLS = {
-            "/api/v1/auth/**",
-            "/api/v1/products/public/**",
-            "/swagger-ui/**",
-            "/v3/api-docs/**",
-            "/actuator/**",
-            "/uploads/**",
-            "/ws/**"
-    };
-
     private static final String[] ADMIN_URLS = {
             "/api/v1/admin/**"
     };
@@ -94,6 +84,10 @@ public class SecurityConfig {
         return source;
     }
 
+    /**
+     * SecurityFilterChain chính cho các API endpoints
+     * Có OAuth2 Resource Server với JWT authentication
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtAuthenticationEntryPoint jwtEntryPoint,
@@ -102,9 +96,11 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Public endpoints
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+                        // Protected endpoints
                         .requestMatchers(CUSTOMER_URLS).hasRole("CUSTOMER")
                         .requestMatchers(EMPLOYEE_SELF_SERVICE_URLS).hasRole("EMPLOYEE")
                         .requestMatchers(ADMIN_EMPLOYEE_MANAGEMENT_URLS).hasRole("ADMIN")
@@ -124,7 +120,12 @@ public class SecurityConfig {
                         )
                         .authenticationEntryPoint(jwtEntryPoint)
                 )
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers(
+                                "/api/v1/auth/**",
+                                "/uploads/**"
+                        )
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();

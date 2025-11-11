@@ -1,7 +1,7 @@
 package com.storemanagement.service;
 
-import com.storemanagement.dto.ghn.GHNTrackingDto;
-import com.storemanagement.dto.response.ShipmentDto;
+import com.storemanagement.dto.ghn.GHNTrackingDTO;
+import com.storemanagement.dto.shipment.ShipmentDTO;
 
 /**
  * Service interface cho Shipment
@@ -17,17 +17,17 @@ public interface ShipmentService {
      * Lấy thông tin shipment theo ID
      * 
      * @param shipmentId ID shipment
-     * @return ShipmentDto
+     * @return ShipmentDTO
      */
-    ShipmentDto getShipmentById(Integer shipmentId);
+    ShipmentDTO getShipmentById(Integer shipmentId);
     
     /**
      * Lấy thông tin shipment theo order ID
      * 
      * @param orderId ID đơn hàng
-     * @return ShipmentDto
+     * @return ShipmentDTO
      */
-    ShipmentDto getShipmentByOrderId(Integer orderId);
+    ShipmentDTO getShipmentByOrderId(Integer orderId);
     
     /**
      * Đồng bộ trạng thái với GHN API
@@ -39,9 +39,9 @@ public interface ShipmentService {
      * 4. Sync shippingStatus và Order.status
      * 
      * @param shipmentId ID shipment
-     * @return ShipmentDto đã được cập nhật
+     * @return ShipmentDTO đã được cập nhật
      */
-    ShipmentDto syncWithGHN(Integer shipmentId);
+    ShipmentDTO syncWithGHN(Integer shipmentId);
     
     /**
      * Lấy thông tin tracking từ GHN
@@ -52,10 +52,11 @@ public interface ShipmentService {
      * 3. Trả về GHNTrackingDto với lịch sử cập nhật trạng thái
      * 
      * @param shipmentId ID shipment
-     * @return GHNTrackingDto chứa thông tin tracking
+     * @return GHNTrackingDTO chứa thông tin tracking
      */
-    GHNTrackingDto getShipmentTracking(Integer shipmentId);
+    GHNTrackingDTO getShipmentTracking(Integer shipmentId);
 }
+
 
 
 

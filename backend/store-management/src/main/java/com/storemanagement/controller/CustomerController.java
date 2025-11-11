@@ -2,8 +2,8 @@ package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.request.ChangePasswordRequestDto;
-import com.storemanagement.dto.response.CustomerDto;
+import com.storemanagement.dto.auth.ChangePasswordDTO;
+import com.storemanagement.dto.customer.CustomerDTO;
 import com.storemanagement.service.CustomerService;
 import com.storemanagement.service.UserService;
 import jakarta.validation.Valid;
@@ -40,7 +40,7 @@ public class CustomerController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<CustomerDto>>> getAllCustomers(
+    public ResponseEntity<ApiResponse<PageResponse<CustomerDTO>>> getAllCustomers(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(defaultValue = "idCustomer") String sortBy,
@@ -49,20 +49,20 @@ public class CustomerController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<CustomerDto> customerPage = customerService.getAllCustomersPaginated(pageable);
+        PageResponse<CustomerDTO> customerPage = customerService.getAllCustomersPaginated(pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách customer thành công", customerPage));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<CustomerDto>> getCustomerById(@PathVariable Integer id) {
-        CustomerDto customer = customerService.getCustomerById(id);
+    public ResponseEntity<ApiResponse<CustomerDTO>> getCustomerById(@PathVariable Integer id) {
+        CustomerDTO customer = customerService.getCustomerById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin customer thành công", customer));
     }
 
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<CustomerDto>>> searchCustomersByNameAndPhone(
+    public ResponseEntity<ApiResponse<PageResponse<CustomerDTO>>> searchCustomersByNameAndPhone(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String phone,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
@@ -73,13 +73,13 @@ public class CustomerController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo-1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<CustomerDto> customerPage = customerService.searchCustomersPaginated(name, phone, pageable);
+        PageResponse<CustomerDTO> customerPage = customerService.searchCustomersPaginated(name, phone, pageable);
         return ResponseEntity.ok(ApiResponse.success("Tìm kiếm customer thành công", customerPage));
     }
 
     @GetMapping("/type/{type}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<CustomerDto>>> getCustomersByType(
+    public ResponseEntity<ApiResponse<PageResponse<CustomerDTO>>> getCustomersByType(
             @PathVariable String type,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
@@ -89,30 +89,30 @@ public class CustomerController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<CustomerDto> customerPage = customerService.getCustomersByTypePaginated(type, pageable);
+        PageResponse<CustomerDTO> customerPage = customerService.getCustomersByTypePaginated(type, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách customer theo loại thành công", customerPage));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<CustomerDto>> updateCustomer(
+    public ResponseEntity<ApiResponse<CustomerDTO>> updateCustomer(
             @PathVariable Integer id,
-            @RequestBody @Valid CustomerDto customerDto) {
-        CustomerDto updatedCustomer = customerService.updateCustomer(id, customerDto);
+            @RequestBody @Valid CustomerDTO customerDto) {
+        CustomerDTO updatedCustomer = customerService.updateCustomer(id, customerDto);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật customer thành công", updatedCustomer));
     }
 
     @PatchMapping("/{id}/upgrade-vip")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<CustomerDto>> upgradeToVip(@PathVariable Integer id) {
-        CustomerDto customer = customerService.upgradeToVip(id);
+    public ResponseEntity<ApiResponse<CustomerDTO>> upgradeToVip(@PathVariable Integer id) {
+        CustomerDTO customer = customerService.upgradeToVip(id);
         return ResponseEntity.ok(ApiResponse.success("Nâng cấp customer lên VIP thành công", customer));
     }
 
     @PatchMapping("/{id}/downgrade-regular")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<CustomerDto>> downgradeToRegular(@PathVariable Integer id) {
-        CustomerDto customer = customerService.downgradeToRegular(id);
+    public ResponseEntity<ApiResponse<CustomerDTO>> downgradeToRegular(@PathVariable Integer id) {
+        CustomerDTO customer = customerService.downgradeToRegular(id);
         return ResponseEntity.ok(ApiResponse.success("Hạ cấp customer xuống REGULAR thành công", customer));
     }
 
@@ -125,27 +125,27 @@ public class CustomerController {
 
     @GetMapping("/me")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<CustomerDto>> getMyCustomerInfo() {
+    public ResponseEntity<ApiResponse<CustomerDTO>> getMyCustomerInfo() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        CustomerDto customer = customerService.getCustomerByUsername(username);
+        CustomerDTO customer = customerService.getCustomerByUsername(username);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin thành công", customer));
     }
 
     @PutMapping("/me")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<CustomerDto>> updateMyCustomerInfo(
-            @RequestBody @Valid CustomerDto customerDto) {
+    public ResponseEntity<ApiResponse<CustomerDTO>> updateMyCustomerInfo(
+            @RequestBody @Valid CustomerDTO customerDto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        CustomerDto updatedCustomer = customerService.updateMyCustomerInfo(username, customerDto);
+        CustomerDTO updatedCustomer = customerService.updateMyCustomerInfo(username, customerDto);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin thành công", updatedCustomer));
     }
 
     @PutMapping("/me/change-password")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<Void>> changePassword(
-            @RequestBody @Valid ChangePasswordRequestDto request) {
+            @RequestBody @Valid ChangePasswordDTO request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         userService.changePassword(username, request.getCurrentPassword(), request.getNewPassword());

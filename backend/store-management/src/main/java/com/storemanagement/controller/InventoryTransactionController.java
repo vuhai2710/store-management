@@ -1,7 +1,7 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.response.InventoryTransactionDto;
+import com.storemanagement.dto.inventory.InventoryTransactionDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.service.InventoryTransactionService;
 import com.storemanagement.utils.ReferenceType;
@@ -28,7 +28,7 @@ public class InventoryTransactionController {
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDto>>> getAllTransactions(
+    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> getAllTransactions(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "transactionDate") String sortBy,
@@ -37,7 +37,7 @@ public class InventoryTransactionController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<InventoryTransactionDto> transactions = inventoryTransactionService.getAllTransactions(pageable);
+        PageResponse<InventoryTransactionDTO> transactions = inventoryTransactionService.getAllTransactions(pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử nhập/xuất kho thành công", transactions));
     }
 
@@ -47,7 +47,7 @@ public class InventoryTransactionController {
      */
     @GetMapping("/product/{productId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDto>>> getTransactionsByProduct(
+    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> getTransactionsByProduct(
             @PathVariable Integer productId,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
@@ -57,7 +57,7 @@ public class InventoryTransactionController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<InventoryTransactionDto> transactions = 
+        PageResponse<InventoryTransactionDTO> transactions = 
                 inventoryTransactionService.getTransactionsByProduct(productId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử nhập/xuất kho của sản phẩm thành công", transactions));
     }
@@ -68,7 +68,7 @@ public class InventoryTransactionController {
      */
     @GetMapping("/reference")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDto>>> getTransactionsByReference(
+    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> getTransactionsByReference(
             @RequestParam ReferenceType referenceType,
             @RequestParam Integer referenceId,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
@@ -79,7 +79,7 @@ public class InventoryTransactionController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<InventoryTransactionDto> transactions = 
+        PageResponse<InventoryTransactionDTO> transactions = 
                 inventoryTransactionService.getTransactionsByReference(referenceType, referenceId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử nhập/xuất kho theo reference thành công", transactions));
     }
@@ -90,7 +90,7 @@ public class InventoryTransactionController {
      */
     @GetMapping("/history")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDto>>> getTransactionHistory(
+    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> getTransactionHistory(
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) Integer productId,
@@ -105,7 +105,7 @@ public class InventoryTransactionController {
         LocalDateTime start = startDate != null ? LocalDateTime.parse(startDate) : LocalDateTime.now().minusMonths(1);
         LocalDateTime end = endDate != null ? LocalDateTime.parse(endDate) : LocalDateTime.now();
 
-        PageResponse<InventoryTransactionDto> transactions;
+        PageResponse<InventoryTransactionDTO> transactions;
 
         // Nếu có productId, lọc theo cả product và thời gian
         if (productId != null) {
@@ -124,7 +124,7 @@ public class InventoryTransactionController {
      */
     @GetMapping("/by-type")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDto>>> getTransactionsByType(
+    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> getTransactionsByType(
             @RequestParam TransactionType transactionType,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
@@ -134,7 +134,7 @@ public class InventoryTransactionController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<InventoryTransactionDto> transactions = 
+        PageResponse<InventoryTransactionDTO> transactions = 
                 inventoryTransactionService.getTransactionsByType(transactionType, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử " + 
                 (transactionType == TransactionType.IN ? "nhập kho" : "xuất kho") + " thành công", transactions));
@@ -153,7 +153,7 @@ public class InventoryTransactionController {
      */
     @GetMapping("/filter")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDto>>> filterTransactions(
+    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> filterTransactions(
             @RequestParam(required = false) TransactionType transactionType,
             @RequestParam(required = false) Integer productId,
             @RequestParam(required = false) String startDate,
@@ -169,7 +169,7 @@ public class InventoryTransactionController {
         LocalDateTime start = startDate != null ? LocalDateTime.parse(startDate) : LocalDateTime.now().minusMonths(1);
         LocalDateTime end = endDate != null ? LocalDateTime.parse(endDate) : LocalDateTime.now();
 
-        PageResponse<InventoryTransactionDto> transactions = 
+        PageResponse<InventoryTransactionDTO> transactions = 
                 inventoryTransactionService.getTransactionsByMultipleCriteria(
                         transactionType, productId, start, end, pageable);
 

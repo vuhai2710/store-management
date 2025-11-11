@@ -1,7 +1,7 @@
 package com.storemanagement.service;
 
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.response.NotificationDto;
+import com.storemanagement.dto.notification.NotificationDTO;
 import com.storemanagement.model.User;
 import com.storemanagement.utils.NotificationType;
 import com.storemanagement.utils.ReferenceType;
@@ -22,9 +22,9 @@ public interface NotificationService {
      * @param referenceType Loại đối tượng liên quan
      * @param referenceId ID đối tượng liên quan
      * @param sendEmail Có gửi email không
-     * @return NotificationDto
+     * @return NotificationDTO
      */
-    NotificationDto createNotification(
+    NotificationDTO createNotification(
             User user,
             NotificationType type,
             String title,
@@ -37,12 +37,12 @@ public interface NotificationService {
     /**
      * Lấy tất cả notifications của user hiện tại (phân trang)
      */
-    PageResponse<NotificationDto> getMyNotifications(String username, Pageable pageable);
+    PageResponse<NotificationDTO> getMyNotifications(String username, Pageable pageable);
     
     /**
      * Lấy notifications chưa đọc của user hiện tại
      */
-    PageResponse<NotificationDto> getUnreadNotifications(String username, Pageable pageable);
+    PageResponse<NotificationDTO> getUnreadNotifications(String username, Pageable pageable);
     
     /**
      * Đếm số lượng notifications chưa đọc
@@ -52,7 +52,7 @@ public interface NotificationService {
     /**
      * Đánh dấu notification là đã đọc
      */
-    NotificationDto markAsRead(Integer notificationId, String username);
+    NotificationDTO markAsRead(Integer notificationId, String username);
     
     /**
      * Đánh dấu tất cả notifications là đã đọc
@@ -64,6 +64,7 @@ public interface NotificationService {
      */
     void deleteNotification(Integer notificationId, String username);
 }
+
 
 
 

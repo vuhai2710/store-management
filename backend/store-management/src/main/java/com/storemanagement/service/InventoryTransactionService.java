@@ -1,6 +1,6 @@
 package com.storemanagement.service;
 
-import com.storemanagement.dto.response.InventoryTransactionDto;
+import com.storemanagement.dto.inventory.InventoryTransactionDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.utils.TransactionType;
 import org.springframework.data.domain.Pageable;
@@ -13,17 +13,17 @@ public interface InventoryTransactionService {
      * Lấy tất cả inventory transactions với phân trang
      * Sắp xếp theo transaction_date DESC
      */
-    PageResponse<InventoryTransactionDto> getAllTransactions(Pageable pageable);
+    PageResponse<InventoryTransactionDTO> getAllTransactions(Pageable pageable);
 
     /**
      * Lấy transactions của một sản phẩm
      */
-    PageResponse<InventoryTransactionDto> getTransactionsByProduct(Integer productId, Pageable pageable);
+    PageResponse<InventoryTransactionDTO> getTransactionsByProduct(Integer productId, Pageable pageable);
 
     /**
      * Lấy transactions theo reference_type và reference_id
      */
-    PageResponse<InventoryTransactionDto> getTransactionsByReference(
+    PageResponse<InventoryTransactionDTO> getTransactionsByReference(
             com.storemanagement.utils.ReferenceType referenceType,
             Integer referenceId,
             Pageable pageable
@@ -32,7 +32,7 @@ public interface InventoryTransactionService {
     /**
      * Lấy transactions trong khoảng thời gian
      */
-    PageResponse<InventoryTransactionDto> getTransactionsByDateRange(
+    PageResponse<InventoryTransactionDTO> getTransactionsByDateRange(
             LocalDateTime startDate,
             LocalDateTime endDate,
             Pageable pageable
@@ -41,7 +41,7 @@ public interface InventoryTransactionService {
     /**
      * Lấy transactions của sản phẩm trong khoảng thời gian
      */
-    PageResponse<InventoryTransactionDto> getTransactionsByProductAndDateRange(
+    PageResponse<InventoryTransactionDTO> getTransactionsByProductAndDateRange(
             Integer productId,
             LocalDateTime startDate,
             LocalDateTime endDate,
@@ -51,7 +51,7 @@ public interface InventoryTransactionService {
     /**
      * Lấy transactions theo loại giao dịch (IN/OUT)
      */
-    PageResponse<InventoryTransactionDto> getTransactionsByType(
+    PageResponse<InventoryTransactionDTO> getTransactionsByType(
             TransactionType transactionType,
             Pageable pageable
     );
@@ -61,7 +61,7 @@ public interface InventoryTransactionService {
      * Hỗ trợ filter theo: transactionType, productId, dateRange
      * Tất cả params có thể null (trừ startDate, endDate)
      */
-    PageResponse<InventoryTransactionDto> getTransactionsByMultipleCriteria(
+    PageResponse<InventoryTransactionDTO> getTransactionsByMultipleCriteria(
             TransactionType transactionType,
             Integer productId,
             LocalDateTime startDate,

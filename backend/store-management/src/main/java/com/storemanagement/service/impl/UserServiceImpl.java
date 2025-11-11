@@ -1,8 +1,8 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.request.AuthenticationRequestDto;
+import com.storemanagement.dto.auth.RegisterDTO;
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.response.UserDto;
+import com.storemanagement.dto.user.UserDTO;
 import com.storemanagement.mapper.UserMapper;
 import com.storemanagement.model.User;
 import com.storemanagement.repository.UserRepository;
@@ -34,13 +34,13 @@ public class UserServiceImpl implements UserService {
     private final FileStorageService fileStorageService;
 
     @Override
-    public UserDto createCustomerUser(AuthenticationRequestDto request) {
+    public UserDTO createCustomerUser(RegisterDTO request) {
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         User savedUser = userRepository.save(user);
 
         customerService.createCustomerForUser(savedUser, request);
-        return userMapper.toDto(savedUser);
+        return userMapper.toDTO(savedUser);
     }
 
     // Verify cho login
@@ -55,41 +55,41 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserDto> getAllUsers() {
+    public List<UserDTO> getAllUsers() {
         List<User> users = userRepository.findAll();
-        return userMapper.toDtoList(users);
+        return userMapper.toDTOList(users);
     }
 
     @Override
-    public PageResponse<UserDto> getAllUsersPaginated(Pageable pageable) {
+    public PageResponse<UserDTO> getAllUsersPaginated(Pageable pageable) {
         Page<User> userPage = userRepository.findAll(pageable); //Lấy thông tin
-        List<UserDto> userDtos = userMapper.toDtoList(userPage.getContent()); //Map entity sang dto
+        List<UserDTO> userDtos = userMapper.toDTOList(userPage.getContent()); //Map entity sang dto
         return PageUtils.toPageResponse(userPage, userDtos); //(page, data)
     }
 
     @Override
-    public PageResponse<UserDto> getUsersByIsActive(Boolean isActive, Pageable pageable) {
+    public PageResponse<UserDTO> getUsersByIsActive(Boolean isActive, Pageable pageable) {
         Page<User> userPage = userRepository.findByIsActive(isActive, pageable); //Lấy thông tin theo isActive
-        List<UserDto> userDtos = userMapper.toDtoList(userPage.getContent()); //Map entity sang dto
+        List<UserDTO> userDtos = userMapper.toDTOList(userPage.getContent()); //Map entity sang dto
         return PageUtils.toPageResponse(userPage, userDtos); //(page, data)
     }
 
     @Override
-    public UserDto getUserById(Integer id) {
+    public UserDTO getUserById(Integer id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + id));
-        return userMapper.toDto(user);
+        return userMapper.toDTO(user);
     }
 
     @Override
-    public UserDto getUserByUsername(String username) {
+    public UserDTO getUserByUsername(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại với username: " + username));
-        return userMapper.toDto(user);
+        return userMapper.toDTO(user);
     }
 
     @Override
-    public UserDto updateUser(Integer id, UserDto userDto) {
+    public UserDTO updateUser(Integer id, UserDTO userDto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + id));
         
@@ -113,7 +113,7 @@ public class UserServiceImpl implements UserService {
         }
         
         User updatedUser = userRepository.save(user);
-        return userMapper.toDto(updatedUser);
+        return userMapper.toDTO(updatedUser);
     }
 
     @Override
@@ -133,7 +133,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto changeUserRole(Integer id, String role) {
+    public UserDTO changeUserRole(Integer id, String role) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + id));
         
@@ -141,7 +141,7 @@ public class UserServiceImpl implements UserService {
             Role newRole = Role.valueOf(role.toUpperCase());
             user.setRole(newRole);
             User updatedUser = userRepository.save(user);
-            return userMapper.toDto(updatedUser);
+            return userMapper.toDTO(updatedUser);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Role không hợp lệ: " + role);
         }
@@ -202,10 +202,10 @@ public class UserServiceImpl implements UserService {
      * 
      * @param username Username của user
      * @param avatar File ảnh
-     * @return UserDto đã được cập nhật
+     * @return UserDTO đã được cập nhật
      */
     @Override
-    public UserDto uploadAvatar(String username, MultipartFile avatar) {
+    public UserDTO uploadAvatar(String username, MultipartFile avatar) {
         log.info("Uploading avatar for user: {}", username);
         
         User user = userRepository.findByUsername(username)
@@ -218,7 +218,7 @@ public class UserServiceImpl implements UserService {
             User savedUser = userRepository.save(user);
             
             log.info("Avatar uploaded successfully: {}", avatarUrl);
-            return userMapper.toDto(savedUser);
+            return userMapper.toDTO(savedUser);
             
         } catch (Exception e) {
             log.error("Error uploading avatar: {}", e.getMessage(), e);
@@ -232,10 +232,10 @@ public class UserServiceImpl implements UserService {
      * 
      * @param username Username của user
      * @param avatar File ảnh mới
-     * @return UserDto đã được cập nhật
+     * @return UserDTO đã được cập nhật
      */
     @Override
-    public UserDto updateAvatar(String username, MultipartFile avatar) {
+    public UserDTO updateAvatar(String username, MultipartFile avatar) {
         log.info("Updating avatar for user: {}", username);
         
         User user = userRepository.findByUsername(username)
@@ -254,7 +254,7 @@ public class UserServiceImpl implements UserService {
             User savedUser = userRepository.save(user);
             
             log.info("Avatar updated successfully: {}", avatarUrl);
-            return userMapper.toDto(savedUser);
+            return userMapper.toDTO(savedUser);
             
         } catch (Exception e) {
             log.error("Error updating avatar: {}", e.getMessage(), e);

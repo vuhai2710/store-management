@@ -1,6 +1,6 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.response.CategoryDto;
+import com.storemanagement.dto.category.CategoryDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.CategoryMapper;
 import com.storemanagement.model.Category;
@@ -28,48 +28,48 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryMapper categoryMapper;
 
     @Override
-    public CategoryDto createCategory(CategoryDto categoryDto) {
-        log.info("Creating category: {}", categoryDto.getCategoryName());
+    public CategoryDTO createCategory(CategoryDTO categoryDTO) {
+        log.info("Creating category: {}", categoryDTO.getCategoryName());
 
-        if (categoryRepository.existsByCategoryName(categoryDto.getCategoryName())) {
-            throw new RuntimeException("Tên danh mục đã tồn tại: " + categoryDto.getCategoryName());
+        if (categoryRepository.existsByCategoryName(categoryDTO.getCategoryName())) {
+            throw new RuntimeException("Tên danh mục đã tồn tại: " + categoryDTO.getCategoryName());
         }
 
         // Map DTO sang Entity
-        Category category = categoryMapper.toEntity(categoryDto);
+        Category category = categoryMapper.toEntity(categoryDTO);
         category.setCreatedAt(LocalDateTime.now());
 
         // Lưu vào DB
         Category savedCategory = categoryRepository.save(category);
         log.info("Category created successfully with ID: {}", savedCategory.getIdCategory());
 
-        return categoryMapper.toDto(savedCategory);
+        return categoryMapper.toDTO(savedCategory);
     }
 
     @Override
-    public CategoryDto updateCategory(Integer id, CategoryDto categoryDto) {
+    public CategoryDTO updateCategory(Integer id, CategoryDTO categoryDTO) {
         log.info("Updating category ID: {}", id);
 
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Danh mục không tồn tại với ID: " + id));
 
-        if (categoryDto.getCategoryName() != null &&
-            !categoryDto.getCategoryName().equals(category.getCategoryName())) {
-            if (categoryRepository.existsByCategoryName(categoryDto.getCategoryName())) {
-                throw new RuntimeException("Tên danh mục đã tồn tại: " + categoryDto.getCategoryName());
+        if (categoryDTO.getCategoryName() != null &&
+            !categoryDTO.getCategoryName().equals(category.getCategoryName())) {
+            if (categoryRepository.existsByCategoryName(categoryDTO.getCategoryName())) {
+                throw new RuntimeException("Tên danh mục đã tồn tại: " + categoryDTO.getCategoryName());
             }
-            category.setCategoryName(categoryDto.getCategoryName());
+            category.setCategoryName(categoryDTO.getCategoryName());
         }
 
-        if (categoryDto.getCodePrefix() != null) {
-            category.setCodePrefix(categoryDto.getCodePrefix());
+        if (categoryDTO.getCodePrefix() != null) {
+            category.setCodePrefix(categoryDTO.getCodePrefix());
         }
 
         // Lưu lại
         Category updatedCategory = categoryRepository.save(category);
         log.info("Category updated successfully: {}", updatedCategory.getIdCategory());
 
-        return categoryMapper.toDto(updatedCategory);
+        return categoryMapper.toDTO(updatedCategory);
     }
 
     @Override
@@ -84,30 +84,30 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public CategoryDto getCategoryById(Integer id) {
+    public CategoryDTO getCategoryById(Integer id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Danh mục không tồn tại với ID: " + id));
-        return categoryMapper.toDto(category);
+        return categoryMapper.toDTO(category);
     }
 
     @Override
-    public List<CategoryDto> getAllCategories() {
+    public List<CategoryDTO> getAllCategories() {
         List<Category> categories = categoryRepository.findAll();
-        return categoryMapper.toDtoList(categories);
+        return categoryMapper.toDTOList(categories);
     }
 
     @Override
-    public PageResponse<CategoryDto> getAllCategoriesPaginated(Pageable pageable) {
+    public PageResponse<CategoryDTO> getAllCategoriesPaginated(Pageable pageable) {
         Page<Category> categoryPage = categoryRepository.findAll(pageable);
-        List<CategoryDto> categoryDtos = categoryMapper.toDtoList(categoryPage.getContent());
-        return PageUtils.toPageResponse(categoryPage, categoryDtos);
+        List<CategoryDTO> categoryDTOs = categoryMapper.toDTOList(categoryPage.getContent());
+        return PageUtils.toPageResponse(categoryPage, categoryDTOs);
     }
 
     @Override
-    public PageResponse<CategoryDto> searchCategoriesByName(String name, Pageable pageable) {
+    public PageResponse<CategoryDTO> searchCategoriesByName(String name, Pageable pageable) {
         Page<Category> categoryPage = categoryRepository.findByCategoryNameContainingIgnoreCase(name, pageable);
-        List<CategoryDto> categoryDtos = categoryMapper.toDtoList(categoryPage.getContent());
-        return PageUtils.toPageResponse(categoryPage, categoryDtos);
+        List<CategoryDTO> categoryDTOs = categoryMapper.toDTOList(categoryPage.getContent());
+        return PageUtils.toPageResponse(categoryPage, categoryDTOs);
     }
 }
 

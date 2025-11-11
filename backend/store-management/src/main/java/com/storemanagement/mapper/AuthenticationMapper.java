@@ -1,12 +1,11 @@
 package com.storemanagement.mapper;
 
-import com.storemanagement.dto.response.UserDto;
+import com.storemanagement.dto.user.UserDTO;
 import com.storemanagement.model.User;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring", uses = {UserMapper.class})
 public interface AuthenticationMapper {
-    // User to UserDTO
-    UserDto toUserDto(User entity);
+    // User to UserDTO - delegates to UserMapper
+    UserDTO toUserDTO(User entity);
 }

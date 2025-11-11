@@ -55,8 +55,8 @@ Authorization: Bearer {JWT_TOKEN}
       "phoneNumber": "0912345678",
       "address": "123 Đường ABC, Phường XYZ, Quận 1, TP.HCM",
       "isDefault": true,
-      "createdAt": "2025-01-01T00:00:00",
-      "updatedAt": "2025-01-01T00:00:00"
+      "createdAt": "01/01/2025 00:00:00",
+      "updatedAt": "01/01/2025 00:00:00"
     },
     {
       "idShippingAddress": 2,
@@ -65,8 +65,8 @@ Authorization: Bearer {JWT_TOKEN}
       "phoneNumber": "0912345678",
       "address": "456 Đường DEF, Phường UVW, Quận 2, TP.HCM",
       "isDefault": false,
-      "createdAt": "2025-01-02T00:00:00",
-      "updatedAt": "2025-01-02T00:00:00"
+      "createdAt": "02/01/2025 00:00:00",
+      "updatedAt": "02/01/2025 00:00:00"
     }
   ]
 }
@@ -101,8 +101,8 @@ Authorization: Bearer {JWT_TOKEN}
     "phoneNumber": "0912345678",
     "address": "123 Đường ABC, Phường XYZ, Quận 1, TP.HCM",
     "isDefault": true,
-    "createdAt": "2025-01-01T00:00:00",
-    "updatedAt": "2025-01-01T00:00:00"
+    "createdAt": "01/01/2025 00:00:00",
+    "updatedAt": "01/01/2025 00:00:00"
   }
 }
 ```
@@ -154,8 +154,8 @@ Authorization: Bearer {JWT_TOKEN}
     "phoneNumber": "0912345678",
     "address": "123 Đường ABC, Phường XYZ, Quận 1, TP.HCM",
     "isDefault": false,
-    "createdAt": "2025-01-03T00:00:00",
-    "updatedAt": "2025-01-03T00:00:00"
+    "createdAt": "03/01/2025 00:00:00",
+    "updatedAt": "03/01/2025 00:00:00"
   }
 }
 ```
@@ -221,7 +221,7 @@ Content-Type: application/json
 
 **Status Code:** `200 OK`
 
-Trả về ShippingAddressDto đã được cập nhật.
+Trả về ShippingAddressDTO đã được cập nhật.
 
 ### Logic xử lý
 
@@ -484,6 +484,7 @@ if (pm.response.code === 200) {
 ## Liên hệ
 
 Nếu có thắc mắc về Shipping Address Module, vui lòng liên hệ team Backend.
+
 
 
 

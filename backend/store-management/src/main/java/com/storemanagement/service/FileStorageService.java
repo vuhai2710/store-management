@@ -27,36 +27,3 @@ public interface FileStorageService {
     boolean isValidImageFile(MultipartFile file);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

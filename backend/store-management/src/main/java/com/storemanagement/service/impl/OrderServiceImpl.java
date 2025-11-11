@@ -1,10 +1,8 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.request.BuyNowRequestDto;
-import com.storemanagement.dto.request.CreateOrderForCustomerRequestDto;
-import com.storemanagement.dto.request.CreateOrderRequestDto;
-import com.storemanagement.dto.response.CustomerDto;
-import com.storemanagement.dto.response.OrderDto;
+import com.storemanagement.dto.customer.CustomerDTO;
+import com.storemanagement.dto.order.OrderDTO;
+import com.storemanagement.dto.order.OrderDetailDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.OrderMapper;
 import com.storemanagement.model.*;
@@ -54,17 +52,17 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public OrderDto getOrderById(Integer id) {
+    public OrderDTO getOrderById(Integer id) {
         Order order = orderRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new EntityNotFoundException("Đơn hàng không tồn tại với ID: " + id));
 
-        return orderMapper.toDto(order);
+        return orderMapper.toDTO(order);
     }
 
     @Override
     @Transactional(readOnly = true)
     public byte[] exportOrderToPdf(Integer id) {
-        OrderDto orderDto = getOrderById(id);
+        OrderDTO orderDto = getOrderById(id);
         return pdfService.generateInvoicePdf(orderDto);
     }
 
@@ -111,7 +109,7 @@ public class OrderServiceImpl implements OrderService {
      * - Snapshot địa chỉ để đảm bảo không bị ảnh hưởng nếu địa chỉ bị xóa
      */
     @Override
-    public OrderDto createOrderFromCart(Integer customerId, CreateOrderRequestDto request) {
+    public OrderDTO createOrderFromCart(Integer customerId, OrderDTO request) {
         log.info("Creating order from cart for customer: {}", customerId);
 
         // ========== PHASE 1: VALIDATION ==========
@@ -282,7 +280,7 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("Order created successfully: {}", savedOrder.getIdOrder());
 
-        return orderMapper.toDto(savedOrder);
+        return orderMapper.toDTO(savedOrder);
     }
 
     /**
@@ -311,7 +309,7 @@ public class OrderServiceImpl implements OrderService {
      * Lưu ý: Không xóa giỏ hàng vì không sử dụng giỏ hàng
      */
     @Override
-    public OrderDto createOrderDirectly(Integer customerId, BuyNowRequestDto request) {
+    public OrderDTO createOrderDirectly(Integer customerId, OrderDTO request) {
         log.info("Creating order directly (Buy Now) for customer: {}, product: {}, quantity: {}",
                 customerId, request.getProductId(), request.getQuantity());
 
@@ -442,7 +440,7 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("Order created successfully (Buy Now): {}", savedOrder.getIdOrder());
 
-        return orderMapper.toDto(savedOrder);
+        return orderMapper.toDTO(savedOrder);
     }
 
     /**
@@ -456,7 +454,7 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<OrderDto> getMyOrders(Integer customerId, Order.OrderStatus status, Pageable pageable) {
+    public PageResponse<OrderDTO> getMyOrders(Integer customerId, Order.OrderStatus status, Pageable pageable) {
         log.info("Getting orders for customer: {}, status filter: {}", customerId, status);
 
         Page<Order> orderPage;
@@ -469,12 +467,12 @@ public class OrderServiceImpl implements OrderService {
             orderPage = orderRepository.findByCustomerIdCustomerOrderByOrderDateDesc(customerId, pageable);
         }
 
-        return PageUtils.toPageResponse(orderPage, orderMapper.toDtoList(orderPage.getContent()));
+        return PageUtils.toPageResponse(orderPage, orderMapper.toDTOList(orderPage.getContent()));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public OrderDto getMyOrderById(Integer customerId, Integer orderId) {
+    public OrderDTO getMyOrderById(Integer customerId, Integer orderId) {
         Order order = orderRepository.findByIdWithDetails(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng"));
 
@@ -482,7 +480,7 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("Không có quyền xem đơn hàng này");
         }
 
-        return orderMapper.toDto(order);
+        return orderMapper.toDTO(order);
     }
 
     /**
@@ -510,7 +508,7 @@ public class OrderServiceImpl implements OrderService {
      * - Ghi lại lịch sử inventory transaction để theo dõi
      */
     @Override
-    public OrderDto cancelOrder(Integer customerId, Integer orderId) {
+    public OrderDTO cancelOrder(Integer customerId, Integer orderId) {
         log.info("Cancelling order {} for customer: {}", orderId, customerId);
 
         // ========== PHASE 1: VALIDATION ==========
@@ -569,7 +567,7 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("Order cancelled successfully: {}", orderId);
 
-        return orderMapper.toDto(savedOrder);
+        return orderMapper.toDTO(savedOrder);
     }
 
     /**
@@ -600,19 +598,19 @@ public class OrderServiceImpl implements OrderService {
      * - Trừ tồn kho và tạo inventory transactions
      */
     @Override
-    public OrderDto createOrderForCustomer(Integer employeeId, CreateOrderForCustomerRequestDto request) {
+    public OrderDTO createOrderForCustomer(Integer employeeId, OrderDTO request) {
         log.info("Creating order for customer by {}, customerId: {}",
                 employeeId != null ? "employee: " + employeeId : "admin",
-                request.getCustomerId());
+                request.getIdCustomer());
 
         // ========== PHASE 1: CUSTOMER ==========
 
         Customer customer;
-        if (request.getCustomerId() != null) {
+        if (request.getIdCustomer() != null) {
             // Trường hợp 1: Có customerId → Sử dụng customer có sẵn trong hệ thống
             // Customer này có thể có hoặc không có User account
-            customer = customerRepository.findById(request.getCustomerId())
-                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng với ID: " + request.getCustomerId()));
+            customer = customerRepository.findById(request.getIdCustomer())
+                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng với ID: " + request.getIdCustomer()));
         } else {
             // Trường hợp 2: Không có customerId → Tạo đơn cho walk-in customer (khách hàng không có tài khoản)
 
@@ -634,12 +632,12 @@ public class OrderServiceImpl implements OrderService {
                 // Customer chưa tồn tại → Tạo customer mới không có User account
                 // Customer này sẽ có id_user = NULL, chỉ lưu thông tin cơ bản (tên, phone, address)
                 // Vẫn có thể theo dõi lịch sử mua hàng qua Customer record
-                CustomerDto newCustomerDto = customerService.createCustomerWithoutUser(
+                CustomerDTO newCustomerDTO = customerService.createCustomerWithoutUser(
                         request.getCustomerName(),
                         request.getCustomerPhone(),
                         request.getCustomerAddress()
                 );
-                customer = customerRepository.findById(newCustomerDto.getIdCustomer())
+                customer = customerRepository.findById(newCustomerDTO.getIdCustomer())
                         .orElseThrow(() -> new RuntimeException("Lỗi khi tạo khách hàng mới"));
                 log.info("Tạo customer mới (walk-in) với ID: {}", customer.getIdCustomer());
             } else {
@@ -662,9 +660,10 @@ public class OrderServiceImpl implements OrderService {
         // ========== PHASE 3: VALIDATION ==========
 
         // Validate tất cả sản phẩm trong danh sách
-        for (com.storemanagement.dto.request.OrderItemDto item : request.getOrderItems()) {
-            Product product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + item.getProductId()));
+        for (OrderDetailDTO item : request.getOrderItems()) {
+            Integer productId = item.getProductId() != null ? item.getProductId() : item.getIdProduct();
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + productId));
 
             if (product.getStatus() == ProductStatus.OUT_OF_STOCK ||
                     product.getStatus() == ProductStatus.DISCONTINUED) {
@@ -681,8 +680,9 @@ public class OrderServiceImpl implements OrderService {
         // Tính tổng tiền từ tất cả sản phẩm trong đơn hàng
         // totalAmount = sum(quantity × price) cho mỗi sản phẩm
         BigDecimal totalAmount = BigDecimal.ZERO;
-        for (com.storemanagement.dto.request.OrderItemDto item : request.getOrderItems()) {
-            Product product = productRepository.findById(item.getProductId()).orElseThrow();
+        for (OrderDetailDTO item : request.getOrderItems()) {
+            Integer productId = item.getProductId() != null ? item.getProductId() : item.getIdProduct();
+            Product product = productRepository.findById(productId).orElseThrow();
             BigDecimal itemTotal = product.getPrice()
                     .multiply(BigDecimal.valueOf(item.getQuantity()));
             totalAmount = totalAmount.add(itemTotal);
@@ -731,8 +731,9 @@ public class OrderServiceImpl implements OrderService {
 
         // ========== PHASE 6: ORDER DETAILS CREATION (VỚI SNAPSHOT) ==========
 
-        for (com.storemanagement.dto.request.OrderItemDto item : request.getOrderItems()) {
-            Product product = productRepository.findById(item.getProductId()).orElseThrow();
+        for (OrderDetailDTO item : request.getOrderItems()) {
+            Integer productId = item.getProductId() != null ? item.getProductId() : item.getIdProduct();
+            Product product = productRepository.findById(productId).orElseThrow();
 
             String productName = product.getProductName();
             String productCode = product.getProductCode();
@@ -796,7 +797,7 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("Order created successfully for customer by employee: {}", savedOrder.getIdOrder());
 
-        return orderMapper.toDto(savedOrder);
+        return orderMapper.toDTO(savedOrder);
     }
 
     /**
@@ -827,7 +828,7 @@ public class OrderServiceImpl implements OrderService {
      * - Lưu cả order và shipment
      * <p>
      * 3. RETURN PHASE:
-     * - Trả về OrderDto đã được cập nhật
+     * - Trả về OrderDTO đã được cập nhật
      * <p>
      * Lưu ý:
      * - Chỉ cho phép confirm khi order.status = CONFIRMED
@@ -835,7 +836,7 @@ public class OrderServiceImpl implements OrderService {
      * - Cập nhật cả Order và Shipment để đồng bộ trạng thái
      */
     @Override
-    public OrderDto confirmDelivery(Integer customerId, Integer orderId) {
+    public OrderDTO confirmDelivery(Integer customerId, Integer orderId) {
         log.info("Confirming delivery for order {} by customer: {}", orderId, customerId);
 
         // ========== PHASE 1: VALIDATION ==========
@@ -884,7 +885,7 @@ public class OrderServiceImpl implements OrderService {
 
         // ========== PHASE 3: RETURN ==========
 
-        return orderMapper.toDto(savedOrder);
+        return orderMapper.toDTO(savedOrder);
     }
 
     /**
@@ -903,12 +904,12 @@ public class OrderServiceImpl implements OrderService {
      * - Có phân trang
      * <p>
      * 3. MAPPING PHASE:
-     * - Convert Order entities sang OrderDto
+     * - Convert Order entities sang OrderDTO
      * - Trả về PageResponse
      */
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<OrderDto> getAllOrders(Order.OrderStatus status, Integer customerId, Pageable pageable) {
+    public PageResponse<OrderDTO> getAllOrders(Order.OrderStatus status, Integer customerId, Pageable pageable) {
         log.info("Getting all orders with filters - status: {}, customerId: {}", status, customerId);
 
         Page<Order> orderPage;
@@ -922,7 +923,7 @@ public class OrderServiceImpl implements OrderService {
             orderPage = orderRepository.findAllOrdersByOrderDateDesc(pageable);
         }
 
-        return PageUtils.toPageResponse(orderPage, orderMapper.toDtoList(orderPage.getContent()));
+        return PageUtils.toPageResponse(orderPage, orderMapper.toDTOList(orderPage.getContent()));
     }
 
     /**
@@ -945,10 +946,10 @@ public class OrderServiceImpl implements OrderService {
      * - Tạo inventory transactions
      * <p>
      * 3. RETURN PHASE:
-     * - Trả về OrderDto đã cập nhật
+     * - Trả về OrderDTO đã cập nhật
      */
     @Override
-    public OrderDto updateOrderStatus(Integer orderId, Order.OrderStatus newStatus) {
+    public OrderDTO updateOrderStatus(Integer orderId, Order.OrderStatus newStatus) {
         log.info("Updating order status: orderId={}, newStatus={}", orderId, newStatus);
 
         // ========== PHASE 1: VALIDATION ==========
@@ -1016,7 +1017,7 @@ public class OrderServiceImpl implements OrderService {
         log.info("Order status updated successfully: orderId={}, oldStatus={}, newStatus={}",
                 orderId, currentStatus, newStatus);
 
-        return orderMapper.toDto(savedOrder);
+        return orderMapper.toDTO(savedOrder);
     }
 
     /**
@@ -1057,10 +1058,11 @@ public class OrderServiceImpl implements OrderService {
         // Nếu GHN enabled và có shipping address, thử tích hợp GHN
         if (ghnService.isEnabled() && shippingAddress != null) {
             try {
-                // TODO: ShippingAddress hiện tại không có districtId và wardCode
-                // Cần thêm fields này vào ShippingAddress hoặc parse từ address text
-                // Hiện tại sẽ skip tính phí và tạo đơn GHN
-                // Chỉ tạo Shipment cơ bản
+                // Note: ShippingAddress entity hiện tại không có districtId và wardCode
+                // Để tích hợp GHN đầy đủ, cần:
+                // 1. Thêm districtId và wardCode vào ShippingAddress entity
+                // 2. Hoặc parse từ address text (không recommended)
+                // Hiện tại skip GHN integration và chỉ tạo Shipment cơ bản
 
                 log.info("GHN integration skipped: ShippingAddress does not have districtId/wardCode. " +
                         "Creating basic shipment only.");

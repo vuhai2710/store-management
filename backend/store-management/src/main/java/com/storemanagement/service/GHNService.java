@@ -23,7 +23,7 @@ public interface GHNService {
      * 
      * @return Danh sách tỉnh/thành phố
      */
-    List<GHNProvinceDto> getProvinces();
+    List<GHNProvinceDTO> getProvinces();
     
     /**
      * Lấy danh sách quận/huyện theo tỉnh/thành phố
@@ -33,7 +33,7 @@ public interface GHNService {
      * @param provinceId ID tỉnh/thành phố
      * @return Danh sách quận/huyện
      */
-    List<GHNDistrictDto> getDistricts(Integer provinceId);
+    List<GHNDistrictDTO> getDistricts(Integer provinceId);
     
     /**
      * Lấy danh sách phường/xã theo quận/huyện
@@ -43,7 +43,7 @@ public interface GHNService {
      * @param districtId ID quận/huyện
      * @return Danh sách phường/xã
      */
-    List<GHNWardDto> getWards(Integer districtId);
+    List<GHNWardDTO> getWards(Integer districtId);
     
     /**
      * Tính phí vận chuyển
@@ -51,14 +51,14 @@ public interface GHNService {
      * Endpoint: POST /shiip/public-api/v2/shipping-order/fee
      * 
      * Logic:
-     * 1. Build GHNCalculateFeeRequestDto từ thông tin địa chỉ và đơn hàng
+     * 1. Build GHNCalculateFeeRequestDTO từ thông tin địa chỉ và đơn hàng
      * 2. Gọi GHN API để tính phí
-     * 3. Trả về GHNCalculateFeeResponseDto chứa tổng phí vận chuyển
+     * 3. Trả về GHNCalculateFeeResponseDTO chứa tổng phí vận chuyển
      * 
      * @param request Request DTO chứa thông tin địa chỉ và đơn hàng
      * @return Response DTO chứa phí vận chuyển
      */
-    GHNCalculateFeeResponseDto calculateShippingFee(GHNCalculateFeeRequestDto request);
+    GHNCalculateFeeResponseDTO calculateShippingFee(GHNCalculateFeeRequestDTO request);
     
     /**
      * Tạo đơn hàng GHN
@@ -66,15 +66,15 @@ public interface GHNService {
      * Endpoint: POST /shiip/public-api/v2/shipping-order/create
      * 
      * Logic:
-     * 1. Build GHNCreateOrderRequestDto từ Order và ShippingAddress
+     * 1. Build GHNCreateOrderRequestDTO từ Order và ShippingAddress
      * 2. Gọi GHN API để tạo đơn hàng
-     * 3. Trả về GHNCreateOrderResponseDto chứa order_code
+     * 3. Trả về GHNCreateOrderResponseDTO chứa order_code
      * 4. order_code được lưu vào Shipment.ghnOrderCode
      * 
      * @param request Request DTO chứa thông tin đơn hàng
      * @return Response DTO chứa order_code và thông tin đơn hàng
      */
-    GHNCreateOrderResponseDto createOrder(GHNCreateOrderRequestDto request);
+    GHNCreateOrderResponseDTO createOrder(GHNCreateOrderRequestDTO request);
     
     /**
      * Lấy thông tin đơn hàng từ GHN
@@ -84,7 +84,7 @@ public interface GHNService {
      * @param ghnOrderCode Mã đơn hàng GHN
      * @return Thông tin đơn hàng
      */
-    GHNOrderInfoDto getOrderInfo(String ghnOrderCode);
+    GHNOrderInfoDTO getOrderInfo(String ghnOrderCode);
     
     /**
      * Hủy đơn hàng GHN
@@ -105,7 +105,7 @@ public interface GHNService {
      * @param toDistrictId ID quận/huyện nơi nhận
      * @return Danh sách dịch vụ vận chuyển
      */
-    List<GHNServiceDto> getShippingServices(Integer fromDistrictId, Integer toDistrictId);
+    List<GHNServiceDTO> getShippingServices(Integer fromDistrictId, Integer toDistrictId);
     
     /**
      * Lấy thời gian giao hàng dự kiến
@@ -115,7 +115,7 @@ public interface GHNService {
      * @param request Request DTO chứa thông tin địa chỉ và dịch vụ
      * @return Thời gian giao hàng dự kiến (ISO 8601 datetime string)
      */
-    String getExpectedDeliveryTime(GHNExpectedDeliveryTimeRequestDto request);
+    String getExpectedDeliveryTime(GHNExpectedDeliveryTimeRequestDTO request);
     
     /**
      * Theo dõi đơn hàng
@@ -125,7 +125,7 @@ public interface GHNService {
      * @param ghnOrderCode Mã đơn hàng GHN
      * @return Thông tin tracking với lịch sử cập nhật trạng thái
      */
-    GHNTrackingDto trackOrder(String ghnOrderCode);
+    GHNTrackingDTO trackOrder(String ghnOrderCode);
     
     /**
      * In vận đơn (PDF)
@@ -144,7 +144,7 @@ public interface GHNService {
      * 
      * @param request Request DTO chứa thông tin cần cập nhật
      */
-    void updateOrder(GHNUpdateOrderRequestDto request);
+    void updateOrder(GHNUpdateOrderRequestDTO request);
     
     /**
      * Kiểm tra GHN integration có được bật không
@@ -153,6 +153,7 @@ public interface GHNService {
      */
     boolean isEnabled();
 }
+
 
 
 

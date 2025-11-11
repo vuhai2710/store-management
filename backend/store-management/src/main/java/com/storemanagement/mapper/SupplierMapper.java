@@ -1,22 +1,27 @@
 package com.storemanagement.mapper;
 
-import com.storemanagement.dto.response.SupplierDto;
+import com.storemanagement.dto.supplier.SupplierDTO;
 import com.storemanagement.model.Supplier;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface SupplierMapper {
 
-    // Supplier → SupplierDto
-    SupplierDto toDto(Supplier entity);
+    // Supplier → SupplierDTO
+    @Mapping(target = "idSupplier", source = "idSupplier")
+    @Mapping(target = "createdAt", source = "createdAt")
+    SupplierDTO toDTO(Supplier entity);
 
-    // SupplierDto → Supplier
-    Supplier toEntity(SupplierDto dto);
+    // SupplierDTO → Supplier (for create/update)
+    @Mapping(target = "idSupplier", ignore = true)
+    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
+    Supplier toEntity(SupplierDTO dto);
 
     // List mapping
-    List<SupplierDto> toDtoList(List<Supplier> entities);
+    List<SupplierDTO> toDTOList(List<Supplier> entities);
 }
 
 

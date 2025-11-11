@@ -62,13 +62,15 @@ Không có query parameters
   "data": [
     {
       "idCategory": 1,
-      "name": "Điện tử",
-      "description": "Danh mục sản phẩm điện tử"
+      "categoryName": "Điện tử",
+      "codePrefix": "DT",
+      "createdAt": "01/01/2025 00:00:00"
     },
     {
       "idCategory": 2,
-      "name": "Thời trang",
-      "description": "Danh mục sản phẩm thời trang"
+      "categoryName": "Thời trang",
+      "codePrefix": "TT",
+      "createdAt": "01/01/2025 00:00:00"
     }
   ]
 }
@@ -117,8 +119,9 @@ GET /api/v1/categories?pageNo=1&pageSize=10&sortBy=name&sortDirection=ASC&name=�
     "content": [
       {
         "idCategory": 1,
-        "name": "Điện tử",
-        "description": "Danh mục sản phẩm điện tử"
+        "categoryName": "Điện tử",
+        "codePrefix": "DT",
+        "createdAt": "01/01/2025 00:00:00"
       }
     ],
     "pageNo": 1,
@@ -175,8 +178,9 @@ GET /api/v1/categories/1
   "message": "Lấy thông tin danh mục thành công",
   "data": {
     "idCategory": 1,
-    "name": "Điện tử",
-    "description": "Danh mục sản phẩm điện tử"
+    "categoryName": "Điện tử",
+    "codePrefix": "DT",
+    "createdAt": "01/01/2025 00:00:00"
   }
 }
 ```
@@ -235,8 +239,8 @@ Giống như endpoint lấy danh sách có phân trang
 
 ```json
 {
-  "name": "string (required)",
-  "description": "string (optional)"
+  "categoryName": "string (required)",
+  "codePrefix": "string (optional, max 10 chars)"
 }
 ```
 
@@ -244,8 +248,8 @@ Giống như endpoint lấy danh sách có phân trang
 
 ```json
 {
-  "name": "Điện tử",
-  "description": "Danh mục sản phẩm điện tử"
+  "categoryName": "Điện tử",
+  "codePrefix": "DT"
 }
 ```
 
@@ -259,8 +263,9 @@ Giống như endpoint lấy danh sách có phân trang
   "message": "Thêm danh mục thành công",
   "data": {
     "idCategory": 1,
-    "name": "Điện tử",
-    "description": "Danh mục sản phẩm điện tử"
+    "categoryName": "Điện tử",
+    "codePrefix": "DT",
+    "createdAt": "01/01/2025 00:00:00"
   }
 }
 ```
@@ -274,7 +279,7 @@ Giống như endpoint lấy danh sách có phân trang
   "code": 400,
   "message": "Validation failed",
   "errors": {
-    "name": "Tên danh mục không được để trống"
+    "categoryName": "Tên danh mục không được để trống"
   }
 }
 ```
@@ -299,8 +304,8 @@ Giống như endpoint lấy danh sách có phân trang
 
 ```json
 {
-  "name": "string (required)",
-  "description": "string (optional)"
+  "categoryName": "string (required)",
+  "codePrefix": "string (optional, max 10 chars)"
 }
 ```
 
@@ -312,8 +317,8 @@ PUT /api/v1/categories/1
 
 ```json
 {
-  "name": "Điện tử - Cập nhật",
-  "description": "Mô tả mới"
+  "categoryName": "Điện tử - Cập nhật",
+  "codePrefix": "DT"
 }
 ```
 
@@ -327,8 +332,8 @@ PUT /api/v1/categories/1
   "message": "Cập nhật danh mục thành công",
   "data": {
     "idCategory": 1,
-    "name": "Điện tử - Cập nhật",
-    "description": "Mô tả mới"
+    "categoryName": "Điện tử - Cập nhật",
+    "codePrefix": "DT"
   }
 }
 ```
@@ -430,8 +435,8 @@ DELETE /api/v1/categories/1
 - Body (raw JSON):
 ```json
 {
-  "name": "Điện tử",
-  "description": "Danh mục sản phẩm điện tử"
+  "categoryName": "Điện tử",
+  "codePrefix": "DT"
 }
 ```
 
@@ -465,8 +470,8 @@ if (pm.response.code === 200) {
 - Body (raw JSON):
 ```json
 {
-  "name": "Điện tử - Cập nhật",
-  "description": "Mô tả mới"
+  "categoryName": "Điện tử - Cập nhật",
+  "codePrefix": "DT"
 }
 ```
 

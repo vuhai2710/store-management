@@ -88,7 +88,8 @@ Authorization: Bearer {JWT_TOKEN}
     "username": "employee1",
     "email": "employee1@example.com",
     "isActive": true,
-    "createdAt": "2025-01-01T00:00:00"
+    "createdAt": "01/01/2025 00:00:00",
+    "updatedAt": "01/01/2025 00:00:00"
   }
 }
 ```
@@ -158,7 +159,7 @@ GET /api/v1/employees/paginated?page=0&size=10&sort=idEmployee,DESC
   "code": 200,
   "message": "Lấy danh sách nhân viên thành công",
   "data": {
-    "content": [ /* EmployeeDto objects */ ],
+    "content": [ /* EmployeeDTO objects */ ],
     "pageNo": 1,
     "pageSize": 10,
     "totalElements": 50,
@@ -470,6 +471,7 @@ if (pm.response.code === 201) {
 ## Liên hệ
 
 Nếu có thắc mắc về Employee Module, vui lòng liên hệ team Backend.
+
 
 
 

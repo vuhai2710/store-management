@@ -2,7 +2,7 @@ package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.response.UserDto;
+import com.storemanagement.dto.user.UserDTO;
 import com.storemanagement.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +37,7 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<PageResponse<UserDto>>> getAllUsers(
+    public ResponseEntity<ApiResponse<PageResponse<UserDTO>>> getAllUsers(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(defaultValue = "idUser") String sortBy,
@@ -46,13 +46,13 @@ public class UserController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<UserDto> userPage = userService.getAllUsersPaginated(pageable);
+        PageResponse<UserDTO> userPage = userService.getAllUsersPaginated(pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách user thành công", userPage));
     }
 
     @GetMapping("/status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<PageResponse<UserDto>>> getUsersByStatus(
+    public ResponseEntity<ApiResponse<PageResponse<UserDTO>>> getUsersByStatus(
             @RequestParam Boolean isActive,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
@@ -62,23 +62,23 @@ public class UserController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<UserDto> userPage = userService.getUsersByIsActive(isActive, pageable);
+        PageResponse<UserDTO> userPage = userService.getUsersByIsActive(isActive, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách user theo trạng thái thành công", userPage));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<UserDto>> getUserById(@PathVariable Integer id) {
-        UserDto user = userService.getUserById(id);
+    public ResponseEntity<ApiResponse<UserDTO>> getUserById(@PathVariable Integer id) {
+        UserDTO user = userService.getUserById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin user thành công", user));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<UserDto>> updateUser(
+    public ResponseEntity<ApiResponse<UserDTO>> updateUser(
             @PathVariable Integer id,
-            @RequestBody @Valid UserDto userDto) {
-        UserDto updatedUser = userService.updateUser(id, userDto);
+            @RequestBody @Valid UserDTO userDTO) {
+        UserDTO updatedUser = userService.updateUser(id, userDTO);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật user thành công", updatedUser));
     }
 
@@ -98,10 +98,10 @@ public class UserController {
 
     @PatchMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<UserDto>> changeUserRole(
+    public ResponseEntity<ApiResponse<UserDTO>> changeUserRole(
             @PathVariable Integer id,
             @RequestParam String role) {
-        UserDto updatedUser = userService.changeUserRole(id, role);
+        UserDTO updatedUser = userService.changeUserRole(id, role);
         return ResponseEntity.ok(ApiResponse.success("Thay đổi role thành công", updatedUser));
     }
 
@@ -114,10 +114,10 @@ public class UserController {
 
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<UserDto>> getMyProfile() {
+    public ResponseEntity<ApiResponse<UserDTO>> getMyProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        UserDto user = userService.getUserByUsername(username);
+        UserDTO user = userService.getUserByUsername(username);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin profile thành công", user));
     }
 
@@ -131,11 +131,11 @@ public class UserController {
      */
     @PostMapping(value = "/avatar", consumes = {"multipart/form-data"})
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<UserDto>> uploadAvatar(
+    public ResponseEntity<ApiResponse<UserDTO>> uploadAvatar(
             @RequestParam("avatar") MultipartFile avatar) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        UserDto updatedUser = userService.uploadAvatar(username, avatar);
+        UserDTO updatedUser = userService.uploadAvatar(username, avatar);
         return ResponseEntity.ok(ApiResponse.success("Upload ảnh đại diện thành công", updatedUser));
     }
 
@@ -149,11 +149,11 @@ public class UserController {
      */
     @PutMapping(value = "/avatar", consumes = {"multipart/form-data"})
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<UserDto>> updateAvatar(
+    public ResponseEntity<ApiResponse<UserDTO>> updateAvatar(
             @RequestParam("avatar") MultipartFile avatar) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        UserDto updatedUser = userService.updateAvatar(username, avatar);
+        UserDTO updatedUser = userService.updateAvatar(username, avatar);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật ảnh đại diện thành công", updatedUser));
     }
 

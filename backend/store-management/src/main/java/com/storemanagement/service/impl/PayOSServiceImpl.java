@@ -44,7 +44,7 @@ public class PayOSServiceImpl implements PayOSService {
      * 
      * Logic chi tiết:
      * 1. Validate order: phải có paymentMethod = PAYOS, status = PENDING
-     * 2. Build PayOSPaymentRequestDto:
+     * 2. Build PayOSPaymentRequestDTO:
      *    - orderCode: orderId (Long)
      *    - amount: order.finalAmount (BigDecimal, convert sang Long VND)
      *    - description: "Thanh toan don hang #" + orderId
@@ -54,18 +54,18 @@ public class PayOSServiceImpl implements PayOSService {
      * 3. Gọi PayOS API POST /v2/payment-requests:
      *    - URL: {baseUrl}/v2/payment-requests
      *    - Headers: Content-Type: application/json, x-client-id: {clientId}, x-api-key: {apiKey}
-     *    - Body: PayOSPaymentRequestDto (JSON)
+     *    - Body: PayOSPaymentRequestDTO (JSON)
      * 4. Parse response:
      *    - Check response.code == "00" (success)
      *    - Extract paymentLinkId và checkoutUrl từ response.data
-     * 5. Return PayOSPaymentResponseDto
+     * 5. Return PayOSPaymentResponseDTO
      * 
      * Error handling:
      * - Nếu PayOS API trả về error: log và throw RuntimeException
      * - Nếu network error: log và throw RuntimeException
      */
     @Override
-    public PayOSPaymentResponseDto createPaymentLink(Order order) {
+    public PayOSPaymentResponseDTO createPaymentLink(Order order) {
         log.info("Creating PayOS payment link for order ID: {}", order.getIdOrder());
         
         // Validate order
@@ -78,7 +78,7 @@ public class PayOSServiceImpl implements PayOSService {
         
         try {
             // Build request DTO
-            PayOSPaymentRequestDto request = buildPaymentRequest(order);
+            PayOSPaymentRequestDTO request = buildPaymentRequest(order);
             
             // Build request URL
             String url = payOSConfig.getBaseUrl() + "/v2/payment-requests";
@@ -90,20 +90,20 @@ public class PayOSServiceImpl implements PayOSService {
             headers.set("x-api-key", payOSConfig.getApiKey());
             
             // Build request entity
-            HttpEntity<PayOSPaymentRequestDto> requestEntity = new HttpEntity<>(request, headers);
+            HttpEntity<PayOSPaymentRequestDTO> requestEntity = new HttpEntity<>(request, headers);
             
             log.debug("Calling PayOS API: POST {}", url);
             log.debug("Request body: {}", objectMapper.writeValueAsString(request));
             
             // Call PayOS API
-            ResponseEntity<PayOSPaymentResponseDto> response = restTemplate.exchange(
+            ResponseEntity<PayOSPaymentResponseDTO> response = restTemplate.exchange(
                 url,
                 HttpMethod.POST,
                 requestEntity,
-                PayOSPaymentResponseDto.class
+                PayOSPaymentResponseDTO.class
             );
             
-            PayOSPaymentResponseDto responseDto = response.getBody();
+            PayOSPaymentResponseDTO responseDto = response.getBody();
             
             // Validate response
             if (responseDto == null) {
@@ -133,16 +133,16 @@ public class PayOSServiceImpl implements PayOSService {
     }
     
     /**
-     * Build PayOSPaymentRequestDto từ Order entity
+     * Build PayOSPaymentRequestDTO từ Order entity
      * 
      * Logic:
      * - Convert orderId sang Long (orderCode)
      * - Convert finalAmount sang Long VND (PayOS yêu cầu số nguyên)
      * - Build description từ orderId
-     * - Convert orderDetails sang PayOSItemDto list (optional)
+     * - Convert orderDetails sang PayOSItemDTO list (optional)
      * - Lấy returnUrl và cancelUrl từ PayOSConfig
      */
-    private PayOSPaymentRequestDto buildPaymentRequest(Order order) {
+    private PayOSPaymentRequestDTO buildPaymentRequest(Order order) {
         // Convert orderId to Long (PayOS yêu cầu orderCode là Long)
         Long orderCode = Long.valueOf(order.getIdOrder());
         
@@ -154,7 +154,7 @@ public class PayOSServiceImpl implements PayOSService {
         String description = "Thanh toan don hang #" + order.getIdOrder();
         
         // Build items list (optional - PayOS có thể yêu cầu hoặc không)
-        List<PayOSItemDto> items = new ArrayList<>();
+        List<PayOSItemDTO> items = new ArrayList<>();
         if (order.getOrderDetails() != null && !order.getOrderDetails().isEmpty()) {
             for (var orderDetail : order.getOrderDetails()) {
                 // Sử dụng productNameSnapshot nếu có, nếu không thì dùng product name
@@ -162,7 +162,7 @@ public class PayOSServiceImpl implements PayOSService {
                     orderDetail.getProductNameSnapshot() : 
                     (orderDetail.getProduct() != null ? orderDetail.getProduct().getProductName() : "Product");
                 
-                PayOSItemDto item = PayOSItemDto.builder()
+                PayOSItemDTO item = PayOSItemDTO.builder()
                     .name(productName)
                     .quantity(orderDetail.getQuantity())
                     .price(orderDetail.getPrice()) // OrderDetail có field 'price' (giá tại thời điểm mua)
@@ -171,7 +171,7 @@ public class PayOSServiceImpl implements PayOSService {
             }
         }
         
-        return PayOSPaymentRequestDto.builder()
+        return PayOSPaymentRequestDTO.builder()
             .orderCode(orderCode)
             .amount(BigDecimal.valueOf(amount))
             .description(description)
@@ -250,7 +250,7 @@ public class PayOSServiceImpl implements PayOSService {
      * 3. Parse response và trả về
      */
     @Override
-    public PayOSPaymentResponseDto getPaymentLinkInfo(String paymentLinkId) {
+    public PayOSPaymentResponseDTO getPaymentLinkInfo(String paymentLinkId) {
         log.info("Getting PayOS payment link info. PaymentLinkId: {}", paymentLinkId);
         
         try {
@@ -262,14 +262,14 @@ public class PayOSServiceImpl implements PayOSService {
             
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
             
-            ResponseEntity<PayOSPaymentResponseDto> response = restTemplate.exchange(
+            ResponseEntity<PayOSPaymentResponseDTO> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 requestEntity,
-                PayOSPaymentResponseDto.class
+                PayOSPaymentResponseDTO.class
             );
             
-            PayOSPaymentResponseDto responseDto = response.getBody();
+            PayOSPaymentResponseDTO responseDto = response.getBody();
             
             if (responseDto == null || !"00".equals(responseDto.getCode())) {
                 log.error("PayOS API error: code={}, desc={}", 

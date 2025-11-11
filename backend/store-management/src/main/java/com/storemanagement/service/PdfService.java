@@ -2,10 +2,10 @@ package com.storemanagement.service;
 
 import com.itextpdf.html2pdf.ConverterProperties;
 import com.itextpdf.html2pdf.HtmlConverter;
-import com.storemanagement.dto.response.ImportOrderDetailDto;
-import com.storemanagement.dto.response.ImportOrderDto;
-import com.storemanagement.dto.response.OrderDetailDto;
-import com.storemanagement.dto.response.OrderDto;
+import com.storemanagement.dto.order.OrderDTO;
+import com.storemanagement.dto.order.OrderDetailDTO;
+import com.storemanagement.dto.purchase.PurchaseOrderDTO;
+import com.storemanagement.dto.purchase.PurchaseOrderDetailDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -53,11 +53,11 @@ public class PdfService {
     /**
      * Tạo PDF cho phiếu nhập hàng
      *
-     * @param importOrderDto DTO của đơn nhập hàng
+     * @param purchaseOrderDTO DTO của đơn nhập hàng
      * @return Byte array của PDF file
      */
-    public byte[] generateImportOrderPdf(ImportOrderDto importOrderDto) {
-        String htmlContent = generateImportOrderHtml(importOrderDto);
+    public byte[] generateImportOrderPdf(PurchaseOrderDTO purchaseOrderDTO) {
+        String htmlContent = generateImportOrderHtml(purchaseOrderDTO);
         String fullHtml = wrapHtmlTemplate("PHIẾU NHẬP HÀNG", htmlContent);
         return generatePdfFromHtml(fullHtml);
     }
@@ -65,11 +65,11 @@ public class PdfService {
     /**
      * Tạo PDF cho hóa đơn bán hàng
      *
-     * @param orderDto DTO của đơn hàng
+     * @param orderDTO DTO của đơn hàng
      * @return Byte array của PDF file
      */
-    public byte[] generateInvoicePdf(OrderDto orderDto) {
-        String htmlContent = generateInvoiceHtml(orderDto);
+    public byte[] generateInvoicePdf(OrderDTO orderDTO) {
+        String htmlContent = generateInvoiceHtml(orderDTO);
         String fullHtml = wrapHtmlTemplate("HÓA ĐƠN BÁN HÀNG", htmlContent);
         return generatePdfFromHtml(fullHtml);
     }
@@ -77,7 +77,7 @@ public class PdfService {
     /**
      * Generate HTML content cho phiếu nhập hàng
      */
-    private String generateImportOrderHtml(ImportOrderDto dto) {
+    private String generateImportOrderHtml(PurchaseOrderDTO dto) {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         
         StringBuilder html = new StringBuilder();
@@ -152,7 +152,7 @@ public class PdfService {
             """);
 
         int stt = 1;
-        for (ImportOrderDetailDto detail : dto.getImportOrderDetails()) {
+        for (PurchaseOrderDetailDTO detail : dto.getImportOrderDetails()) {
             BigDecimal subtotal = detail.getImportPrice()
                     .multiply(BigDecimal.valueOf(detail.getQuantity()))
                     .setScale(2, RoundingMode.HALF_UP);
@@ -206,7 +206,7 @@ public class PdfService {
     /**
      * Generate HTML content cho hóa đơn bán hàng
      */
-    private String generateInvoiceHtml(OrderDto dto) {
+    private String generateInvoiceHtml(OrderDTO dto) {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
         StringBuilder html = new StringBuilder();
@@ -278,7 +278,7 @@ public class PdfService {
             """);
 
         int stt = 1;
-        for (OrderDetailDto detail : dto.getOrderDetails()) {
+        for (OrderDetailDTO detail : dto.getOrderDetails()) {
             BigDecimal subtotal = detail.getPrice()
                     .multiply(BigDecimal.valueOf(detail.getQuantity()))
                     .setScale(2, RoundingMode.HALF_UP);

@@ -1,7 +1,7 @@
 package com.storemanagement.service.impl;
 
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.response.SupplierDto;
+import com.storemanagement.dto.supplier.SupplierDTO;
 import com.storemanagement.mapper.SupplierMapper;
 import com.storemanagement.model.Supplier;
 import com.storemanagement.repository.SupplierRepository;
@@ -28,56 +28,56 @@ public class SupplierServiceImpl implements SupplierService {
     private final SupplierMapper supplierMapper;
 
     @Override
-    public SupplierDto createSupplier(SupplierDto supplierDto) {
-        log.info("Creating supplier: {}", supplierDto.getSupplierName());
+    public SupplierDTO createSupplier(SupplierDTO supplierDTO) {
+        log.info("Creating supplier: {}", supplierDTO.getSupplierName());
 
-        if (supplierDto.getEmail() != null && !supplierDto.getEmail().trim().isEmpty()) {
-            if (supplierRepository.findByEmail(supplierDto.getEmail()).isPresent()) {
-                throw new RuntimeException("Email đã được sử dụng: " + supplierDto.getEmail());
+        if (supplierDTO.getEmail() != null && !supplierDTO.getEmail().trim().isEmpty()) {
+            if (supplierRepository.findByEmail(supplierDTO.getEmail()).isPresent()) {
+                throw new RuntimeException("Email đã được sử dụng: " + supplierDTO.getEmail());
             }
         }
 
         // Map DTO sang Entity
-        Supplier supplier = supplierMapper.toEntity(supplierDto);
+        Supplier supplier = supplierMapper.toEntity(supplierDTO);
         supplier.setCreatedAt(LocalDateTime.now());
 
         // Lưu vào DB
         Supplier savedSupplier = supplierRepository.save(supplier);
         log.info("Supplier created successfully with ID: {}", savedSupplier.getIdSupplier());
 
-        return supplierMapper.toDto(savedSupplier);
+        return supplierMapper.toDTO(savedSupplier);
     }
 
     @Override
-    public SupplierDto updateSupplier(Integer id, SupplierDto supplierDto) {
+    public SupplierDTO updateSupplier(Integer id, SupplierDTO supplierDTO) {
         log.info("Updating supplier ID: {}", id);
 
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Nhà cung cấp không tồn tại với ID: " + id));
 
-        if (supplierDto.getEmail() != null && !supplierDto.getEmail().equals(supplier.getEmail())) {
-            if (supplierRepository.findByEmail(supplierDto.getEmail()).isPresent()) {
-                throw new RuntimeException("Email đã được sử dụng: " + supplierDto.getEmail());
+        if (supplierDTO.getEmail() != null && !supplierDTO.getEmail().equals(supplier.getEmail())) {
+            if (supplierRepository.findByEmail(supplierDTO.getEmail()).isPresent()) {
+                throw new RuntimeException("Email đã được sử dụng: " + supplierDTO.getEmail());
             }
-            supplier.setEmail(supplierDto.getEmail());
+            supplier.setEmail(supplierDTO.getEmail());
         }
 
         // Cập nhật các trường khác
-        if (supplierDto.getSupplierName() != null) {
-            supplier.setSupplierName(supplierDto.getSupplierName());
+        if (supplierDTO.getSupplierName() != null) {
+            supplier.setSupplierName(supplierDTO.getSupplierName());
         }
-        if (supplierDto.getAddress() != null) {
-            supplier.setAddress(supplierDto.getAddress());
+        if (supplierDTO.getAddress() != null) {
+            supplier.setAddress(supplierDTO.getAddress());
         }
-        if (supplierDto.getPhoneNumber() != null) {
-            supplier.setPhoneNumber(supplierDto.getPhoneNumber());
+        if (supplierDTO.getPhoneNumber() != null) {
+            supplier.setPhoneNumber(supplierDTO.getPhoneNumber());
         }
 
         // Lưu lại
         Supplier updatedSupplier = supplierRepository.save(supplier);
         log.info("Supplier updated successfully: {}", updatedSupplier.getIdSupplier());
 
-        return supplierMapper.toDto(updatedSupplier);
+        return supplierMapper.toDTO(updatedSupplier);
     }
 
     @Override
@@ -92,30 +92,30 @@ public class SupplierServiceImpl implements SupplierService {
     }
 
     @Override
-    public SupplierDto getSupplierById(Integer id) {
+    public SupplierDTO getSupplierById(Integer id) {
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Nhà cung cấp không tồn tại với ID: " + id));
-        return supplierMapper.toDto(supplier);
+        return supplierMapper.toDTO(supplier);
     }
 
     @Override
-    public List<SupplierDto> getAllSuppliers() {
+    public List<SupplierDTO> getAllSuppliers() {
         List<Supplier> suppliers = supplierRepository.findAll();
-        return supplierMapper.toDtoList(suppliers);
+        return supplierMapper.toDTOList(suppliers);
     }
 
     @Override
-    public PageResponse<SupplierDto> getAllSuppliersPaginated(Pageable pageable) {
+    public PageResponse<SupplierDTO> getAllSuppliersPaginated(Pageable pageable) {
         Page<Supplier> supplierPage = supplierRepository.findAll(pageable);
-        List<SupplierDto> supplierDtos = supplierMapper.toDtoList(supplierPage.getContent());
-        return PageUtils.toPageResponse(supplierPage, supplierDtos);
+        List<SupplierDTO> supplierDTOs = supplierMapper.toDTOList(supplierPage.getContent());
+        return PageUtils.toPageResponse(supplierPage, supplierDTOs);
     }
 
     @Override
-    public PageResponse<SupplierDto> searchSuppliersByName(String name, Pageable pageable) {
+    public PageResponse<SupplierDTO> searchSuppliersByName(String name, Pageable pageable) {
         Page<Supplier> supplierPage = supplierRepository.findBySupplierNameContainingIgnoreCase(name, pageable);
-        List<SupplierDto> supplierDtos = supplierMapper.toDtoList(supplierPage.getContent());
-        return PageUtils.toPageResponse(supplierPage, supplierDtos);
+        List<SupplierDTO> supplierDTOs = supplierMapper.toDTOList(supplierPage.getContent());
+        return PageUtils.toPageResponse(supplierPage, supplierDTOs);
     }
 }
 

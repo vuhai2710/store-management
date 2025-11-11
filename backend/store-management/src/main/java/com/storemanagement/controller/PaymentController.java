@@ -2,8 +2,8 @@ package com.storemanagement.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.payos.PayOSPaymentResponseDto;
-import com.storemanagement.dto.payos.PayOSWebhookDto;
+import com.storemanagement.dto.payos.PayOSPaymentResponseDTO;
+import com.storemanagement.dto.payos.PayOSWebhookDTO;
 import com.storemanagement.model.Order;
 import com.storemanagement.repository.OrderRepository;
 import com.storemanagement.model.InventoryTransaction;
@@ -110,7 +110,7 @@ public class PaymentController {
         }
         
         // Gọi PayOSService để tạo payment link
-        PayOSPaymentResponseDto response = payOSService.createPaymentLink(order);
+        PayOSPaymentResponseDTO response = payOSService.createPaymentLink(order);
         
         // Lưu paymentLinkId vào order
         order.setPaymentLinkId(response.getData().getPaymentLinkId());
@@ -168,7 +168,7 @@ public class PaymentController {
         
         try {
             // Parse request body thành PayOSWebhookDto
-            PayOSWebhookDto webhookDto = objectMapper.readValue(requestBody, PayOSWebhookDto.class);
+            PayOSWebhookDTO webhookDto = objectMapper.readValue(requestBody, PayOSWebhookDTO.class);
             
             log.info("Webhook data: code={}, desc={}, paymentLinkId={}", 
                 webhookDto.getCode(), 

@@ -1,6 +1,6 @@
 package com.storemanagement.service;
 
-import com.storemanagement.dto.response.ProductImageDto;
+import com.storemanagement.dto.product.ProductImageDTO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -18,18 +18,18 @@ public interface ProductImageService {
      * 
      * @param productId ID sản phẩm
      * @param images Danh sách file ảnh
-     * @return Danh sách ProductImageDto đã upload
+     * @return Danh sách ProductImageDTO đã upload
      */
-    List<ProductImageDto> uploadProductImages(Integer productId, List<MultipartFile> images);
+    List<ProductImageDTO> uploadProductImages(Integer productId, List<MultipartFile> images);
     
     /**
      * Thêm một ảnh cho sản phẩm
      * 
      * @param productId ID sản phẩm
      * @param image File ảnh
-     * @return ProductImageDto đã thêm
+     * @return ProductImageDTO đã thêm
      */
-    ProductImageDto addProductImage(Integer productId, MultipartFile image);
+    ProductImageDTO addProductImage(Integer productId, MultipartFile image);
     
     /**
      * Xóa một ảnh của sản phẩm
@@ -43,17 +43,17 @@ public interface ProductImageService {
      * Đặt một ảnh làm ảnh chính
      * 
      * @param imageId ID của ảnh
-     * @return ProductImageDto đã cập nhật
+     * @return ProductImageDTO đã cập nhật
      */
-    ProductImageDto setImageAsPrimary(Integer imageId);
+    ProductImageDTO setImageAsPrimary(Integer imageId);
     
     /**
      * Lấy tất cả ảnh của sản phẩm
      * 
      * @param productId ID sản phẩm
-     * @return Danh sách ProductImageDto
+     * @return Danh sách ProductImageDTO
      */
-    List<ProductImageDto> getProductImages(Integer productId);
+    List<ProductImageDTO> getProductImages(Integer productId);
 }
 
 

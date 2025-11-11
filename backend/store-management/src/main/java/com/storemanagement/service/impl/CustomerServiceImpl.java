@@ -1,7 +1,7 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.request.AuthenticationRequestDto;
-import com.storemanagement.dto.response.CustomerDto;
+import com.storemanagement.dto.auth.RegisterDTO;
+import com.storemanagement.dto.customer.CustomerDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.CustomerMapper;
 import com.storemanagement.model.Customer;
@@ -32,7 +32,7 @@ public class CustomerServiceImpl implements CustomerService {
     private final ShippingAddressRepository shippingAddressRepository;
 
     @Override
-    public CustomerDto createCustomerForUser(User user, AuthenticationRequestDto request) {
+    public CustomerDTO createCustomerForUser(User user, RegisterDTO request) {
         Customer customer = customerMapper.toEntity(request);
         customer.setUser(user);
         Customer savedCustomer = customerRepository.save(customer);
@@ -50,44 +50,44 @@ public class CustomerServiceImpl implements CustomerService {
             shippingAddressRepository.save(defaultAddress);
         }
         
-        return customerMapper.toDto(savedCustomer);
+        return customerMapper.toDTO(savedCustomer);
     }
 
     @Override
-    public List<CustomerDto> getAllCustomers() {
-        return customerMapper.toDtoList(customerRepository.findAll());
+    public List<CustomerDTO> getAllCustomers() {
+        return customerMapper.toDTOList(customerRepository.findAll());
     }
 
     @Override
-    public PageResponse<CustomerDto> getAllCustomersPaginated(Pageable pageable) {
+    public PageResponse<CustomerDTO> getAllCustomersPaginated(Pageable pageable) {
         Page<Customer> customerPage = customerRepository.findAll(pageable);
-        List<CustomerDto> customerDtos = customerMapper.toDtoList(customerPage.getContent());
+        List<CustomerDTO> customerDtos = customerMapper.toDTOList(customerPage.getContent());
         return PageUtils.toPageResponse(customerPage, customerDtos);
     }
 
     @Override
-    public CustomerDto getCustomerById(Integer id) {
+    public CustomerDTO getCustomerById(Integer id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer không tồn tại với ID: " + id));
-        return customerMapper.toDto(customer);
+        return customerMapper.toDTO(customer);
     }
 
     @Override
-    public CustomerDto getCustomerByUsername(String username) {
+    public CustomerDTO getCustomerByUsername(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại với username: " + username));
         Customer customer = customerRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Customer không tồn tại cho user: " + username));
-        return customerMapper.toDto(customer);
+        return customerMapper.toDTO(customer);
     }
 
     @Override
-    public List<CustomerDto> searchCustomers(String name, String phone) {
+    public List<CustomerDTO> searchCustomers(String name, String phone) {
         List<Customer> customers = customerRepository.findAll();
 
         // Nếu không có tham số tìm kiếm, trả về tất cả
         if ((name == null || name.isEmpty()) && (phone == null || phone.isEmpty())) {
-            return customerMapper.toDtoList(customers);
+            return customerMapper.toDTOList(customers);
         }
 
         // Sử dụng OR logic: tìm theo name HOẶC phone
@@ -117,37 +117,37 @@ public class CustomerServiceImpl implements CustomerService {
                 })
                 .collect(Collectors.toList());
 
-        return customerMapper.toDtoList(customers);
+        return customerMapper.toDTOList(customers);
     }
 
     @Override
-    public PageResponse<CustomerDto> searchCustomersPaginated(String name, String phone, Pageable pageable) {
+    public PageResponse<CustomerDTO> searchCustomersPaginated(String name, String phone, Pageable pageable) {
         String normalizedName = (name == null || name.trim().isEmpty()) ? null : name.trim();
         String normalizedPhone = (phone == null || phone.trim().isEmpty()) ? null : phone.trim();
 
         Page<Customer> page = customerRepository.searchCustomers(normalizedName, normalizedPhone, pageable);
-        List<CustomerDto> customerDtos = customerMapper.toDtoList(page.getContent());
+        List<CustomerDTO> customerDtos = customerMapper.toDTOList(page.getContent());
         return PageUtils.toPageResponse(page, customerDtos);
     }
 
 
     @Override
-    public List<CustomerDto> getCustomersByType(String type) {
+    public List<CustomerDTO> getCustomersByType(String type) {
         try {
             CustomerType customerType = CustomerType.valueOf(type.toUpperCase());
             List<Customer> customers = customerRepository.findByCustomerType(customerType);
-            return customerMapper.toDtoList(customers);
+            return customerMapper.toDTOList(customers);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Customer type không hợp lệ: " + type);
         }
     }
 
     @Override
-    public PageResponse<CustomerDto> getCustomersByTypePaginated(String type, Pageable pageable) {
+    public PageResponse<CustomerDTO> getCustomersByTypePaginated(String type, Pageable pageable) {
         try {
             CustomerType customerType = CustomerType.valueOf(type.toUpperCase());
             Page<Customer> page = customerRepository.findByCustomerType(customerType, pageable);
-            List<CustomerDto> customerDtos = customerMapper.toDtoList(page.getContent());
+            List<CustomerDTO> customerDtos = customerMapper.toDTOList(page.getContent());
             return PageUtils.toPageResponse(page, customerDtos);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Customer type không hợp lệ: " + type);
@@ -155,7 +155,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public CustomerDto updateCustomer(Integer id, CustomerDto customerDto) {
+    public CustomerDTO updateCustomer(Integer id, CustomerDTO customerDto) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer không tồn tại với ID: " + id));
 
@@ -180,25 +180,25 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         Customer updatedCustomer = customerRepository.save(customer);
-        return customerMapper.toDto(updatedCustomer);
+        return customerMapper.toDTO(updatedCustomer);
     }
 
     @Override
-    public CustomerDto upgradeToVip(Integer id) {
+    public CustomerDTO upgradeToVip(Integer id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer không tồn tại với ID: " + id));
         customer.setCustomerType(CustomerType.VIP);
         Customer updatedCustomer = customerRepository.save(customer);
-        return customerMapper.toDto(updatedCustomer);
+        return customerMapper.toDTO(updatedCustomer);
     }
 
     @Override
-    public CustomerDto downgradeToRegular(Integer id) {
+    public CustomerDTO downgradeToRegular(Integer id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer không tồn tại với ID: " + id));
         customer.setCustomerType(CustomerType.REGULAR);
         Customer updatedCustomer = customerRepository.save(customer);
-        return customerMapper.toDto(updatedCustomer);
+        return customerMapper.toDTO(updatedCustomer);
     }
 
     @Override
@@ -226,7 +226,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public CustomerDto updateMyCustomerInfo(String username, CustomerDto customerDto) {
+    public CustomerDTO updateMyCustomerInfo(String username, CustomerDTO customerDto) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại với username: " + username));
         Customer customer = customerRepository.findByUser(user)
@@ -250,7 +250,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         Customer updatedCustomer = customerRepository.save(customer);
-        return customerMapper.toDto(updatedCustomer);
+        return customerMapper.toDTO(updatedCustomer);
     }
 
     /**
@@ -273,11 +273,11 @@ public class CustomerServiceImpl implements CustomerService {
      * @param customerName Tên khách hàng (required)
      * @param phoneNumber Số điện thoại (required, unique)
      * @param address Địa chỉ (optional)
-     * @return CustomerDto của customer vừa tạo
+     * @return CustomerDTO của customer vừa tạo
      * @throws RuntimeException nếu số điện thoại đã được sử dụng
      */
     @Override
-    public CustomerDto createCustomerWithoutUser(String customerName, String phoneNumber, String address) {
+    public CustomerDTO createCustomerWithoutUser(String customerName, String phoneNumber, String address) {
         // Kiểm tra phone number đã tồn tại chưa
         // Phone number là unique trong database, không được trùng
         customerRepository.findByPhoneNumber(phoneNumber)
@@ -297,6 +297,6 @@ public class CustomerServiceImpl implements CustomerService {
                 .build();
 
         Customer savedCustomer = customerRepository.save(customer);
-        return customerMapper.toDto(savedCustomer);
+        return customerMapper.toDTO(savedCustomer);
     }
 }

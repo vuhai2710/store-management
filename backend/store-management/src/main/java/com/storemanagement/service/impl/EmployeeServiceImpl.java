@@ -1,6 +1,6 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.response.EmployeeDto;
+import com.storemanagement.dto.employee.EmployeeDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.EmployeeMapper;
 import com.storemanagement.model.Employee;
@@ -29,7 +29,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public EmployeeDto createEmployee(EmployeeDto request) {
+    public EmployeeDTO createEmployee(EmployeeDTO request) {
         // Validate email khi tạo (email là bắt buộc khi create)
         if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
             throw new RuntimeException("Email không được để trống");
@@ -60,42 +60,42 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setUser(savedUser);
         Employee savedEmployee = employeeRepository.save(employee);
 
-        return employeeMapper.toDto(savedEmployee);
+        return employeeMapper.toDTO(savedEmployee);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<EmployeeDto> getAllEmployees() {
+    public List<EmployeeDTO> getAllEmployees() {
         List<Employee> employees = employeeRepository.findAll();
-        return employeeMapper.toDtoList(employees);
+        return employeeMapper.toDTOList(employees);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<EmployeeDto> getAllEmployeesPaginated(Pageable pageable) {
+    public PageResponse<EmployeeDTO> getAllEmployeesPaginated(Pageable pageable) {
         Page<Employee> employeePage = employeeRepository.findAll(pageable);
-        List<EmployeeDto> employeeDtos = employeeMapper.toDtoList(employeePage.getContent());
-        return PageUtils.toPageResponse(employeePage, employeeDtos);
+        List<EmployeeDTO> employeeDTOs = employeeMapper.toDTOList(employeePage.getContent());
+        return PageUtils.toPageResponse(employeePage, employeeDTOs);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public EmployeeDto getEmployeeById(Integer id) {
+    public EmployeeDTO getEmployeeById(Integer id) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Nhân viên không tồn tại với ID: " + id));
-        return employeeMapper.toDto(employee);
+        return employeeMapper.toDTO(employee);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public EmployeeDto getEmployeeByUserId(Integer userId) {
+    public EmployeeDTO getEmployeeByUserId(Integer userId) {
         Employee employee = employeeRepository.findByUser_IdUser(userId)
                 .orElseThrow(() -> new RuntimeException("Nhân viên không tồn tại với User ID: " + userId));
-        return employeeMapper.toDto(employee);
+        return employeeMapper.toDTO(employee);
     }
 
     @Override
-    public EmployeeDto updateEmployeeByAdmin(Integer id, EmployeeDto request) {
+    public EmployeeDTO updateEmployeeByAdmin(Integer id, EmployeeDTO request) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Nhân viên không tồn tại với ID: " + id));
 
@@ -133,7 +133,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeMapper.updateEntityFromDto(request, employee);
         Employee updatedEmployee = employeeRepository.save(employee);
 
-        return employeeMapper.toDto(updatedEmployee);
+        return employeeMapper.toDTO(updatedEmployee);
     }
 
     @Override
@@ -152,18 +152,18 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     @Transactional(readOnly = true)
-    public EmployeeDto getMyProfile(String username) {
+    public EmployeeDTO getMyProfile(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại: " + username));
 
         Employee employee = employeeRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Thông tin nhân viên không tồn tại"));
 
-        return employeeMapper.toDto(employee);
+        return employeeMapper.toDTO(employee);
     }
 
     @Override
-    public EmployeeDto updateMyProfile(String username, EmployeeDto request) {
+    public EmployeeDTO updateMyProfile(String username, EmployeeDTO request) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại: " + username));
 
@@ -195,7 +195,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         Employee updatedEmployee = employeeRepository.save(employee);
-        return employeeMapper.toDto(updatedEmployee);
+        return employeeMapper.toDTO(updatedEmployee);
     }
 }
 

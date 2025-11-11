@@ -1,7 +1,7 @@
 package com.storemanagement.mapper;
 
-import com.storemanagement.dto.request.AuthenticationRequestDto;
-import com.storemanagement.dto.response.UserDto;
+import com.storemanagement.dto.auth.RegisterDTO;
+import com.storemanagement.dto.user.UserDTO;
 import com.storemanagement.model.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -17,14 +17,23 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-    // AuthenticationDto → User
+    // RegisterDTO → User (for registration)
+    @Mapping(target = "idUser", ignore = true)
     @Mapping(target = "role", constant = "CUSTOMER")
     @Mapping(target = "isActive", constant = "true")
-    User toEntity(AuthenticationRequestDto dto);
+    User toEntity(RegisterDTO dto);
 
-    // User → UserDto
+    // UserDTO → User (for create/update)
+    @Mapping(target = "idUser", ignore = true)
+    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
+    // password may be null on update (handled in service)
+    User toEntity(UserDTO dto);
+
+    // User → UserDTO
     @Mapping(target = "idUser", source = "idUser")
-    UserDto toDto(User entity);
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "avatarUrl", source = "avatarUrl")
+    UserDTO toDTO(User entity);
 
-    List<UserDto> toDtoList(List<User> entities);
+    List<UserDTO> toDTOList(List<User> entities);
 }

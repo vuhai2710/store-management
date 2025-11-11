@@ -2,7 +2,7 @@ package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.response.SupplierDto;
+import com.storemanagement.dto.supplier.SupplierDTO;
 import com.storemanagement.service.SupplierService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,14 +33,14 @@ public class SupplierController {
 
     @GetMapping("/all")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<List<SupplierDto>>> getAllSuppliers() {
-        List<SupplierDto> suppliers = supplierService.getAllSuppliers();
+    public ResponseEntity<ApiResponse<List<SupplierDTO>>> getAllSuppliers() {
+        List<SupplierDTO> suppliers = supplierService.getAllSuppliers();
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách nhà cung cấp thành công", suppliers));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<SupplierDto>>> getAllSuppliersPaginated(
+    public ResponseEntity<ApiResponse<PageResponse<SupplierDTO>>> getAllSuppliersPaginated(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "idSupplier") String sortBy,
@@ -50,7 +50,7 @@ public class SupplierController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<SupplierDto> supplierPage;
+        PageResponse<SupplierDTO> supplierPage;
 
         if (name != null && !name.trim().isEmpty()) {
             supplierPage = supplierService.searchSuppliersByName(name, pageable);
@@ -63,14 +63,14 @@ public class SupplierController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<SupplierDto>> getSupplierById(@PathVariable Integer id) {
-        SupplierDto supplier = supplierService.getSupplierById(id);
+    public ResponseEntity<ApiResponse<SupplierDTO>> getSupplierById(@PathVariable Integer id) {
+        SupplierDTO supplier = supplierService.getSupplierById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin nhà cung cấp thành công", supplier));
     }
 
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<SupplierDto>>> searchSuppliersByName(
+    public ResponseEntity<ApiResponse<PageResponse<SupplierDTO>>> searchSuppliersByName(
             @RequestParam String name,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
@@ -80,23 +80,23 @@ public class SupplierController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<SupplierDto> supplierPage = supplierService.searchSuppliersByName(name, pageable);
+        PageResponse<SupplierDTO> supplierPage = supplierService.searchSuppliersByName(name, pageable);
         return ResponseEntity.ok(ApiResponse.success("Tìm kiếm nhà cung cấp thành công", supplierPage));
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<SupplierDto>> createSupplier(@RequestBody @Valid SupplierDto supplierDto) {
-        SupplierDto createdSupplier = supplierService.createSupplier(supplierDto);
+    public ResponseEntity<ApiResponse<SupplierDTO>> createSupplier(@RequestBody @Valid SupplierDTO supplierDto) {
+        SupplierDTO createdSupplier = supplierService.createSupplier(supplierDto);
         return ResponseEntity.ok(ApiResponse.success("Thêm nhà cung cấp thành công", createdSupplier));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<SupplierDto>> updateSupplier(
+    public ResponseEntity<ApiResponse<SupplierDTO>> updateSupplier(
             @PathVariable Integer id,
-            @RequestBody @Valid SupplierDto supplierDto) {
-        SupplierDto updatedSupplier = supplierService.updateSupplier(id, supplierDto);
+            @RequestBody @Valid SupplierDTO supplierDto) {
+        SupplierDTO updatedSupplier = supplierService.updateSupplier(id, supplierDto);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật nhà cung cấp thành công", updatedSupplier));
     }
 

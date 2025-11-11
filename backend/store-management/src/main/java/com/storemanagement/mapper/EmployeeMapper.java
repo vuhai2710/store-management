@@ -1,6 +1,6 @@
 package com.storemanagement.mapper;
 
-import com.storemanagement.dto.response.EmployeeDto;
+import com.storemanagement.dto.employee.EmployeeDTO;
 import com.storemanagement.model.Employee;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -11,27 +11,29 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface EmployeeMapper {
 
-    // Employee → EmployeeDto
+    // Employee → EmployeeDTO
+    @Mapping(target = "idEmployee", source = "idEmployee")
     @Mapping(source = "user.idUser", target = "idUser")
     @Mapping(source = "user.username", target = "username")
     @Mapping(source = "user.email", target = "email")
     @Mapping(source = "user.isActive", target = "isActive")
     @Mapping(target = "password", ignore = true)
-    // createdAt và updatedAt được map tự động từ BaseEntity của Employee
-    EmployeeDto toDto(Employee entity);
+    EmployeeDTO toDTO(Employee entity);
 
-    List<EmployeeDto> toDtoList(List<Employee> entities);
+    List<EmployeeDTO> toDTOList(List<Employee> entities);
 
-    // EmployeeDto → Employee
+    // EmployeeDTO → Employee (for create/update)
     @Mapping(target = "idEmployee", ignore = true)
     @Mapping(target = "user", ignore = true)
-    Employee toEntity(EmployeeDto dto);
+    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
+    // password, username, email are in EmployeeDTO but handled via User entity in service
+    Employee toEntity(EmployeeDTO dto);
 
-    // Update Employee từ EmployeeDto
+    // Update Employee từ EmployeeDTO
     @Mapping(target = "idEmployee", ignore = true)
     @Mapping(target = "user", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    void updateEntityFromDto(EmployeeDto dto, @MappingTarget Employee entity);
+    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
+    // password, username, email are in EmployeeDTO but handled via User entity in service
+    void updateEntityFromDto(EmployeeDTO dto, @MappingTarget Employee entity);
 }
 

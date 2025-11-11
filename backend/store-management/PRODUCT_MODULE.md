@@ -111,8 +111,8 @@ GET /api/v1/products?pageNo=1&pageSize=10&categoryId=1&brand=Apple&minPrice=1000
         "productCode": "SP001",
         "codeType": "SKU",
         "sku": "IP15PRO-001",
-        "createdAt": "2025-01-01T00:00:00",
-        "updatedAt": "2025-01-01T00:00:00"
+        "createdAt": "01/01/2025 00:00:00",
+        "updatedAt": "01/01/2025 00:00:00"
       }
     ],
     "pageNo": 1,
@@ -202,7 +202,7 @@ GET /api/v1/products/code/SP001
 
 **Status Code:** `200 OK`
 
-Trả về ProductDto object (giống như lấy chi tiết)
+Trả về ProductDTO object (giống như lấy chi tiết)
 
 ---
 

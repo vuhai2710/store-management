@@ -49,7 +49,7 @@ Authorization: Bearer {JWT_TOKEN}
       "address": "123 Đường XYZ",
       "phoneNumber": "0912345678",
       "email": "abc@example.com",
-      "createdAt": "2025-01-01T00:00:00"
+      "createdAt": "01/01/2025 00:00:00"
     }
   ]
 }
@@ -83,7 +83,7 @@ Authorization: Bearer {JWT_TOKEN}
   "code": 200,
   "message": "Lấy danh sách nhà cung cấp thành công",
   "data": {
-    "content": [ /* SupplierDto objects */ ],
+    "content": [ /* SupplierDTO objects */ ],
     "pageNo": 1,
     "pageSize": 10,
     "totalElements": 50,
@@ -365,6 +365,7 @@ if (pm.response.code === 200) {
 ## Liên hệ
 
 Nếu có thắc mắc về Supplier Module, vui lòng liên hệ team Backend.
+
 
 
 
