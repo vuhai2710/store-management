@@ -2,17 +2,15 @@ package com.storemanagement.controller;
 
 import com.nimbusds.jose.JOSEException;
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.request.AuthenticationRequestDto;
-import com.storemanagement.dto.request.ForgotPasswordRequestDto;
-import com.storemanagement.dto.request.LoginRequestDto;
-import com.storemanagement.dto.response.AuthenticationResponseDto;
+import com.storemanagement.dto.auth.RegisterDTO;
+import com.storemanagement.dto.auth.ForgotPasswordRequestDto;
+import com.storemanagement.dto.auth.LoginDTO;
+import com.storemanagement.dto.auth.AuthenticationResponseDTO;
 import com.storemanagement.service.AuthenticationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -60,9 +58,9 @@ public class AuthenticationController {
      * @return ApiResponse chứa JWT token và thông tin user
      */
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<AuthenticationResponseDto>> register(
-            @RequestBody @Valid AuthenticationRequestDto request) throws JOSEException {
-        AuthenticationResponseDto response = authService.register(request);
+    public ResponseEntity<ApiResponse<AuthenticationResponseDTO>> register(
+            @RequestBody @Valid RegisterDTO request) throws JOSEException {
+        AuthenticationResponseDTO response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Đăng ký thành công", response));
     }
@@ -94,13 +92,13 @@ public class AuthenticationController {
      * Authorization: Bearer {token}
      * cho tất cả các request sau đó (trừ các endpoint PUBLIC)
      * 
-     * @param request LoginRequestDto chứa username và password
+     * @param request LoginDTO chứa username và password
      * @return ApiResponse chứa JWT token và thông tin user
      */
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthenticationResponseDto>> login(
-            @RequestBody @Valid LoginRequestDto request) throws JOSEException {
-        AuthenticationResponseDto response = authService.authenticate(request);
+    public ResponseEntity<ApiResponse<AuthenticationResponseDTO>> login(
+            @RequestBody @Valid LoginDTO request) throws JOSEException {
+        AuthenticationResponseDTO response = authService.authenticate(request);
         return ResponseEntity.ok(ApiResponse.success("Đăng nhập thành công", response));
     }
 

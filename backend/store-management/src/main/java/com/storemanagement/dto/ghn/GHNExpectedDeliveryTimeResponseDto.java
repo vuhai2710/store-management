@@ -13,34 +13,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GHNExpectedDeliveryTimeResponseDto {
-    
-    /**
-     * Thời gian giao hàng dự kiến
-     * Format: ISO 8601 datetime string
-     */
+public class GHNExpectedDeliveryTimeResponseDTO {
     @JsonProperty("leadtime")
     private String leadtime;
     
-    /**
-     * Số ngày dự kiến
-     */
     @JsonProperty("order_date")
     private String orderDate;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

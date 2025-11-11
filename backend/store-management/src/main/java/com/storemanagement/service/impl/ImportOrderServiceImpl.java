@@ -1,7 +1,7 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.response.ImportOrderDetailDto;
-import com.storemanagement.dto.response.ImportOrderDto;
+import com.storemanagement.dto.purchase.PurchaseOrderDTO;
+import com.storemanagement.dto.purchase.PurchaseOrderDetailDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.ImportOrderMapper;
 import com.storemanagement.model.*;
@@ -77,20 +77,20 @@ public class ImportOrderServiceImpl implements ImportOrderService {
      * @return ImportOrderDto đã được tạo với ID
      */
     @Override
-    public ImportOrderDto createImportOrder(ImportOrderDto importOrderDto, Integer employeeId) {
-        log.info("Creating import order for supplier: {}", importOrderDto.getIdSupplier());
+    public PurchaseOrderDTO createImportOrder(PurchaseOrderDTO purchaseOrderDTO, Integer employeeId) {
+        log.info("Creating import order for supplier: {}", purchaseOrderDTO.getIdSupplier());
 
         // Bước 1: Validate supplier tồn tại
-        Supplier supplier = supplierRepository.findById(importOrderDto.getIdSupplier())
+        Supplier supplier = supplierRepository.findById(purchaseOrderDTO.getIdSupplier())
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "Nhà cung cấp không tồn tại với ID: " + importOrderDto.getIdSupplier()));
+                        "Nhà cung cấp không tồn tại với ID: " + purchaseOrderDTO.getIdSupplier()));
 
         // Bước 2: Validate products và tính tổng tiền
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<ImportOrderDetail> details = new ArrayList<>();
 
         // Duyệt qua từng sản phẩm trong đơn nhập hàng
-        for (ImportOrderDetailDto detailDto : importOrderDto.getImportOrderDetails()) {
+        for (PurchaseOrderDetailDTO detailDto : purchaseOrderDTO.getImportOrderDetails()) {
             // Validate product tồn tại
             Product product = productRepository.findById(detailDto.getIdProduct())
                     .orElseThrow(() -> new EntityNotFoundException(
@@ -196,7 +196,7 @@ public class ImportOrderServiceImpl implements ImportOrderService {
         }
 
         // Map và trả về DTO
-        ImportOrderDto result = importOrderMapper.toDto(savedOrder);
+        PurchaseOrderDTO result = importOrderMapper.toDTO(savedOrder);
         
         // Set employee name nếu có
         if (savedOrder.getIdEmployee() != null) {
@@ -209,14 +209,14 @@ public class ImportOrderServiceImpl implements ImportOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public ImportOrderDto getImportOrderById(Integer id) {
+    public PurchaseOrderDTO getImportOrderById(Integer id) {
         ImportOrder importOrder = importOrderRepository.findByIdWithDetails(id);
         if (importOrder == null) {
             importOrder = importOrderRepository.findById(id)
                     .orElseThrow(() -> new EntityNotFoundException("Đơn nhập hàng không tồn tại với ID: " + id));
         }
 
-        ImportOrderDto dto = importOrderMapper.toDto(importOrder);
+        PurchaseOrderDTO dto = importOrderMapper.toDTO(importOrder);
         
         // Set employee name nếu có
         if (importOrder.getIdEmployee() != null) {
@@ -229,9 +229,9 @@ public class ImportOrderServiceImpl implements ImportOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ImportOrderDto> getAllImportOrders(Pageable pageable) {
+    public PageResponse<PurchaseOrderDTO> getAllImportOrders(Pageable pageable) {
         Page<ImportOrder> orderPage = importOrderRepository.findAll(pageable);
-        List<ImportOrderDto> dtos = importOrderMapper.toDtoList(orderPage.getContent());
+        List<PurchaseOrderDTO> dtos = importOrderMapper.toDTOList(orderPage.getContent());
         
         // Set employee names
         dtos.forEach(dto -> {
@@ -246,13 +246,13 @@ public class ImportOrderServiceImpl implements ImportOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ImportOrderDto> getImportOrdersBySupplier(Integer supplierId, Pageable pageable) {
+    public PageResponse<PurchaseOrderDTO> getImportOrdersBySupplier(Integer supplierId, Pageable pageable) {
         if (!supplierRepository.existsById(supplierId)) {
             throw new EntityNotFoundException("Nhà cung cấp không tồn tại với ID: " + supplierId);
         }
 
         Page<ImportOrder> orderPage = importOrderRepository.findBySupplier_IdSupplier(supplierId, pageable);
-        List<ImportOrderDto> dtos = importOrderMapper.toDtoList(orderPage.getContent());
+        List<PurchaseOrderDTO> dtos = importOrderMapper.toDTOList(orderPage.getContent());
         
         // Set employee names
         dtos.forEach(dto -> {
@@ -267,9 +267,9 @@ public class ImportOrderServiceImpl implements ImportOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ImportOrderDto> getImportOrdersByDateRange(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
+    public PageResponse<PurchaseOrderDTO> getImportOrdersByDateRange(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
         Page<ImportOrder> orderPage = importOrderRepository.findByOrderDateBetween(startDate, endDate, pageable);
-        List<ImportOrderDto> dtos = importOrderMapper.toDtoList(orderPage.getContent());
+        List<PurchaseOrderDTO> dtos = importOrderMapper.toDTOList(orderPage.getContent());
         
         // Set employee names
         dtos.forEach(dto -> {
@@ -284,14 +284,14 @@ public class ImportOrderServiceImpl implements ImportOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ImportOrderDto> getImportOrdersBySupplierAndDateRange(Integer supplierId, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
+    public PageResponse<PurchaseOrderDTO> getImportOrdersBySupplierAndDateRange(Integer supplierId, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
         // Validate supplier
         if (!supplierRepository.existsById(supplierId)) {
             throw new EntityNotFoundException("Nhà cung cấp không tồn tại với ID: " + supplierId);
         }
 
         Page<ImportOrder> orderPage = importOrderRepository.findBySupplierAndDateRange(supplierId, startDate, endDate, pageable);
-        List<ImportOrderDto> dtos = importOrderMapper.toDtoList(orderPage.getContent());
+        List<PurchaseOrderDTO> dtos = importOrderMapper.toDTOList(orderPage.getContent());
         
         // Set employee names
         dtos.forEach(dto -> {
@@ -307,8 +307,8 @@ public class ImportOrderServiceImpl implements ImportOrderService {
     @Override
     @Transactional(readOnly = true)
     public byte[] exportImportOrderToPdf(Integer id) {
-        ImportOrderDto importOrderDto = getImportOrderById(id);
-        return pdfService.generateImportOrderPdf(importOrderDto);
+        PurchaseOrderDTO purchaseOrderDTO = getImportOrderById(id);
+        return pdfService.generateImportOrderPdf(purchaseOrderDTO);
     }
 }
 

@@ -3,7 +3,7 @@ package com.storemanagement.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.storemanagement.config.GHNConfig;
 import com.storemanagement.dto.ghn.*;
-import com.storemanagement.dto.ghn.GHNExpectedDeliveryTimeResponseDto;
+import com.storemanagement.dto.ghn.GHNExpectedDeliveryTimeResponseDTO;
 import com.storemanagement.service.GHNService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -84,7 +84,7 @@ public class GHNServiceImpl implements GHNService {
      * 3. Parse response và trả về danh sách tỉnh/thành phố
      */
     @Override
-    public List<GHNProvinceDto> getProvinces() {
+    public List<GHNProvinceDTO> getProvinces() {
         log.info("Getting provinces from GHN API");
         
         if (!isEnabled()) {
@@ -99,14 +99,14 @@ public class GHNServiceImpl implements GHNService {
             
             log.debug("Calling GHN API: GET {}", url);
             
-            ResponseEntity<GHNBaseResponseDto<List<GHNProvinceDto>>> response = ghnRestTemplate.exchange(
+            ResponseEntity<GHNBaseResponseDTO<List<GHNProvinceDTO>>> response = ghnRestTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDto<List<GHNProvinceDto>>>() {}
+                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<List<GHNProvinceDTO>>>() {}
             );
             
-            GHNBaseResponseDto<List<GHNProvinceDto>> responseBody = response.getBody();
+            GHNBaseResponseDTO<List<GHNProvinceDTO>> responseBody = response.getBody();
             
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
@@ -136,7 +136,7 @@ public class GHNServiceImpl implements GHNService {
      * 3. Parse response và trả về danh sách quận/huyện
      */
     @Override
-    public List<GHNDistrictDto> getDistricts(Integer provinceId) {
+    public List<GHNDistrictDTO> getDistricts(Integer provinceId) {
         log.info("Getting districts from GHN API for province ID: {}", provinceId);
         
         if (!isEnabled()) {
@@ -151,14 +151,14 @@ public class GHNServiceImpl implements GHNService {
             
             log.debug("Calling GHN API: GET {}", url);
             
-            ResponseEntity<GHNBaseResponseDto<List<GHNDistrictDto>>> response = ghnRestTemplate.exchange(
+            ResponseEntity<GHNBaseResponseDTO<List<GHNDistrictDTO>>> response = ghnRestTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDto<List<GHNDistrictDto>>>() {}
+                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<List<GHNDistrictDTO>>>() {}
             );
             
-            GHNBaseResponseDto<List<GHNDistrictDto>> responseBody = response.getBody();
+            GHNBaseResponseDTO<List<GHNDistrictDTO>> responseBody = response.getBody();
             
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
@@ -188,7 +188,7 @@ public class GHNServiceImpl implements GHNService {
      * 3. Parse response và trả về danh sách phường/xã
      */
     @Override
-    public List<GHNWardDto> getWards(Integer districtId) {
+    public List<GHNWardDTO> getWards(Integer districtId) {
         log.info("Getting wards from GHN API for district ID: {}", districtId);
         
         if (!isEnabled()) {
@@ -203,14 +203,14 @@ public class GHNServiceImpl implements GHNService {
             
             log.debug("Calling GHN API: GET {}", url);
             
-            ResponseEntity<GHNBaseResponseDto<List<GHNWardDto>>> response = ghnRestTemplate.exchange(
+            ResponseEntity<GHNBaseResponseDTO<List<GHNWardDTO>>> response = ghnRestTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDto<List<GHNWardDto>>>() {}
+                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<List<GHNWardDTO>>>() {}
             );
             
-            GHNBaseResponseDto<List<GHNWardDto>> responseBody = response.getBody();
+            GHNBaseResponseDTO<List<GHNWardDTO>> responseBody = response.getBody();
             
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
@@ -236,20 +236,20 @@ public class GHNServiceImpl implements GHNService {
      * 
      * Logic:
      * 1. Kiểm tra GHN enabled
-     * 2. Build request body từ GHNCalculateFeeRequestDto
+     * 2. Build request body từ GHNCalculateFeeRequestDTO
      * 3. Gọi GHN API POST /shiip/public-api/v2/shipping-order/fee
-     * 4. Parse response và trả về GHNCalculateFeeResponseDto
+     * 4. Parse response và trả về GHNCalculateFeeResponseDTO
      * 5. Response chứa total (tổng phí vận chuyển) và các phí chi tiết
      */
     @Override
-    public GHNCalculateFeeResponseDto calculateShippingFee(GHNCalculateFeeRequestDto request) {
+    public GHNCalculateFeeResponseDTO calculateShippingFee(GHNCalculateFeeRequestDTO request) {
         log.info("Calculating shipping fee from GHN API: fromDistrictId={}, toDistrictId={}", 
             request.getFromDistrictId(), request.getToDistrictId());
         
         if (!isEnabled()) {
             log.warn("GHN integration is disabled, returning default fee");
             // Return default fee if disabled
-            return GHNCalculateFeeResponseDto.builder()
+            return GHNCalculateFeeResponseDTO.builder()
                 .total(java.math.BigDecimal.valueOf(30000)) // Default 30,000 VND
                 .serviceFee(java.math.BigDecimal.valueOf(25000))
                 .insuranceFee(java.math.BigDecimal.ZERO)
@@ -264,19 +264,19 @@ public class GHNServiceImpl implements GHNService {
         try {
             String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/fee";
             HttpHeaders headers = buildHeaders();
-            HttpEntity<GHNCalculateFeeRequestDto> requestEntity = new HttpEntity<>(request, headers);
+            HttpEntity<GHNCalculateFeeRequestDTO> requestEntity = new HttpEntity<>(request, headers);
             
             log.debug("Calling GHN API: POST {}", url);
             log.debug("Request body: {}", objectMapper.writeValueAsString(request));
             
-            ResponseEntity<GHNBaseResponseDto<GHNCalculateFeeResponseDto>> response = ghnRestTemplate.exchange(
+            ResponseEntity<GHNBaseResponseDTO<GHNCalculateFeeResponseDTO>> response = ghnRestTemplate.exchange(
                 url,
                 HttpMethod.POST,
                 requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDto<GHNCalculateFeeResponseDto>>() {}
+                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNCalculateFeeResponseDTO>>() {}
             );
             
-            GHNBaseResponseDto<GHNCalculateFeeResponseDto> responseBody = response.getBody();
+            GHNBaseResponseDTO<GHNCalculateFeeResponseDTO> responseBody = response.getBody();
             
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
@@ -303,14 +303,14 @@ public class GHNServiceImpl implements GHNService {
      * 
      * Logic:
      * 1. Kiểm tra GHN enabled
-     * 2. Build request body từ GHNCreateOrderRequestDto
+     * 2. Build request body từ GHNCreateOrderRequestDTO
      * 3. Gọi GHN API POST /shiip/public-api/v2/shipping-order/create
-     * 4. Parse response và trả về GHNCreateOrderResponseDto
+     * 4. Parse response và trả về GHNCreateOrderResponseDTO
      * 5. Response chứa order_code (quan trọng, dùng để tracking)
      * 6. order_code được lưu vào Shipment.ghnOrderCode
      */
     @Override
-    public GHNCreateOrderResponseDto createOrder(GHNCreateOrderRequestDto request) {
+    public GHNCreateOrderResponseDTO createOrder(GHNCreateOrderRequestDTO request) {
         log.info("Creating GHN order: clientOrderCode={}, toName={}, toPhone={}", 
             request.getClientOrderCode(), request.getToName(), request.getToPhone());
         
@@ -322,19 +322,19 @@ public class GHNServiceImpl implements GHNService {
         try {
             String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/create";
             HttpHeaders headers = buildHeaders();
-            HttpEntity<GHNCreateOrderRequestDto> requestEntity = new HttpEntity<>(request, headers);
+            HttpEntity<GHNCreateOrderRequestDTO> requestEntity = new HttpEntity<>(request, headers);
             
             log.debug("Calling GHN API: POST {}", url);
             log.debug("Request body: {}", objectMapper.writeValueAsString(request));
             
-            ResponseEntity<GHNBaseResponseDto<GHNCreateOrderResponseDto>> response = ghnRestTemplate.exchange(
+            ResponseEntity<GHNBaseResponseDTO<GHNCreateOrderResponseDTO>> response = ghnRestTemplate.exchange(
                 url,
                 HttpMethod.POST,
                 requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDto<GHNCreateOrderResponseDto>>() {}
+                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNCreateOrderResponseDTO>>() {}
             );
             
-            GHNBaseResponseDto<GHNCreateOrderResponseDto> responseBody = response.getBody();
+            GHNBaseResponseDTO<GHNCreateOrderResponseDTO> responseBody = response.getBody();
             
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
@@ -361,10 +361,10 @@ public class GHNServiceImpl implements GHNService {
      * Logic:
      * 1. Kiểm tra GHN enabled
      * 2. Gọi GHN API GET /shiip/public-api/v2/shipping-order/detail?order_code={code}
-     * 3. Parse response và trả về GHNOrderInfoDto
+     * 3. Parse response và trả về GHNOrderInfoDTO
      */
     @Override
-    public GHNOrderInfoDto getOrderInfo(String ghnOrderCode) {
+    public GHNOrderInfoDTO getOrderInfo(String ghnOrderCode) {
         log.info("Getting GHN order info: orderCode={}", ghnOrderCode);
         
         if (!isEnabled()) {
@@ -379,14 +379,14 @@ public class GHNServiceImpl implements GHNService {
             
             log.debug("Calling GHN API: GET {}", url);
             
-            ResponseEntity<GHNBaseResponseDto<GHNOrderInfoDto>> response = ghnRestTemplate.exchange(
+            ResponseEntity<GHNBaseResponseDTO<GHNOrderInfoDTO>> response = ghnRestTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDto<GHNOrderInfoDto>>() {}
+                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNOrderInfoDTO>>() {}
             );
             
-            GHNBaseResponseDto<GHNOrderInfoDto> responseBody = response.getBody();
+            GHNBaseResponseDTO<GHNOrderInfoDTO> responseBody = response.getBody();
             
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
@@ -438,14 +438,14 @@ public class GHNServiceImpl implements GHNService {
             log.debug("Calling GHN API: POST {}", url);
             log.debug("Request body: {}", objectMapper.writeValueAsString(requestBody));
             
-            ResponseEntity<GHNBaseResponseDto<Object>> response = ghnRestTemplate.exchange(
+            ResponseEntity<GHNBaseResponseDTO<Object>> response = ghnRestTemplate.exchange(
                 url,
                 HttpMethod.POST,
                 requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDto<Object>>() {}
+                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<Object>>() {}
             );
             
-            GHNBaseResponseDto<Object> responseBody = response.getBody();
+            GHNBaseResponseDTO<Object> responseBody = response.getBody();
             
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
@@ -472,7 +472,7 @@ public class GHNServiceImpl implements GHNService {
      * 3. Parse response và trả về danh sách dịch vụ
      */
     @Override
-    public List<GHNServiceDto> getShippingServices(Integer fromDistrictId, Integer toDistrictId) {
+    public List<GHNServiceDTO> getShippingServices(Integer fromDistrictId, Integer toDistrictId) {
         log.info("Getting shipping services from GHN: fromDistrictId={}, toDistrictId={}", 
             fromDistrictId, toDistrictId);
         
@@ -489,14 +489,14 @@ public class GHNServiceImpl implements GHNService {
             
             log.debug("Calling GHN API: GET {}", url);
             
-            ResponseEntity<GHNBaseResponseDto<List<GHNServiceDto>>> response = ghnRestTemplate.exchange(
+            ResponseEntity<GHNBaseResponseDTO<List<GHNServiceDTO>>> response = ghnRestTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDto<List<GHNServiceDto>>>() {}
+                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<List<GHNServiceDTO>>>() {}
             );
             
-            GHNBaseResponseDto<List<GHNServiceDto>> responseBody = response.getBody();
+            GHNBaseResponseDTO<List<GHNServiceDTO>> responseBody = response.getBody();
             
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
@@ -519,12 +519,12 @@ public class GHNServiceImpl implements GHNService {
      * 
      * Logic:
      * 1. Kiểm tra GHN enabled
-     * 2. Build request body từ GHNExpectedDeliveryTimeRequestDto
+     * 2. Build request body từ GHNExpectedDeliveryTimeRequestDTO
      * 3. Gọi GHN API POST /shiip/public-api/v2/shipping-order/leadtime
      * 4. Parse response và trả về thời gian giao hàng dự kiến (ISO 8601 datetime string)
      */
     @Override
-    public String getExpectedDeliveryTime(GHNExpectedDeliveryTimeRequestDto request) {
+    public String getExpectedDeliveryTime(GHNExpectedDeliveryTimeRequestDTO request) {
         log.info("Getting expected delivery time from GHN: fromDistrictId={}, toDistrictId={}", 
             request.getFromDistrictId(), request.getToDistrictId());
         
@@ -536,19 +536,19 @@ public class GHNServiceImpl implements GHNService {
         try {
             String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/leadtime";
             HttpHeaders headers = buildHeaders();
-            HttpEntity<GHNExpectedDeliveryTimeRequestDto> requestEntity = new HttpEntity<>(request, headers);
+            HttpEntity<GHNExpectedDeliveryTimeRequestDTO> requestEntity = new HttpEntity<>(request, headers);
             
             log.debug("Calling GHN API: POST {}", url);
             log.debug("Request body: {}", objectMapper.writeValueAsString(request));
             
-            ResponseEntity<GHNBaseResponseDto<GHNExpectedDeliveryTimeResponseDto>> response = ghnRestTemplate.exchange(
+            ResponseEntity<GHNBaseResponseDTO<GHNExpectedDeliveryTimeResponseDTO>> response = ghnRestTemplate.exchange(
                 url,
                 HttpMethod.POST,
                 requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDto<GHNExpectedDeliveryTimeResponseDto>>() {}
+                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNExpectedDeliveryTimeResponseDTO>>() {}
             );
             
-            GHNBaseResponseDto<GHNExpectedDeliveryTimeResponseDto> responseBody = response.getBody();
+            GHNBaseResponseDTO<GHNExpectedDeliveryTimeResponseDTO> responseBody = response.getBody();
             
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
@@ -572,10 +572,10 @@ public class GHNServiceImpl implements GHNService {
      * Logic:
      * 1. Kiểm tra GHN enabled
      * 2. Gọi GHN API GET /shiip/public-api/v2/shipping-order/tracking?order_code={code}
-     * 3. Parse response và trả về GHNTrackingDto với lịch sử cập nhật trạng thái
+     * 3. Parse response và trả về GHNTrackingDTO với lịch sử cập nhật trạng thái
      */
     @Override
-    public GHNTrackingDto trackOrder(String ghnOrderCode) {
+    public GHNTrackingDTO trackOrder(String ghnOrderCode) {
         log.info("Tracking GHN order: orderCode={}", ghnOrderCode);
         
         if (!isEnabled()) {
@@ -590,14 +590,14 @@ public class GHNServiceImpl implements GHNService {
             
             log.debug("Calling GHN API: GET {}", url);
             
-            ResponseEntity<GHNBaseResponseDto<GHNTrackingDto>> response = ghnRestTemplate.exchange(
+            ResponseEntity<GHNBaseResponseDTO<GHNTrackingDTO>> response = ghnRestTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDto<GHNTrackingDto>>() {}
+                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNTrackingDTO>>() {}
             );
             
-            GHNBaseResponseDto<GHNTrackingDto> responseBody = response.getBody();
+            GHNBaseResponseDTO<GHNTrackingDTO> responseBody = response.getBody();
             
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
@@ -669,12 +669,12 @@ public class GHNServiceImpl implements GHNService {
      * 
      * Logic:
      * 1. Kiểm tra GHN enabled
-     * 2. Build request body từ GHNUpdateOrderRequestDto
+     * 2. Build request body từ GHNUpdateOrderRequestDTO
      * 3. Gọi GHN API POST /shiip/public-api/v2/shipping-order/update
      * 4. Xử lý response (thường chỉ cần check code == 200)
      */
     @Override
-    public void updateOrder(GHNUpdateOrderRequestDto request) {
+    public void updateOrder(GHNUpdateOrderRequestDTO request) {
         log.info("Updating GHN order: orderCode={}", request.getOrderCode());
         
         if (!isEnabled()) {
@@ -685,19 +685,19 @@ public class GHNServiceImpl implements GHNService {
         try {
             String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/update";
             HttpHeaders headers = buildHeaders();
-            HttpEntity<GHNUpdateOrderRequestDto> requestEntity = new HttpEntity<>(request, headers);
+            HttpEntity<GHNUpdateOrderRequestDTO> requestEntity = new HttpEntity<>(request, headers);
             
             log.debug("Calling GHN API: POST {}", url);
             log.debug("Request body: {}", objectMapper.writeValueAsString(request));
             
-            ResponseEntity<GHNBaseResponseDto<Object>> response = ghnRestTemplate.exchange(
+            ResponseEntity<GHNBaseResponseDTO<Object>> response = ghnRestTemplate.exchange(
                 url,
                 HttpMethod.POST,
                 requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDto<Object>>() {}
+                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<Object>>() {}
             );
             
-            GHNBaseResponseDto<Object> responseBody = response.getBody();
+            GHNBaseResponseDTO<Object> responseBody = response.getBody();
             
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");

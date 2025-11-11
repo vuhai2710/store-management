@@ -1,8 +1,8 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.request.CreateShippingAddressRequestDto;
-import com.storemanagement.dto.response.ShippingAddressDto;
-import com.storemanagement.dto.request.UpdateShippingAddressRequestDto;
+import com.storemanagement.dto.shipment.ShippingAddressDTO;
+import com.storemanagement.dto.shipment.CreateShippingAddressRequestDto;
+import com.storemanagement.dto.shipment.UpdateShippingAddressRequestDto;
 import com.storemanagement.mapper.ShippingAddressMapper;
 import com.storemanagement.model.Customer;
 import com.storemanagement.model.ShippingAddress;
@@ -26,19 +26,19 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ShippingAddressDto> getAllAddresses(Integer customerId) {
+    public List<ShippingAddressDTO> getAllAddresses(Integer customerId) {
         List<ShippingAddress> addresses = shippingAddressRepository
                 .findByCustomerIdCustomerOrderByIsDefaultDesc(customerId);
-        return shippingAddressMapper.toDtoList(addresses);
+        return shippingAddressMapper.toDTOList(addresses);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ShippingAddressDto getDefaultAddress(Integer customerId) {
+    public ShippingAddressDTO getDefaultAddress(Integer customerId) {
         ShippingAddress defaultAddress = shippingAddressRepository
                 .findByCustomerIdCustomerAndIsDefaultTrue(customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy địa chỉ mặc định"));
-        return shippingAddressMapper.toDto(defaultAddress);
+        return shippingAddressMapper.toDTO(defaultAddress);
     }
 
     /**
@@ -53,18 +53,23 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
      * 4. Lưu địa chỉ mới
      */
     @Override
-    public ShippingAddressDto createAddress(Integer customerId, CreateShippingAddressRequestDto request) {
+    public ShippingAddressDTO createAddress(Integer customerId, CreateShippingAddressRequestDto request) {
         // Kiểm tra customer tồn tại
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng"));
 
-        // Map DTO sang entity
-        ShippingAddress address = shippingAddressMapper.toEntity(request);
-        address.setCustomer(customer);
+        // Map Request DTO to Entity
+        ShippingAddress address = ShippingAddress.builder()
+                .recipientName(request.getRecipientName())
+                .phoneNumber(request.getPhoneNumber())
+                .address(request.getAddress())
+                .isDefault(request.getIsDefault() != null ? request.getIsDefault() : false)
+                .customer(customer)
+                .build();
 
         // Xử lý isDefault: Nếu set làm default, cần unset các địa chỉ default khác
         // Đảm bảo chỉ có một địa chỉ mặc định tại một thời điểm
-        if (Boolean.TRUE.equals(request.getIsDefault())) {
+        if (Boolean.TRUE.equals(address.getIsDefault())) {
             // Tìm tất cả địa chỉ mặc định hiện tại
             List<ShippingAddress> defaultAddresses = shippingAddressRepository
                     .findByCustomerIdCustomerAndIsDefaultTrue(customerId)
@@ -78,18 +83,22 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
 
         // Lưu địa chỉ mới
         ShippingAddress savedAddress = shippingAddressRepository.save(address);
-        return shippingAddressMapper.toDto(savedAddress);
+        return shippingAddressMapper.toDTO(savedAddress);
     }
 
     @Override
-    public ShippingAddressDto updateAddress(Integer customerId, Integer addressId, UpdateShippingAddressRequestDto request) {
+    public ShippingAddressDTO updateAddress(Integer customerId, Integer addressId, UpdateShippingAddressRequestDto request) {
         ShippingAddress address = shippingAddressRepository
                 .findByIdShippingAddressAndCustomerIdCustomer(addressId, customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy địa chỉ"));
 
-        shippingAddressMapper.updateEntityFromDto(request, address);
+        // Update fields from Request DTO
+        address.setRecipientName(request.getRecipientName());
+        address.setPhoneNumber(request.getPhoneNumber());
+        address.setAddress(request.getAddress());
+        
         ShippingAddress updatedAddress = shippingAddressRepository.save(address);
-        return shippingAddressMapper.toDto(updatedAddress);
+        return shippingAddressMapper.toDTO(updatedAddress);
     }
 
     /**
@@ -103,7 +112,7 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
      * Đảm bảo: Chỉ có một địa chỉ mặc định tại một thời điểm
      */
     @Override
-    public ShippingAddressDto setDefaultAddress(Integer customerId, Integer addressId) {
+    public ShippingAddressDTO setDefaultAddress(Integer customerId, Integer addressId) {
         // Kiểm tra địa chỉ tồn tại và thuộc về customer
         ShippingAddress address = shippingAddressRepository
                 .findByIdShippingAddressAndCustomerIdCustomer(addressId, customerId)
@@ -122,7 +131,7 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
         // Set địa chỉ này làm mặc định
         address.setIsDefault(true);
         ShippingAddress savedAddress = shippingAddressRepository.save(address);
-        return shippingAddressMapper.toDto(savedAddress);
+        return shippingAddressMapper.toDTO(savedAddress);
     }
 
     /**

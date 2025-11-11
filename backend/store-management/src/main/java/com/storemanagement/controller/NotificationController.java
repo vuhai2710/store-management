@@ -2,7 +2,7 @@ package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.response.NotificationDto;
+import com.storemanagement.dto.notification.NotificationDTO;
 import com.storemanagement.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -34,7 +34,7 @@ public class NotificationController {
      */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<PageResponse<NotificationDto>>> getMyNotifications(
+    public ResponseEntity<ApiResponse<PageResponse<NotificationDTO>>> getMyNotifications(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -47,7 +47,7 @@ public class NotificationController {
                 Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
         
-        PageResponse<NotificationDto> notifications = 
+        PageResponse<NotificationDTO> notifications = 
                 notificationService.getMyNotifications(username, pageable);
         
         return ResponseEntity.ok(ApiResponse.success(
@@ -60,7 +60,7 @@ public class NotificationController {
      */
     @GetMapping("/unread")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<PageResponse<NotificationDto>>> getUnreadNotifications(
+    public ResponseEntity<ApiResponse<PageResponse<NotificationDTO>>> getUnreadNotifications(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
         
@@ -70,7 +70,7 @@ public class NotificationController {
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, 
                 Sort.by(Sort.Direction.DESC, "createdAt"));
         
-        PageResponse<NotificationDto> notifications = 
+        PageResponse<NotificationDTO> notifications = 
                 notificationService.getUnreadNotifications(username, pageable);
         
         return ResponseEntity.ok(ApiResponse.success(
@@ -99,11 +99,11 @@ public class NotificationController {
      */
     @PutMapping("/{id}/mark-read")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<NotificationDto>> markAsRead(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<NotificationDTO>> markAsRead(@PathVariable Integer id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         
-        NotificationDto notification = notificationService.markAsRead(id, username);
+        NotificationDTO notification = notificationService.markAsRead(id, username);
         
         return ResponseEntity.ok(ApiResponse.success(
                 "Đánh dấu đã đọc thành công", notification));
@@ -141,6 +141,7 @@ public class NotificationController {
                 "Xóa thông báo thành công", null));
     }
 }
+
 
 
 

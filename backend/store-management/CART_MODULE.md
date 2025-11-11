@@ -64,8 +64,8 @@ Authorization: Bearer {JWT_TOKEN}
     ],
     "totalAmount": 50000000,
     "totalItems": 2,
-    "createdAt": "2025-01-01T00:00:00",
-    "updatedAt": "2025-01-01T00:00:00"
+    "createdAt": "01/01/2025 00:00:00",
+    "updatedAt": "01/01/2025 00:00:00"
   }
 }
 ```
@@ -184,7 +184,7 @@ Content-Type: application/json
 
 **Status Code:** `200 OK`
 
-Trả về CartDto với thông tin đã được cập nhật.
+Trả về CartDTO với thông tin đã được cập nhật.
 
 ### Logic xử lý
 
@@ -425,6 +425,7 @@ Khi thêm sản phẩm đã có trong giỏ:
 ## Liên hệ
 
 Nếu có thắc mắc về Cart Module, vui lòng liên hệ team Backend.
+
 
 
 

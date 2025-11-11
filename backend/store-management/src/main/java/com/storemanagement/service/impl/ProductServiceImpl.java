@@ -1,7 +1,7 @@
 package com.storemanagement.service.impl;
 
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.response.ProductDto;
+import com.storemanagement.dto.product.ProductDTO;
 import com.storemanagement.mapper.ProductMapper;
 import com.storemanagement.model.Category;
 import com.storemanagement.model.Product;
@@ -57,7 +57,7 @@ public class ProductServiceImpl implements ProductService {
      * Overload method - tạo sản phẩm không có ảnh
      */
     @Override
-    public ProductDto createProduct(ProductDto productDto) {
+    public ProductDTO createProduct(ProductDTO productDto) {
         return createProduct(productDto, null);
     }
     
@@ -76,10 +76,10 @@ public class ProductServiceImpl implements ProductService {
      * 
      * @param productDto DTO chứa thông tin sản phẩm
      * @param image File ảnh (optional) - multipart/form-data
-     * @return ProductDto đã được tạo với ID
+     * @return ProductDTO đã được tạo với ID
      */
     @Override
-    public ProductDto createProduct(ProductDto productDto, MultipartFile image) {
+    public ProductDTO createProduct(ProductDTO productDto, MultipartFile image) {
         log.info("Creating product: {}", productDto.getProductName());
         
         // Bước 1: Xử lý upload ảnh nếu có
@@ -189,16 +189,16 @@ public class ProductServiceImpl implements ProductService {
         Product productWithDetails = productRepository.findByIdWithDetails(savedProduct.getIdProduct())
                 .orElse(savedProduct);
         
-        return productMapper.toDto(productWithDetails);
+        return productMapper.toDTO(productWithDetails);
     }
 
     @Override
-    public ProductDto updateProduct(Integer id, ProductDto productDto) {
+    public ProductDTO updateProduct(Integer id, ProductDTO productDto) {
         return updateProduct(id, productDto, null);
     }
     
     @Override
-    public ProductDto updateProduct(Integer id, ProductDto productDto, MultipartFile image) {
+    public ProductDTO updateProduct(Integer id, ProductDTO productDto, MultipartFile image) {
         log.info("Updating product ID: {}", id);
         
         // Tìm product theo ID
@@ -314,7 +314,7 @@ public class ProductServiceImpl implements ProductService {
         Product productWithDetails = productRepository.findByIdWithDetails(updatedProduct.getIdProduct())
                 .orElse(updatedProduct);
         
-        return productMapper.toDto(productWithDetails);
+        return productMapper.toDTO(productWithDetails);
     }
 
     @Override
@@ -340,73 +340,73 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductDto getProductById(Integer id) {
+    public ProductDTO getProductById(Integer id) {
         Product product = productRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + id));
-        return productMapper.toDto(product);
+        return productMapper.toDTO(product);
     }
 
     @Override
-    public ProductDto getProductByCode(String productCode) {
+    public ProductDTO getProductByCode(String productCode) {
         Product product = productRepository.findByProductCode(productCode)
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với mã: " + productCode));
         // Fetch lại với JOIN FETCH để có đầy đủ thông tin
         Product productWithDetails = productRepository.findByIdWithDetails(product.getIdProduct())
                 .orElse(product);
-        return productMapper.toDto(productWithDetails);
+        return productMapper.toDTO(productWithDetails);
     }
 
     @Override
-    public PageResponse<ProductDto> getAllProductsPaginated(Pageable pageable) {
+    public PageResponse<ProductDTO> getAllProductsPaginated(Pageable pageable) {
         Page<Product> productPage = productRepository.findAll(pageable);
-        List<ProductDto> productDtos = productMapper.toDtoList(productPage.getContent());
+        List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
     @Override
-    public PageResponse<ProductDto> searchProductsByName(String name, Pageable pageable) {
+    public PageResponse<ProductDTO> searchProductsByName(String name, Pageable pageable) {
         Page<Product> productPage = productRepository.findByProductNameContainingIgnoreCase(name, pageable);
-        List<ProductDto> productDtos = productMapper.toDtoList(productPage.getContent());
+        List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
     @Override
-    public PageResponse<ProductDto> getProductsByCategory(Integer idCategory, Pageable pageable) {
+    public PageResponse<ProductDTO> getProductsByCategory(Integer idCategory, Pageable pageable) {
         // Kiểm tra category tồn tại
         if (!categoryRepository.existsById(idCategory)) {
             throw new EntityNotFoundException("Danh mục không tồn tại với ID: " + idCategory);
         }
         
         Page<Product> productPage = productRepository.findByCategory_IdCategory(idCategory, pageable);
-        List<ProductDto> productDtos = productMapper.toDtoList(productPage.getContent());
+        List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
     @Override
-    public PageResponse<ProductDto> getProductsByBrand(String brand, Pageable pageable) {
+    public PageResponse<ProductDTO> getProductsByBrand(String brand, Pageable pageable) {
         if (brand == null || brand.trim().isEmpty()) {
             throw new RuntimeException("Thương hiệu không được để trống");
         }
         
         Page<Product> productPage = productRepository.findByBrandIgnoreCase(brand.trim(), pageable);
-        List<ProductDto> productDtos = productMapper.toDtoList(productPage.getContent());
+        List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         return PageUtils.toPageResponse(productPage, productDtos);
     }
     
     @Override
-    public PageResponse<ProductDto> getProductsBySupplier(Integer idSupplier, Pageable pageable) {
+    public PageResponse<ProductDTO> getProductsBySupplier(Integer idSupplier, Pageable pageable) {
         // Kiểm tra supplier tồn tại
         if (!supplierRepository.existsById(idSupplier)) {
             throw new EntityNotFoundException("Nhà cung cấp không tồn tại với ID: " + idSupplier);
         }
         
         Page<Product> productPage = productRepository.findBySupplier_IdSupplier(idSupplier, pageable);
-        List<ProductDto> productDtos = productMapper.toDtoList(productPage.getContent());
+        List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
     @Override
-    public PageResponse<ProductDto> searchProducts(String productCode, String productName,
+    public PageResponse<ProductDTO> searchProducts(String productCode, String productName,
                                                    Integer idCategory, String brand,
                                                    Double minPrice, Double maxPrice,
                                                    Pageable pageable) {
@@ -431,12 +431,12 @@ public class ProductServiceImpl implements ProductService {
             normalizedCode, normalizedName, idCategory, normalizedBrand, minPrice, maxPrice, pageable
         );
         
-        List<ProductDto> productDtos = productMapper.toDtoList(productPage.getContent());
+        List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         return PageUtils.toPageResponse(productPage, productDtos);
     }
     
     @Override
-    public PageResponse<ProductDto> getProductsByPriceRange(Double minPrice, Double maxPrice, Pageable pageable) {
+    public PageResponse<ProductDTO> getProductsByPriceRange(Double minPrice, Double maxPrice, Pageable pageable) {
         // Validate price range
         if (minPrice != null && minPrice < 0) {
             throw new RuntimeException("Giá tối thiểu phải >= 0");
@@ -452,12 +452,12 @@ public class ProductServiceImpl implements ProductService {
             null, null, null, null, minPrice, maxPrice, pageable
         );
         
-        List<ProductDto> productDtos = productMapper.toDtoList(productPage.getContent());
+        List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         return PageUtils.toPageResponse(productPage, productDtos);
     }
     
     @Override
-    public PageResponse<ProductDto> getBestSellingProducts(String orderStatus, Pageable pageable) {
+    public PageResponse<ProductDTO> getBestSellingProducts(String orderStatus, Pageable pageable) {
         // orderStatus: null = tất cả orders, "COMPLETED" = chỉ đơn đã hoàn thành
         // Normalize: null hoặc empty string = null
         String normalizedStatus = (orderStatus == null || orderStatus.trim().isEmpty()) ? null : orderStatus.trim();
@@ -473,7 +473,7 @@ public class ProductServiceImpl implements ProductService {
         
         if (bestSellingData.isEmpty()) {
             // Không có sản phẩm nào đã bán
-            return PageResponse.<ProductDto>builder()
+            return PageResponse.<ProductDTO>builder()
                 .content(List.of())
                 .pageNo(pageNo)
                 .pageSize(pageSize)
@@ -515,14 +515,14 @@ public class ProductServiceImpl implements ProductService {
         });
         
         // Map to DTO
-        List<ProductDto> productDtos = productMapper.toDtoList(products);
+        List<ProductDTO> productDtos = productMapper.toDTOList(products);
         
         // Count total
         Long totalElements = productRepository.countBestSellingProducts(normalizedStatus);
         int totalPages = (int) Math.ceil((double) totalElements / pageSize);
         
         // Build PageResponse manually
-        return PageResponse.<ProductDto>builder()
+        return PageResponse.<ProductDTO>builder()
             .content(productDtos)
             .pageNo(pageNo)
             .pageSize(pageSize)
@@ -547,7 +547,7 @@ public class ProductServiceImpl implements ProductService {
      */
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ProductDto> getNewProducts(Pageable pageable, Integer limit) {
+    public PageResponse<ProductDTO> getNewProducts(Pageable pageable, Integer limit) {
         // Nếu có limit, tạo Pageable mới với limit làm pageSize
         Pageable queryPageable = pageable;
         if (limit != null && limit > 0) {
@@ -561,12 +561,12 @@ public class ProductServiceImpl implements ProductService {
         // Query products với status = IN_STOCK, sắp xếp theo createdAt DESC
         Page<Product> productPage = productRepository.findNewProductsByStatus(queryPageable);
         
-        List<ProductDto> productDtos = productMapper.toDtoList(productPage.getContent());
+        List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         
         // Nếu có limit và số lượng kết quả > limit, cắt danh sách
         if (limit != null && limit > 0 && productDtos.size() > limit) {
-            List<ProductDto> limitedDtos = productDtos.subList(0, limit);
-            return PageResponse.<ProductDto>builder()
+            List<ProductDTO> limitedDtos = productDtos.subList(0, limit);
+            return PageResponse.<ProductDTO>builder()
                 .content(limitedDtos)
                 .pageNo(pageable.getPageNumber())
                 .pageSize(pageable.getPageSize())
@@ -594,7 +594,7 @@ public class ProductServiceImpl implements ProductService {
      */
     @Override
     @Transactional(readOnly = true)
-    public List<ProductDto> getRelatedProducts(Integer productId, Integer limit) {
+    public List<ProductDTO> getRelatedProducts(Integer productId, Integer limit) {
         // Lấy product hiện tại để lấy categoryId
         Product currentProduct = productRepository.findById(productId)
             .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + productId));
@@ -615,7 +615,7 @@ public class ProductServiceImpl implements ProductService {
             categoryId, productId, pageable
         );
         
-        return productMapper.toDtoList(relatedProducts);
+        return productMapper.toDTOList(relatedProducts);
     }
     
     /**

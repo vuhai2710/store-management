@@ -139,7 +139,7 @@ Authorization: Bearer {JWT_TOKEN}
 
 **Status Code:** `200 OK`
 
-Trả về ImportOrderDto với đầy đủ thông tin và danh sách importOrderDetails
+Trả về PurchaseOrderDTO với đầy đủ thông tin và danh sách importOrderDetails
 
 ---
 
@@ -168,7 +168,7 @@ Trả về ImportOrderDto với đầy đủ thông tin và danh sách importOrd
   "code": 200,
   "message": "Lấy danh sách đơn nhập hàng thành công",
   "data": {
-    "content": [ /* ImportOrderDto objects */ ],
+    "content": [ /* PurchaseOrderDTO objects */ ],
     "pageNo": 1,
     "pageSize": 10,
     "totalElements": 50,
@@ -371,6 +371,7 @@ if (pm.response.code === 200) {
 ## Liên hệ
 
 Nếu có thắc mắc về Import Order Module, vui lòng liên hệ team Backend.
+
 
 
 

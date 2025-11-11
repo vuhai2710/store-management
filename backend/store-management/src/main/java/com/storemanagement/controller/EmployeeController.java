@@ -1,7 +1,7 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.response.EmployeeDto;
+import com.storemanagement.dto.employee.EmployeeDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.service.EmployeeService;
 import jakarta.validation.Valid;
@@ -38,47 +38,47 @@ public class EmployeeController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<EmployeeDto>> createEmployee(@RequestBody @Valid EmployeeDto request) {
-        EmployeeDto employee = employeeService.createEmployee(request);
+    public ResponseEntity<ApiResponse<EmployeeDTO>> createEmployee(@RequestBody @Valid EmployeeDTO request) {
+        EmployeeDTO employee = employeeService.createEmployee(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Tạo nhân viên thành công", employee));
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<EmployeeDto>>> getAllEmployees() {
-        List<EmployeeDto> employees = employeeService.getAllEmployees();
+    public ResponseEntity<ApiResponse<List<EmployeeDTO>>> getAllEmployees() {
+        List<EmployeeDTO> employees = employeeService.getAllEmployees();
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách nhân viên thành công", employees));
     }
 
     @GetMapping("/paginated")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<PageResponse<EmployeeDto>>> getAllEmployeesPaginated(
+    public ResponseEntity<ApiResponse<PageResponse<EmployeeDTO>>> getAllEmployeesPaginated(
             @PageableDefault(size = 10, sort = "idEmployee", direction = Sort.Direction.DESC) Pageable pageable) {
-        PageResponse<EmployeeDto> employees = employeeService.getAllEmployeesPaginated(pageable);
+        PageResponse<EmployeeDTO> employees = employeeService.getAllEmployeesPaginated(pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách nhân viên thành công", employees));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<EmployeeDto>> getEmployeeById(@PathVariable Integer id) {
-        EmployeeDto employee = employeeService.getEmployeeById(id);
+    public ResponseEntity<ApiResponse<EmployeeDTO>> getEmployeeById(@PathVariable Integer id) {
+        EmployeeDTO employee = employeeService.getEmployeeById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin nhân viên thành công", employee));
     }
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<EmployeeDto>> getEmployeeByUserId(@PathVariable Integer userId) {
-        EmployeeDto employee = employeeService.getEmployeeByUserId(userId);
+    public ResponseEntity<ApiResponse<EmployeeDTO>> getEmployeeByUserId(@PathVariable Integer userId) {
+        EmployeeDTO employee = employeeService.getEmployeeByUserId(userId);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin nhân viên thành công", employee));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<EmployeeDto>> updateEmployee(
+    public ResponseEntity<ApiResponse<EmployeeDTO>> updateEmployee(
             @PathVariable Integer id,
-            @RequestBody @Valid EmployeeDto request) {
-        EmployeeDto employee = employeeService.updateEmployeeByAdmin(id, request);
+            @RequestBody @Valid EmployeeDTO request) {
+        EmployeeDTO employee = employeeService.updateEmployeeByAdmin(id, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật nhân viên thành công", employee));
     }
 
@@ -91,20 +91,20 @@ public class EmployeeController {
 
     @GetMapping("/me")
     @PreAuthorize("hasRole('EMPLOYEE')")
-    public ResponseEntity<ApiResponse<EmployeeDto>> getMyProfile() {
+    public ResponseEntity<ApiResponse<EmployeeDTO>> getMyProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        EmployeeDto employee = employeeService.getMyProfile(username);
+        EmployeeDTO employee = employeeService.getMyProfile(username);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin cá nhân thành công", employee));
     }
 
     @PutMapping("/me")
     @PreAuthorize("hasRole('EMPLOYEE')")
-    public ResponseEntity<ApiResponse<EmployeeDto>> updateMyProfile(
-            @RequestBody @Valid EmployeeDto request) {
+    public ResponseEntity<ApiResponse<EmployeeDTO>> updateMyProfile(
+            @RequestBody @Valid EmployeeDTO request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        EmployeeDto employee = employeeService.updateMyProfile(username, request);
+        EmployeeDTO employee = employeeService.updateMyProfile(username, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin cá nhân thành công", employee));
     }
 }

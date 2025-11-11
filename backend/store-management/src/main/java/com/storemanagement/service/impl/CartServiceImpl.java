@@ -1,8 +1,8 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.request.AddToCartRequestDto;
-import com.storemanagement.dto.request.UpdateCartItemRequestDto;
-import com.storemanagement.dto.response.CartDto;
+import com.storemanagement.dto.cart.CartDTO;
+import com.storemanagement.dto.cart.AddToCartRequestDto;
+import com.storemanagement.dto.cart.UpdateCartItemRequestDto;
 import com.storemanagement.mapper.CartMapper;
 import com.storemanagement.model.Cart;
 import com.storemanagement.model.CartItem;
@@ -42,9 +42,9 @@ public class CartServiceImpl implements CartService {
      */
     @Override
     @Transactional(readOnly = true)
-    public CartDto getCart(Integer customerId) {
+    public CartDTO getCart(Integer customerId) {
         Cart cart = getOrCreateCart(customerId);
-        return cartMapper.toDto(cart);
+        return cartMapper.toDTO(cart);
     }
 
     /**
@@ -62,7 +62,7 @@ public class CartServiceImpl implements CartService {
      * 7. Trả về giỏ hàng đã được cập nhật
      */
     @Override
-    public CartDto addToCart(Integer customerId, AddToCartRequestDto request) {
+    public CartDTO addToCart(Integer customerId, AddToCartRequestDto request) {
         // Bước 1: Lấy hoặc tạo giỏ hàng
         Cart cart = getOrCreateCart(customerId);
         
@@ -128,7 +128,7 @@ public class CartServiceImpl implements CartService {
      * 5. Trả về giỏ hàng đã được cập nhật
      */
     @Override
-    public CartDto updateCartItem(Integer customerId, Integer itemId, UpdateCartItemRequestDto request) {
+    public CartDTO updateCartItem(Integer customerId, Integer itemId, UpdateCartItemRequestDto request) {
         // Lấy giỏ hàng của customer
         Cart cart = getOrCreateCart(customerId);
         
@@ -168,7 +168,7 @@ public class CartServiceImpl implements CartService {
      * 4. Trả về giỏ hàng đã được cập nhật
      */
     @Override
-    public CartDto removeCartItem(Integer customerId, Integer itemId) {
+    public CartDTO removeCartItem(Integer customerId, Integer itemId) {
         // Lấy giỏ hàng của customer
         Cart cart = getOrCreateCart(customerId);
         

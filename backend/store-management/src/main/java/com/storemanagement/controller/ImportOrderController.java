@@ -1,7 +1,7 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.response.ImportOrderDto;
+import com.storemanagement.dto.purchase.PurchaseOrderDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.service.ImportOrderService;
 import com.storemanagement.utils.SecurityUtils;
@@ -31,13 +31,13 @@ public class ImportOrderController {
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<ImportOrderDto>> createImportOrder(
-            @RequestBody @Valid ImportOrderDto importOrderDto) {
+    public ResponseEntity<ApiResponse<PurchaseOrderDTO>> createImportOrder(
+            @RequestBody @Valid PurchaseOrderDTO purchaseOrderDTO) {
         
         // Lấy employee ID từ JWT token (không cần query database)
         Integer employeeId = SecurityUtils.getCurrentEmployeeId().orElse(null);
         
-        ImportOrderDto createdOrder = importOrderService.createImportOrder(importOrderDto, employeeId);
+        PurchaseOrderDTO createdOrder = importOrderService.createImportOrder(purchaseOrderDTO, employeeId);
         return ResponseEntity.ok(ApiResponse.success("Tạo đơn nhập hàng thành công", createdOrder));
     }
 
@@ -47,8 +47,8 @@ public class ImportOrderController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<ImportOrderDto>> getImportOrderById(@PathVariable Integer id) {
-        ImportOrderDto order = importOrderService.getImportOrderById(id);
+    public ResponseEntity<ApiResponse<PurchaseOrderDTO>> getImportOrderById(@PathVariable Integer id) {
+        PurchaseOrderDTO order = importOrderService.getImportOrderById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin đơn nhập hàng thành công", order));
     }
 
@@ -58,7 +58,7 @@ public class ImportOrderController {
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<ImportOrderDto>>> getAllImportOrders(
+    public ResponseEntity<ApiResponse<PageResponse<PurchaseOrderDTO>>> getAllImportOrders(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "idImportOrder") String sortBy,
@@ -67,7 +67,7 @@ public class ImportOrderController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<ImportOrderDto> orders = importOrderService.getAllImportOrders(pageable);
+        PageResponse<PurchaseOrderDTO> orders = importOrderService.getAllImportOrders(pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đơn nhập hàng thành công", orders));
     }
 
@@ -77,7 +77,7 @@ public class ImportOrderController {
      */
     @GetMapping("/supplier/{supplierId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<ImportOrderDto>>> getImportOrdersBySupplier(
+    public ResponseEntity<ApiResponse<PageResponse<PurchaseOrderDTO>>> getImportOrdersBySupplier(
             @PathVariable Integer supplierId,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
@@ -87,7 +87,7 @@ public class ImportOrderController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<ImportOrderDto> orders = importOrderService.getImportOrdersBySupplier(supplierId, pageable);
+        PageResponse<PurchaseOrderDTO> orders = importOrderService.getImportOrdersBySupplier(supplierId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đơn nhập hàng theo nhà cung cấp thành công", orders));
     }
 
@@ -97,7 +97,7 @@ public class ImportOrderController {
      */
     @GetMapping("/history")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<ImportOrderDto>>> getImportOrderHistory(
+    public ResponseEntity<ApiResponse<PageResponse<PurchaseOrderDTO>>> getImportOrderHistory(
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) Integer supplierId,
@@ -112,7 +112,7 @@ public class ImportOrderController {
         LocalDateTime start = startDate != null ? LocalDateTime.parse(startDate) : LocalDateTime.now().minusMonths(1);
         LocalDateTime end = endDate != null ? LocalDateTime.parse(endDate) : LocalDateTime.now();
 
-        PageResponse<ImportOrderDto> orders;
+        PageResponse<PurchaseOrderDTO> orders;
         
         // Nếu có supplierId, lọc theo cả supplier và thời gian
         if (supplierId != null) {

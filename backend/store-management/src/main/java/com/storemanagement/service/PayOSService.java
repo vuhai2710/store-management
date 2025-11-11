@@ -1,6 +1,6 @@
 package com.storemanagement.service;
 
-import com.storemanagement.dto.payos.PayOSPaymentResponseDto;
+import com.storemanagement.dto.payos.PayOSPaymentResponseDTO;
 import com.storemanagement.model.Order;
 
 /**
@@ -20,14 +20,14 @@ public interface PayOSService {
      * Logic:
      * 1. Build PayOSPaymentRequestDto từ Order entity
      * 2. Gọi PayOS API POST /v2/payment-requests để tạo payment link
-     * 3. Parse response và trả về PayOSPaymentResponseDto
+     * 3. Parse response và trả về PayOSPaymentResponseDTO
      * 4. Payment link URL sẽ được trả về trong response.data.checkoutUrl
      * 
      * @param order Order entity cần tạo payment link
-     * @return PayOSPaymentResponseDto chứa payment link URL và payment link ID
+     * @return PayOSPaymentResponseDTO chứa payment link URL và payment link ID
      * @throws RuntimeException nếu gọi PayOS API thất bại
      */
-    PayOSPaymentResponseDto createPaymentLink(Order order);
+    PayOSPaymentResponseDTO createPaymentLink(Order order);
     
     /**
      * Xác thực webhook signature từ PayOS
@@ -56,10 +56,10 @@ public interface PayOSService {
      * 2. Parse response và trả về thông tin payment link
      * 
      * @param paymentLinkId PayOS payment link ID
-     * @return PayOSPaymentResponseDto chứa thông tin payment link
+     * @return PayOSPaymentResponseDTO chứa thông tin payment link
      * @throws RuntimeException nếu gọi PayOS API thất bại
      */
-    PayOSPaymentResponseDto getPaymentLinkInfo(String paymentLinkId);
+    PayOSPaymentResponseDTO getPaymentLinkInfo(String paymentLinkId);
     
     /**
      * Hủy payment link trên PayOS
@@ -73,6 +73,7 @@ public interface PayOSService {
      */
     void cancelPaymentLink(String paymentLinkId);
 }
+
 
 
 

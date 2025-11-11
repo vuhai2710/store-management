@@ -1,9 +1,6 @@
 package com.storemanagement.service;
 
-import com.storemanagement.dto.request.BuyNowRequestDto;
-import com.storemanagement.dto.request.CreateOrderForCustomerRequestDto;
-import com.storemanagement.dto.request.CreateOrderRequestDto;
-import com.storemanagement.dto.response.OrderDto;
+import com.storemanagement.dto.order.OrderDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.model.Order;
 import org.springframework.data.domain.Pageable;
@@ -11,37 +8,37 @@ import org.springframework.data.domain.Pageable;
 public interface OrderService {
 
     // Xem chi tiết đơn hàng
-    OrderDto getOrderById(Integer id);
+    OrderDTO getOrderById(Integer id);
 
     // Xuất PDF hóa đơn bán hàng
     byte[] exportOrderToPdf(Integer id);
     
     // Customer: Tạo order từ cart
-    OrderDto createOrderFromCart(Integer customerId, CreateOrderRequestDto request);
+    OrderDTO createOrderFromCart(Integer customerId, OrderDTO request);
     
     // Customer: Tạo order trực tiếp từ sản phẩm (Buy Now)
-    OrderDto createOrderDirectly(Integer customerId, BuyNowRequestDto request);
+    OrderDTO createOrderDirectly(Integer customerId, OrderDTO request);
     
     // Admin/Employee: Tạo order cho khách hàng (có thể không có tài khoản)
-    OrderDto createOrderForCustomer(Integer employeeId, CreateOrderForCustomerRequestDto request);
+    OrderDTO createOrderForCustomer(Integer employeeId, OrderDTO request);
     
     // Customer: Lấy danh sách order của customer (có thể filter theo status)
-    PageResponse<OrderDto> getMyOrders(Integer customerId, Order.OrderStatus status, Pageable pageable);
+    PageResponse<OrderDTO> getMyOrders(Integer customerId, Order.OrderStatus status, Pageable pageable);
     
     // Customer: Xem chi tiết order của customer
-    OrderDto getMyOrderById(Integer customerId, Integer orderId);
+    OrderDTO getMyOrderById(Integer customerId, Integer orderId);
     
     // Customer: Hủy order (chỉ khi status = PENDING)
-    OrderDto cancelOrder(Integer customerId, Integer orderId);
+    OrderDTO cancelOrder(Integer customerId, Integer orderId);
     
     // Customer: Xác nhận đã nhận hàng
-    OrderDto confirmDelivery(Integer customerId, Integer orderId);
+    OrderDTO confirmDelivery(Integer customerId, Integer orderId);
 
     // Admin/Employee: Lấy tất cả đơn hàng (có filter theo status, customerId, dateRange)
-    PageResponse<OrderDto> getAllOrders(Order.OrderStatus status, Integer customerId, Pageable pageable);
+    PageResponse<OrderDTO> getAllOrders(Order.OrderStatus status, Integer customerId, Pageable pageable);
 
     // Admin/Employee: Cập nhật trạng thái đơn hàng
-    OrderDto updateOrderStatus(Integer orderId, Order.OrderStatus newStatus);
+    OrderDTO updateOrderStatus(Integer orderId, Order.OrderStatus newStatus);
 }
 
 

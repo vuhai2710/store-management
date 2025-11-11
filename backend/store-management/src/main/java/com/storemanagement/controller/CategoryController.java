@@ -1,7 +1,7 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.response.CategoryDto;
+import com.storemanagement.dto.category.CategoryDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.service.CategoryService;
 import jakarta.validation.Valid;
@@ -43,15 +43,15 @@ public class CategoryController {
      * {
      *   "code": 200,
      *   "message": "Lấy danh sách danh mục thành công",
-     *   "data": [ { CategoryDto }, ... ]
+     *   "data": [ { CategoryDTO }, ... ]
      * }
      * 
      * @return ApiResponse chứa danh sách tất cả categories
      */
     @GetMapping("/all")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
-    public ResponseEntity<ApiResponse<List<CategoryDto>>> getAllCategories() {
-        List<CategoryDto> categories = categoryService.getAllCategories();
+    public ResponseEntity<ApiResponse<List<CategoryDTO>>> getAllCategories() {
+        List<CategoryDTO> categories = categoryService.getAllCategories();
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách danh mục thành công", categories));
     }
 
@@ -75,7 +75,7 @@ public class CategoryController {
      *   "code": 200,
      *   "message": "Lấy danh sách danh mục thành công",
      *   "data": {
-     *     "content": [ { CategoryDto }, ... ],
+     *     "content": [ { CategoryDTO }, ... ],
      *     "pageNo": 1,
      *     "pageSize": 10,
      *     "totalElements": 50,
@@ -97,7 +97,7 @@ public class CategoryController {
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<CategoryDto>>> getAllCategoriesPaginated(
+    public ResponseEntity<ApiResponse<PageResponse<CategoryDTO>>> getAllCategoriesPaginated(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "idCategory") String sortBy,
@@ -107,7 +107,7 @@ public class CategoryController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<CategoryDto> categoryPage;
+        PageResponse<CategoryDTO> categoryPage;
 
         if (name != null && !name.trim().isEmpty()) {
             categoryPage = categoryService.searchCategoriesByName(name, pageable);
@@ -135,16 +135,16 @@ public class CategoryController {
      * {
      *   "code": 200,
      *   "message": "Lấy thông tin danh mục thành công",
-     *   "data": { CategoryDto object }
+     *   "data": { CategoryDTO object }
      * }
      * 
      * @param id ID của category
-     * @return ApiResponse chứa CategoryDto
+     * @return ApiResponse chứa CategoryDTO
      */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
-    public ResponseEntity<ApiResponse<CategoryDto>> getCategoryById(@PathVariable Integer id) {
-        CategoryDto category = categoryService.getCategoryById(id);
+    public ResponseEntity<ApiResponse<CategoryDTO>> getCategoryById(@PathVariable Integer id) {
+        CategoryDTO category = categoryService.getCategoryById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin danh mục thành công", category));
     }
 
@@ -174,7 +174,7 @@ public class CategoryController {
      */
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<CategoryDto>>> searchCategoriesByName(
+    public ResponseEntity<ApiResponse<PageResponse<CategoryDTO>>> searchCategoriesByName(
             @RequestParam String name,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
@@ -184,7 +184,7 @@ public class CategoryController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<CategoryDto> categoryPage = categoryService.searchCategoriesByName(name, pageable);
+        PageResponse<CategoryDTO> categoryPage = categoryService.searchCategoriesByName(name, pageable);
         return ResponseEntity.ok(ApiResponse.success("Tìm kiếm danh mục thành công", categoryPage));
     }
 
@@ -204,16 +204,16 @@ public class CategoryController {
      * {
      *   "code": 200,
      *   "message": "Thêm danh mục thành công",
-     *   "data": { CategoryDto object với idCategory đã được tạo }
+     *   "data": { CategoryDTO object với idCategory đã được tạo }
      * }
      * 
-     * @param categoryDto CategoryDto chứa thông tin danh mục mới
-     * @return ApiResponse chứa CategoryDto đã được tạo
+     * @param categoryDto CategoryDTO chứa thông tin danh mục mới
+     * @return ApiResponse chứa CategoryDTO đã được tạo
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<CategoryDto>> createCategory(@RequestBody @Valid CategoryDto categoryDto) {
-        CategoryDto createdCategory = categoryService.createCategory(categoryDto);
+    public ResponseEntity<ApiResponse<CategoryDTO>> createCategory(@RequestBody @Valid CategoryDTO categoryDto) {
+        CategoryDTO createdCategory = categoryService.createCategory(categoryDto);
         return ResponseEntity.ok(ApiResponse.success("Thêm danh mục thành công", createdCategory));
     }
 
@@ -238,19 +238,19 @@ public class CategoryController {
      * {
      *   "code": 200,
      *   "message": "Cập nhật danh mục thành công",
-     *   "data": { CategoryDto object đã được cập nhật }
+     *   "data": { CategoryDTO object đã được cập nhật }
      * }
      * 
      * @param id ID của category cần cập nhật
-     * @param categoryDto CategoryDto chứa thông tin mới
-     * @return ApiResponse chứa CategoryDto đã được cập nhật
+     * @param categoryDto CategoryDTO chứa thông tin mới
+     * @return ApiResponse chứa CategoryDTO đã được cập nhật
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<CategoryDto>> updateCategory(
+    public ResponseEntity<ApiResponse<CategoryDTO>> updateCategory(
             @PathVariable Integer id,
-            @RequestBody @Valid CategoryDto categoryDto) {
-        CategoryDto updatedCategory = categoryService.updateCategory(id, categoryDto);
+            @RequestBody @Valid CategoryDTO categoryDto) {
+        CategoryDTO updatedCategory = categoryService.updateCategory(id, categoryDto);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật danh mục thành công", updatedCategory));
     }
 

@@ -2,11 +2,7 @@ package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.request.BuyNowRequestDto;
-import com.storemanagement.dto.request.CreateOrderForCustomerRequestDto;
-import com.storemanagement.dto.request.CreateOrderRequestDto;
-import com.storemanagement.dto.request.UpdateOrderStatusRequestDto;
-import com.storemanagement.dto.response.OrderDto;
+import com.storemanagement.dto.order.OrderDTO;
 import com.storemanagement.model.Order;
 import com.storemanagement.service.CustomerService;
 import com.storemanagement.service.EmployeeService;
@@ -39,8 +35,8 @@ public class OrderController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<OrderDto>> getOrderById(@PathVariable Integer id) {
-        OrderDto order = orderService.getOrderById(id);
+    public ResponseEntity<ApiResponse<OrderDTO>> getOrderById(@PathVariable Integer id) {
+        OrderDTO order = orderService.getOrderById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin đơn hàng thành công", order));
     }
 
@@ -80,12 +76,12 @@ public class OrderController {
      */
     @PostMapping("/checkout")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<OrderDto>> checkout(@RequestBody @Valid CreateOrderRequestDto request) {
+    public ResponseEntity<ApiResponse<OrderDTO>> checkout(@RequestBody @Valid OrderDTO request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
         
-        OrderDto order = orderService.createOrderFromCart(customerId, request);
+        OrderDTO order = orderService.createOrderFromCart(customerId, request);
         return ResponseEntity.ok(ApiResponse.success("Đặt hàng thành công", order));
     }
 
@@ -106,7 +102,7 @@ public class OrderController {
      */
     @PostMapping("/buy-now")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<OrderDto>> buyNow(@RequestBody @Valid BuyNowRequestDto request) {
+    public ResponseEntity<ApiResponse<OrderDTO>> buyNow(@RequestBody @Valid OrderDTO request) {
         // Lấy thông tin customer từ JWT token
         // JWT token chứa username, từ đó lấy customerId
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -119,7 +115,7 @@ public class OrderController {
         // - Tạo order với 1 order detail
         // - Trừ tồn kho và tạo inventory transaction
         // - Không xóa giỏ hàng (vì không sử dụng giỏ hàng)
-        OrderDto order = orderService.createOrderDirectly(customerId, request);
+        OrderDTO order = orderService.createOrderDirectly(customerId, request);
         return ResponseEntity.ok(ApiResponse.success("Đặt hàng thành công", order));
     }
 
@@ -141,7 +137,7 @@ public class OrderController {
      */
     @PostMapping("/create-for-customer")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<OrderDto>> createOrderForCustomer(@RequestBody @Valid CreateOrderForCustomerRequestDto request) {
+    public ResponseEntity<ApiResponse<OrderDTO>> createOrderForCustomer(@RequestBody @Valid OrderDTO request) {
         // Lấy thông tin employee từ JWT token
         // Employee này là người tạo đơn hàng (được lưu vào order.employee)
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -163,7 +159,7 @@ public class OrderController {
         // - Tính tổng tiền và áp dụng discount
         // - Tạo order với employee và customer
         // - Trừ tồn kho và tạo inventory transactions
-        OrderDto order = orderService.createOrderForCustomer(employeeId, request);
+        OrderDTO order = orderService.createOrderForCustomer(employeeId, request);
         return ResponseEntity.ok(ApiResponse.success("Tạo đơn hàng thành công", order));
     }
 
@@ -195,7 +191,7 @@ public class OrderController {
      */
     @GetMapping("/my-orders")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<PageResponse<OrderDto>>> getMyOrders(
+    public ResponseEntity<ApiResponse<PageResponse<OrderDTO>>> getMyOrders(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "orderDate") String sortBy,
@@ -218,7 +214,7 @@ public class OrderController {
             }
         }
         
-        PageResponse<OrderDto> orders = orderService.getMyOrders(customerId, orderStatus, pageable);
+        PageResponse<OrderDTO> orders = orderService.getMyOrders(customerId, orderStatus, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đơn hàng thành công", orders));
     }
 
@@ -230,17 +226,17 @@ public class OrderController {
      * 
      * Logic:
      * - Kiểm tra order tồn tại và thuộc về customer hiện tại
-     * - Trả về OrderDto đầy đủ với order details (có snapshot fields)
+     * - Trả về OrderDTO đầy đủ với order details (có snapshot fields)
      * - Snapshot đảm bảo hiển thị đúng thông tin tại thời điểm mua
      */
     @GetMapping("/my-orders/{orderId}")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<OrderDto>> getMyOrderById(@PathVariable Integer orderId) {
+    public ResponseEntity<ApiResponse<OrderDTO>> getMyOrderById(@PathVariable Integer orderId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
         
-        OrderDto order = orderService.getMyOrderById(customerId, orderId);
+        OrderDTO order = orderService.getMyOrderById(customerId, orderId);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin đơn hàng thành công", order));
     }
 
@@ -261,12 +257,12 @@ public class OrderController {
      */
     @PutMapping("/my-orders/{orderId}/cancel")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<OrderDto>> cancelOrder(@PathVariable Integer orderId) {
+    public ResponseEntity<ApiResponse<OrderDTO>> cancelOrder(@PathVariable Integer orderId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
         
-        OrderDto order = orderService.cancelOrder(customerId, orderId);
+        OrderDTO order = orderService.cancelOrder(customerId, orderId);
         return ResponseEntity.ok(ApiResponse.success("Hủy đơn hàng thành công", order));
     }
 
@@ -289,7 +285,7 @@ public class OrderController {
      *    - Lưu cả order và shipment
      * 
      * 3. RETURN PHASE:
-     *    - Trả về OrderDto đã được cập nhật
+     *    - Trả về OrderDTO đã được cập nhật
      * 
      * Lưu ý:
      * - Chỉ cho phép confirm khi order.status = CONFIRMED
@@ -298,12 +294,12 @@ public class OrderController {
      */
     @PutMapping("/my-orders/{orderId}/confirm-delivery")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<OrderDto>> confirmDelivery(@PathVariable Integer orderId) {
+    public ResponseEntity<ApiResponse<OrderDTO>> confirmDelivery(@PathVariable Integer orderId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
         
-        OrderDto order = orderService.confirmDelivery(customerId, orderId);
+        OrderDTO order = orderService.confirmDelivery(customerId, orderId);
         return ResponseEntity.ok(ApiResponse.success("Xác nhận nhận hàng thành công", order));
     }
 
@@ -337,7 +333,7 @@ public class OrderController {
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<OrderDto>>> getAllOrders(
+    public ResponseEntity<ApiResponse<PageResponse<OrderDTO>>> getAllOrders(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "orderDate") String sortBy,
@@ -359,7 +355,7 @@ public class OrderController {
             }
         }
 
-        PageResponse<OrderDto> orders = orderService.getAllOrders(orderStatus, customerId, pageable);
+        PageResponse<OrderDTO> orders = orderService.getAllOrders(orderStatus, customerId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đơn hàng thành công", orders));
     }
 
@@ -393,11 +389,11 @@ public class OrderController {
      */
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<OrderDto>> updateOrderStatus(
+    public ResponseEntity<ApiResponse<OrderDTO>> updateOrderStatus(
             @PathVariable Integer id,
-            @RequestBody @Valid UpdateOrderStatusRequestDto request) {
+            @RequestBody @Valid OrderDTO request) {
 
-        OrderDto order = orderService.updateOrderStatus(id, request.getStatus());
+        OrderDTO order = orderService.updateOrderStatus(id, request.getStatus());
         return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái đơn hàng thành công", order));
     }
 }

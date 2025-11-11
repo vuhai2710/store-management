@@ -112,3 +112,6 @@ secrets.json
 # Documentation (personal notes - optional)
 *.pdf
 !**/documentation/**/*.pdf
+
+# Sandbox setup guide (contains setup instructions, may contain sensitive info)
+SANDBOX_SETUP_GUIDE.md

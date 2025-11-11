@@ -1,7 +1,7 @@
 package com.storemanagement.service.impl;
 
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.response.NotificationDto;
+import com.storemanagement.dto.notification.NotificationDTO;
 import com.storemanagement.mapper.NotificationMapper;
 import com.storemanagement.model.Notification;
 import com.storemanagement.model.User;
@@ -32,7 +32,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final EmailService emailService;
     
     @Override
-    public NotificationDto createNotification(
+    public NotificationDTO createNotification(
             User user,
             NotificationType type,
             String title,
@@ -68,12 +68,12 @@ public class NotificationServiceImpl implements NotificationService {
             }
         }
         
-        return notificationMapper.toDto(saved);
+        return notificationMapper.toDTO(saved);
     }
     
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<NotificationDto> getMyNotifications(String username, Pageable pageable) {
+    public PageResponse<NotificationDTO> getMyNotifications(String username, Pageable pageable) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new EntityNotFoundException("User không tồn tại"));
         
@@ -81,12 +81,12 @@ public class NotificationServiceImpl implements NotificationService {
                 .findByUser_IdUserOrderByCreatedAtDesc(user.getIdUser(), pageable);
         
         return PageUtils.toPageResponse(notificationPage,
-                notificationMapper.toDtoList(notificationPage.getContent()));
+                notificationMapper.toDTOList(notificationPage.getContent()));
     }
     
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<NotificationDto> getUnreadNotifications(String username, Pageable pageable) {
+    public PageResponse<NotificationDTO> getUnreadNotifications(String username, Pageable pageable) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new EntityNotFoundException("User không tồn tại"));
         
@@ -94,7 +94,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .findByUser_IdUserAndIsReadFalseOrderByCreatedAtDesc(user.getIdUser(), pageable);
         
         return PageUtils.toPageResponse(notificationPage,
-                notificationMapper.toDtoList(notificationPage.getContent()));
+                notificationMapper.toDTOList(notificationPage.getContent()));
     }
     
     @Override
@@ -107,7 +107,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
     
     @Override
-    public NotificationDto markAsRead(Integer notificationId, String username) {
+    public NotificationDTO markAsRead(Integer notificationId, String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new EntityNotFoundException("User không tồn tại"));
         
@@ -122,7 +122,7 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setIsRead(true);
         Notification updated = notificationRepository.save(notification);
         
-        return notificationMapper.toDto(updated);
+        return notificationMapper.toDTO(updated);
     }
     
     @Override
@@ -151,6 +151,7 @@ public class NotificationServiceImpl implements NotificationService {
         log.info("Deleted notification {} for user: {}", notificationId, username);
     }
 }
+
 
 
 

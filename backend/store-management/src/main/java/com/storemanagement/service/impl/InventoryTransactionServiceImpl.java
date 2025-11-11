@@ -1,6 +1,6 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.response.InventoryTransactionDto;
+import com.storemanagement.dto.inventory.InventoryTransactionDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.InventoryTransactionMapper;
 import com.storemanagement.model.InventoryTransaction;
@@ -27,7 +27,7 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
     private final InventoryTransactionMapper inventoryTransactionMapper;
 
     @Override
-    public PageResponse<InventoryTransactionDto> getAllTransactions(Pageable pageable) {
+    public PageResponse<InventoryTransactionDTO> getAllTransactions(Pageable pageable) {
         log.info("Getting all inventory transactions, page: {}, size: {}", 
                 pageable.getPageNumber(), pageable.getPageSize());
         
@@ -35,22 +35,22 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
                 inventoryTransactionRepository.findAllByOrderByTransactionDateDesc(pageable);
         
         return PageUtils.toPageResponse(transactionPage, 
-                inventoryTransactionMapper.toDtoList(transactionPage.getContent()));
+                inventoryTransactionMapper.toDTOList(transactionPage.getContent()));
     }
 
     @Override
-    public PageResponse<InventoryTransactionDto> getTransactionsByProduct(Integer productId, Pageable pageable) {
+    public PageResponse<InventoryTransactionDTO> getTransactionsByProduct(Integer productId, Pageable pageable) {
         log.info("Getting inventory transactions for product ID: {}", productId);
         
         Page<InventoryTransaction> transactionPage = 
                 inventoryTransactionRepository.findByProduct_IdProduct(productId, pageable);
         
         return PageUtils.toPageResponse(transactionPage, 
-                inventoryTransactionMapper.toDtoList(transactionPage.getContent()));
+                inventoryTransactionMapper.toDTOList(transactionPage.getContent()));
     }
 
     @Override
-    public PageResponse<InventoryTransactionDto> getTransactionsByReference(
+    public PageResponse<InventoryTransactionDTO> getTransactionsByReference(
             com.storemanagement.utils.ReferenceType referenceType,
             Integer referenceId,
             Pageable pageable) {
@@ -61,11 +61,11 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
                 inventoryTransactionRepository.findByReferenceTypeAndReferenceId(referenceType, referenceId, pageable);
         
         return PageUtils.toPageResponse(transactionPage, 
-                inventoryTransactionMapper.toDtoList(transactionPage.getContent()));
+                inventoryTransactionMapper.toDTOList(transactionPage.getContent()));
     }
 
     @Override
-    public PageResponse<InventoryTransactionDto> getTransactionsByDateRange(
+    public PageResponse<InventoryTransactionDTO> getTransactionsByDateRange(
             LocalDateTime startDate,
             LocalDateTime endDate,
             Pageable pageable) {
@@ -76,11 +76,11 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
                 inventoryTransactionRepository.findByTransactionDateBetween(startDate, endDate, pageable);
         
         return PageUtils.toPageResponse(transactionPage, 
-                inventoryTransactionMapper.toDtoList(transactionPage.getContent()));
+                inventoryTransactionMapper.toDTOList(transactionPage.getContent()));
     }
 
     @Override
-    public PageResponse<InventoryTransactionDto> getTransactionsByProductAndDateRange(
+    public PageResponse<InventoryTransactionDTO> getTransactionsByProductAndDateRange(
             Integer productId,
             LocalDateTime startDate,
             LocalDateTime endDate,
@@ -92,11 +92,11 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
                 inventoryTransactionRepository.findByProductAndDateRange(productId, startDate, endDate, pageable);
         
         return PageUtils.toPageResponse(transactionPage, 
-                inventoryTransactionMapper.toDtoList(transactionPage.getContent()));
+                inventoryTransactionMapper.toDTOList(transactionPage.getContent()));
     }
 
     @Override
-    public PageResponse<InventoryTransactionDto> getTransactionsByType(
+    public PageResponse<InventoryTransactionDTO> getTransactionsByType(
             TransactionType transactionType,
             Pageable pageable) {
         
@@ -106,11 +106,11 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
                 inventoryTransactionRepository.findByTransactionType(transactionType, pageable);
         
         return PageUtils.toPageResponse(transactionPage, 
-                inventoryTransactionMapper.toDtoList(transactionPage.getContent()));
+                inventoryTransactionMapper.toDTOList(transactionPage.getContent()));
     }
 
     @Override
-    public PageResponse<InventoryTransactionDto> getTransactionsByMultipleCriteria(
+    public PageResponse<InventoryTransactionDTO> getTransactionsByMultipleCriteria(
             TransactionType transactionType,
             Integer productId,
             LocalDateTime startDate,
@@ -125,7 +125,7 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
                         transactionType, productId, startDate, endDate, pageable);
         
         return PageUtils.toPageResponse(transactionPage, 
-                inventoryTransactionMapper.toDtoList(transactionPage.getContent()));
+                inventoryTransactionMapper.toDTOList(transactionPage.getContent()));
     }
 }
 

@@ -1,7 +1,7 @@
 package com.storemanagement.mapper;
 
-import com.storemanagement.dto.response.CartDto;
-import com.storemanagement.dto.response.CartItemDto;
+import com.storemanagement.dto.cart.CartDTO;
+import com.storemanagement.dto.cart.CartItemDTO;
 import com.storemanagement.model.Cart;
 import com.storemanagement.model.CartItem;
 import org.mapstruct.Mapper;
@@ -13,31 +13,36 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface CartMapper {
+    // Cart → CartDTO
+    @Mapping(target = "idCart", source = "idCart")
     @Mapping(target = "idCustomer", source = "customer.idCustomer")
     @Mapping(target = "cartItems", expression = "java(mapCartItems(cart.getCartItems()))")
     @Mapping(target = "totalAmount", expression = "java(calculateTotalAmount(cart.getCartItems()))")
     @Mapping(target = "totalItems", expression = "java(calculateTotalItems(cart.getCartItems()))")
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    CartDto toDto(Cart cart);
+    @Mapping(target = "createdAt", ignore = true) // Cart entity doesn't have these fields
+    @Mapping(target = "updatedAt", ignore = true) // Cart entity doesn't have these fields
+    CartDTO toDTO(Cart cart);
 
+    // CartItem → CartItemDTO
+    @Mapping(target = "idCartItem", source = "idCartItem")
     @Mapping(target = "idProduct", source = "product.idProduct")
     @Mapping(target = "productName", source = "product.productName")
     @Mapping(target = "productCode", source = "product.productCode")
     @Mapping(target = "productImageUrl", source = "product.imageUrl")
     @Mapping(target = "productPrice", source = "product.price")
     @Mapping(target = "productStockQuantity", source = "product.stockQuantity")
+    @Mapping(target = "quantity", source = "quantity")
     @Mapping(target = "subtotal", expression = "java(calculateSubtotal(cartItem.getProduct().getPrice(), cartItem.getQuantity()))")
-    CartItemDto toCartItemDto(CartItem cartItem);
+    CartItemDTO toCartItemDTO(CartItem cartItem);
 
-    List<CartItemDto> toCartItemDtoList(List<CartItem> cartItems);
+    List<CartItemDTO> toCartItemDTOList(List<CartItem> cartItems);
 
-    default List<CartItemDto> mapCartItems(List<CartItem> cartItems) {
+    default List<CartItemDTO> mapCartItems(List<CartItem> cartItems) {
         if (cartItems == null) {
             return List.of();
         }
         return cartItems.stream()
-                .map(this::toCartItemDto)
+                .map(this::toCartItemDTO)
                 .toList();
     }
 

@@ -1,6 +1,6 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.response.ProductImageDto;
+import com.storemanagement.dto.product.ProductImageDTO;
 import com.storemanagement.mapper.ProductImageMapper;
 import com.storemanagement.model.Product;
 import com.storemanagement.model.ProductImage;
@@ -41,7 +41,7 @@ public class ProductImageServiceImpl implements ProductImageService {
     private static final int MAX_IMAGES_PER_PRODUCT = 5;
     
     @Override
-    public List<ProductImageDto> uploadProductImages(Integer productId, List<MultipartFile> images) {
+    public List<ProductImageDTO> uploadProductImages(Integer productId, List<MultipartFile> images) {
         log.info("Uploading {} images for product ID: {}", images.size(), productId);
         
         // Validate product tồn tại
@@ -97,11 +97,11 @@ public class ProductImageServiceImpl implements ProductImageService {
             }
         }
         
-        return productImageMapper.toDtoList(uploadedImages);
+        return productImageMapper.toDTOList(uploadedImages);
     }
     
     @Override
-    public ProductImageDto addProductImage(Integer productId, MultipartFile image) {
+    public ProductImageDTO addProductImage(Integer productId, MultipartFile image) {
         log.info("Adding single image for product ID: {}", productId);
         
         // Validate product tồn tại
@@ -136,7 +136,7 @@ public class ProductImageServiceImpl implements ProductImageService {
             }
             
             log.info("Image added successfully: {} (isPrimary: {})", imageUrl, productImage.getIsPrimary());
-            return productImageMapper.toDto(saved);
+            return productImageMapper.toDTO(saved);
             
         } catch (Exception e) {
             log.error("Error adding image: {}", e.getMessage());
@@ -189,7 +189,7 @@ public class ProductImageServiceImpl implements ProductImageService {
     }
     
     @Override
-    public ProductImageDto setImageAsPrimary(Integer imageId) {
+    public ProductImageDTO setImageAsPrimary(Integer imageId) {
         log.info("Setting image ID {} as primary", imageId);
         
         ProductImage productImage = productImageRepository.findById(imageId)
@@ -217,12 +217,12 @@ public class ProductImageServiceImpl implements ProductImageService {
         }
         
         log.info("Image set as primary successfully");
-        return productImageMapper.toDto(saved);
+        return productImageMapper.toDTO(saved);
     }
     
     @Override
     @Transactional(readOnly = true)
-    public List<ProductImageDto> getProductImages(Integer productId) {
+    public List<ProductImageDTO> getProductImages(Integer productId) {
         log.info("Getting all images for product ID: {}", productId);
         
         // Validate product tồn tại
@@ -231,7 +231,7 @@ public class ProductImageServiceImpl implements ProductImageService {
         }
         
         List<ProductImage> images = productImageRepository.findByProduct_IdProductOrderByDisplayOrderAsc(productId);
-        return productImageMapper.toDtoList(images);
+        return productImageMapper.toDTOList(images);
     }
 }
 

@@ -1,9 +1,9 @@
 package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
-import com.storemanagement.dto.request.CreateShippingAddressRequestDto;
-import com.storemanagement.dto.request.UpdateShippingAddressRequestDto;
-import com.storemanagement.dto.response.ShippingAddressDto;
+import com.storemanagement.dto.shipment.CreateShippingAddressRequestDto;
+import com.storemanagement.dto.shipment.UpdateShippingAddressRequestDto;
+import com.storemanagement.dto.shipment.ShippingAddressDTO;
 import com.storemanagement.service.CustomerService;
 import com.storemanagement.service.ShippingAddressService;
 import jakarta.validation.Valid;
@@ -51,12 +51,12 @@ public class ShippingAddressController {
      */
     @GetMapping
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<List<ShippingAddressDto>>> getAllAddresses() {
+    public ResponseEntity<ApiResponse<List<ShippingAddressDTO>>> getAllAddresses() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
         
-        List<ShippingAddressDto> addresses = shippingAddressService.getAllAddresses(customerId);
+        List<ShippingAddressDTO> addresses = shippingAddressService.getAllAddresses(customerId);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách địa chỉ thành công", addresses));
     }
 
@@ -72,12 +72,12 @@ public class ShippingAddressController {
      */
     @GetMapping("/default")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<ShippingAddressDto>> getDefaultAddress() {
+    public ResponseEntity<ApiResponse<ShippingAddressDTO>> getDefaultAddress() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
         
-        ShippingAddressDto address = shippingAddressService.getDefaultAddress(customerId);
+        ShippingAddressDTO address = shippingAddressService.getDefaultAddress(customerId);
         return ResponseEntity.ok(ApiResponse.success("Lấy địa chỉ mặc định thành công", address));
     }
 
@@ -95,13 +95,13 @@ public class ShippingAddressController {
      */
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<ShippingAddressDto>> createAddress(
+    public ResponseEntity<ApiResponse<ShippingAddressDTO>> createAddress(
             @RequestBody @Valid CreateShippingAddressRequestDto request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
         
-        ShippingAddressDto address = shippingAddressService.createAddress(customerId, request);
+        ShippingAddressDTO address = shippingAddressService.createAddress(customerId, request);
         return ResponseEntity.ok(ApiResponse.success("Tạo địa chỉ thành công", address));
     }
 
@@ -118,14 +118,14 @@ public class ShippingAddressController {
      */
     @PutMapping("/{addressId}")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<ShippingAddressDto>> updateAddress(
+    public ResponseEntity<ApiResponse<ShippingAddressDTO>> updateAddress(
             @PathVariable Integer addressId,
             @RequestBody @Valid UpdateShippingAddressRequestDto request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
         
-        ShippingAddressDto address = shippingAddressService.updateAddress(customerId, addressId, request);
+        ShippingAddressDTO address = shippingAddressService.updateAddress(customerId, addressId, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật địa chỉ thành công", address));
     }
 
@@ -143,12 +143,12 @@ public class ShippingAddressController {
      */
     @PutMapping("/{addressId}/set-default")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<ShippingAddressDto>> setDefaultAddress(@PathVariable Integer addressId) {
+    public ResponseEntity<ApiResponse<ShippingAddressDTO>> setDefaultAddress(@PathVariable Integer addressId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
         
-        ShippingAddressDto address = shippingAddressService.setDefaultAddress(customerId, addressId);
+        ShippingAddressDTO address = shippingAddressService.setDefaultAddress(customerId, addressId);
         return ResponseEntity.ok(ApiResponse.success("Đặt địa chỉ mặc định thành công", address));
     }
 

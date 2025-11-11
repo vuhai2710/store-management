@@ -1,21 +1,21 @@
 package com.storemanagement.service;
 
-import com.storemanagement.dto.request.CreateShippingAddressRequestDto;
-import com.storemanagement.dto.request.UpdateShippingAddressRequestDto;
-import com.storemanagement.dto.response.ShippingAddressDto;
+import com.storemanagement.dto.shipment.ShippingAddressDTO;
+import com.storemanagement.dto.shipment.CreateShippingAddressRequestDto;
+import com.storemanagement.dto.shipment.UpdateShippingAddressRequestDto;
 
 import java.util.List;
 
 public interface ShippingAddressService {
-    List<ShippingAddressDto> getAllAddresses(Integer customerId);
+    List<ShippingAddressDTO> getAllAddresses(Integer customerId);
     
-    ShippingAddressDto getDefaultAddress(Integer customerId);
+    ShippingAddressDTO getDefaultAddress(Integer customerId);
     
-    ShippingAddressDto createAddress(Integer customerId, CreateShippingAddressRequestDto request);
+    ShippingAddressDTO createAddress(Integer customerId, CreateShippingAddressRequestDto request);
     
-    ShippingAddressDto updateAddress(Integer customerId, Integer addressId, UpdateShippingAddressRequestDto request);
+    ShippingAddressDTO updateAddress(Integer customerId, Integer addressId, UpdateShippingAddressRequestDto request);
     
-    ShippingAddressDto setDefaultAddress(Integer customerId, Integer addressId);
+    ShippingAddressDTO setDefaultAddress(Integer customerId, Integer addressId);
     
     void deleteAddress(Integer customerId, Integer addressId);
 }

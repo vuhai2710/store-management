@@ -194,18 +194,18 @@ src/main/java/com/storemanagement/
 │       └── GHNServiceImpl.java     # Service implementation
 ├── dto/
 │   └── ghn/
-│       ├── GHNBaseResponseDto.java
-│       ├── GHNCalculateFeeRequestDto.java
-│       ├── GHNCalculateFeeResponseDto.java
-│       ├── GHNCreateOrderRequestDto.java
-│       ├── GHNCreateOrderResponseDto.java
-│       ├── GHNOrderInfoDto.java
-│       ├── GHNTrackingDto.java
-│       ├── GHNWebhookDto.java
-│       ├── GHNServiceDto.java
-│       ├── GHNExpectedDeliveryTimeRequestDto.java
-│       ├── GHNExpectedDeliveryTimeResponseDto.java
-│       └── GHNUpdateOrderRequestDto.java
+│       ├── GHNBaseResponseDTO.java
+│       ├── GHNCalculateFeeRequestDTO.java
+│       ├── GHNCalculateFeeResponseDTO.java
+│       ├── GHNCreateOrderRequestDTO.java
+│       ├── GHNCreateOrderResponseDTO.java
+│       ├── GHNOrderInfoDTO.java
+│       ├── GHNTrackingDTO.java
+│       ├── GHNWebhookDTO.java
+│       ├── GHNServiceDTO.java
+│       ├── GHNExpectedDeliveryTimeRequestDTO.java
+│       ├── GHNExpectedDeliveryTimeResponseDTO.java
+│       └── GHNUpdateOrderRequestDTO.java
 └── model/
     └── Shipment.java                # Đã có GHN fields (V8 migration)
 ```
@@ -242,15 +242,15 @@ public class GHNConfig {
 1. **getProvinces()** - Lấy danh sách tỉnh/thành phố
 2. **getDistricts(Integer provinceId)** - Lấy danh sách quận/huyện
 3. **getWards(Integer districtId)** - Lấy danh sách phường/xã
-4. **calculateShippingFee(GHNCalculateFeeRequestDto)** - Tính phí vận chuyển
-5. **createOrder(GHNCreateOrderRequestDto)** - Tạo đơn hàng GHN
+4. **calculateShippingFee(GHNCalculateFeeRequestDTO)** - Tính phí vận chuyển
+5. **createOrder(GHNCreateOrderRequestDTO)** - Tạo đơn hàng GHN
 6. **getOrderInfo(String ghnOrderCode)** - Lấy thông tin đơn hàng
 7. **cancelOrder(String ghnOrderCode, String reason)** - Hủy đơn hàng
 8. **getShippingServices(Integer fromDistrictId, Integer toDistrictId)** - Lấy dịch vụ vận chuyển
-9. **getExpectedDeliveryTime(GHNExpectedDeliveryTimeRequestDto)** - Lấy thời gian giao hàng dự kiến
+9. **getExpectedDeliveryTime(GHNExpectedDeliveryTimeRequestDTO)** - Lấy thời gian giao hàng dự kiến
 10. **trackOrder(String ghnOrderCode)** - Theo dõi đơn hàng
 11. **printOrder(String ghnOrderCode)** - In vận đơn (PDF)
-12. **updateOrder(GHNUpdateOrderRequestDto)** - Cập nhật đơn hàng
+12. **updateOrder(GHNUpdateOrderRequestDTO)** - Cập nhật đơn hàng
 
 **Logic chung cho tất cả methods:**
 
@@ -266,15 +266,15 @@ headers.set("Token", ghnConfig.getToken());
 headers.set("ShopId", String.valueOf(ghnConfig.getShopId()));
 
 // 3. Gọi GHN API
-ResponseEntity<GHNBaseResponseDto<T>> response = ghnRestTemplate.exchange(
+ResponseEntity<GHNBaseResponseDTO<T>> response = ghnRestTemplate.exchange(
     url,
     HttpMethod.POST/GET,
     requestEntity,
-    new ParameterizedTypeReference<GHNBaseResponseDto<T>>() {}
+    new ParameterizedTypeReference<GHNBaseResponseDTO<T>>() {}
 );
 
 // 4. Parse response và xử lý lỗi
-GHNBaseResponseDto<T> responseBody = response.getBody();
+GHNBaseResponseDTO<T> responseBody = response.getBody();
 if (responseBody == null || responseBody.getCode() != 200) {
     throw new RuntimeException("GHN API error: " + responseBody.getMessage());
 }
@@ -315,7 +315,7 @@ return responseBody.getData();
 ```java
 @PostMapping("/webhook")
 @Transactional
-public ResponseEntity<Map<String, String>> webhook(@RequestBody GHNWebhookDto webhookDto) {
+public ResponseEntity<Map<String, String>> webhook(@RequestBody GHNWebhookDTO webhookDto) {
     // 1. Tìm Shipment theo ghnOrderCode
     Shipment shipment = shipmentRepository.findByGhnOrderCode(webhookDto.getOrderCode())
         .orElse(null);
@@ -423,7 +423,7 @@ private void createShipmentAndIntegrateGHN(Order order, ShippingAddress shipping
 
 ```java
 // Build request để tính phí
-GHNCalculateFeeRequestDto feeRequest = GHNCalculateFeeRequestDto.builder()
+GHNCalculateFeeRequestDTO feeRequest = GHNCalculateFeeRequestDTO.builder()
     .fromDistrictId(shopDistrictId)  // District của shop (từ config)
     .toDistrictId(shippingAddress.getDistrictId())
     .toWardCode(shippingAddress.getWardCode())
@@ -432,7 +432,7 @@ GHNCalculateFeeRequestDto feeRequest = GHNCalculateFeeRequestDto.builder()
     .build();
 
 // Gọi GHN API tính phí
-GHNCalculateFeeResponseDto feeResponse = ghnService.calculateShippingFee(feeRequest);
+GHNCalculateFeeResponseDTO feeResponse = ghnService.calculateShippingFee(feeRequest);
 
 // Lưu phí vận chuyển vào Shipment
 shipment.setGhnShippingFee(feeResponse.getTotal());
@@ -444,7 +444,7 @@ shipment.setGhnShippingFee(feeResponse.getTotal());
 
 ```java
 // Build request để tạo đơn GHN
-GHNCreateOrderRequestDto createOrderRequest = GHNCreateOrderRequestDto.builder()
+GHNCreateOrderRequestDTO createOrderRequest = GHNCreateOrderRequestDTO.builder()
     .fromDistrictId(shopDistrictId)
     .fromWardCode(shopWardCode)
     .toDistrictId(shippingAddress.getDistrictId())
@@ -459,7 +459,7 @@ GHNCreateOrderRequestDto createOrderRequest = GHNCreateOrderRequestDto.builder()
     .build();
 
 // Gọi GHN API tạo đơn
-GHNCreateOrderResponseDto createOrderResponse = ghnService.createOrder(createOrderRequest);
+GHNCreateOrderResponseDTO createOrderResponse = ghnService.createOrder(createOrderRequest);
 
 // Lưu thông tin GHN vào Shipment
 shipment.setGhnOrderCode(createOrderResponse.getOrderCode());
@@ -500,7 +500,7 @@ public ShipmentDto syncWithGHN(Integer shipmentId) {
     }
     
     // 3. Gọi GHN API để lấy thông tin mới nhất
-    GHNOrderInfoDto orderInfo = ghnService.getOrderInfo(shipment.getGhnOrderCode());
+    GHNOrderInfoDTO orderInfo = ghnService.getOrderInfo(shipment.getGhnOrderCode());
     
     // 4. Cập nhật shipment với thông tin từ GHN
     shipment.setGhnStatus(orderInfo.getStatus());
@@ -1063,6 +1063,7 @@ Tài liệu này cung cấp hướng dẫn chi tiết để tích hợp GHN API 
 - GHN API Documentation: https://api.ghn.vn/
 - GHN Dashboard: https://khachhang.ghn.vn
 - GHN Sandbox: https://dev-online-gateway.ghn.vn
+
 
 
 

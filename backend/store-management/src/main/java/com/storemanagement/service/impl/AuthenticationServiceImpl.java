@@ -3,10 +3,10 @@ package com.storemanagement.service.impl;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
-import com.storemanagement.dto.request.AuthenticationRequestDto;
-import com.storemanagement.dto.request.LoginRequestDto;
-import com.storemanagement.dto.response.AuthenticationResponseDto;
-import com.storemanagement.dto.response.UserDto;
+import com.storemanagement.dto.auth.RegisterDTO;
+import com.storemanagement.dto.auth.LoginDTO;
+import com.storemanagement.dto.auth.AuthenticationResponseDTO;
+import com.storemanagement.dto.user.UserDTO;
 import com.storemanagement.model.Employee;
 import com.storemanagement.model.User;
 import com.storemanagement.repository.EmployeeRepository;
@@ -40,24 +40,24 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private String SIGNER_KEY;
 
     // LOGIN
-    public AuthenticationResponseDto authenticate(LoginRequestDto request) throws JOSEException {
+    public AuthenticationResponseDTO authenticate(LoginDTO request) throws JOSEException {
         User user = userService.verifyInfo(request.getUsername(), request.getPassword());
         String token = generateToken(user);
 
-        return AuthenticationResponseDto.builder()
+        return AuthenticationResponseDTO.builder()
                 .token(token)
                 .authenticated(true)
                 .build();
     }
 
     // REGISTER
-    public AuthenticationResponseDto register(AuthenticationRequestDto request) throws JOSEException {
-        UserDto userDTO = userService.createCustomerUser(request);
+    public AuthenticationResponseDTO register(RegisterDTO request) throws JOSEException {
+        UserDTO userDTO = userService.createCustomerUser(request);
         User user = userRepository.findById(userDTO.getIdUser())
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
         String token = generateToken(user);
-        return AuthenticationResponseDto.builder()
+        return AuthenticationResponseDTO.builder()
                 .token(token)
                 .authenticated(true)
                 .build();

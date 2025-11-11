@@ -1,7 +1,7 @@
 package com.storemanagement.service;
 
-import com.storemanagement.dto.request.AuthenticationRequestDto;
-import com.storemanagement.dto.response.CustomerDto;
+import com.storemanagement.dto.auth.RegisterDTO;
+import com.storemanagement.dto.customer.CustomerDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.model.User;
 import org.springframework.data.domain.Page;
@@ -10,23 +10,23 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface CustomerService {
-    CustomerDto createCustomerForUser(User user, AuthenticationRequestDto request);
-    List<CustomerDto> getAllCustomers();
-    PageResponse<CustomerDto> getAllCustomersPaginated(Pageable pageable);
+    CustomerDTO createCustomerForUser(User user, RegisterDTO request);
+    List<CustomerDTO> getAllCustomers();
+    PageResponse<CustomerDTO> getAllCustomersPaginated(Pageable pageable);
 
-    CustomerDto getCustomerById(Integer id);
-    CustomerDto getCustomerByUsername(String username);
-    List<CustomerDto> searchCustomers(String name, String phone);
-    PageResponse<CustomerDto> searchCustomersPaginated(String name, String phone, Pageable pageable);
-    List<CustomerDto> getCustomersByType(String type);
-    PageResponse<CustomerDto> getCustomersByTypePaginated(String type, Pageable pageable);
-    CustomerDto updateCustomer(Integer id, CustomerDto customerDto);
-    CustomerDto upgradeToVip(Integer id);
-    CustomerDto downgradeToRegular(Integer id);
+    CustomerDTO getCustomerById(Integer id);
+    CustomerDTO getCustomerByUsername(String username);
+    List<CustomerDTO> searchCustomers(String name, String phone);
+    PageResponse<CustomerDTO> searchCustomersPaginated(String name, String phone, Pageable pageable);
+    List<CustomerDTO> getCustomersByType(String type);
+    PageResponse<CustomerDTO> getCustomersByTypePaginated(String type, Pageable pageable);
+    CustomerDTO updateCustomer(Integer id, CustomerDTO customerDTO);
+    CustomerDTO upgradeToVip(Integer id);
+    CustomerDTO downgradeToRegular(Integer id);
     void deleteCustomer(Integer id);
     void deleteCustomerByUser(User user);
-    CustomerDto updateMyCustomerInfo(String username, CustomerDto customerDto);
+    CustomerDTO updateMyCustomerInfo(String username, CustomerDTO customerDTO);
     
     // Tạo customer không có user account (cho walk-in customers)
-    CustomerDto createCustomerWithoutUser(String customerName, String phoneNumber, String address);
+    CustomerDTO createCustomerWithoutUser(String customerName, String phoneNumber, String address);
 }

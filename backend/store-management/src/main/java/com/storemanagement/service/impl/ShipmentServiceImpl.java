@@ -1,7 +1,7 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.ghn.GHNTrackingDto;
-import com.storemanagement.dto.response.ShipmentDto;
+import com.storemanagement.dto.ghn.GHNTrackingDTO;
+import com.storemanagement.dto.shipment.ShipmentDTO;
 import com.storemanagement.mapper.ShipmentMapper;
 import com.storemanagement.model.Order;
 import com.storemanagement.model.Shipment;
@@ -41,18 +41,18 @@ public class ShipmentServiceImpl implements ShipmentService {
      * 
      * Logic:
      * 1. Tìm shipment từ database
-     * 2. Map sang ShipmentDto
+     * 2. Map sang ShipmentDTO
      * 3. Trả về
      */
     @Override
     @Transactional(readOnly = true)
-    public ShipmentDto getShipmentById(Integer shipmentId) {
+    public ShipmentDTO getShipmentById(Integer shipmentId) {
         log.info("Getting shipment by ID: {}", shipmentId);
         
         Shipment shipment = shipmentRepository.findById(shipmentId)
             .orElseThrow(() -> new EntityNotFoundException("Shipment không tồn tại với ID: " + shipmentId));
         
-        return shipmentMapper.toDto(shipment);
+        return shipmentMapper.toDTO(shipment);
     }
     
     /**
@@ -60,18 +60,18 @@ public class ShipmentServiceImpl implements ShipmentService {
      * 
      * Logic:
      * 1. Tìm shipment theo orderId
-     * 2. Map sang ShipmentDto
+     * 2. Map sang ShipmentDTO
      * 3. Trả về
      */
     @Override
     @Transactional(readOnly = true)
-    public ShipmentDto getShipmentByOrderId(Integer orderId) {
+    public ShipmentDTO getShipmentByOrderId(Integer orderId) {
         log.info("Getting shipment by order ID: {}", orderId);
         
         Shipment shipment = shipmentRepository.findByOrder_IdOrder(orderId)
             .orElseThrow(() -> new EntityNotFoundException("Shipment không tồn tại cho order ID: " + orderId));
         
-        return shipmentMapper.toDto(shipment);
+        return shipmentMapper.toDTO(shipment);
     }
     
     /**
@@ -87,10 +87,10 @@ public class ShipmentServiceImpl implements ShipmentService {
      *    - ghnNote (nếu có)
      * 5. Sync shippingStatus và Order.status
      * 6. Lưu shipment
-     * 7. Trả về ShipmentDto đã được cập nhật
+     * 7. Trả về ShipmentDTO đã được cập nhật
      */
     @Override
-    public ShipmentDto syncWithGHN(Integer shipmentId) {
+    public ShipmentDTO syncWithGHN(Integer shipmentId) {
         log.info("Syncing shipment with GHN: shipmentId={}", shipmentId);
         
         Shipment shipment = shipmentRepository.findById(shipmentId)
@@ -131,7 +131,7 @@ public class ShipmentServiceImpl implements ShipmentService {
             log.info("Successfully synced shipment with GHN: shipmentId={}, newStatus={}", 
                 shipmentId, orderInfo.getStatus());
             
-            return shipmentMapper.toDto(shipment);
+            return shipmentMapper.toDTO(shipment);
             
         } catch (Exception e) {
             log.error("Error syncing shipment with GHN", e);
@@ -146,11 +146,11 @@ public class ShipmentServiceImpl implements ShipmentService {
      * 1. Lấy shipment từ database
      * 2. Kiểm tra có ghnOrderCode không
      * 3. Gọi GHN API để lấy tracking info
-     * 4. Trả về GHNTrackingDto với lịch sử cập nhật trạng thái
+     * 4. Trả về GHNTrackingDTO với lịch sử cập nhật trạng thái
      */
     @Override
     @Transactional(readOnly = true)
-    public GHNTrackingDto getShipmentTracking(Integer shipmentId) {
+    public GHNTrackingDTO getShipmentTracking(Integer shipmentId) {
         log.info("Getting shipment tracking: shipmentId={}", shipmentId);
         
         Shipment shipment = shipmentRepository.findById(shipmentId)
@@ -167,7 +167,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         
         try {
             // Gọi GHN API để lấy tracking info
-            GHNTrackingDto tracking = ghnService.trackOrder(shipment.getGhnOrderCode());
+            GHNTrackingDTO tracking = ghnService.trackOrder(shipment.getGhnOrderCode());
             
             log.info("Successfully got tracking info for shipment: shipmentId={}", shipmentId);
             

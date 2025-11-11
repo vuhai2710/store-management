@@ -1,7 +1,7 @@
 package com.storemanagement.controller;
 
-import com.storemanagement.dto.request.ChatMessageRequest;
-import com.storemanagement.dto.response.ChatMessageDto;
+import com.storemanagement.dto.chat.ChatMessageRequest;
+import com.storemanagement.dto.chat.ChatMessageDTO;
 import com.storemanagement.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +49,7 @@ public class ChatWebSocketController {
         
         try {
             // Lưu tin nhắn vào database
-            ChatMessageDto savedMessage = chatService.sendMessage(request);
+            ChatMessageDTO savedMessage = chatService.sendMessage(request);
             
             // Broadcast tin nhắn đến tất cả subscribers của conversation này
             String destination = "/topic/chat." + request.getConversationId();
@@ -58,8 +58,9 @@ public class ChatWebSocketController {
             log.info("Message broadcasted to {}", destination);
             
         } catch (Exception e) {
+            // Error handling: Log error và có thể gửi error message về client qua WebSocket
+            // Hiện tại chỉ log error, client sẽ handle timeout/retry
             log.error("Error sending message: {}", e.getMessage(), e);
-            // TODO: Gửi error message về cho client
             // messagingTemplate.convertAndSendToUser(principal.getName(), "/queue/errors", error);
         }
     }
@@ -82,6 +83,7 @@ public class ChatWebSocketController {
     //     log.info("User disconnected: {}", disconnectData);
     // }
 }
+
 
 
 

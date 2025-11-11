@@ -807,7 +807,7 @@ Authorization: Bearer {customer_token}
 
 **Status Code:** `200 OK`
 
-Trả về OrderDto đầy đủ với order details (giống như endpoint admin nhưng chỉ lấy đơn hàng của customer).
+Trả về OrderDTO đầy đủ với order details (giống như endpoint admin nhưng chỉ lấy đơn hàng của customer).
 
 ### Logic xử lý
 
@@ -1102,7 +1102,7 @@ if (pm.response.code === 200) {
 
 ### 2. Response Fields
 
-**OrderDto** chứa các trường sau:
+**OrderDTO** chứa các trường sau:
 - `idOrder`: ID đơn hàng
 - `idCustomer`: ID khách hàng
 - `customerName`: Tên khách hàng
@@ -1124,7 +1124,7 @@ if (pm.response.code === 200) {
 - `paymentLinkUrl`: URL thanh toán PayOS (nếu có)
 - `orderDetails`: Danh sách chi tiết đơn hàng
 
-**OrderDetailDto** chứa các trường sau:
+**OrderDetailDTO** chứa các trường sau:
 - `idOrderDetail`: ID chi tiết đơn hàng
 - `idProduct`: ID sản phẩm
 - `productName`: Tên sản phẩm (từ product hiện tại, fallback nếu không có snapshot)

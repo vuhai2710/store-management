@@ -200,7 +200,7 @@ Frontend Request → PaymentController.createPaymentLink() → PayOSService.crea
    - Validate: order phải có `paymentMethod = PAYOS`, `status = PENDING`
    - Gọi `PayOSService.createPaymentLink(order)`
 3. PayOSService:
-   - Build `PayOSPaymentRequestDto` từ order
+   - Build `PayOSPaymentRequestDTO` từ order
    - Gọi PayOS API: `POST /v2/payment-requests`
    - Headers: `x-client-id`, `x-api-key`
    - Body: JSON với orderCode, amount, description, items, returnUrl, cancelUrl
@@ -256,7 +256,7 @@ PayOS → PaymentController.webhook() → Verify Signature → Update Order → 
 
 3. **Parse webhook data:**
    ```java
-   PayOSWebhookDto webhookDto = objectMapper.readValue(requestBody, PayOSWebhookDto.class);
+   PayOSWebhookDTO webhookDto = objectMapper.readValue(requestBody, PayOSWebhookDTO.class);
    String paymentLinkId = webhookDto.getData().getPaymentLinkId();
    ```
 
@@ -850,6 +850,7 @@ Tài liệu này cung cấp hướng dẫn chi tiết để tích hợp PayOS pa
 **Tài liệu tham khảo:**
 - PayOS API Documentation: https://payos.vn/docs/api/
 - PayOS Dashboard: https://my.payos.vn
+
 
 
 

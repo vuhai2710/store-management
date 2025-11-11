@@ -1,7 +1,7 @@
 package com.storemanagement.service;
 
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.response.SupplierDto;
+import com.storemanagement.dto.supplier.SupplierDTO;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -9,25 +9,25 @@ import java.util.List;
 public interface SupplierService {
 
     // Tạo nhà cung cấp mới
-    SupplierDto createSupplier(SupplierDto supplierDto);
+    SupplierDTO createSupplier(SupplierDTO supplierDTO);
 
     // Cập nhật nhà cung cấp
-    SupplierDto updateSupplier(Integer id, SupplierDto supplierDto);
+    SupplierDTO updateSupplier(Integer id, SupplierDTO supplierDTO);
 
     // Xóa nhà cung cấp
     void deleteSupplier(Integer id);
 
     // Lấy thông tin nhà cung cấp theo ID
-    SupplierDto getSupplierById(Integer id);
+    SupplierDTO getSupplierById(Integer id);
 
     // Lấy danh sách tất cả nhà cung cấp (không phân trang)
-    List<SupplierDto> getAllSuppliers();
+    List<SupplierDTO> getAllSuppliers();
 
     // Lấy danh sách nhà cung cấp có phân trang
-    PageResponse<SupplierDto> getAllSuppliersPaginated(Pageable pageable);
+    PageResponse<SupplierDTO> getAllSuppliersPaginated(Pageable pageable);
 
     // Tìm kiếm nhà cung cấp theo tên (gần đúng)
-    PageResponse<SupplierDto> searchSuppliersByName(String name, Pageable pageable);
+    PageResponse<SupplierDTO> searchSuppliersByName(String name, Pageable pageable);
 }
 
 

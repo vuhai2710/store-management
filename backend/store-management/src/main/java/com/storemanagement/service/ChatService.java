@@ -1,8 +1,8 @@
 package com.storemanagement.service;
 
-import com.storemanagement.dto.request.ChatMessageRequest;
-import com.storemanagement.dto.response.ChatConversationDto;
-import com.storemanagement.dto.response.ChatMessageDto;
+import com.storemanagement.dto.chat.ChatMessageRequest;
+import com.storemanagement.dto.chat.ChatConversationDTO;
+import com.storemanagement.dto.chat.ChatMessageDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -20,41 +20,41 @@ public interface ChatService {
      * @param customerId ID của customer
      * @return ChatConversationDto
      */
-    ChatConversationDto createConversation(Integer customerId);
+    ChatConversationDTO createConversation(Integer customerId);
     
     /**
      * Gửi tin nhắn và lưu vào database
      * 
      * @param request ChatMessageRequest
-     * @return ChatMessageDto đã được lưu
+     * @return ChatMessageDTO đã được lưu
      */
-    ChatMessageDto sendMessage(ChatMessageRequest request);
+    ChatMessageDTO sendMessage(ChatMessageRequest request);
     
     /**
      * Lấy lịch sử tin nhắn của conversation (có phân trang)
      * 
      * @param conversationId ID của conversation
      * @param pageable Phân trang
-     * @return Page<ChatMessageDto>
+     * @return Page<ChatMessageDTO>
      */
-    Page<ChatMessageDto> getConversationMessages(Integer conversationId, Pageable pageable);
+    Page<ChatMessageDTO> getConversationMessages(Integer conversationId, Pageable pageable);
     
     /**
      * Lấy hoặc tạo conversation của customer
      * Nếu chưa có conversation OPEN, tạo mới
      * 
      * @param customerId ID của customer
-     * @return ChatConversationDto
+     * @return ChatConversationDTO
      */
-    ChatConversationDto getOrCreateCustomerConversation(Integer customerId);
+    ChatConversationDTO getOrCreateCustomerConversation(Integer customerId);
     
     /**
      * Lấy tất cả conversations cho Admin/Employee (có phân trang)
      * 
      * @param pageable Phân trang
-     * @return Page<ChatConversationDto>
+     * @return Page<ChatConversationDTO>
      */
-    Page<ChatConversationDto> getAllConversations(Pageable pageable);
+    Page<ChatConversationDTO> getAllConversations(Pageable pageable);
     
     /**
      * Đóng conversation
@@ -67,10 +67,11 @@ public interface ChatService {
      * Lấy conversation theo ID
      * 
      * @param conversationId ID của conversation
-     * @return ChatConversationDto
+     * @return ChatConversationDTO
      */
-    ChatConversationDto getConversationById(Integer conversationId);
+    ChatConversationDTO getConversationById(Integer conversationId);
 }
+
 
 
 
