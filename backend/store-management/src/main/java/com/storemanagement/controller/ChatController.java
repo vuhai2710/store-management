@@ -2,12 +2,13 @@ package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.PageResponse;
-import com.storemanagement.dto.chat.ChatConversationDTO;
-import com.storemanagement.dto.chat.ChatMessageDTO;
+import com.storemanagement.dto.response.ChatConversationDto;
+import com.storemanagement.dto.response.ChatMessageDto;
 import com.storemanagement.model.Customer;
 import com.storemanagement.repository.CustomerRepository;
 import com.storemanagement.service.ChatService;
 import com.storemanagement.utils.SecurityUtils;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -44,17 +45,16 @@ public class ChatController {
      */
     @PostMapping("/conversations")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<ChatConversationDTO>> createConversation() {
+    public ResponseEntity<ApiResponse<ChatConversationDto>> createConversation() {
         Integer userId = SecurityUtils.getCurrentUserId()
                 .orElseThrow(() -> new RuntimeException("Không thể xác định user hiện tại"));
         log.info("Creating conversation for user ID: {}", userId);
         
         // Lấy customerId từ userId
         Customer customer = customerRepository.findByUser_IdUser(userId)
-                .orElseThrow(() -> new RuntimeException("Customer not found for user ID: " + userId));
-        Integer customerId = customer.getIdCustomer();
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng với user ID: " + userId));
         
-        ChatConversationDTO conversation = chatService.createConversation(customerId);
+        ChatConversationDto conversation = chatService.createConversation(customer.getIdCustomer());
         return ResponseEntity.ok(ApiResponse.success("Tạo cuộc hội thoại thành công", conversation));
     }
     
@@ -66,17 +66,16 @@ public class ChatController {
      */
     @GetMapping("/conversations/my")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<ChatConversationDTO>> getMyConversation() {
+    public ResponseEntity<ApiResponse<ChatConversationDto>> getMyConversation() {
         Integer userId = SecurityUtils.getCurrentUserId()
                 .orElseThrow(() -> new RuntimeException("Không thể xác định user hiện tại"));
         log.info("Getting conversation for user ID: {}", userId);
         
         // Lấy customerId từ userId
         Customer customer = customerRepository.findByUser_IdUser(userId)
-                .orElseThrow(() -> new RuntimeException("Customer not found for user ID: " + userId));
-        Integer customerId = customer.getIdCustomer();
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng với user ID: " + userId));
         
-        ChatConversationDTO conversation = chatService.getOrCreateCustomerConversation(customerId);
+        ChatConversationDto conversation = chatService.getOrCreateCustomerConversation(customer.getIdCustomer());
         return ResponseEntity.ok(ApiResponse.success("Lấy cuộc hội thoại thành công", conversation));
     }
     
@@ -88,16 +87,16 @@ public class ChatController {
      */
     @GetMapping("/conversations")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PageResponse<ChatConversationDTO>>> getAllConversations(
+    public ResponseEntity<ApiResponse<PageResponse<ChatConversationDto>>> getAllConversations(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "20") Integer pageSize) {
         
         log.info("Getting all conversations, page: {}, size: {}", pageNo, pageSize);
         
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
-        Page<ChatConversationDTO> conversations = chatService.getAllConversations(pageable);
+        Page<ChatConversationDto> conversations = chatService.getAllConversations(pageable);
         
-        PageResponse<ChatConversationDTO> response = PageResponse.<ChatConversationDTO>builder()
+        PageResponse<ChatConversationDto> response = PageResponse.<ChatConversationDto>builder()
                 .content(conversations.getContent())
                 .pageNo(pageNo)
                 .pageSize(pageSize)
@@ -119,10 +118,10 @@ public class ChatController {
      */
     @GetMapping("/conversations/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
-    public ResponseEntity<ApiResponse<ChatConversationDTO>> getConversationById(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<ChatConversationDto>> getConversationById(@PathVariable Integer id) {
         log.info("Getting conversation ID: {}", id);
         
-        ChatConversationDTO conversation = chatService.getConversationById(id);
+        ChatConversationDto conversation = chatService.getConversationById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin cuộc hội thoại thành công", conversation));
     }
     
@@ -134,7 +133,7 @@ public class ChatController {
      */
     @GetMapping("/conversations/{id}/messages")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
-    public ResponseEntity<ApiResponse<PageResponse<ChatMessageDTO>>> getConversationMessages(
+    public ResponseEntity<ApiResponse<PageResponse<ChatMessageDto>>> getConversationMessages(
             @PathVariable Integer id,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "50") Integer pageSize) {
@@ -142,9 +141,9 @@ public class ChatController {
         log.info("Getting messages for conversation ID: {}, page: {}, size: {}", id, pageNo, pageSize);
         
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
-        Page<ChatMessageDTO> messages = chatService.getConversationMessages(id, pageable);
+        Page<ChatMessageDto> messages = chatService.getConversationMessages(id, pageable);
         
-        PageResponse<ChatMessageDTO> response = PageResponse.<ChatMessageDTO>builder()
+        PageResponse<ChatMessageDto> response = PageResponse.<ChatMessageDto>builder()
                 .content(messages.getContent())
                 .pageNo(pageNo)
                 .pageSize(pageSize)

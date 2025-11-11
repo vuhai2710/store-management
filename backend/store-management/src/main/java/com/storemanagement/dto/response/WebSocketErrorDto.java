@@ -1,0 +1,30 @@
+package com.storemanagement.dto.response;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * DTO cho WebSocket error messages
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class WebSocketErrorDto {
+    
+    @JsonProperty("error")
+    private String error;
+    
+    @JsonProperty("message")
+    private String message;
+    
+    @JsonProperty("conversationId")
+    private Integer conversationId;
+    
+    @JsonProperty("timestamp")
+    private Long timestamp;
+}
+
