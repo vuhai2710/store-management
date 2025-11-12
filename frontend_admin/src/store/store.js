@@ -6,8 +6,12 @@ import customersReducer from "./slices/customersSlice";
 import inventoryReducer from "./slices/inventorySlice";
 import employeesReducer from "./slices/employeesSlice";
 import financeReducer from "./slices/financeSlice";
-import suppliersReducer from "./slices/suppliersSlice"; // nếu chưa có, giữ nguyên
-import usersReducer from "./slices/usersSlice"; // thêm
+import suppliersReducer from "./slices/suppliersSlice";
+import usersReducer from "./slices/usersSlice";
+import categoriesReducer from "./slices/categoriesSlice";
+import importOrdersReducer from "./slices/importOrdersSlice";
+import shipmentsReducer from "./slices/shipmentsSlice";
+import notificationsReducer from "./slices/notificationsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -18,8 +22,12 @@ export const store = configureStore({
     inventory: inventoryReducer,
     employees: employeesReducer,
     finance: financeReducer,
-    suppliers: suppliersReducer, // nếu chưa có, giữ nguyên
-    users: usersReducer, // thêm
+    suppliers: suppliersReducer,
+    users: usersReducer,
+    categories: categoriesReducer,
+    importOrders: importOrdersReducer,
+    shipments: shipmentsReducer,
+    notifications: notificationsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

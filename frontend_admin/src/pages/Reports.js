@@ -1,6 +1,7 @@
-import React from 'react';
-import { Card, Typography, Row, Col, Button, Space, DatePicker, Select } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Card, Typography, Row, Col, Button, Space, DatePicker, Select, message, Spin } from 'antd';
 import { DownloadOutlined, PrinterOutlined } from '@ant-design/icons';
+import { ordersService } from '../services/ordersService';
 import RevenueChart from '../components/dashboard/RevenueChart';
 import OrderStatusChart from '../components/dashboard/OrderStatusChart';
 import TopProductsChart from '../components/dashboard/TopProductsChart';
@@ -10,6 +11,75 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const Reports = () => {
+  const [dateRange, setDateRange] = useState(null);
+  const [reportType, setReportType] = useState('revenue');
+  const [orders, setOrders] = useState([]);
+  const [ordersByStatus, setOrdersByStatus] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadReportData();
+  }, [dateRange, reportType]);
+
+  const loadReportData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch orders with date range if specified
+      const params = {
+        pageNo: 1,
+        pageSize: 1000, // Get all orders for report
+        sortBy: 'orderDate',
+        sortDirection: 'DESC',
+      };
+
+      // Note: Backend doesn't support date range filter directly in orders endpoint
+      // We'll filter on frontend if date range is selected
+      const ordersResponse = await ordersService.getOrders(params);
+      let ordersData = ordersResponse?.content || [];
+
+      // Filter by date range if specified
+      if (dateRange && dateRange.length === 2) {
+        const startDate = dateRange[0];
+        const endDate = dateRange[1];
+        const start = startDate ? new Date(startDate) : null;
+        const end = endDate ? new Date(endDate) : null;
+
+        if (start && end) {
+          ordersData = ordersData.filter((order) => {
+            if (!order.orderDate) return false;
+            const orderDate = new Date(order.orderDate);
+            return orderDate >= start && orderDate <= end;
+          });
+        }
+      }
+
+      setOrders(ordersData);
+
+      // Count orders by status
+      const statusCount = ordersData.reduce((acc, order) => {
+        const status = order.status || 'UNKNOWN';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+      setOrdersByStatus(statusCount);
+    } catch (error) {
+      console.error('Error loading report data:', error);
+      message.error('Lỗi khi tải dữ liệu báo cáo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportExcel = () => {
+    message.info('Chức năng xuất Excel đang được phát triển');
+    // TODO: Implement Excel export using a library like xlsx
+  };
+
+  const handlePrintReport = () => {
+    window.print();
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -19,42 +89,59 @@ const Reports = () => {
 
       <Card style={{ marginBottom: '24px' }}>
         <Space wrap>
-          <RangePicker placeholder={['Từ ngày', 'Đến ngày']} />
-          <Select placeholder="Loại báo cáo" style={{ width: 200 }}>
+          <RangePicker
+            placeholder={['Từ ngày', 'Đến ngày']}
+            value={dateRange}
+            onChange={setDateRange}
+          />
+          <Select
+            placeholder="Loại báo cáo"
+            style={{ width: 200 }}
+            value={reportType}
+            onChange={setReportType}
+          >
             <Option value="revenue">Báo cáo doanh thu</Option>
             <Option value="orders">Báo cáo đơn hàng</Option>
             <Option value="products">Báo cáo sản phẩm</Option>
             <Option value="customers">Báo cáo khách hàng</Option>
           </Select>
-          <Button type="primary" icon={<DownloadOutlined />}>
+          <Button type="primary" icon={<DownloadOutlined />} onClick={handleExportExcel}>
             Xuất Excel
           </Button>
-          <Button icon={<PrinterOutlined />}>
+          <Button icon={<PrinterOutlined />} onClick={handlePrintReport}>
             In báo cáo
           </Button>
         </Space>
       </Card>
 
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={16}>
-          <Card title="Biểu đồ doanh thu theo thời gian">
-            <RevenueChart />
-          </Card>
-        </Col>
-        <Col xs={24} lg={8}>
-          <Card title="Phân bố trạng thái đơn hàng">
-            <OrderStatusChart />
-          </Card>
-        </Col>
-      </Row>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <Spin size="large" />
+        </div>
+      ) : (
+        <>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={16}>
+              <Card title="Biểu đồ doanh thu theo thời gian">
+                <RevenueChart orders={orders} />
+              </Card>
+            </Col>
+            <Col xs={24} lg={8}>
+              <Card title="Phân bố trạng thái đơn hàng">
+                <OrderStatusChart ordersByStatus={ordersByStatus} />
+              </Card>
+            </Col>
+          </Row>
 
-      <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
-        <Col span={24}>
-          <Card title="Top sản phẩm bán chạy">
-            <TopProductsChart />
-          </Card>
-        </Col>
-      </Row>
+          <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
+            <Col span={24}>
+              <Card title="Top sản phẩm bán chạy">
+                <TopProductsChart />
+              </Card>
+            </Col>
+          </Row>
+        </>
+      )}
     </div>
   );
 };

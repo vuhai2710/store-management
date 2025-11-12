@@ -571,9 +571,9 @@ Content-Type: application/json
 
 ```json
 {
-  "customerName": "Nguyễn Văn A",
-  "customerPhone": "0912345678",
-  "customerAddress": "123 Đường ABC, Quận XYZ",
+  "customerNameForCreate": "Nguyễn Văn A",
+  "customerPhoneForCreate": "0912345678",
+  "customerAddressForCreate": "123 Đường ABC, Quận XYZ",
   "orderItems": [
     {
       "productId": 5,
@@ -589,14 +589,14 @@ Content-Type: application/json
 | Field | Type | Required | Mô tả |
 |-------|------|----------|-------|
 | customerId | Integer | No | ID của khách hàng (nếu có sẵn). Nếu null thì tạo customer mới |
-| customerName | String | Yes* | Tên khách hàng (required nếu customerId null) |
-| customerPhone | String | Yes* | Số điện thoại khách hàng (required nếu customerId null) |
-| customerAddress | String | No | Địa chỉ khách hàng (optional) |
+| customerNameForCreate | String | Yes* | Tên khách hàng (required nếu customerId null) |
+| customerPhoneForCreate | String | Yes* | Số điện thoại khách hàng (required nếu customerId null) |
+| customerAddressForCreate | String | No | Địa chỉ khách hàng (optional) |
 | orderItems | Array | Yes | Danh sách sản phẩm trong đơn hàng |
 | orderItems[].productId | Integer | Yes | ID của sản phẩm |
 | orderItems[].quantity | Integer | Yes | Số lượng (phải >= 1) |
 | paymentMethod | String | Yes | Phương thức thanh toán: CASH, TRANSFER, ZALOPAY, PAYOS |
-| discount | Decimal | No | Giảm giá (mặc định 0, không được lớn hơn totalAmount) |
+| discount | BigDecimal | No | Giảm giá (mặc định 0, không được lớn hơn totalAmount) |
 | notes | String | No | Ghi chú đơn hàng |
 
 ### Response
@@ -675,9 +675,9 @@ Authorization: Bearer {admin_token}
 Content-Type: application/json
 
 {
-  "customerName": "Nguyễn Văn A",
-  "customerPhone": "0912345678",
-  "customerAddress": "123 Đường ABC",
+  "customerNameForCreate": "Nguyễn Văn A",
+  "customerPhoneForCreate": "0912345678",
+  "customerAddressForCreate": "123 Đường ABC",
   "orderItems": [
     {
       "productId": 5,
@@ -1175,7 +1175,7 @@ if (pm.response.code === 200) {
 2. **Kiểm tra stock trước checkout:** Stock có thể thay đổi, cần validate lại
 3. **Hủy đơn hàng:** Chỉ cho phép hủy khi PENDING để tránh rối loạn
 4. **Inventory tracking:** Luôn tạo inventory transaction để theo dõi
-5. **UI/UX:** 
+5. **UI/UX:**
    - Hiển thị rõ trạng thái đơn hàng
    - Cho phép customer hủy đơn dễ dàng (nếu PENDING)
    - Hiển thị thông tin snapshot để customer biết đã mua gì

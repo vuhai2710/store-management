@@ -5,16 +5,18 @@
  * Tích hợp đầy đủ authentication và protected routes
  */
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Layout } from "antd";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/common/ProtectedRoute";
-import { USER_ROLES } from "./constants";
+import { USER_ROLES, APP_CONFIG } from "./constants";
 import { useAuth } from "./hooks";
 
 // Layout Components
 import AppHeader from "./components/layout/AppHeader";
 import AppSidebar from "./components/layout/AppSidebar";
+import Breadcrumbs from "./components/common/Breadcrumbs";
+import FloatingChatButton from "./components/chat/FloatingChatButton";
 
 // Common Components
 // giữ 1 dòng import duy nhất
@@ -34,6 +36,10 @@ import Customers from "./pages/Customers";
 import CustomerDetail from "./pages/CustomerDetail";
 import Inventory from "./pages/Inventory";
 import Suppliers from "./pages/Suppliers";
+import Categories from "./pages/Categories";
+import ImportOrders from "./pages/ImportOrders";
+import ImportOrderDetail from "./pages/ImportOrderDetail";
+import ShipmentDetail from "./pages/ShipmentDetail";
 import Employees from "./pages/Employees";
 import EmployeeDetail from "./pages/EmployeeDetail";
 import Finance from "./pages/Finance";
@@ -54,7 +60,19 @@ const PublicRoutes = () => (
 function App() {
   const { user, isAuthenticated, loading } = useAuth();
 
-  // Loading state
+  // Kiểm tra và redirect CUSTOMER sang frontend_client
+  useEffect(() => {
+    if (!loading && isAuthenticated && user?.role === USER_ROLES.CUSTOMER) {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const clientUrl = APP_CONFIG.CLIENT_URL;
+        // Chuyển hướng sang frontend_client với token
+        window.location.href = `${clientUrl}?token=${token}`;
+      }
+    }
+  }, [loading, isAuthenticated, user]);
+
+  // Loading state - hiển thị loading screen trước khi check auth
   if (loading) {
     return (
       <div
@@ -63,8 +81,12 @@ function App() {
           justifyContent: "center",
           alignItems: "center",
           minHeight: "100vh",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         }}>
-        <div>Đang tải...</div>
+        <div style={{ textAlign: "center", color: "white" }}>
+          <div style={{ fontSize: "24px", marginBottom: "16px" }}>Đang tải...</div>
+          <div style={{ fontSize: "14px", opacity: 0.8 }}>Vui lòng chờ trong giây lát</div>
+        </div>
       </div>
     );
   }
@@ -74,13 +96,40 @@ function App() {
     return <PublicRoutes />;
   }
 
+  // Nếu là CUSTOMER, hiển thị loading trong khi redirect
+  if (user?.role === USER_ROLES.CUSTOMER) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        }}>
+        <div style={{ textAlign: "center", color: "white" }}>
+          <div style={{ fontSize: "24px", marginBottom: "16px" }}>Đang chuyển hướng...</div>
+          <div style={{ fontSize: "14px", opacity: 0.8 }}>Vui lòng chờ trong giây lát</div>
+        </div>
+      </div>
+    );
+  }
+
   // Protected routes (đã đăng nhập)
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <AppSidebar />
       <Layout>
         <AppHeader user={user} />
-        <Content style={{ margin: "24px 16px", padding: 24, minHeight: 280 }}>
+        <Content 
+          style={{ 
+            margin: "24px 16px", 
+            padding: 24, 
+            minHeight: 280,
+            transition: "all 0.2s",
+          }}
+        >
+          <Breadcrumbs />
           <Routes>
             {/* Public trong authenticated area */}
             <Route path="/unauthorized" element={<Unauthorized />} />
@@ -188,6 +237,48 @@ function App() {
               }
             />
 
+            {/* Categories - ADMIN, EMPLOYEE */}
+            <Route
+              path="/categories"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
+                  <Categories />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Import Orders - ADMIN, EMPLOYEE */}
+            <Route
+              path="/import-orders"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
+                  <ImportOrders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/import-orders/:id"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
+                  <ImportOrderDetail />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Shipments - ADMIN, EMPLOYEE */}
+            <Route
+              path="/shipments/:id"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
+                  <ShipmentDetail />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Employees - ADMIN only */}
             <Route
               path="/employees"
@@ -241,6 +332,7 @@ function App() {
           </Routes>
         </Content>
       </Layout>
+      <FloatingChatButton />
     </Layout>
   );
 }

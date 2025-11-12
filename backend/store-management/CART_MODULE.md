@@ -146,7 +146,7 @@ Content-Type: application/json
 ### Lỗi có thể xảy ra
 
 - **404 Not Found:** Sản phẩm không tồn tại
-- **400 Bad Request:** 
+- **400 Bad Request:**
   - Sản phẩm đã hết hàng
   - Sản phẩm đã ngừng kinh doanh
   - Số lượng không đủ
@@ -340,14 +340,14 @@ if (pm.response.code === 200) {
 
 ## Error Handling
 
-- **400 Bad Request:** 
+- **400 Bad Request:**
   - Validation fail (quantity < 1)
   - Sản phẩm đã hết hàng
   - Sản phẩm đã ngừng kinh doanh
   - Số lượng không đủ
 - **401 Unauthorized:** Không có token hoặc token không hợp lệ
 - **403 Forbidden:** Không phải CUSTOMER role
-- **404 Not Found:** 
+- **404 Not Found:**
   - Sản phẩm không tồn tại
   - Cart item không tồn tại
 
@@ -402,7 +402,7 @@ Khi thêm sản phẩm đã có trong giỏ:
 
 ### Issue: Lỗi "Số lượng sản phẩm không đủ" khi thêm vào giỏ
 
-**Nguyên nhân:** 
+**Nguyên nhân:**
 - Stock đã thay đổi sau khi customer xem sản phẩm
 - Nhiều customer cùng thêm sản phẩm cuối cùng
 

@@ -36,6 +36,7 @@ Authorization: Bearer {JWT_TOKEN}
 | GET    | `/api/v1/products/brand/{brand}`         | ADMIN, EMPLOYEE, **CUSTOMER** | Lọc sản phẩm theo thương hiệu                         |
 | GET    | `/api/v1/products/price`                 | ADMIN, EMPLOYEE, **CUSTOMER** | Lọc sản phẩm theo khoảng giá                          |
 | GET    | `/api/v1/products/best-sellers`          | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy sản phẩm bán chạy                                 |
+| GET    | `/api/v1/products/best-sellers/top-5`    | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy top 5 sản phẩm bán chạy                           |
 | GET    | `/api/v1/products/new`                   | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy sản phẩm mới (mới nhất)                           |
 | GET    | `/api/v1/products/{id}/related`          | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy sản phẩm liên quan (cùng category)                |
 | GET    | `/api/v1/products/brands`                | ADMIN, EMPLOYEE, **CUSTOMER** | Lấy danh sách tất cả thương hiệu                      |
@@ -66,23 +67,27 @@ Authorization: Bearer {JWT_TOKEN}
 
 ### Query Parameters
 
-| Parameter     | Type    | Required | Default     | Mô tả                    |
-| ------------- | ------- | -------- | ----------- | ------------------------ |
-| pageNo        | Integer | No       | 1           | Số trang                 |
-| pageSize      | Integer | No       | 10          | Số lượng item mỗi trang  |
-| sortBy        | String  | No       | "idProduct" | Trường sắp xếp           |
-| sortDirection | String  | No       | "ASC"       | Hướng sắp xếp (ASC/DESC) |
-| code          | String  | No       | -           | Tìm theo mã sản phẩm     |
-| name          | String  | No       | -           | Tìm theo tên sản phẩm    |
-| categoryId    | Integer | No       | -           | Lọc theo danh mục        |
-| brand         | String  | No       | -           | Lọc theo thương hiệu     |
-| minPrice      | Double  | No       | -           | Giá tối thiểu            |
-| maxPrice      | Double  | No       | -           | Giá tối đa               |
+| Parameter       | Type    | Required | Default     | Mô tả                                                                    |
+| --------------- | ------- | -------- | ----------- | ------------------------------------------------------------------------ |
+| pageNo          | Integer | No       | 1           | Số trang                                                                 |
+| pageSize        | Integer | No       | 10          | Số lượng item mỗi trang                                                 |
+| sortBy          | String  | No       | "idProduct" | Trường sắp xếp                                                           |
+| sortDirection   | String  | No       | "ASC"       | Hướng sắp xếp (ASC/DESC)                                                 |
+| code            | String  | No       | -           | Tìm theo mã sản phẩm                                                     |
+| name            | String  | No       | -           | Tìm theo tên sản phẩm                                                    |
+| categoryId      | Integer | No       | -           | Lọc theo danh mục                                                        |
+| brand           | String  | No       | -           | Lọc theo thương hiệu                                                     |
+| minPrice        | Double  | No       | -           | Giá tối thiểu                                                            |
+| maxPrice        | Double  | No       | -           | Giá tối đa                                                               |
+| inventoryStatus | String  | No       | -           | Lọc theo trạng thái tồn kho: COMING_SOON, IN_STOCK, OUT_OF_STOCK        |
 
 ### Ví dụ Request
 
 ```
 GET /api/v1/products?pageNo=1&pageSize=10&categoryId=1&brand=Apple&minPrice=1000000&maxPrice=50000000
+GET /api/v1/products?inventoryStatus=IN_STOCK&categoryId=1
+GET /api/v1/products?inventoryStatus=COMING_SOON
+GET /api/v1/products?inventoryStatus=OUT_OF_STOCK&brand=Apple
 ```
 
 ### Response
@@ -106,7 +111,7 @@ GET /api/v1/products?pageNo=1&pageSize=10&categoryId=1&brand=Apple&minPrice=1000
         "description": "Điện thoại cao cấp",
         "price": 25000000,
         "stockQuantity": 10,
-        "status": "ACTIVE",
+        "status": "IN_STOCK",
         "imageUrl": "/uploads/products/iphone15pro.jpg",
         "productCode": "SP001",
         "codeType": "SKU",
@@ -130,9 +135,17 @@ GET /api/v1/products?pageNo=1&pageSize=10&categoryId=1&brand=Apple&minPrice=1000
 
 ### Lưu ý
 
-- Nếu có bất kỳ tham số tìm kiếm/lọc nào (code, name, categoryId, brand, minPrice, maxPrice), hệ thống sẽ tự động dùng searchProducts
+- Nếu có bất kỳ tham số tìm kiếm/lọc nào (code, name, categoryId, brand, minPrice, maxPrice, inventoryStatus), hệ thống sẽ tự động dùng searchProducts
 - Có thể kết hợp nhiều filter cùng lúc
 - SortBy có thể là: `idProduct`, `productName`, `price`, `stockQuantity`, `createdAt`, etc.
+
+### Trạng thái tồn kho (inventoryStatus)
+
+| Giá trị      | Mô tả                                                                    | Điều kiện                                                          |
+| ------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| COMING_SOON  | Hàng sắp về (đã thêm vào sản phẩm nhưng chưa thêm vào kho)              | `stockQuantity = 0 hoặc null` AND `status != DISCONTINUED`         |
+| IN_STOCK     | Còn hàng                                                                  | `stockQuantity > 0`                                                |
+| OUT_OF_STOCK | Hết hàng                                                                  | `stockQuantity = 0 hoặc null` AND `status = OUT_OF_STOCK`         |
 
 ---
 
@@ -322,6 +335,79 @@ GET /api/v1/products/price?minPrice=1000000&maxPrice=5000000&pageNo=1&pageSize=1
 - Sản phẩm đã được sort sẵn theo số lượng bán, không cần sortBy
 - Phù hợp cho trang chủ, trang sản phẩm nổi bật
 
+### Ví dụ Request
+
+```
+GET /api/v1/products/best-sellers?status=COMPLETED&pageNo=1&pageSize=10
+GET /api/v1/products/best-sellers?pageNo=1&pageSize=20
+```
+
+---
+
+## 9.1. Lấy top 5 sản phẩm bán chạy
+
+### Thông tin Endpoint
+
+- **URL:** `GET /api/v1/products/best-sellers/top-5?status={status}`
+- **Authentication:** Required (ADMIN, EMPLOYEE, **CUSTOMER**)
+
+### Query Parameters
+
+| Parameter | Type   | Required | Mô tả                                 |
+| --------- | ------ | -------- | ------------------------------------- |
+| status    | String | No       | Trạng thái đơn hàng (COMPLETED, etc.) |
+
+### Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "code": 200,
+  "message": "Lấy top 5 sản phẩm bán chạy thành công",
+  "data": [
+    {
+      "idProduct": 1,
+      "productName": "iPhone 15 Pro",
+      "price": 25000000,
+      "stockQuantity": 10,
+      "status": "IN_STOCK"
+      /* ... các field khác */
+    },
+    {
+      "idProduct": 2,
+      "productName": "Samsung Galaxy S24",
+      "price": 22000000,
+      "stockQuantity": 15,
+      "status": "IN_STOCK"
+      /* ... các field khác */
+    }
+    /* ... 3 sản phẩm khác */
+  ]
+}
+```
+
+### Logic xử lý
+
+- Lấy top 5 sản phẩm bán chạy nhất (tính từ tổng số lượng đã bán trong order_details)
+- Sắp xếp theo số lượng bán giảm dần
+- Có thể lọc theo trạng thái đơn hàng (ví dụ: chỉ tính đơn đã hoàn thành)
+- Trả về danh sách (không phân trang)
+- Phù hợp cho: Trang chủ, banner "Sản phẩm bán chạy", widget sidebar
+
+### Ví dụ Request
+
+```
+GET /api/v1/products/best-sellers/top-5
+GET /api/v1/products/best-sellers/top-5?status=COMPLETED
+```
+
+### Lưu ý
+
+- Khác với endpoint `/best-sellers` (có phân trang), endpoint này trả về chính xác top 5 sản phẩm
+- Nếu không có đủ 5 sản phẩm đã bán, sẽ trả về số lượng sản phẩm có sẵn
+- Nếu không có sản phẩm nào đã bán, trả về mảng rỗng `[]`
+
 ---
 
 ## 10. Lấy sản phẩm mới
@@ -508,7 +594,7 @@ GET /api/v1/products/brands
 | brand         | String  | No       | Thương hiệu (Apple, Samsung, ...)                       |
 | idSupplier    | Integer | No       | ID nhà cung cấp                                         |
 | description   | String  | No       | Mô tả sản phẩm                                          |
-| price         | Double  | **Yes**  | Giá sản phẩm (>= 0)                                     |
+| price         | BigDecimal  | **Yes**  | Giá sản phẩm (>= 0)                                     |
 | stockQuantity | Integer | No       | Số lượng tồn kho (>= 0, mặc định: 0)                    |
 | codeType      | Enum    | **Yes**  | Loại mã: SKU, MANUAL                                    |
 | productCode   | String  | No       | Mã sản phẩm (nếu codeType = SKU và để trống sẽ tự sinh) |
@@ -740,6 +826,29 @@ if (pm.response.code === 200) {
 - Headers:
   - `Authorization: Bearer {{token}}`
 
+### Bước 5.1: Test Lọc theo trạng thái tồn kho
+
+**Request:**
+
+- Method: `GET`
+- URL: `{{base_url}}/products?inventoryStatus=IN_STOCK&pageNo=1&pageSize=10`
+- Headers:
+  - `Authorization: Bearer {{token}}`
+
+**Các giá trị inventoryStatus:**
+- `COMING_SOON`: Hàng sắp về
+- `IN_STOCK`: Còn hàng
+- `OUT_OF_STOCK`: Hết hàng
+
+### Bước 5.2: Test Lấy top 5 sản phẩm bán chạy
+
+**Request:**
+
+- Method: `GET`
+- URL: `{{base_url}}/products/best-sellers/top-5?status=COMPLETED`
+- Headers:
+  - `Authorization: Bearer {{token}}`
+
 ### Bước 6: Test Cập nhật sản phẩm
 
 **Request:**
@@ -780,6 +889,8 @@ if (pm.response.code === 200) {
    - `MANUAL`: Tự nhập productCode
 4. **Image URL:** Sau khi upload, imageUrl sẽ là đường dẫn tương đối, cần thêm base URL khi hiển thị
 5. **Best Sellers:** Sử dụng cho trang chủ, trang sản phẩm nổi bật
+6. **Top 5 Best Sellers:** Sử dụng endpoint `/best-sellers/top-5` cho widget, banner nhỏ gọn
+7. **Inventory Status Filter:** Kết hợp với các filter khác để tìm kiếm chính xác hơn (ví dụ: `inventoryStatus=IN_STOCK&categoryId=1&brand=Apple`)
 
 ---
 

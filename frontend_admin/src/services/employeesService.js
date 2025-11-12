@@ -84,6 +84,19 @@ export const employeesService = {
     return response.data;
   },
 
+  // Get my profile (EMPLOYEE)
+  getMyProfile: async () => {
+    const response = await api.get('/employees/me');
+    return response.data;
+  },
+
+  // Update my profile (EMPLOYEE)
+  updateMyProfile: async (employeeData) => {
+    const body = normalizeEmployeePayload(employeeData);
+    const response = await api.put('/employees/me', body);
+    return response.data;
+  },
+
   getDepartments: async () => [],
   getPositions: async () => [],
   updateEmployeeRole: async () => null,
