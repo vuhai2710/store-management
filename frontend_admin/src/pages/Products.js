@@ -16,20 +16,39 @@ import {
   Col,
   Tag,
 } from "antd";
-import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, EyeOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  SearchOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  ReloadOutlined,
+  EyeOutlined,
+} from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { fetchProducts, deleteProduct, fetchProductsBySupplier } from "../store/slices/productsSlice";
+import {
+  fetchProducts,
+  deleteProduct,
+  fetchProductsBySupplier,
+} from "../store/slices/productsSlice";
 import ProductForm from "../components/products/ProductForm";
 import { usePagination } from "../hooks/usePagination";
 import { categoriesService } from "../services/categoriesService";
 import { suppliersService } from "../services/suppliersService";
+import EmptyState from "../components/common/EmptyState";
+import LoadingSkeleton from "../components/common/LoadingSkeleton";
+import { exportToExcel, exportToCSV } from "../utils/exportUtils";
+import { DownloadOutlined } from "@ant-design/icons";
+import { LOW_STOCK_THRESHOLD } from "../constants";
 
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 const Products = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { list, loading, pagination } = useSelector((state) => state.products || {});
+  const { list, loading, pagination } = useSelector(
+    (state) => state.products || {}
+  );
 
   // usePagination(v1): trả về currentPage/pageSize/total + handlers
   const {
@@ -40,7 +59,7 @@ const Products = () => {
     // handlePageSizeChange, // bỏ vì không dùng
     resetPagination,
     pagination: tablePagination,
-  } = usePagination(1, 10);
+  } = usePagination(1, 5); // Default page size: 5
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -53,6 +72,7 @@ const Products = () => {
   const [supplierId, setSupplierId] = useState(null);
   const [minPrice, setMinPrice] = useState();
   const [maxPrice, setMaxPrice] = useState();
+  const [inventoryStatusFilter, setInventoryStatusFilter] = useState(null); // Filter by inventory status: 'COMING_SOON', 'IN_STOCK', 'OUT_OF_STOCK', null (all)
 
   // Sort (quản lý riêng vì hook không xử lý sorter)
   const [sortBy, setSortBy] = useState("idProduct");
@@ -103,6 +123,7 @@ const Products = () => {
           brand: brand?.trim() || undefined,
           minPrice: minPrice != null ? Number(minPrice) : undefined,
           maxPrice: maxPrice != null ? Number(maxPrice) : undefined,
+          inventoryStatus: inventoryStatusFilter || undefined,
         })
       );
     }
@@ -119,6 +140,7 @@ const Products = () => {
     brand,
     minPrice,
     maxPrice,
+    inventoryStatusFilter,
   ]);
 
   // Khi đổi nhà cung cấp → về trang 1 và fetch lại
@@ -153,6 +175,7 @@ const Products = () => {
     setSupplierId(null);
     setMinPrice(undefined);
     setMaxPrice(undefined);
+    setInventoryStatusFilter(null);
     setSortBy("idProduct");
     setSortDirection("ASC");
     resetPagination();
@@ -194,7 +217,13 @@ const Products = () => {
 
   const columns = useMemo(
     () => [
-      { title: "ID", dataIndex: "idProduct", key: "idProduct", width: 80, sorter: true },
+      {
+        title: "ID",
+        dataIndex: "idProduct",
+        key: "idProduct",
+        width: 80,
+        sorter: true,
+      },
       {
         title: "Tên",
         dataIndex: "productName",
@@ -214,13 +243,33 @@ const Products = () => {
         sorter: true,
         render: (v) => (v != null ? v.toLocaleString("vi-VN") : ""),
       },
-      { title: "Tồn", dataIndex: "stockQuantity", key: "stockQuantity", sorter: true },
+      {
+        title: "Tồn",
+        dataIndex: "stockQuantity",
+        key: "stockQuantity",
+        sorter: true,
+      },
       {
         title: "Trạng thái",
         dataIndex: "status",
         key: "status",
-        render: (st) =>
-          st === "IN_STOCK" ? <Tag color="green">IN_STOCK</Tag> : <Tag color="red">OUT_OF_STOCK</Tag>,
+        render: (st, record) => {
+          // Determine stock status based on status and stockQuantity
+          if (st === "OUT_OF_STOCK" || record.stockQuantity === 0) {
+            return <Tag color="red">Hết hàng</Tag>;
+          } else if (
+            st === "IN_STOCK" &&
+            record.stockQuantity > 0 &&
+            record.stockQuantity <= (LOW_STOCK_THRESHOLD || 10)
+          ) {
+            return <Tag color="orange">Sắp hết hàng</Tag>;
+          } else if (st === "IN_STOCK") {
+            return <Tag color="green">Còn hàng</Tag>;
+          } else if (st === "DISCONTINUED") {
+            return <Tag color="default">Ngừng kinh doanh</Tag>;
+          }
+          return <Tag>{st}</Tag>;
+        },
       },
       { title: "Code", dataIndex: "productCode", key: "productCode" },
       { title: "Code Type", dataIndex: "codeType", key: "codeType" },
@@ -232,22 +281,63 @@ const Products = () => {
         width: 170,
         render: (_, record) => (
           <Space>
-            <Button type="text" icon={<EyeOutlined />} onClick={() => handleView(record.idProduct)} />
-            <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+            <Button
+              type="text"
+              icon={<EyeOutlined />}
+              onClick={() => handleView(record.idProduct)}
+            />
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+            />
             <Popconfirm
               title="Xóa sản phẩm?"
               onConfirm={() => handleDelete(record.idProduct)}
               okText="Xóa"
-              cancelText="Hủy"
-            >
+              cancelText="Hủy">
               <Button type="text" danger icon={<DeleteOutlined />} />
             </Popconfirm>
           </Space>
         ),
       },
     ],
-    []
+    [handleView, handleEdit, handleDelete]
   );
+
+  const handleExportExcel = useCallback(() => {
+    if (!columns || !list || list.length === 0) {
+      message.warning("Không có dữ liệu để xuất");
+      return;
+    }
+    try {
+      exportToExcel(
+        list,
+        `san-pham-${new Date().toISOString().split("T")[0]}`,
+        columns
+      );
+      message.success("Xuất file Excel thành công!");
+    } catch (error) {
+      message.error(error?.message || "Xuất file Excel thất bại!");
+    }
+  }, [list, columns]);
+
+  const handleExportCSV = useCallback(() => {
+    if (!columns || !list || list.length === 0) {
+      message.warning("Không có dữ liệu để xuất");
+      return;
+    }
+    try {
+      exportToCSV(
+        list,
+        `san-pham-${new Date().toISOString().split("T")[0]}`,
+        columns
+      );
+      message.success("Xuất file CSV thành công!");
+    } catch (error) {
+      message.error(error?.message || "Xuất file CSV thất bại!");
+    }
+  }, [list, columns]);
 
   return (
     <div>
@@ -283,7 +373,10 @@ const Products = () => {
               style={{ width: "100%" }}
               showSearch
               optionFilterProp="label"
-              options={categories.map((c) => ({ value: c.idCategory, label: c.categoryName }))}
+              options={categories.map((c) => ({
+                value: c.idCategory,
+                label: c.categoryName,
+              }))}
             />
           </Col>
           <Col xs={24} sm={12} md={6}>
@@ -295,7 +388,10 @@ const Products = () => {
               style={{ width: "100%" }}
               showSearch
               optionFilterProp="label"
-              options={suppliers.map((s) => ({ value: s.idSupplier, label: s.supplierName }))}
+              options={suppliers.map((s) => ({
+                value: s.idSupplier,
+                label: s.supplierName,
+              }))}
             />
           </Col>
 
@@ -327,15 +423,40 @@ const Products = () => {
             />
           </Col>
 
+          <Col xs={24} sm={12} md={6}>
+            <Select
+              placeholder="Trạng thái tồn kho"
+              value={inventoryStatusFilter}
+              onChange={setInventoryStatusFilter}
+              allowClear
+              style={{ width: "100%" }}>
+              <Option value="COMING_SOON">Hàng sắp về</Option>
+              <Option value="IN_STOCK">Còn hàng</Option>
+              <Option value="OUT_OF_STOCK">Hết hàng</Option>
+            </Select>
+          </Col>
+
           <Col xs={24} sm={24} md={8}>
             <Space wrap>
-              <Button type="primary" icon={<SearchOutlined />} onClick={onSearch}>
+              <Button
+                type="primary"
+                icon={<SearchOutlined />}
+                onClick={onSearch}>
                 Tìm kiếm
               </Button>
               <Button icon={<ReloadOutlined />} onClick={onResetFilters}>
                 Xóa lọc
               </Button>
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+              <Button icon={<DownloadOutlined />} onClick={handleExportExcel}>
+                Xuất Excel
+              </Button>
+              <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
+                Xuất CSV
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleCreate}>
                 Thêm sản phẩm
               </Button>
             </Space>
@@ -344,20 +465,35 @@ const Products = () => {
       </Card>
 
       <Card>
-        <Table
-          columns={columns}
-          dataSource={list}
-          loading={loading}
-          rowKey="idProduct"
-          onChange={onTableChange}
-          pagination={{
-            ...tablePagination,
-            current: currentPage,
-            pageSize,
-            total: pagination.totalElements, // luôn bám theo Redux
-          }}
-          scroll={{ x: 1100 }}
-        />
+        {loading && (!list || list.length === 0) ? (
+          <LoadingSkeleton type="table" rows={5} />
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={list}
+            loading={loading}
+            rowKey="idProduct"
+            onChange={onTableChange}
+            pagination={{
+              ...tablePagination,
+              current: currentPage,
+              pageSize,
+              total: pagination.totalElements,
+              pageSizeOptions: ["5", "10", "20", "50", "100"],
+            }}
+            scroll={{ x: 1100 }}
+            locale={{
+              emptyText: (
+                <EmptyState
+                  description="Chưa có sản phẩm nào"
+                  actionText="Thêm sản phẩm"
+                  showAction
+                  onAction={handleCreate}
+                />
+              ),
+            }}
+          />
+        )}
       </Card>
 
       <Modal
@@ -366,8 +502,7 @@ const Products = () => {
         onCancel={() => setIsModalVisible(false)}
         footer={null}
         width={800}
-        destroyOnClose
-      >
+        destroyOnClose>
         <ProductForm
           product={editingProduct}
           onSuccess={() => {

@@ -14,7 +14,7 @@ import {
 } from 'antd';
 import { PlusOutlined, MinusOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { createOrder, updateOrder } from '../../store/slices/ordersSlice';
+import { createOrder } from '../../store/slices/ordersSlice';
 import { fetchProducts } from '../../store/slices/productsSlice';
 import { fetchCustomers } from '../../store/slices/customersSlice';
 
@@ -23,26 +23,50 @@ const { Text } = Typography;
 
 const OrderForm = ({ order, onSuccess }) => {
   const dispatch = useDispatch();
-  const { products } = useSelector((state) => state.products);
-  const { customers } = useSelector((state) => state.customers);
+  const { list: products, loading: productsLoading } = useSelector((state) => state.products || {});
+  const { customers, loading: customersLoading } = useSelector((state) => state.customers || {});
   const [form] = Form.useForm();
   const [orderItems, setOrderItems] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [createNewCustomer, setCreateNewCustomer] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchProducts());
-    dispatch(fetchCustomers());
+    // Fetch products with pagination to get full list
+    dispatch(fetchProducts({ pageNo: 1, pageSize: 1000, sortBy: "idProduct", sortDirection: "ASC" }));
+    // Fetch customers with pagination
+    dispatch(fetchCustomers({ pageNo: 1, pageSize: 100, sortBy: "idCustomer", sortDirection: "ASC" }));
   }, [dispatch]);
 
   useEffect(() => {
     if (order) {
+      // Note: Backend doesn't support direct order update
+      // This form is only for creating new orders
+      // If order exists, we can pre-fill some fields for reference
       form.setFieldsValue({
-        customerId: order.customerId,
-        status: order.status,
+        customerId: order.idCustomer || order.customerId,
+        paymentMethod: order.paymentMethod,
+        discount: order.discount || 0,
         notes: order.notes,
       });
-      setOrderItems(order.items || []);
+      // Map orderDetails to orderItems format for display
+      if (order.orderDetails && Array.isArray(order.orderDetails)) {
+        const items = order.orderDetails.map(detail => ({
+          productId: detail.idProduct || detail.productId,
+          productName: detail.productNameSnapshot || detail.productName,
+          price: detail.price || 0,
+          quantity: detail.quantity || 0,
+          total: (detail.price || 0) * (detail.quantity || 0),
+        }));
+        setOrderItems(items);
+      } else {
+        setOrderItems([]);
+      }
+    } else {
+      // Reset form for new order
+      form.resetFields();
+      setOrderItems([]);
+      setCreateNewCustomer(false);
     }
   }, [order, form]);
 
@@ -52,8 +76,15 @@ const OrderForm = ({ order, onSuccess }) => {
       return;
     }
 
+    // Products from Redux have idProduct field
+    const productId = selectedProduct.idProduct || selectedProduct.id;
+    if (!productId) {
+      message.error('Sản phẩm không hợp lệ');
+      return;
+    }
+
     const existingItemIndex = orderItems.findIndex(
-      item => item.productId === selectedProduct.id
+      item => item.productId === productId
     );
 
     if (existingItemIndex >= 0) {
@@ -64,11 +95,11 @@ const OrderForm = ({ order, onSuccess }) => {
       setOrderItems(updatedItems);
     } else {
       const newItem = {
-        productId: selectedProduct.id,
-        productName: selectedProduct.name,
-        price: selectedProduct.price,
+        productId: productId,
+        productName: selectedProduct.productName || selectedProduct.name,
+        price: selectedProduct.price || 0,
         quantity: quantity,
-        total: selectedProduct.price * quantity,
+        total: (selectedProduct.price || 0) * quantity,
       };
       setOrderItems([...orderItems, newItem]);
     }
@@ -101,15 +132,7 @@ const OrderForm = ({ order, onSuccess }) => {
   };
 
   const calculateSubtotal = () => {
-    return orderItems.reduce((sum, item) => sum + item.total, 0);
-  };
-
-  const calculateVAT = () => {
-    return calculateSubtotal() * 0.1; // 10% VAT
-  };
-
-  const calculateTotal = () => {
-    return calculateSubtotal() + calculateVAT();
+    return orderItems.reduce((sum, item) => sum + (item.total || 0), 0);
   };
 
   const handleSubmit = async (values) => {
@@ -119,25 +142,45 @@ const OrderForm = ({ order, onSuccess }) => {
     }
 
     try {
+      // Map to backend format: POST /api/v1/orders/create-for-customer
+      // Backend expects OrderDTO with:
+      // - customerId (optional) - if null, use customerName, customerPhone, customerAddress
+      // - orderItems (List<OrderDetailDTO>) - contains productId and quantity
+      // - paymentMethod (CASH, TRANSFER, ZALOPAY, PAYOS)
+      // - discount (optional)
+      // - notes (optional)
+      // Backend will calculate totalAmount automatically
+      
       const orderData = {
-        ...values,
-        items: orderItems,
-        subtotal: calculateSubtotal(),
-        vat: calculateVAT(),
-        totalAmount: calculateTotal(),
+        // Customer: either customerId or customer info for new customer
+        ...(values.customerId 
+          ? { customerId: values.customerId } 
+          : {
+              customerName: values.customerName,
+              customerPhone: values.customerPhone,
+              customerAddress: values.customerAddress || '',
+            }
+        ),
+        // Order items: map to OrderDetailDTO format with productId and quantity
+        orderItems: orderItems.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+        // Payment method: CASH, TRANSFER, ZALOPAY, PAYOS
+        paymentMethod: values.paymentMethod || 'CASH',
+        // Discount: optional, default 0
+        discount: values.discount ? Number(values.discount) : 0,
+        // Notes: optional
+        notes: values.notes || null,
       };
 
-      if (order) {
-        await dispatch(updateOrder({ id: order.id, orderData })).unwrap();
-        message.success('Cập nhật đơn hàng thành công!');
-      } else {
-        await dispatch(createOrder(orderData)).unwrap();
-        message.success('Tạo đơn hàng thành công!');
-      }
-
+      await dispatch(createOrder(orderData)).unwrap();
+      message.success('Tạo đơn hàng thành công!');
       onSuccess();
     } catch (error) {
-      message.error('Có lỗi xảy ra khi lưu đơn hàng');
+      const errorMessage = error?.message || error?.errors || 'Có lỗi xảy ra khi tạo đơn hàng';
+      message.error(errorMessage);
+      console.error('Order creation error:', error);
     }
   };
 
@@ -193,42 +236,97 @@ const OrderForm = ({ order, onSuccess }) => {
       onFinish={handleSubmit}
     >
       <Card title="Thông tin đơn hàng" style={{ marginBottom: '16px' }}>
+        {/* Customer Selection: Existing or New */}
         <Form.Item
-          name="customerId"
-          label="Khách hàng"
-          rules={[{ required: true, message: 'Vui lòng chọn khách hàng' }]}
+          name="customerType"
+          label="Loại khách hàng"
+          initialValue="existing"
         >
-          <Select placeholder="Chọn khách hàng">
-            {customers.map(customer => (
-              <Option key={customer.id} value={customer.id}>
-                {customer.name} - {customer.phone}
-              </Option>
-            ))}
+          <Select
+            placeholder="Chọn loại khách hàng"
+            onChange={(value) => setCreateNewCustomer(value === 'new')}
+          >
+            <Option value="existing">Khách hàng có sẵn</Option>
+            <Option value="new">Khách hàng mới (walk-in)</Option>
           </Select>
         </Form.Item>
 
-        <Form.Item
-          name="status"
-          label="Trạng thái"
-          rules={[{ required: true, message: 'Vui lòng chọn trạng thái' }]}
-        >
-          <Select placeholder="Chọn trạng thái">
-            <Option value="pending">Chờ xác nhận</Option>
-            <Option value="processing">Đang xử lý</Option>
-            <Option value="completed">Hoàn thành</Option>
-            <Option value="cancelled">Đã hủy</Option>
-          </Select>
-        </Form.Item>
+        {!createNewCustomer ? (
+          <Form.Item
+            name="customerId"
+            label="Khách hàng"
+            rules={[{ required: !createNewCustomer, message: 'Vui lòng chọn khách hàng' }]}
+          >
+            <Select 
+              placeholder="Chọn khách hàng"
+              loading={customersLoading}
+              showSearch
+              optionFilterProp="children"
+            >
+              {customers && customers.map(customer => (
+                <Option key={customer.idCustomer || customer.id} value={customer.idCustomer || customer.id}>
+                  {customer.customerName || customer.name} - {customer.phoneNumber || customer.phone}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        ) : (
+          <>
+            <Form.Item
+              name="customerName"
+              label="Tên khách hàng"
+              rules={[{ required: createNewCustomer, message: 'Vui lòng nhập tên khách hàng' }]}
+            >
+              <Input placeholder="Nhập tên khách hàng" />
+            </Form.Item>
+            <Form.Item
+              name="customerPhone"
+              label="Số điện thoại"
+              rules={[
+                { required: createNewCustomer, message: 'Vui lòng nhập số điện thoại' },
+                { pattern: /^0\d{9,10}$/, message: 'Số điện thoại không hợp lệ (10-11 chữ số, bắt đầu bằng 0)' }
+              ]}
+            >
+              <Input placeholder="Nhập số điện thoại" />
+            </Form.Item>
+            <Form.Item
+              name="customerAddress"
+              label="Địa chỉ"
+            >
+              <Input.TextArea rows={2} placeholder="Nhập địa chỉ (tùy chọn)" />
+            </Form.Item>
+          </>
+        )}
+
+        {/* Status is automatically set to PENDING by backend when creating order */}
+        {/* Status can only be updated via updateOrderStatus endpoint, not during creation */}
 
         <Form.Item
           name="paymentMethod"
           label="Phương thức thanh toán"
           rules={[{ required: true, message: 'Vui lòng chọn phương thức thanh toán' }]}
+          initialValue="CASH"
         >
           <Select placeholder="Chọn phương thức thanh toán">
-            <Option value="cash">Tiền mặt</Option>
-            <Option value="bank_transfer">Chuyển khoản</Option>
+            <Option value="CASH">Tiền mặt</Option>
+            <Option value="TRANSFER">Chuyển khoản</Option>
+            <Option value="ZALOPAY">ZaloPay</Option>
+            <Option value="PAYOS">PayOS</Option>
           </Select>
+        </Form.Item>
+
+        <Form.Item
+          name="discount"
+          label="Giảm giá (VNĐ)"
+          initialValue={0}
+        >
+          <InputNumber
+            min={0}
+            style={{ width: '100%' }}
+            placeholder="Nhập số tiền giảm giá"
+            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+            parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
+          />
         </Form.Item>
 
         <Form.Item
@@ -244,21 +342,28 @@ const OrderForm = ({ order, onSuccess }) => {
           <Select
             placeholder="Chọn sản phẩm"
             style={{ width: 300 }}
-            value={selectedProduct?.id}
+            value={selectedProduct?.idProduct || selectedProduct?.id}
             onChange={(value) => {
-              const product = products.find(p => p.id === value);
+              // Products from Redux have idProduct field
+              const product = products.find(p => (p.idProduct || p.id) === value);
               setSelectedProduct(product);
             }}
+            loading={productsLoading}
             showSearch
             filterOption={(input, option) =>
               option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }
           >
-            {products.map(product => (
-              <Option key={product.id} value={product.id}>
-                {product.name} - {product.price.toLocaleString('vi-VN')} VNĐ
-              </Option>
-            ))}
+            {products && products.map(product => {
+              const productId = product.idProduct || product.id;
+              const productName = product.productName || product.name;
+              const price = product.price || 0;
+              return (
+                <Option key={productId} value={productId}>
+                  {productName} - {price.toLocaleString('vi-VN')} VNĐ
+                </Option>
+              );
+            })}
           </Select>
           <InputNumber
             min={1}
@@ -291,11 +396,8 @@ const OrderForm = ({ order, onSuccess }) => {
             <Text>
               Tạm tính: {calculateSubtotal().toLocaleString('vi-VN')} VNĐ
             </Text>
-            <Text>
-              VAT (10%): {calculateVAT().toLocaleString('vi-VN')} VNĐ
-            </Text>
-            <Text strong style={{ fontSize: '18px' }}>
-              Tổng tiền: {calculateTotal().toLocaleString('vi-VN')} VNĐ
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              (Backend sẽ tự tính tổng tiền sau khi tạo đơn)
             </Text>
           </Space>
         </div>
@@ -307,7 +409,7 @@ const OrderForm = ({ order, onSuccess }) => {
             Hủy
           </Button>
           <Button type="primary" htmlType="submit">
-            {order ? 'Cập nhật' : 'Tạo'} đơn hàng
+            Tạo đơn hàng
           </Button>
         </Space>
       </div>

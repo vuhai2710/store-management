@@ -21,6 +21,7 @@ import {
   DeleteOutlined,
   EyeOutlined,
   UserOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +31,9 @@ import {
   setPagination,
 } from "../store/slices/customersSlice";
 import CustomerForm from "../components/customers/CustomerForm";
+import { exportToExcel, exportToCSV } from "../utils/exportUtils";
+import LoadingSkeleton from "../components/common/LoadingSkeleton";
+import EmptyState from "../components/common/EmptyState";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -48,7 +52,7 @@ const Customers = () => {
   useEffect(() => {
     const params = {
       pageNo: pagination.current || 1,
-      pageSize: pagination.pageSize || 10,
+      pageSize: pagination.pageSize || 5, // Default page size: 5
       sortBy: "idCustomer",
       sortDirection: "ASC",
     };
@@ -92,6 +96,24 @@ const Customers = () => {
     setCustomerTypeFilter(value);
     setSearchText(""); // Clear search when filtering by type
     dispatch(setPagination({ current: 1 }));
+  };
+
+  const handleExportExcel = () => {
+    try {
+      exportToExcel(customers, `khach-hang-${new Date().toISOString().split('T')[0]}`, columns);
+      message.success('Xuất file Excel thành công!');
+    } catch (error) {
+      message.error('Xuất file Excel thất bại!');
+    }
+  };
+
+  const handleExportCSV = () => {
+    try {
+      exportToCSV(customers, `khach-hang-${new Date().toISOString().split('T')[0]}`, columns);
+      message.success('Xuất file CSV thành công!');
+    } catch (error) {
+      message.error('Xuất file CSV thất bại!');
+    }
   };
 
   const handleCreateCustomer = () => {
@@ -141,7 +163,7 @@ const Customers = () => {
           src={avatar}
           icon={<UserOutlined />}
           style={{ backgroundColor: "#1890ff" }}>
-          {record.name?.charAt(0)}
+          {(record.name || record.customerName)?.charAt(0)?.toUpperCase()}
         </Avatar>
       ),
     },
@@ -149,30 +171,34 @@ const Customers = () => {
       title: "Tên khách hàng",
       dataIndex: "name",
       key: "name",
-      render: (text) => <Text strong>{text}</Text>,
+      render: (text, record) => <Text strong>{text || record.customerName || "N/A"}</Text>,
     },
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
+      render: (text) => text || "N/A",
     },
     {
       title: "Số điện thoại",
       dataIndex: "phone",
       key: "phone",
+      render: (text, record) => text || record.phoneNumber || "N/A",
     },
     {
       title: "Địa chỉ",
       dataIndex: "address",
       key: "address",
       ellipsis: true,
+      render: (text) => text || "N/A",
     },
     {
       title: "Loại khách hàng",
       dataIndex: "customerType",
       key: "customerType",
       render: (type) => {
-        const typeUpper = type?.toUpperCase();
+        if (!type) return <Tag>N/A</Tag>;
+        const typeUpper = String(type).toUpperCase();
         return (
           <Tag color={typeUpper === "VIP" ? "gold" : "blue"}>
             {typeUpper === "VIP" ? "VIP" : "REGULAR"}
@@ -247,6 +273,16 @@ const Customers = () => {
               <Option value="VIP">VIP</Option>
             </Select>
             <Button
+              icon={<DownloadOutlined />}
+              onClick={handleExportExcel}>
+              Xuất Excel
+            </Button>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={handleExportCSV}>
+              Xuất CSV
+            </Button>
+            <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={handleCreateCustomer}>
@@ -256,23 +292,38 @@ const Customers = () => {
         </div>
 
         {/* Table */}
-        <Table
-          columns={columns}
-          dataSource={customers}
-          loading={loading}
-          rowKey="id"
-          pagination={{
-            current: pagination.current,
-            pageSize: pagination.pageSize,
-            total: pagination.total,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} của ${total} khách hàng`,
-          }}
-          onChange={handleTableChange}
-          scroll={{ x: 800 }}
-        />
+        {loading && (!customers || customers.length === 0) ? (
+          <LoadingSkeleton type="table" rows={5} />
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={customers}
+            loading={loading}
+            rowKey="id"
+            pagination={{
+              current: pagination.current,
+              pageSize: pagination.pageSize || 5,
+              total: pagination.total,
+              showSizeChanger: true,
+              pageSizeOptions: ["5", "10", "20", "50", "100"],
+              showQuickJumper: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} của ${total} khách hàng`,
+            }}
+            onChange={handleTableChange}
+            scroll={{ x: 800 }}
+            locale={{
+              emptyText: (
+                <EmptyState
+                  description="Chưa có khách hàng nào"
+                  actionText="Thêm khách hàng"
+                  showAction
+                  onAction={handleCreateCustomer}
+                />
+              ),
+            }}
+          />
+        )}
       </Card>
 
       {/* Customer Form Modal */}

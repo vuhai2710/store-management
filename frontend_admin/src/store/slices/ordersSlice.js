@@ -6,11 +6,12 @@ export const fetchOrders = createAsyncThunk(
   "orders/fetchOrders",
   async (params, { rejectWithValue }) => {
     try {
-      const response = await ordersService.getOrders(params);
-      return response;
+      const pageResponse = await ordersService.getOrders(params);
+      // Backend returns PageResponse with: content, pageNo (0-indexed), pageSize, totalElements, totalPages, etc.
+      return pageResponse;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi tải danh sách đơn hàng"
+        error.message || error.response?.data?.message || "Lỗi khi tải danh sách đơn hàng"
       );
     }
   }
@@ -20,11 +21,11 @@ export const fetchOrderById = createAsyncThunk(
   "orders/fetchOrderById",
   async (id, { rejectWithValue }) => {
     try {
-      const response = await ordersService.getOrderById(id);
-      return response;
+      const order = await ordersService.getOrderById(id);
+      return order;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi tải chi tiết đơn hàng"
+        error.message || error.response?.data?.message || "Lỗi khi tải chi tiết đơn hàng"
       );
     }
   }
@@ -34,11 +35,11 @@ export const createOrder = createAsyncThunk(
   "orders/createOrder",
   async (orderData, { rejectWithValue }) => {
     try {
-      const response = await ordersService.createOrder(orderData);
-      return response;
+      const order = await ordersService.createOrder(orderData);
+      return order;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi tạo đơn hàng"
+        error.message || error.response?.data?.message || "Lỗi khi tạo đơn hàng"
       );
     }
   }
@@ -62,11 +63,11 @@ export const updateOrderStatus = createAsyncThunk(
   "orders/updateOrderStatus",
   async ({ id, status }, { rejectWithValue }) => {
     try {
-      const response = await ordersService.updateOrderStatus(id, status);
-      return response;
+      const order = await ordersService.updateOrderStatus(id, status);
+      return order;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi cập nhật trạng thái đơn hàng"
+        error.message || error.response?.data?.message || "Lỗi khi cập nhật trạng thái đơn hàng"
       );
     }
   }
@@ -95,10 +96,11 @@ const initialState = {
     current: 1,
     pageSize: 10,
     total: 0,
+    totalPages: 0,
   },
   filters: {
     status: null,
-    customer: null,
+    customerId: null,
     dateRange: null,
   },
 };
@@ -129,12 +131,19 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchOrders.fulfilled, (state, action) => {
         state.loading = false;
-        // Response trực tiếp là array hoặc object, không có .data wrapper
-        if (Array.isArray(action.payload)) {
-          state.orders = action.payload;
-          state.pagination.total = action.payload.length;
+        // Backend returns PageResponse: { content, pageNo (0-indexed), pageSize, totalElements, totalPages, ... }
+        const pageResponse = action.payload;
+        if (pageResponse && pageResponse.content) {
+          state.orders = pageResponse.content || [];
+          // Convert 0-indexed pageNo to 1-indexed for frontend
+          state.pagination.current = (pageResponse.pageNo || 0) + 1;
+          state.pagination.pageSize = pageResponse.pageSize || 10;
+          state.pagination.total = pageResponse.totalElements || 0;
+          state.pagination.totalPages = pageResponse.totalPages || 0;
         } else {
-          state.orders = [];
+          // Fallback: if not PageResponse, treat as array
+          state.orders = Array.isArray(pageResponse) ? pageResponse : [];
+          state.pagination.total = state.orders.length;
         }
         state.error = null;
       })
@@ -150,6 +159,7 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchOrderById.fulfilled, (state, action) => {
         state.loading = false;
+        // Backend returns OrderDTO directly
         state.currentOrder = action.payload;
         state.error = null;
       })
@@ -159,39 +169,48 @@ const ordersSlice = createSlice({
       })
       // Create order
       .addCase(createOrder.fulfilled, (state, action) => {
-        state.orders.unshift(action.payload);
+        const newOrder = action.payload;
+        state.orders.unshift(newOrder);
         state.pagination.total += 1;
       })
-      // Update order
+      // Update order (deprecated - backend doesn't support direct update)
       .addCase(updateOrder.fulfilled, (state, action) => {
+        // This should not be called as backend doesn't support direct update
+        const updatedOrder = action.payload;
+        const orderId = updatedOrder.idOrder || updatedOrder.id;
         const index = state.orders.findIndex(
-          (order) => order.id === action.payload.id
+          (order) => (order.idOrder || order.id) === orderId
         );
         if (index !== -1) {
-          state.orders[index] = action.payload;
+          state.orders[index] = updatedOrder;
         }
-        if (state.currentOrder && state.currentOrder.id === action.payload.id) {
-          state.currentOrder = action.payload;
+        if (state.currentOrder && (state.currentOrder.idOrder || state.currentOrder.id) === orderId) {
+          state.currentOrder = updatedOrder;
         }
       })
       // Update order status
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
+        const updatedOrder = action.payload;
+        // Backend uses idOrder, not id
+        const orderId = updatedOrder.idOrder || updatedOrder.id;
         const index = state.orders.findIndex(
-          (order) => order.id === action.payload.id
+          (order) => (order.idOrder || order.id) === orderId
         );
         if (index !== -1) {
-          state.orders[index].status = action.payload.status;
+          state.orders[index] = updatedOrder;
         }
-        if (state.currentOrder && state.currentOrder.id === action.payload.id) {
-          state.currentOrder.status = action.payload.status;
+        if (state.currentOrder && (state.currentOrder.idOrder || state.currentOrder.id) === orderId) {
+          state.currentOrder = updatedOrder;
         }
       })
-      // Delete order
+      // Delete order (deprecated - backend doesn't support deletion)
       .addCase(deleteOrder.fulfilled, (state, action) => {
+        // This should not be called as backend doesn't support deletion
+        const orderId = action.payload;
         state.orders = state.orders.filter(
-          (order) => order.id !== action.payload
+          (order) => (order.idOrder || order.id) !== orderId
         );
-        state.pagination.total -= 1;
+        state.pagination.total = Math.max(0, state.pagination.total - 1);
       });
   },
 });

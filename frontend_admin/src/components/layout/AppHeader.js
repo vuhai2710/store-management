@@ -1,21 +1,23 @@
 import React from 'react';
-import { Layout, Avatar, Dropdown, Button, Space, Badge } from 'antd';
+import { Layout, Avatar, Dropdown, Space, Badge } from 'antd';
 import {
   UserOutlined,
   BellOutlined,
   SettingOutlined,
   LogoutOutlined,
-  ShoppingCartOutlined,
 } from '@ant-design/icons';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../../store/slices/authSlice';
+import NotificationCenter from '../common/NotificationCenter';
 
 const { Header } = Layout;
 
-const AppHeader = ({ user }) => {
+const AppHeader = ({ user: userProp }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const userFromRedux = useSelector((state) => state.auth?.user);
+  const user = userProp || userFromRedux;
 
   const handleLogout = () => {
     dispatch(logout());
@@ -29,6 +31,18 @@ const AppHeader = ({ user }) => {
     } else if (key === 'logout') {
       handleLogout();
     }
+  };
+
+  const getAvatarUrl = () => {
+    if (user?.avatarUrl) {
+      // If avatarUrl is a full URL, return as is
+      if (user.avatarUrl.startsWith('http://') || user.avatarUrl.startsWith('https://')) {
+        return user.avatarUrl;
+      }
+      // Otherwise, prepend base URL
+      return `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}${user.avatarUrl}`;
+    }
+    return null;
   };
 
   const userMenuItems = [
@@ -66,23 +80,9 @@ const AppHeader = ({ user }) => {
       </div>
       
       <Space size="middle">
-        <Badge count={5} size="small">
-          <Button 
-            type="text" 
-            icon={<BellOutlined />} 
-            size="large"
-            style={{ color: '#666' }}
-          />
-        </Badge>
-        
-        <Badge count={3} size="small">
-          <Button 
-            type="text" 
-            icon={<ShoppingCartOutlined />} 
-            size="large"
-            style={{ color: '#666' }}
-          />
-        </Badge>
+        <div style={{ position: 'relative' }}>
+          <NotificationCenter />
+        </div>
         
         <Dropdown
           menu={{ items: userMenuItems, onClick: handleMenuClick }}
@@ -93,7 +93,7 @@ const AppHeader = ({ user }) => {
             <Avatar 
               size="small" 
               icon={<UserOutlined />} 
-              src={user?.avatar}
+              src={getAvatarUrl()}
             />
             <span style={{ color: '#666' }}>
               {user?.name || user?.username || 'Người dùng'}
