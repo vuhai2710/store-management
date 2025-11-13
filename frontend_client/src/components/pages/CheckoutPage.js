@@ -8,6 +8,7 @@ import { ordersService } from '../../services/ordersService';
 import { shippingAddressService } from '../../services/shippingAddressService';
 import { paymentService } from '../../services/paymentService';
 import { ghnService } from '../../services/ghnService';
+import { promotionService } from '../../services/promotionService';
 import { formatPrice, getImageUrl } from '../../utils/formatUtils';
 import { useAuth } from '../../hooks/useAuth';
 

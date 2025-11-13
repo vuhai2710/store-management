@@ -7,6 +7,7 @@ import { productsService } from '../../services/productsService';
 import { categoriesService } from '../../services/categoriesService';
 import { formatPrice } from '../../utils/formatUtils';
 import { Grid3X3, List } from 'lucide-react'; 
+import { useAuth } from '../../hooks/useAuth';
 
 const ShopPage = ({ 
   selectedCategory, 
@@ -18,6 +19,7 @@ const ShopPage = ({
   setCurrentPage,
   searchTerm
 }) => {
+  const { isAuthenticated } = useAuth();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,37 +50,62 @@ const ShopPage = ({
     marginBottom: '0.25rem'
   });
 
-  // Fetch categories
+  // Fetch categories (only when authenticated)
   useEffect(() => {
     const fetchCategories = async () => {
+      if (!isAuthenticated) {
+        setCategories([]);
+        return;
+      }
+      
       try {
         const categoriesData = await categoriesService.getAll();
         setCategories(categoriesData || []);
       } catch (error) {
         console.error('Error fetching categories:', error);
+        setCategories([]);
       }
     };
 
     fetchCategories();
-  }, []);
+  }, [isAuthenticated]);
 
-  // Fetch brands
+  // Fetch brands (only when authenticated)
   useEffect(() => {
     const fetchBrands = async () => {
+      if (!isAuthenticated) {
+        setBrands([]);
+        return;
+      }
+      
       try {
         const brandsData = await productsService.getAllBrands();
         setBrands(brandsData || []);
       } catch (error) {
         console.error('Error fetching brands:', error);
+        setBrands([]);
       }
     };
 
     fetchBrands();
-  }, []);
+  }, [isAuthenticated]);
 
-  // Fetch products based on filters
+  // Reset to first page when search term changes
+  useEffect(() => {
+    setPageNo(1);
+  }, [searchTerm]);
+
+  // Fetch products based on filters (only when authenticated)
   useEffect(() => {
     const fetchProducts = async () => {
+      // Don't fetch if not authenticated
+      if (!isAuthenticated) {
+        setProducts([]);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
@@ -164,6 +191,12 @@ const ShopPage = ({
         setTotalPages(productsData?.totalPages || 1);
         setTotalElements(productsData?.totalElements || 0);
 
+        // If current page exceeds available pages after a new filter/search, reset to page 1
+        if ((productsData?.totalPages || 1) > 0 && pageNo > (productsData?.totalPages || 1)) {
+          setPageNo(1);
+          return; // let the effect re-fetch with page 1
+        }
+
         // Update max price for display if needed
         if (productsData?.content && productsData.content.length > 0) {
           const prices = productsData.content.map(p => p.price || 0);
@@ -182,21 +215,27 @@ const ShopPage = ({
     };
 
     fetchProducts();
-  }, [pageNo, sortOption, selectedCategory, searchTerm, selectedBrand, minPrice, maxPrice, categories]);
+  }, [isAuthenticated, pageNo, sortOption, selectedCategory, searchTerm, selectedBrand, minPrice, maxPrice, categories]);
 
   // Fetch latest products for sidebar
   useEffect(() => {
     const fetchLatestProducts = async () => {
+      if (!isAuthenticated) {
+        setLatestProducts([]);
+        return;
+      }
+      
       try {
         const latestData = await productsService.getNewProducts({ pageNo: 1, pageSize: 3 });
         setLatestProducts(latestData?.content || []);
       } catch (error) {
         console.error('Error fetching latest products:', error);
+        setLatestProducts([]);
       }
     };
 
     fetchLatestProducts();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleMinPriceChange = (e) => {
     setMinPrice(e.target.value);
@@ -231,6 +270,38 @@ const ShopPage = ({
 
   // Note: Price filtering is now done server-side via API
   const filteredProducts = products;
+
+  // Show login prompt if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <section style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
+        <div style={styles.container}>
+          <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
+            <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+              Đăng nhập để xem sản phẩm 🔐
+            </h2>
+            <p style={{ fontSize: '1.125rem', color: '#6c757d', marginBottom: '2rem' }}>
+              Vui lòng đăng nhập để xem và mua sắm sản phẩm.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button 
+                onClick={() => setCurrentPage('login')}
+                style={{ ...styles.buttonPrimary, padding: '1rem 2rem', fontSize: '1.125rem' }}
+              >
+                Đăng nhập
+              </button>
+              <button 
+                onClick={() => setCurrentPage('register')}
+                style={{ ...styles.buttonSecondary, padding: '1rem 2rem', fontSize: '1.125rem' }}
+              >
+                Đăng ký
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (loading && products.length === 0) {
     return (

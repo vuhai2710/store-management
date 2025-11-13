@@ -30,3 +30,4 @@ public class PromotionRuleDTO extends BaseDTO {
 }
 
 
+

@@ -35,3 +35,4 @@ CREATE TABLE IF NOT EXISTS product_reviews (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Bảng lưu đánh giá sản phẩm của khách hàng';
 
 
+

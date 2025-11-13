@@ -3,6 +3,9 @@ import { Drawer, List, Input, Button, Space, Avatar, Typography, Spin, Empty, Ta
 import { SendOutlined, UserOutlined } from '@ant-design/icons';
 import { chatService } from '../../services/chatService';
 import { message } from 'antd';
+import SockJS from 'sockjs-client';
+import { Client } from '@stomp/stompjs';
+import { authService } from '../../services/authService';
 
 const { Text } = Typography;
 
@@ -13,23 +16,53 @@ const ChatWindow = ({ visible, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
+  const [connected, setConnected] = useState(false);
   const messagesEndRef = useRef(null);
+  const stompClientRef = useRef(null);
+  const subscriptionRef = useRef(null);
+
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  const WS_URL = API_BASE_URL + '/ws';
 
   useEffect(() => {
     if (visible) {
       loadConversations();
+      ensureWebSocketConnected();
+    } else {
+      // Unsubscribe when closing drawer but keep connection for quick reopen
+      unsubscribeFromConversation();
     }
   }, [visible]);
 
   useEffect(() => {
     if (selectedConversation) {
       loadMessages(selectedConversation.idConversation);
+      subscribeToConversation(selectedConversation.idConversation);
+    } else {
+      unsubscribeFromConversation();
     }
   }, [selectedConversation]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    // Cleanup on unmount
+    return () => {
+      try {
+        unsubscribeFromConversation();
+        if (stompClientRef.current) {
+          stompClientRef.current.deactivate();
+        }
+      } catch (e) {
+        // no-op
+      } finally {
+        stompClientRef.current = null;
+        subscriptionRef.current = null;
+      }
+    };
+  }, []);
 
   const loadConversations = async () => {
     try {
@@ -69,14 +102,117 @@ const ChatWindow = ({ visible, onClose }) => {
 
     try {
       setSending(true);
-      // TODO: Implement WebSocket send message
-      // For now, just show a message
-      message.info('Tính năng gửi tin nhắn realtime đang được phát triển. Vui lòng sử dụng WebSocket.');
+      if (!stompClientRef.current || !connected) {
+        message.error('Chưa kết nối chat realtime');
+        return;
+      }
+
+      const user = authService.getUserFromStorage?.() || null;
+      const userId = user?.idUser;
+
+      console.log('[ChatWindow] Sending message:', {
+        user,
+        userId,
+        conversationId: selectedConversation.idConversation
+      });
+
+      if (!userId) {
+        console.error('[ChatWindow] Cannot determine userId:', { user });
+        message.error('Không xác định được người dùng');
+        return;
+      }
+
+      const senderType = Array.isArray(user?.roles) && user.roles.includes('ADMIN') ? 'ADMIN' : 'EMPLOYEE';
+
+      const messageData = {
+        conversationId: selectedConversation.idConversation,
+        senderId: userId,
+        senderType,
+        message: messageText.trim(),
+      };
+
+      console.log('[ChatWindow] Message data to send:', messageData);
+
+      const body = JSON.stringify(messageData);
+
+      stompClientRef.current.publish({
+        destination: '/app/chat.send',
+        body,
+      });
+
       setMessageText('');
     } catch (error) {
       message.error('Gửi tin nhắn thất bại');
     } finally {
       setSending(false);
+    }
+  };
+
+  const ensureWebSocketConnected = () => {
+    if (stompClientRef.current && connected) return;
+
+    const token = authService.getToken?.();
+    if (!token) {
+      setConnected(false);
+      return;
+    }
+
+    // Create SockJS and STOMP client
+    const socket = new SockJS(`${WS_URL}?token=${encodeURIComponent(token)}`);
+    const client = new Client({
+      webSocketFactory: () => socket,
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+      connectHeaders: {
+        Authorization: `Bearer ${token}`,
+      },
+      onConnect: () => {
+        setConnected(true);
+        // Resubscribe current conversation after reconnect
+        if (selectedConversation?.idConversation) {
+          subscribeToConversation(selectedConversation.idConversation);
+        }
+      },
+      onDisconnect: () => setConnected(false),
+      onStompError: () => setConnected(false),
+      onWebSocketClose: () => setConnected(false),
+      onWebSocketError: () => setConnected(false),
+    });
+
+    client.activate();
+    stompClientRef.current = client;
+  };
+
+  const subscribeToConversation = (conversationId) => {
+    if (!stompClientRef.current || !connected || !conversationId) return;
+
+    // Clear previous subscription
+    unsubscribeFromConversation();
+
+    subscriptionRef.current = stompClientRef.current.subscribe(`/topic/chat.${conversationId}`, (messageFrame) => {
+      try {
+        const messageData = JSON.parse(messageFrame.body);
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.idMessage === messageData.idMessage);
+          if (exists) return prev;
+          return [...prev, messageData];
+        });
+      } catch (e) {
+        // ignore
+      }
+    });
+  };
+
+  const unsubscribeFromConversation = () => {
+    if (subscriptionRef.current) {
+      try {
+        subscriptionRef.current.unsubscribe();
+      } catch (e) {
+        // ignore
+      } finally {
+        subscriptionRef.current = null;
+      }
     }
   };
 
@@ -149,6 +285,11 @@ const ChatWindow = ({ visible, onClose }) => {
                 <Tag color={selectedConversation.status === 'OPEN' ? 'green' : 'default'} style={{ marginLeft: '8px' }}>
                   {selectedConversation.status === 'OPEN' ? 'Đang mở' : 'Đã đóng'}
                 </Tag>
+                {connected ? (
+                  <Tag color="green" style={{ marginLeft: 8 }}>Đã kết nối</Tag>
+                ) : (
+                  <Tag color="default" style={{ marginLeft: 8 }}>Mất kết nối</Tag>
+                )}
               </div>
 
               <div

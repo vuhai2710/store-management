@@ -21,3 +21,4 @@ public interface PromotionUsageRepository extends JpaRepository<PromotionUsage, 
 }
 
 
+

@@ -18,6 +18,8 @@ import RegisterPage from './components/pages/RegisterPage';
 import CheckoutPage from './components/pages/CheckoutPage';
 import OrdersPage from './components/pages/OrdersPage';
 import ProfilePage from './components/pages/ProfilePage';
+import PaymentSuccessPage from './components/pages/PaymentSuccessPage';
+import PaymentCancelPage from './components/pages/PaymentCancelPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import ChatWidget from './components/chat/ChatWidget';

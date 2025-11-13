@@ -7,19 +7,27 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import { productsService } from '../../services/productsService';
 import { categoriesService } from '../../services/categoriesService';
 import { formatPrice } from '../../utils/formatUtils';
+import { useAuth } from '../../hooks/useAuth';
 
 // Component NHẬN handleViewProductDetail
 const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) => {
+  const { isAuthenticated } = useAuth();
   const [categories, setCategories] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
   const [newProducts, setNewProducts] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  // Fetch data from API
+  // Fetch data from API only when authenticated
   useEffect(() => {
     const fetchData = async () => {
+      // Only fetch data if user is authenticated
+      if (!isAuthenticated) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
@@ -42,14 +50,17 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
 
       } catch (err) {
         console.error('Error fetching homepage data:', err);
-        setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+        // Don't show error if it's just authentication issue
+        if (err?.status !== 401) {
+          setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [isAuthenticated]);
 
   // --- CHỨC NĂNG MÔ PHỎNG: Đồng hồ đếm ngược cho Deal of the Week ---
   const calculateTimeLeft = () => {
@@ -108,7 +119,8 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
     transition: 'transform 0.3s'
   };
 
-  if (loading) {
+  // Show loading only when authenticated and loading
+  if (loading && isAuthenticated) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
         <LoadingSpinner />
@@ -180,7 +192,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
       </section>
 
       {/* 3. Category Explorer (Khám phá Danh mục) */}
-      {categories.length > 0 && (
+      {isAuthenticated && categories.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '3rem', textAlign: 'center' }}>Mua sắm theo danh mục</h2>
@@ -213,8 +225,38 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
         </section>
       )}
 
+      {/* Login Prompt for unauthenticated users */}
+      {!isAuthenticated && (
+        <section style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
+          <div style={styles.container}>
+            <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
+              <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+                Chào mừng đến với TechStore! 🎉
+              </h2>
+              <p style={{ fontSize: '1.125rem', color: '#6c757d', marginBottom: '2rem' }}>
+                Đăng nhập để xem sản phẩm và mua sắm ngay hôm nay!
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <button 
+                  onClick={() => setCurrentPage('login')}
+                  style={{ ...styles.buttonPrimary, padding: '1rem 2rem', fontSize: '1.125rem' }}
+                >
+                  Đăng nhập
+                </button>
+                <button 
+                  onClick={() => setCurrentPage('register')}
+                  style={{ ...styles.buttonSecondary, padding: '1rem 2rem', fontSize: '1.125rem' }}
+                >
+                  Đăng ký
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 4. Deal of the Week (Banner ưu đãi) */}
-      {dealProduct && (
+      {isAuthenticated && dealProduct && (
         <section style={{ padding: '4rem 0', backgroundColor: '#f0f4f8' }}>
           <div style={styles.container}>
             <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '3rem', alignItems: 'center', backgroundColor: '#fff', padding: '3rem', borderRadius: '0.75rem', boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)' }}>
@@ -258,7 +300,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
 
 
       {/* 5. Best Sellers */}
-      {bestSellers.length > 0 && (
+      {isAuthenticated && bestSellers.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
@@ -285,7 +327,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
       )}
       
       {/* 6. Featured Products */}
-      {featuredProducts.length > 0 && (
+      {isAuthenticated && featuredProducts.length > 0 && (
         <section style={{ padding: '4rem 0', backgroundColor: '#f8f8f8' }}>
           <div style={styles.container}>
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '3rem' }}>Sản phẩm nổi bật</h2>
@@ -304,7 +346,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
       )}
       
       {/* 7. New Products */}
-      {newProducts.length > 0 && (
+      {isAuthenticated && newProducts.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>

@@ -1,7 +1,7 @@
 import api from './api';
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
-const unwrap = (resp) => resp?.data ?? resp;
+const unwrap = (resp) => resp?.data?.data ?? resp?.data ?? resp;
 
 export const chatService = {
   /**
@@ -67,6 +67,7 @@ export const chatService = {
     }
   },
 };
+
 
 
 

@@ -116,3 +116,5 @@ secrets.json
 # Sandbox setup guide (contains setup instructions, may contain sensitive info)
 SANDBOX_SETUP_GUIDE.md
 PAYOS_SDK_REFACTOR_NOTES.md
+CART_BUG_FIX.md
+GHN_SHIPPING_UPDATE.md

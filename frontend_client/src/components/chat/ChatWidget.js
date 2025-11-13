@@ -8,7 +8,7 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-const WS_URL = API_BASE_URL.replace('http', 'ws') + '/ws';
+const WS_URL = API_BASE_URL + '/ws';
 
 const ChatWidget = () => {
   const { isAuthenticated, user, customer } = useAuth();
@@ -80,9 +80,16 @@ const ChatWidget = () => {
       disconnectWebSocket();
       
       // Get or create conversation
-      const conversationData = await chatService.getMyConversation();
+      let conversationData = null;
+      try {
+        conversationData = await chatService.getMyConversation();
+      } catch (err) {
+        // Fallback: create conversation if not found or backend error
+        conversationData = await chatService.createConversation();
+      }
+
       setConversation(conversationData);
-      const convId = conversationData.idConversation || conversationData.id;
+      const convId = conversationData?.idConversation || conversationData?.id;
       conversationIdRef.current = convId;
       
       // Load messages
@@ -106,7 +113,7 @@ const ChatWidget = () => {
         pageNo: 1,
         pageSize: 50,
       });
-      setMessages(messagesData?.content || messagesData || []);
+      setMessages(messagesData?.content || []);
     } catch (error) {
       console.error('Error loading messages:', error);
       setError('Không thể tải tin nhắn. Vui lòng thử lại sau.');
@@ -214,8 +221,17 @@ const ChatWidget = () => {
     try {
       // Backend expects senderId to be idUser (from JWT token), not idCustomer
       // CustomerDTO contains idUser field
-      const userId = user?.idUser || customer?.idUser || user?.id || customer?.id;
+      const userId = customer?.idUser || user?.idUser;
+      
+      console.log('[ChatWidget] Sending message:', {
+        customer,
+        user,
+        userId,
+        conversationId: conversationIdRef.current
+      });
+      
       if (!userId) {
+        console.error('[ChatWidget] Cannot determine userId:', { customer, user });
         setError('Không thể xác định người dùng. Vui lòng đăng nhập lại.');
         return;
       }
@@ -226,6 +242,8 @@ const ChatWidget = () => {
         senderType: 'CUSTOMER',
         message: newMessage.trim(),
       };
+
+      console.log('[ChatWidget] Message data to send:', messageData);
 
       // Send message via WebSocket
       stompClientRef.current.publish({

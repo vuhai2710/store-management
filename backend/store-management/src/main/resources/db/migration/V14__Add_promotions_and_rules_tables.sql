@@ -89,3 +89,4 @@ ADD CONSTRAINT fk_orders_promotion_rule
   ON DELETE SET NULL ON UPDATE CASCADE;
 
 
+

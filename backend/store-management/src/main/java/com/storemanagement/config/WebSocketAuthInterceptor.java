@@ -13,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -37,38 +38,47 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     private final JwtAuthenticationConverter jwtAuthenticationConverter;
     
     @Override
-    public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
-        StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
+    StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+    
+    if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
+        // Lấy token từ query parameter hoặc header
+        String token = extractToken(accessor);
         
-        if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-            // Lấy token từ query parameter hoặc header
-            String token = extractToken(accessor);
-            
-            if (token != null && !token.isEmpty()) {
-                try {
-                    // Validate và decode JWT token
-                    Jwt jwt = jwtDecoder.decode(token);
-                    
-                    // Convert JWT thành Authentication object
-                    Authentication authentication = jwtAuthenticationConverter.convert(jwt);
-                    
-                    // Set authentication vào session
-                    accessor.setUser(authentication);
-                    
-                    log.info("WebSocket authenticated for user: {}", authentication.getName());
-                } catch (Exception e) {
-                    log.error("WebSocket authentication failed: {}", e.getMessage());
-                    // Reject connection nếu token không hợp lệ
-                    throw new RuntimeException("Authentication failed: " + e.getMessage());
-                }
-            } else {
-                log.warn("WebSocket connection attempt without token");
-                throw new RuntimeException("Authentication token required");
+        if (token != null && !token.isEmpty()) {
+            try {
+                // Validate và decode JWT token
+                Jwt jwt = jwtDecoder.decode(token);
+                
+                // Convert JWT thành Authentication object
+                Authentication authentication = jwtAuthenticationConverter.convert(jwt);
+                
+                // Set authentication vào session
+                accessor.setUser(authentication);
+                
+                //  THÊM: Set authentication vào SecurityContext để SecurityUtils có thể lấy được
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                
+                log.info("WebSocket authenticated for user: {}", authentication.getName());
+            } catch (Exception e) {
+                log.error("WebSocket authentication failed: {}", e.getMessage());
+                // Reject connection nếu token không hợp lệ
+                throw new RuntimeException("Authentication failed: " + e.getMessage());
             }
+        } else {
+            log.warn("WebSocket connection attempt without token");
+            throw new RuntimeException("Authentication token required");
         }
-        
-        return message;
     }
+    
+    //  THÊM: Set authentication cho tất cả các message (không chỉ CONNECT)
+    if (accessor != null && accessor.getUser() instanceof Authentication) {
+        Authentication authentication = (Authentication) accessor.getUser();
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+    
+    return message;
+}
     
     /**
      * Extract JWT token từ query parameter hoặc STOMP header
