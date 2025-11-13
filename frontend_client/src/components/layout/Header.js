@@ -1,23 +1,191 @@
 // src/components/layout/Header.js
-import React from 'react';
-import { Heart, ShoppingBag, Menu, X, Search, Mail, LogIn, User, LogOut } from 'lucide-react'; 
+import React, { useState, useRef, useEffect } from 'react';
+import { ShoppingBag, Menu, X, Search, Mail, LogIn, User, LogOut, Settings, Package } from 'lucide-react'; 
 import styles from '../../styles/styles';
+
+// User Dropdown Component
+const UserDropdown = ({ userName, setCurrentPage, handleLogout }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div style={{ position: 'relative' }} ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.5rem 1rem',
+          backgroundColor: isOpen ? '#f8f9fa' : 'transparent',
+          border: '1px solid #dee2e6',
+          borderRadius: '0.5rem',
+          cursor: 'pointer',
+          color: '#495057',
+          fontWeight: '600',
+          transition: 'all 0.3s'
+        }}
+        onMouseEnter={(e) => {
+          if (!isOpen) {
+            e.currentTarget.style.backgroundColor = '#f8f9fa';
+            e.currentTarget.style.borderColor = '#007bff';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isOpen) {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.borderColor = '#dee2e6';
+          }
+        }}
+      >
+        <User size={18} />
+        <span>👋 Xin chào, <span style={{ color: '#007bff' }}>{userName}</span></span>
+      </button>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          right: 0,
+          marginTop: '0.5rem',
+          backgroundColor: 'white',
+          borderRadius: '0.5rem',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          border: '1px solid #dee2e6',
+          minWidth: '220px',
+          zIndex: 1000,
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            padding: '0.75rem 1rem',
+            borderBottom: '1px solid #e9ecef',
+            backgroundColor: '#f8f9fa',
+            fontWeight: '600',
+            color: '#495057',
+            fontSize: '0.875rem'
+          }}>
+            {userName}
+          </div>
+          
+          <button
+            onClick={() => {
+              setCurrentPage('profile');
+              setIsOpen(false);
+            }}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              border: 'none',
+              backgroundColor: 'transparent',
+              textAlign: 'left',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              color: '#495057',
+              fontSize: '0.875rem',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <Settings size={18} />
+            <span>Quản lý tài khoản</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setCurrentPage('orders');
+              setIsOpen(false);
+            }}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              border: 'none',
+              backgroundColor: 'transparent',
+              textAlign: 'left',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              color: '#495057',
+              fontSize: '0.875rem',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <Package size={18} />
+            <span>Đơn hàng của tôi</span>
+          </button>
+
+          <div style={{ borderTop: '1px solid #e9ecef', marginTop: '0.25rem' }}>
+            <button
+              onClick={() => {
+                handleLogout();
+                setIsOpen(false);
+              }}
+              style={{
+                width: '100%',
+                padding: '0.75rem 1rem',
+                border: 'none',
+                backgroundColor: 'transparent',
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                color: '#dc3545',
+                fontSize: '0.875rem',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fff5f5'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <LogOut size={18} />
+              <span>Đăng xuất</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Header = ({ 
   currentPage, 
   setCurrentPage, 
   mobileMenuOpen, 
   setMobileMenuOpen, 
-  wishlist, 
   cart, 
+  cartItemCount,
   searchTerm, 
   setSearchTerm, 
-  isLoggedIn, 
+  isAuthenticated, 
   user, 
-  handleLogout 
+  handleLogout,
+  cartIconRef,
 }) => {
   
-  // Xử lý khi click vào icon User/Login chính
+  const isLoggedIn = isAuthenticated;
+  const userName = user?.customerName || user?.name || user?.username || 'Guest';
  
 
   return (
@@ -36,30 +204,15 @@ const Header = ({
             </div>
             
             {/* Right: Auth Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', position: 'relative' }}>
               {isLoggedIn ? (
                 <>
-                  {/* Hiển thị tên user */}
-                  <span style={{ color: '#495057', fontWeight: '600' }}>
-                    👋 Xin chào, <span style={{ color: '#007bff' }}>{user.name}</span>
-                  </span>
-                  {/* Nút Logout */}
-                  <button 
-                    onClick={handleLogout}
-                    style={{ 
-                      ...styles.navLink, 
-                      color: '#dc3545', 
-                      fontWeight: '600', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '0.25rem',
-                      transition: 'color 0.3s'
-                    }}
-                    onMouseEnter={(e) => e.target.style.color = '#c82333'}
-                    onMouseLeave={(e) => e.target.style.color = '#dc3545'}
-                  >
-                    <LogOut size={16} /> Đăng xuất
-                  </button>
+                  {/* User Dropdown */}
+                  <UserDropdown 
+                    userName={userName}
+                    setCurrentPage={setCurrentPage}
+                    handleLogout={handleLogout}
+                  />
                 </>
               ) : (
                 <>
@@ -138,11 +291,19 @@ const Header = ({
             >
               Cửa hàng
             </button>
+            {isLoggedIn && (
+              <button 
+                onClick={() => setCurrentPage('orders')} 
+                style={currentPage === 'orders' ? styles.navLinkActive : styles.navLink}
+              >
+                Đơn hàng
+              </button>
+            )}
             <button 
               onClick={() => setCurrentPage('blog')} 
               style={currentPage === 'blog' ? styles.navLinkActive : styles.navLink}
             >
-              Blog
+              Tin tức
             </button>
             <button 
               onClick={() => setCurrentPage('contact')} 
@@ -193,53 +354,9 @@ const Header = ({
             {/* User Account Icon - CHÍNH */}
             
 
-            {/* Wishlist Icon */}
-            <button 
-              onClick={() => setCurrentPage('wishlist')} 
-              style={{ 
-                position: 'relative', 
-                color: '#495057', 
-                border: 'none', 
-                background: 'none', 
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '0.25rem',
-                transition: 'transform 0.2s'
-              }}
-              title="Danh sách yêu thích"
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              <div style={{ position: 'relative' }}>
-                <Heart size={24} style={{ fill: wishlist.length > 0 ? 'red' : 'none', stroke: wishlist.length > 0 ? 'red' : '#495057' }} />
-                {wishlist.length > 0 && (
-                  <span style={{ 
-                    backgroundColor: 'red', 
-                    color: 'white', 
-                    borderRadius: '50%', 
-                    width: '18px', 
-                    height: '18px', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    fontSize: '0.7rem', 
-                    fontWeight: 'bold',
-                    position: 'absolute', 
-                    top: '-8px', 
-                    right: '-8px',
-                    border: '2px solid white'
-                  }}>
-                    {wishlist.length}
-                  </span>
-                )}
-              </div>
-              <span style={{ fontSize: '0.75rem', fontWeight: '600' }}>Yêu thích</span>
-            </button>
-            
             {/* Cart Icon */}
             <button 
+              ref={cartIconRef}
               onClick={() => setCurrentPage('cart')} 
               style={{ 
                 position: 'relative', 
@@ -259,7 +376,7 @@ const Header = ({
             >
               <div style={{ position: 'relative' }}>
                 <ShoppingBag size={24} />
-                {cart.length > 0 && (
+                {(cartItemCount > 0 || (cart && cart.length > 0)) && (
                   <span style={{ 
                     backgroundColor: '#007bff', 
                     color: 'white', 
@@ -276,7 +393,7 @@ const Header = ({
                     right: '-8px',
                     border: '2px solid white'
                   }}>
-                    {cart.length}
+                    {cartItemCount || cart.length}
                   </span>
                 )}
               </div>
@@ -316,8 +433,13 @@ const Header = ({
             <button onClick={() => { setCurrentPage('shop'); setMobileMenuOpen(false); }} style={styles.navLink}>
               Cửa hàng
             </button>
+            {isLoggedIn && (
+              <button onClick={() => { setCurrentPage('orders'); setMobileMenuOpen(false); }} style={styles.navLink}>
+                Đơn hàng
+              </button>
+            )}
             <button onClick={() => { setCurrentPage('blog'); setMobileMenuOpen(false); }} style={styles.navLink}>
-              Blog
+              Tin tức
             </button>
             <button onClick={() => { setCurrentPage('contact'); setMobileMenuOpen(false); }} style={styles.navLink}>
               Liên hệ

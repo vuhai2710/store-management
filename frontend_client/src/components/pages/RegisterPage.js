@@ -1,12 +1,19 @@
 // src/components/pages/RegisterPage.js
 import React, { useState } from 'react';
-import { User, Mail, Lock, Eye, EyeOff, UserPlus } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, UserPlus, Phone } from 'lucide-react';
 import styles from '../../styles/styles';
+import { useAuth } from '../../hooks/useAuth';
+import LoadingSpinner from '../common/LoadingSpinner';
+import { isValidEmail, isValidPhone } from '../../utils/validationUtils';
 
-const RegisterPage = ({ setCurrentPage, handleRegister }) => {
+const RegisterPage = ({ setCurrentPage }) => {
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
+    username: '',
+    customerName: '',
     email: '',
+    phoneNumber: '',
+    address: '',
     password: '',
     confirmPassword: ''
   });
@@ -14,6 +21,8 @@ const RegisterPage = ({ setCurrentPage, handleRegister }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -29,30 +38,37 @@ const RegisterPage = ({ setCurrentPage, handleRegister }) => {
     }
   };
 
-  const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
-
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.name.trim()) {
-      newErrors.name = 'Vui lòng nhập họ và tên';
-    } else if (formData.name.trim().length < 3) {
-      newErrors.name = 'Họ và tên phải có ít nhất 3 ký tự';
+    if (!formData.username.trim()) {
+      newErrors.username = 'Vui lòng nhập tên đăng nhập';
+    } else if (formData.username.trim().length < 4) {
+      newErrors.username = 'Tên đăng nhập phải có ít nhất 4 ký tự';
+    }
+    
+    if (!formData.customerName.trim()) {
+      newErrors.customerName = 'Vui lòng nhập họ và tên';
+    } else if (formData.customerName.trim().length < 3) {
+      newErrors.customerName = 'Họ và tên phải có ít nhất 3 ký tự';
     }
     
     if (!formData.email.trim()) {
       newErrors.email = 'Vui lòng nhập email';
-    } else if (!validateEmail(formData.email)) {
+    } else if (!isValidEmail(formData.email)) {
       newErrors.email = 'Email không hợp lệ';
+    }
+    
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Vui lòng nhập số điện thoại';
+    } else if (!isValidPhone(formData.phoneNumber)) {
+      newErrors.phoneNumber = 'Số điện thoại không hợp lệ';
     }
     
     if (!formData.password) {
       newErrors.password = 'Vui lòng nhập mật khẩu';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    } else if (formData.password.length < 4) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 4 ký tự';
     }
     
     if (!formData.confirmPassword) {
@@ -69,11 +85,29 @@ const RegisterPage = ({ setCurrentPage, handleRegister }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setApiError('');
     
     if (validateForm()) {
-      handleRegister(formData.name, formData.email, formData.password);
+      try {
+        setIsLoading(true);
+        await register({
+          username: formData.username.trim(),
+          password: formData.password,
+          email: formData.email.trim(),
+          customerName: formData.customerName.trim(),
+          phoneNumber: formData.phoneNumber.trim(),
+          address: formData.address.trim() || undefined,
+        });
+        // Redirect to home page after successful registration
+        setCurrentPage('home');
+      } catch (error) {
+        console.error('Register error:', error);
+        setApiError(error?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -156,7 +190,37 @@ const RegisterPage = ({ setCurrentPage, handleRegister }) => {
           {/* Form */}
           <form onSubmit={handleSubmit} style={{ padding: '2rem' }}>
             
-            {/* Name Field */}
+            {/* Username Field */}
+            <div style={inputWrapperStyle}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.5rem', 
+                fontWeight: '600',
+                color: '#495057',
+                fontSize: '0.875rem'
+              }}>
+                Tên đăng nhập
+              </label>
+              <div style={{ position: 'relative' }}>
+                <User size={20} style={iconStyle} />
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  placeholder="Nhập tên đăng nhập (tối thiểu 4 ký tự)"
+                  style={{
+                    ...inputStyle,
+                    borderColor: errors.username ? '#dc3545' : '#dee2e6'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                  onBlur={(e) => e.target.style.borderColor = errors.username ? '#dc3545' : '#dee2e6'}
+                />
+              </div>
+              {errors.username && <p style={errorStyle}>{errors.username}</p>}
+            </div>
+
+            {/* Customer Name Field */}
             <div style={inputWrapperStyle}>
               <label style={{ 
                 display: 'block', 
@@ -171,19 +235,19 @@ const RegisterPage = ({ setCurrentPage, handleRegister }) => {
                 <User size={20} style={iconStyle} />
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
+                  name="customerName"
+                  value={formData.customerName}
                   onChange={handleChange}
                   placeholder="Nhập họ và tên của bạn"
                   style={{
                     ...inputStyle,
-                    borderColor: errors.name ? '#dc3545' : '#dee2e6'
+                    borderColor: errors.customerName ? '#dc3545' : '#dee2e6'
                   }}
                   onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                  onBlur={(e) => e.target.style.borderColor = errors.name ? '#dc3545' : '#dee2e6'}
+                  onBlur={(e) => e.target.style.borderColor = errors.customerName ? '#dc3545' : '#dee2e6'}
                 />
               </div>
-              {errors.name && <p style={errorStyle}>{errors.name}</p>}
+              {errors.customerName && <p style={errorStyle}>{errors.customerName}</p>}
             </div>
 
             {/* Email Field */}
@@ -216,6 +280,66 @@ const RegisterPage = ({ setCurrentPage, handleRegister }) => {
               {errors.email && <p style={errorStyle}>{errors.email}</p>}
             </div>
 
+            {/* Phone Number Field */}
+            <div style={inputWrapperStyle}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.5rem', 
+                fontWeight: '600',
+                color: '#495057',
+                fontSize: '0.875rem'
+              }}>
+                Số điện thoại
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Phone size={20} style={iconStyle} />
+                <input
+                  type="tel"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  placeholder="Nhập số điện thoại (VD: 0123456789)"
+                  style={{
+                    ...inputStyle,
+                    borderColor: errors.phoneNumber ? '#dc3545' : '#dee2e6'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                  onBlur={(e) => e.target.style.borderColor = errors.phoneNumber ? '#dc3545' : '#dee2e6'}
+                />
+              </div>
+              {errors.phoneNumber && <p style={errorStyle}>{errors.phoneNumber}</p>}
+            </div>
+
+            {/* Address Field (Optional) */}
+            <div style={inputWrapperStyle}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.5rem', 
+                fontWeight: '600',
+                color: '#495057',
+                fontSize: '0.875rem'
+              }}>
+                Địa chỉ (Tùy chọn)
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="Nhập địa chỉ của bạn"
+                  style={{
+                    ...inputStyle,
+                    paddingLeft: '1rem',
+                    borderColor: errors.address ? '#dc3545' : '#dee2e6'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                  onBlur={(e) => e.target.style.borderColor = errors.address ? '#dc3545' : '#dee2e6'}
+                />
+              </div>
+              {errors.address && <p style={errorStyle}>{errors.address}</p>}
+            </div>
+
             {/* Password Field */}
             <div style={inputWrapperStyle}>
               <label style={{ 
@@ -234,7 +358,7 @@ const RegisterPage = ({ setCurrentPage, handleRegister }) => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="Tạo mật khẩu (tối thiểu 6 ký tự)"
+                  placeholder="Tạo mật khẩu (tối thiểu 4 ký tự)"
                   style={{
                     ...inputStyle,
                     paddingRight: '3rem',
@@ -343,24 +467,53 @@ const RegisterPage = ({ setCurrentPage, handleRegister }) => {
               {errors.terms && <p style={errorStyle}>{errors.terms}</p>}
             </div>
 
+            {/* API Error Message */}
+            {apiError && (
+              <div style={{
+                padding: '0.75rem',
+                marginBottom: '1rem',
+                backgroundColor: '#f8d7da',
+                color: '#721c24',
+                borderRadius: '0.25rem',
+                fontSize: '0.875rem'
+              }}>
+                {apiError}
+              </div>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
+              disabled={isLoading}
               style={{
                 width: '100%',
                 padding: '1rem',
-                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                background: isLoading 
+                  ? '#6c757d' 
+                  : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '0.5rem',
                 fontSize: '1rem',
                 fontWeight: 'bold',
-                cursor: 'pointer',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
                 transition: 'transform 0.2s, box-shadow 0.2s',
-                marginBottom: '1rem'
+                marginBottom: '1rem',
+                opacity: isLoading ? 0.6 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
               }}
             >
-              Đăng Ký Ngay
+              {isLoading ? (
+                <>
+                  <LoadingSpinner size={20} color="white" />
+                  <span>Đang đăng ký...</span>
+                </>
+              ) : (
+                'Đăng Ký Ngay'
+              )}
             </button>
 
             {/* Divider */}

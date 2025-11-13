@@ -2,14 +2,26 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 import styles from '../../styles/styles';
+import { useAuth } from '../../hooks/useAuth';
+import LoadingSpinner from '../common/LoadingSpinner';
+import { authService } from '../../services/authService';
 
-const LoginPage = ({ setCurrentPage, handleLogin }) => {
+const LoginPage = ({ setCurrentPage }) => {
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [forgotPasswordError, setForgotPasswordError] = useState('');
+  const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,19 +47,64 @@ const LoginPage = ({ setCurrentPage, handleLogin }) => {
     
     if (!formData.password) {
       newErrors.password = 'Vui lòng nhập mật khẩu';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    } else if (formData.password.length < 4) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 4 ký tự';
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setApiError('');
     
     if (validateForm()) {
-      handleLogin(formData.username, formData.password);
+      try {
+        setIsLoading(true);
+        await login(formData.username, formData.password, rememberMe);
+        // Redirect to home page after successful login
+        setCurrentPage('home');
+      } catch (error) {
+        console.error('Login error:', error);
+        setApiError(error?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotPasswordError('');
+    setForgotPasswordSuccess('');
+    
+    if (!forgotPasswordEmail.trim()) {
+      setForgotPasswordError('Vui lòng nhập email');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(forgotPasswordEmail)) {
+      setForgotPasswordError('Email không hợp lệ');
+      return;
+    }
+
+    try {
+      setForgotPasswordLoading(true);
+      const response = await authService.forgotPassword(forgotPasswordEmail);
+      setForgotPasswordSuccess(response?.message || 'Mật khẩu mới đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.');
+      setForgotPasswordEmail('');
+      setTimeout(() => {
+        setShowForgotPassword(false);
+        setForgotPasswordSuccess('');
+      }, 3000);
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      setForgotPasswordError(error?.message || 'Không thể gửi email. Vui lòng thử lại sau.');
+    } finally {
+      setForgotPasswordLoading(false);
     }
   };
 
@@ -217,12 +274,17 @@ const LoginPage = ({ setCurrentPage, handleLogin }) => {
               fontSize: '0.875rem'
             }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                <input type="checkbox" style={{ cursor: 'pointer' }} />
+                <input 
+                  type="checkbox" 
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  style={{ cursor: 'pointer' }} 
+                />
                 <span style={{ color: '#495057' }}>Ghi nhớ đăng nhập</span>
               </label>
               <button
                 type="button"
-                onClick={() => alert('Chức năng quên mật khẩu đang được phát triển')}
+                onClick={() => setShowForgotPassword(true)}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -235,32 +297,54 @@ const LoginPage = ({ setCurrentPage, handleLogin }) => {
               </button>
             </div>
 
+            {/* API Error Message */}
+            {apiError && (
+              <div style={{
+                padding: '0.75rem',
+                marginBottom: '1rem',
+                backgroundColor: '#f8d7da',
+                color: '#721c24',
+                borderRadius: '0.25rem',
+                fontSize: '0.875rem'
+              }}>
+                {apiError}
+              </div>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
+              disabled={isLoading}
               style={{
                 width: '100%',
                 padding: '1rem',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: isLoading 
+                  ? '#6c757d' 
+                  : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '0.5rem',
                 fontSize: '1rem',
                 fontWeight: 'bold',
-                cursor: 'pointer',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
                 transition: 'transform 0.2s, box-shadow 0.2s',
-                marginBottom: '1rem'
+                marginBottom: '1rem',
+                opacity: isLoading ? 0.6 : 1
               }}
               onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+                if (!isLoading) {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+                }
               }}
               onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = 'none';
+                if (!isLoading) {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = 'none';
+                }
               }}
             >
-              Đăng Nhập
+              {isLoading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
             </button>
 
             {/* Divider */}
@@ -312,6 +396,138 @@ const LoginPage = ({ setCurrentPage, handleLogin }) => {
               </button>
             </div>
           </form>
+
+          {/* Forgot Password Modal */}
+          {showForgotPassword && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              padding: '2rem'
+            }} onClick={() => {
+              setShowForgotPassword(false);
+              setForgotPasswordEmail('');
+              setForgotPasswordError('');
+              setForgotPasswordSuccess('');
+            }}>
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '0.5rem',
+                padding: '2rem',
+                maxWidth: '400px',
+                width: '100%',
+                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)'
+              }} onClick={(e) => e.stopPropagation()}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+                  Quên mật khẩu
+                </h3>
+                <p style={{ color: '#6c757d', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+                  Nhập email đã đăng ký để nhận mật khẩu mới
+                </p>
+                
+                <form onSubmit={handleForgotPassword}>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: '0.5rem', 
+                      fontWeight: '600',
+                      color: '#495057',
+                      fontSize: '0.875rem'
+                    }}>
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={forgotPasswordEmail}
+                      onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                      placeholder="Nhập email"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #dee2e6',
+                        borderRadius: '0.5rem',
+                        fontSize: '1rem',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  {forgotPasswordError && (
+                    <div style={{
+                      padding: '0.75rem',
+                      marginBottom: '1rem',
+                      backgroundColor: '#f8d7da',
+                      color: '#721c24',
+                      borderRadius: '0.25rem',
+                      fontSize: '0.875rem'
+                    }}>
+                      {forgotPasswordError}
+                    </div>
+                  )}
+
+                  {forgotPasswordSuccess && (
+                    <div style={{
+                      padding: '0.75rem',
+                      marginBottom: '1rem',
+                      backgroundColor: '#d4edda',
+                      color: '#155724',
+                      borderRadius: '0.25rem',
+                      fontSize: '0.875rem'
+                    }}>
+                      {forgotPasswordSuccess}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPassword(false);
+                        setForgotPasswordEmail('');
+                        setForgotPasswordError('');
+                        setForgotPasswordSuccess('');
+                      }}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        border: '1px solid #dee2e6',
+                        borderRadius: '0.5rem',
+                        backgroundColor: 'white',
+                        color: '#495057',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={forgotPasswordLoading}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        border: 'none',
+                        borderRadius: '0.5rem',
+                        backgroundColor: forgotPasswordLoading ? '#6c757d' : '#667eea',
+                        color: 'white',
+                        cursor: forgotPasswordLoading ? 'not-allowed' : 'pointer',
+                        fontSize: '0.875rem',
+                        fontWeight: '600',
+                        opacity: forgotPasswordLoading ? 0.6 : 1
+                      }}
+                    >
+                      {forgotPasswordLoading ? 'Đang gửi...' : 'Gửi'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>

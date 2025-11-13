@@ -112,7 +112,7 @@ const ImportOrders = () => {
   const handleSupplierFilter = (value) => {
     setSupplierFilter(value);
     dispatch(setFilters({ supplierId: value }));
-    resetPagination();
+    resetPagination(); // Reset về page 1
   };
 
   const handleDateRangeChange = (dates) => {
@@ -127,7 +127,7 @@ const ImportOrders = () => {
     } else {
       dispatch(setFilters({ startDate: null, endDate: null }));
     }
-    resetPagination();
+    resetPagination(); // Reset về page 1 khi thay đổi date range
   };
 
   const handleResetFilters = () => {

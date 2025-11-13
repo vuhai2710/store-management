@@ -165,7 +165,9 @@ public class CartServiceImpl implements CartService {
      * 1. Lấy cart và cart item
      * 2. Kiểm tra quyền: Cart item phải thuộc về giỏ hàng của customer hiện tại
      * 3. Xóa cart item khỏi database
-     * 4. Trả về giỏ hàng đã được cập nhật
+     * 4. Flush transaction để commit ngay lập tức
+     * 5. Reload cart từ database để đảm bảo dữ liệu mới nhất
+     * 6. Trả về giỏ hàng đã được cập nhật
      */
     @Override
     public CartDTO removeCartItem(Integer customerId, Integer itemId) {
@@ -183,9 +185,14 @@ public class CartServiceImpl implements CartService {
 
         // Xóa cart item
         cartItemRepository.delete(cartItem);
+        // Flush transaction để commit ngay lập tức, tránh cache issue
+        cartItemRepository.flush();
         
-        // Trả về giỏ hàng đã được cập nhật
-        return getCart(customerId);
+        // Reload cart từ database để đảm bảo dữ liệu mới nhất (sau khi đã flush)
+        Cart updatedCart = cartRepository.findByCustomerIdCustomer(customerId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy giỏ hàng"));
+        
+        return cartMapper.toDTO(updatedCart);
     }
 
     /**

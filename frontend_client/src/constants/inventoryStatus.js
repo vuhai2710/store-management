@@ -1,0 +1,25 @@
+/**
+ * Inventory Status Constants
+ */
+export const INVENTORY_STATUS = {
+  IN_STOCK: 'IN_STOCK',
+  OUT_OF_STOCK: 'OUT_OF_STOCK',
+  COMING_SOON: 'COMING_SOON',
+};
+
+export const INVENTORY_STATUS_LABELS = {
+  [INVENTORY_STATUS.IN_STOCK]: 'Còn hàng',
+  [INVENTORY_STATUS.OUT_OF_STOCK]: 'Hết hàng',
+  [INVENTORY_STATUS.COMING_SOON]: 'Sắp về',
+};
+
+export const INVENTORY_STATUS_COLORS = {
+  [INVENTORY_STATUS.IN_STOCK]: '#28a745',
+  [INVENTORY_STATUS.OUT_OF_STOCK]: '#dc3545',
+  [INVENTORY_STATUS.COMING_SOON]: '#ffc107',
+};
+
+
+
+
+

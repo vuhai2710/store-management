@@ -1,0 +1,28 @@
+/**
+ * Order Status Constants
+ */
+export const ORDER_STATUS = {
+  PENDING: 'PENDING',
+  CONFIRMED: 'CONFIRMED',
+  COMPLETED: 'COMPLETED',
+  CANCELED: 'CANCELED',
+};
+
+export const ORDER_STATUS_LABELS = {
+  [ORDER_STATUS.PENDING]: 'Đang chờ',
+  [ORDER_STATUS.CONFIRMED]: 'Đã xác nhận',
+  [ORDER_STATUS.COMPLETED]: 'Hoàn thành',
+  [ORDER_STATUS.CANCELED]: 'Đã hủy',
+};
+
+export const ORDER_STATUS_COLORS = {
+  [ORDER_STATUS.PENDING]: '#ffc107',
+  [ORDER_STATUS.CONFIRMED]: '#17a2b8',
+  [ORDER_STATUS.COMPLETED]: '#28a745',
+  [ORDER_STATUS.CANCELED]: '#dc3545',
+};
+
+
+
+
+
