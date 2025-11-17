@@ -49,7 +49,8 @@ export const API_ENDPOINTS = {
     MY_ORDERS: "/orders/my-orders",
     MY_ORDER_BY_ID: (orderId) => `/orders/my-orders/${orderId}`,
     CANCEL: (orderId) => `/orders/my-orders/${orderId}/cancel`,
-    CONFIRM_DELIVERY: (orderId) => `/orders/my-orders/${orderId}/confirm-delivery`,
+    CONFIRM_DELIVERY: (orderId) =>
+      `/orders/my-orders/${orderId}/confirm-delivery`,
   },
 
   // Shipping Addresses
@@ -95,6 +96,7 @@ export const API_ENDPOINTS = {
     MY_CONVERSATION: "/chat/conversations/my",
     CONVERSATION_MESSAGES: (id) => `/chat/conversations/${id}/messages`,
     CLOSE_CONVERSATION: (id) => `/chat/conversations/${id}/close`,
+    MARK_VIEWED: (id) => `/chat/conversations/${id}/mark-viewed`,
   },
 
   // Promotions
@@ -112,5 +114,3 @@ export const API_ENDPOINTS = {
     DELETE: (reviewId) => `/reviews/${reviewId}`,
   },
 };
-
-

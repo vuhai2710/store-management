@@ -26,13 +26,17 @@ export const reviewService = {
    * @param {Object} params - Query parameters
    * @param {number} params.pageNo - Page number
    * @param {number} params.pageSize - Page size
+   * @param {number} params.rating - Filter by rating (optional)
    * @param {string} params.sortBy - Sort by field
    * @param {string} params.sortDirection - Sort direction (ASC/DESC)
    * @returns {Promise<PageResponse<ProductReviewDTO>>}
    */
   getProductReviews: async (productId, params = {}) => {
-    const { pageNo = 1, pageSize = 10, sortBy = 'createdAt', sortDirection = 'DESC' } = params;
+    const { pageNo = 1, pageSize = 10, rating = null, sortBy = 'createdAt', sortDirection = 'DESC' } = params;
     const queryParams = { pageNo, pageSize, sortBy, sortDirection };
+    if (rating !== null && rating !== undefined) {
+      queryParams.rating = rating;
+    }
     const resp = await api.get(API_ENDPOINTS.REVIEWS.GET_PRODUCT_REVIEWS(productId), { params: queryParams });
     return unwrap(resp);
   },

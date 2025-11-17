@@ -161,6 +161,7 @@ export const API_ENDPOINTS = {
     CONVERSATION_BY_ID: (id) => `/chat/conversations/${id}`,
     CONVERSATION_MESSAGES: (id) => `/chat/conversations/${id}/messages`,
     CLOSE_CONVERSATION: (id) => `/chat/conversations/${id}/close`,
+    MARK_VIEWED: (id) => `/chat/conversations/${id}/mark-viewed`,
   },
 
   // Reviews

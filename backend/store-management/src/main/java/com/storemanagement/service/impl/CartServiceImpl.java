@@ -14,6 +14,7 @@ import com.storemanagement.repository.CustomerRepository;
 import com.storemanagement.repository.ProductRepository;
 import com.storemanagement.service.CartService;
 import com.storemanagement.utils.ProductStatus;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class CartServiceImpl implements CartService {
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
     private final CartMapper cartMapper;
+    private final EntityManager entityManager;
 
     /**
      * Lấy giỏ hàng của customer
@@ -166,8 +168,9 @@ public class CartServiceImpl implements CartService {
      * 2. Kiểm tra quyền: Cart item phải thuộc về giỏ hàng của customer hiện tại
      * 3. Xóa cart item khỏi database
      * 4. Flush transaction để commit ngay lập tức
-     * 5. Reload cart từ database để đảm bảo dữ liệu mới nhất
-     * 6. Trả về giỏ hàng đã được cập nhật
+     * 5. Clear EntityManager cache để tránh lấy dữ liệu cũ
+     * 6. Reload cart từ database để đảm bảo dữ liệu mới nhất
+     * 7. Trả về giỏ hàng đã được cập nhật
      */
     @Override
     public CartDTO removeCartItem(Integer customerId, Integer itemId) {
@@ -185,10 +188,12 @@ public class CartServiceImpl implements CartService {
 
         // Xóa cart item
         cartItemRepository.delete(cartItem);
-        // Flush transaction để commit ngay lập tức, tránh cache issue
-        cartItemRepository.flush();
         
-        // Reload cart từ database để đảm bảo dữ liệu mới nhất (sau khi đã flush)
+        // Flush và clear để đảm bảo dữ liệu được commit và cache được xóa
+        cartItemRepository.flush();
+        entityManager.clear(); // Clear cache để tránh lấy dữ liệu cũ
+        
+        // Reload cart từ database để đảm bảo dữ liệu mới nhất (sau khi đã flush và clear cache)
         Cart updatedCart = cartRepository.findByCustomerIdCustomer(customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy giỏ hàng"));
         

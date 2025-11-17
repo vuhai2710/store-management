@@ -149,6 +149,11 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         if (hoursSinceCreation >= 24) {
             throw new RuntimeException("Chỉ có thể chỉnh sửa đánh giá trong vòng 24 giờ sau khi tạo");
         }
+        
+        // Validate edit count: chỉ cho phép edit 1 lần
+        if (review.getEditCount() >= 1) {
+            throw new RuntimeException("Chỉ được phép chỉnh sửa đánh giá 1 lần");
+        }
 
         // Validate rating (1-5)
         if (request.getRating() < 1 || request.getRating() > 5) {
@@ -163,6 +168,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         // Update review
         review.setRating(request.getRating());
         review.setComment(request.getComment().trim());
+        review.setEditCount(review.getEditCount() + 1); // Tăng edit count
         review = productReviewRepository.save(review);
 
         log.info("Review updated successfully with ID: {}", review.getIdReview());
@@ -227,6 +233,49 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         // Delete review (admin/employee can delete anytime)
         productReviewRepository.delete(review);
         log.info("Review deleted successfully by admin/employee with ID: {}", reviewId);
+    }
+    
+    @Override
+    public ProductReviewDTO replyToReview(Integer reviewId, String adminReply) {
+        log.info("Admin replying to review ID: {}", reviewId);
+        
+        // Get review
+        ProductReview review = productReviewRepository.findById(reviewId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đánh giá"));
+        
+        // Validate admin reply not empty
+        if (adminReply == null || adminReply.trim().isEmpty()) {
+            throw new RuntimeException("Admin reply không được để trống");
+        }
+        
+        // Set admin reply
+        review.setAdminReply(adminReply.trim());
+        review = productReviewRepository.save(review);
+        
+        log.info("Admin replied to review ID: {}", reviewId);
+        return productReviewMapper.toDTO(review);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<ProductReviewDTO> getProductReviewsByRating(Integer productId, Integer rating, Pageable pageable) {
+        log.info("Getting reviews for product ID: {} with rating: {}", productId, rating);
+        
+        // Validate product exists
+        if (!productRepository.existsById(productId)) {
+            throw new EntityNotFoundException("Không tìm thấy sản phẩm");
+        }
+        
+        // Validate rating (1-5)
+        if (rating < 1 || rating > 5) {
+            throw new RuntimeException("Rating phải từ 1 đến 5");
+        }
+        
+        // Lấy reviews với rating chính xác (do rating là integer nên đã làm tròn sẵn)
+        Page<ProductReview> reviews = productReviewRepository
+                .findByProductIdProductAndRatingOrderByCreatedAtDesc(productId, rating, pageable);
+        
+        return PageUtils.toPageResponse(reviews.map(productReviewMapper::toDTO));
     }
 }
 

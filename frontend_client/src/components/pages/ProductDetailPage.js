@@ -5,6 +5,7 @@ import styles from '../../styles/styles';
 import StarRating from '../layout/StarRating';
 import ProductCard from '../shared/ProductCard';
 import LoadingSpinner from '../common/LoadingSpinner';
+import ReviewSection from '../common/ReviewSection';
 import { productsService } from '../../services/productsService';
 import { getImageUrl, formatPrice } from '../../utils/formatUtils';
 import { INVENTORY_STATUS, INVENTORY_STATUS_LABELS, INVENTORY_STATUS_COLORS } from '../../constants/inventoryStatus';
@@ -26,6 +27,9 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
   const [canReview, setCanReview] = useState(false); // Check if user can review this product
   const [buyNowLoading, setBuyNowLoading] = useState(false);
   const addToCartButtonRef = useRef(null);
+  
+  // User orders for review
+  const [userOrders, setUserOrders] = useState([]);
   
   // Reviews state
   const [reviews, setReviews] = useState([]);
@@ -89,6 +93,9 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
             });
             const completedOrders = ordersData?.content || [];
             
+            // Save user orders for ReviewSection component
+            setUserOrders(completedOrders);
+            
             // Check if any completed order contains this product
             const currentProductId = productId ? Number(productId) : null;
             const orderDetails = [];
@@ -112,6 +119,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
             console.error('Error checking purchase status:', orderError);
             setCanReview(false);
             setOrderDetailsForReview([]);
+            setUserOrders([]);
           }
         } else {
           setCanReview(false);
@@ -1063,7 +1071,11 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
             <div>
                 {activeTab === 'description' && <DescriptionBlock />}
                 {activeTab === 'information' && <InformationBlock />}
-                {activeTab === 'reviews' && <ReviewsBlock />}
+                {activeTab === 'reviews' && (
+                  <div style={{ padding: '1rem 0' }}>
+                    <ReviewSection productId={productId} userOrders={userOrders} />
+                  </div>
+                )}
             </div>
         </div>
 

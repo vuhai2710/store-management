@@ -23,6 +23,7 @@ import {
   DeleteOutlined,
   ReloadOutlined,
   EyeOutlined,
+  StarOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import {
@@ -215,6 +216,10 @@ const Products = () => {
   const handleView = (idProduct) => {
     navigate(`/products/${idProduct}`);
   };
+  
+  const handleViewReviews = (idProduct) => {
+    navigate(`/products/${idProduct}/reviews`);
+  };
 
   const columns = useMemo(
     () => [
@@ -279,13 +284,19 @@ const Products = () => {
         title: "Hành động",
         key: "actions",
         fixed: "right",
-        width: 170,
+        width: 200,
         render: (_, record) => (
           <Space>
             <Button
               type="text"
               icon={<EyeOutlined />}
               onClick={() => handleView(record.idProduct)}
+            />
+            <Button
+              type="text"
+              icon={<StarOutlined />}
+              onClick={() => handleViewReviews(record.idProduct)}
+              title="Xem đánh giá"
             />
             <Button
               type="text"

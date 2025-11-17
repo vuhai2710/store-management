@@ -37,6 +37,13 @@ public class ProductReview extends BaseEntity {
 
     @Column(name = "comment", columnDefinition = "TEXT", nullable = false)
     private String comment;
+    
+    @Column(name = "admin_reply", columnDefinition = "TEXT")
+    private String adminReply;
+    
+    @Column(name = "edit_count", nullable = false)
+    @Builder.Default
+    private Integer editCount = 0; // Số lần đã edit, chỉ cho phép edit 1 lần
 }
 
 

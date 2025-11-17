@@ -15,6 +15,9 @@ import java.util.Optional;
 public interface ProductReviewRepository extends JpaRepository<ProductReview, Integer> {
     // Lấy danh sách đánh giá theo sản phẩm
     Page<ProductReview> findByProductIdProductOrderByCreatedAtDesc(Integer productId, Pageable pageable);
+    
+    // Lấy danh sách đánh giá theo sản phẩm và rating
+    Page<ProductReview> findByProductIdProductAndRatingOrderByCreatedAtDesc(Integer productId, Integer rating, Pageable pageable);
 
     // Lấy danh sách đánh giá theo customer
     Page<ProductReview> findByCustomerIdCustomerOrderByCreatedAtDesc(Integer customerId, Pageable pageable);

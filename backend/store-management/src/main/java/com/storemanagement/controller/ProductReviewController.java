@@ -57,11 +57,15 @@ public class ProductReviewController {
      *
      * Endpoint: GET /api/v1/products/{productId}/reviews
      * Authentication: Required (CUSTOMER, ADMIN, EMPLOYEE)
+     * 
+     * Query params:
+     * - rating: Lọc theo rating (1-5), nếu lẻ sẽ làm tròn (4.1 → 4)
      */
     @GetMapping("/products/{productId}/reviews")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<PageResponse<ProductReviewDTO>>> getProductReviews(
             @PathVariable Integer productId,
+            @RequestParam(required = false) Integer rating,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -69,7 +73,15 @@ public class ProductReviewController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<ProductReviewDTO> reviews = productReviewService.getProductReviews(productId, pageable);
+        PageResponse<ProductReviewDTO> reviews;
+        if (rating != null) {
+            // Filter by rating
+            reviews = productReviewService.getProductReviewsByRating(productId, rating, pageable);
+        } else {
+            // Get all reviews
+            reviews = productReviewService.getProductReviews(productId, pageable);
+        }
+        
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đánh giá thành công", reviews));
     }
 
@@ -177,6 +189,21 @@ public class ProductReviewController {
     public ResponseEntity<ApiResponse<Void>> deleteReviewByAdmin(@PathVariable Integer reviewId) {
         productReviewService.deleteReviewByAdmin(reviewId);
         return ResponseEntity.ok(ApiResponse.success("Xóa đánh giá thành công", null));
+    }
+    
+    /**
+     * Admin/Employee: Trả lời đánh giá
+     *
+     * Endpoint: POST /api/v1/admin/reviews/{reviewId}/reply
+     * Authentication: Required (ADMIN, EMPLOYEE)
+     */
+    @PostMapping("/admin/reviews/{reviewId}/reply")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<ProductReviewDTO>> replyToReview(
+            @PathVariable Integer reviewId,
+            @RequestBody @Valid com.storemanagement.dto.review.AdminReplyRequestDTO request) {
+        ProductReviewDTO review = productReviewService.replyToReview(reviewId, request.getAdminReply());
+        return ResponseEntity.ok(ApiResponse.success("Trả lời đánh giá thành công", review));
     }
 }
 

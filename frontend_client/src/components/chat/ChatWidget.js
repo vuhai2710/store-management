@@ -1,14 +1,14 @@
 // src/components/chat/ChatWidget.js
-import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Minimize2, Maximize2 } from 'lucide-react';
-import { chatService } from '../../services/chatService';
-import { useAuth } from '../../hooks/useAuth';
-import { authService } from '../../services/authService';
-import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
+import React, { useState, useEffect, useRef } from "react";
+import { MessageCircle, X, Send, Minimize2, Maximize2 } from "lucide-react";
+import { chatService } from "../../services/chatService";
+import { useAuth } from "../../hooks/useAuth";
+import { authService } from "../../services/authService";
+import SockJS from "sockjs-client";
+import { Client } from "@stomp/stompjs";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-const WS_URL = API_BASE_URL + '/ws';
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const WS_URL = API_BASE_URL + "/ws";
 
 const ChatWidget = () => {
   const { isAuthenticated, user, customer } = useAuth();
@@ -16,22 +16,31 @@ const ChatWidget = () => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [conversation, setConversation] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [connected, setConnected] = useState(false);
+  const [supportAgentName, setSupportAgentName] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const conversationIdRef = useRef(null);
   const stompClientRef = useRef(null);
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      // Use instant scroll without smooth animation
+      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+    }
   };
 
   useEffect(() => {
     if (messages.length > 0) {
-      scrollToBottom();
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
     }
   }, [messages]);
 
@@ -40,7 +49,21 @@ const ChatWidget = () => {
     if (isAuthenticated && isOpen && !conversation) {
       initializeConversation();
     }
-  }, [isAuthenticated, isOpen]);
+
+    // Mark conversation as viewed when opening widget
+    if (isAuthenticated && isOpen && conversation) {
+      chatService
+        .markConversationAsViewed(
+          conversation.idConversation || conversation.id
+        )
+        .then(() => {
+          console.log("[ChatWidget] Conversation marked as viewed");
+        })
+        .catch((err) => {
+          console.error("[ChatWidget] Error marking as viewed:", err);
+        });
+    }
+  }, [isAuthenticated, isOpen, conversation]);
 
   // Cleanup when user logs out
   useEffect(() => {
@@ -48,8 +71,8 @@ const ChatWidget = () => {
       disconnectWebSocket();
       setConversation(null);
       setMessages([]);
-      setNewMessage('');
-      setError('');
+      setNewMessage("");
+      setError("");
       setIsOpen(false);
       setIsMinimized(false);
     }
@@ -62,7 +85,7 @@ const ChatWidget = () => {
         try {
           stompClientRef.current.deactivate();
         } catch (error) {
-          console.error('Error disconnecting WebSocket on unmount:', error);
+          console.error("Error disconnecting WebSocket on unmount:", error);
         } finally {
           stompClientRef.current = null;
         }
@@ -74,11 +97,11 @@ const ChatWidget = () => {
   const initializeConversation = async () => {
     try {
       setLoading(true);
-      setError('');
-      
+      setError("");
+
       // Disconnect existing WebSocket if any
       disconnectWebSocket();
-      
+
       // Get or create conversation
       let conversationData = null;
       try {
@@ -91,32 +114,68 @@ const ChatWidget = () => {
       setConversation(conversationData);
       const convId = conversationData?.idConversation || conversationData?.id;
       conversationIdRef.current = convId;
-      
+
       // Load messages
       if (convId) {
         await loadMessages(convId);
         // Connect to WebSocket
         connectWebSocket(convId);
+        // Mark conversation as viewed
+        chatService
+          .markConversationAsViewed(convId)
+          .catch((err) =>
+            console.error("Error marking conversation as viewed:", err)
+          );
       }
     } catch (error) {
-      console.error('Error initializing conversation:', error);
-      setError('Không thể khởi tạo chat. Vui lòng thử lại sau.');
+      console.error("Error initializing conversation:", error);
+      setError("Không thể khởi tạo chat. Vui lòng thử lại sau.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper to parse dd/MM/yyyy HH:mm:ss format
+  const parseVietnameseDate = (dateString) => {
+    if (!dateString) return null;
+    try {
+      // Format: "13/11/2025 19:25:46"
+      const parts = dateString.split(" ");
+      if (parts.length !== 2) return null;
+
+      const [datePart, timePart] = parts;
+      const [day, month, year] = datePart.split("/");
+      const [hours, minutes, seconds] = timePart.split(":");
+
+      return new Date(year, month - 1, day, hours, minutes, seconds);
+    } catch (e) {
+      return null;
     }
   };
 
   // Load messages
   const loadMessages = async (conversationId) => {
     try {
-      const messagesData = await chatService.getConversationMessages(conversationId, {
-        pageNo: 1,
-        pageSize: 50,
-      });
-      setMessages(messagesData?.content || []);
+      const messagesData = await chatService.getConversationMessages(
+        conversationId,
+        {
+          pageNo: 1,
+          pageSize: 50,
+        }
+      );
+      const msgs = messagesData?.content || [];
+      setMessages(msgs);
+
+      // Find the most recent employee/admin message to get support agent name
+      const supportMsg = [...msgs]
+        .reverse()
+        .find((m) => m.senderType === "EMPLOYEE" || m.senderType === "ADMIN");
+      if (supportMsg && supportMsg.senderName) {
+        setSupportAgentName(supportMsg.senderName);
+      }
     } catch (error) {
-      console.error('Error loading messages:', error);
-      setError('Không thể tải tin nhắn. Vui lòng thử lại sau.');
+      console.error("Error loading messages:", error);
+      setError("Không thể tải tin nhắn. Vui lòng thử lại sau.");
     }
   };
 
@@ -126,7 +185,7 @@ const ChatWidget = () => {
       try {
         stompClientRef.current.deactivate();
       } catch (error) {
-        console.error('Error disconnecting WebSocket:', error);
+        console.error("Error disconnecting WebSocket:", error);
       } finally {
         stompClientRef.current = null;
         setConnected(false);
@@ -140,8 +199,8 @@ const ChatWidget = () => {
       // Get token
       const token = authService.getToken();
       if (!token) {
-        console.error('No token found for WebSocket connection');
-        setError('Vui lòng đăng nhập để sử dụng chat.');
+        console.error("No token found for WebSocket connection");
+        setError("Vui lòng đăng nhập để sử dụng chat.");
         return;
       }
 
@@ -158,63 +217,90 @@ const ChatWidget = () => {
           Authorization: `Bearer ${token}`,
         },
         onConnect: (frame) => {
-          console.log('WebSocket connected', frame);
+          console.log("WebSocket connected", frame);
           setConnected(true);
-          setError('');
-          
+          setError("");
+
           // Subscribe to conversation messages
           client.subscribe(`/topic/chat.${conversationId}`, (message) => {
             try {
               const messageData = JSON.parse(message.body);
-              setMessages(prev => {
+
+              // Update support agent name if message is from EMPLOYEE or ADMIN
+              if (
+                (messageData.senderType === "EMPLOYEE" ||
+                  messageData.senderType === "ADMIN") &&
+                messageData.senderName
+              ) {
+                setSupportAgentName(messageData.senderName);
+              }
+
+              // Increment unread count if message is from EMPLOYEE/ADMIN and widget is closed
+              const userId = customer?.idUser || user?.idUser;
+              if (
+                (messageData.senderType === "EMPLOYEE" ||
+                  messageData.senderType === "ADMIN") &&
+                messageData.senderId !== userId
+              ) {
+                // Only increment if widget is completely closed (not just minimized)
+                setIsOpen((currentIsOpen) => {
+                  if (!currentIsOpen) {
+                    setUnreadCount((prev) => prev + 1);
+                  }
+                  return currentIsOpen;
+                });
+              }
+
+              setMessages((prev) => {
                 // Check if message already exists to avoid duplicates
-                const exists = prev.some(m => m.idMessage === messageData.idMessage);
+                const exists = prev.some(
+                  (m) => m.idMessage === messageData.idMessage
+                );
                 if (exists) return prev;
                 return [...prev, messageData];
               });
             } catch (error) {
-              console.error('Error parsing message:', error);
+              console.error("Error parsing message:", error);
             }
           });
         },
         onStompError: (frame) => {
-          console.error('STOMP error:', frame);
+          console.error("STOMP error:", frame);
           setConnected(false);
-          setError('Lỗi kết nối chat. Vui lòng thử lại.');
+          setError("Lỗi kết nối chat. Vui lòng thử lại.");
         },
         onWebSocketClose: () => {
-          console.log('WebSocket closed');
+          console.log("WebSocket closed");
           setConnected(false);
         },
         onDisconnect: () => {
-          console.log('WebSocket disconnected');
+          console.log("WebSocket disconnected");
           setConnected(false);
         },
         onWebSocketError: (event) => {
-          console.error('WebSocket error:', event);
-          setError('Không thể kết nối chat. Vui lòng thử lại sau.');
+          console.error("WebSocket error:", event);
+          setError("Không thể kết nối chat. Vui lòng thử lại sau.");
         },
       });
 
       client.activate();
       stompClientRef.current = client;
     } catch (error) {
-      console.error('Error connecting to WebSocket:', error);
-      setError('Không thể kết nối chat. Vui lòng thử lại sau.');
+      console.error("Error connecting to WebSocket:", error);
+      setError("Không thể kết nối chat. Vui lòng thử lại sau.");
     }
   };
-
 
   // Send message
   const sendMessage = async (e) => {
     e.preventDefault();
-    
+
     if (!newMessage.trim() || !stompClientRef.current || !connected) {
       return;
     }
 
     if (!conversationIdRef.current) {
-      setError('Chưa khởi tạo conversation. Vui lòng thử lại.');
+      setError("Chưa khởi tạo conversation. Vui lòng thử lại.");
       return;
     }
 
@@ -222,40 +308,43 @@ const ChatWidget = () => {
       // Backend expects senderId to be idUser (from JWT token), not idCustomer
       // CustomerDTO contains idUser field
       const userId = customer?.idUser || user?.idUser;
-      
-      console.log('[ChatWidget] Sending message:', {
+
+      console.log("[ChatWidget] Sending message:", {
         customer,
         user,
         userId,
-        conversationId: conversationIdRef.current
+        conversationId: conversationIdRef.current,
       });
-      
+
       if (!userId) {
-        console.error('[ChatWidget] Cannot determine userId:', { customer, user });
-        setError('Không thể xác định người dùng. Vui lòng đăng nhập lại.');
+        console.error("[ChatWidget] Cannot determine userId:", {
+          customer,
+          user,
+        });
+        setError("Không thể xác định người dùng. Vui lòng đăng nhập lại.");
         return;
       }
-      
+
       const messageData = {
         conversationId: conversationIdRef.current,
         senderId: userId,
-        senderType: 'CUSTOMER',
+        senderType: "CUSTOMER",
         message: newMessage.trim(),
       };
 
-      console.log('[ChatWidget] Message data to send:', messageData);
+      console.log("[ChatWidget] Message data to send:", messageData);
 
       // Send message via WebSocket
       stompClientRef.current.publish({
-        destination: '/app/chat.send',
+        destination: "/app/chat.send",
         body: JSON.stringify(messageData),
       });
 
       // Clear input
-      setNewMessage('');
+      setNewMessage("");
     } catch (error) {
-      console.error('Error sending message:', error);
-      setError('Không thể gửi tin nhắn. Vui lòng thử lại.');
+      console.error("Error sending message:", error);
+      setError("Không thể gửi tin nhắn. Vui lòng thử lại.");
     }
   };
 
@@ -266,14 +355,15 @@ const ChatWidget = () => {
       disconnectWebSocket();
       setConversation(null);
       setMessages([]);
-      setNewMessage('');
-      setError('');
+      setNewMessage("");
+      setError("");
       setIsOpen(false);
       setIsMinimized(false);
     } else {
       // Open widget: will initialize conversation via useEffect
       setIsOpen(true);
       setIsMinimized(false);
+      setUnreadCount(0); // Reset unread count when opening
     }
   };
 
@@ -291,103 +381,138 @@ const ChatWidget = () => {
     <>
       {/* Chat Button (Bottom Right) */}
       {!isOpen && (
-        <button
-          onClick={toggleWidget}
+        <div
           style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0, 123, 255, 0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
             zIndex: 1000,
-            transition: 'transform 0.2s, box-shadow 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.1)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 123, 255, 0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 123, 255, 0.4)';
-          }}
-        >
-          <MessageCircle size={28} />
-        </button>
+          }}>
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <button
+              onClick={toggleWidget}
+              style={{
+                width: "60px",
+                height: "60px",
+                borderRadius: "50%",
+                backgroundColor: "#007bff",
+                color: "white",
+                border: "none",
+                cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(0, 123, 255, 0.4)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "transform 0.2s, box-shadow 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.1)";
+                e.currentTarget.style.boxShadow =
+                  "0 6px 16px rgba(0, 123, 255, 0.5)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 12px rgba(0, 123, 255, 0.4)";
+              }}>
+              <MessageCircle size={28} />
+            </button>
+            {unreadCount > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "-5px",
+                  right: "-5px",
+                  backgroundColor: "#dc3545",
+                  color: "white",
+                  borderRadius: "50%",
+                  width: "24px",
+                  height: "24px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "0.75rem",
+                  fontWeight: "bold",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  zIndex: 1001,
+                }}>
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Chat Widget (Bottom Right) */}
       {isOpen && (
         <div
           style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            width: isMinimized ? '300px' : '380px',
-            height: isMinimized ? '60px' : '600px',
-            backgroundColor: 'white',
-            borderRadius: '0.5rem',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            border: '1px solid #dee2e6',
-            display: 'flex',
-            flexDirection: 'column',
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            width: isMinimized ? "300px" : "380px",
+            height: isMinimized ? "60px" : "600px",
+            maxWidth: "calc(100vw - 2rem)",
+            maxHeight: "calc(100vh - 2rem)",
+            backgroundColor: "white",
+            borderRadius: "0.5rem",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+            border: "1px solid #dee2e6",
+            display: "flex",
+            flexDirection: "column",
             zIndex: 1001,
-            transition: 'all 0.3s'
-          }}
-        >
+            transition: "all 0.3s",
+          }}>
           {/* Header */}
           <div
             style={{
-              padding: '1rem',
-              backgroundColor: '#007bff',
-              color: 'white',
-              borderRadius: '0.5rem 0.5rem 0 0',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              cursor: 'pointer'
+              padding: "1rem",
+              backgroundColor: "#007bff",
+              color: "white",
+              borderRadius: "0.5rem 0.5rem 0 0",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              cursor: "pointer",
             }}
-            onClick={toggleMinimize}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            onClick={toggleMinimize}>
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <MessageCircle size={20} />
-              <span style={{ fontWeight: '600', fontSize: '1rem' }}>Chat với Admin</span>
+              <span style={{ fontWeight: "600", fontSize: "1rem" }}>
+                Chat với Admin
+              </span>
               {connected && (
                 <span
                   style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: '#28a745',
-                    marginLeft: '0.5rem'
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    backgroundColor: "#28a745",
+                    marginLeft: "0.5rem",
                   }}
                   title="Đã kết nối"
                 />
               )}
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleMinimize();
                 }}
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'white',
-                  cursor: 'pointer',
-                  padding: '0.25rem'
-                }}
-              >
-                {isMinimized ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
+                  background: "none",
+                  border: "none",
+                  color: "white",
+                  cursor: "pointer",
+                  padding: "0.25rem",
+                }}>
+                {isMinimized ? (
+                  <Maximize2 size={18} />
+                ) : (
+                  <Minimize2 size={18} />
+                )}
               </button>
               <button
                 onClick={(e) => {
@@ -395,13 +520,12 @@ const ChatWidget = () => {
                   toggleWidget();
                 }}
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'white',
-                  cursor: 'pointer',
-                  padding: '0.25rem'
-                }}
-              >
+                  background: "none",
+                  border: "none",
+                  color: "white",
+                  cursor: "pointer",
+                  padding: "0.25rem",
+                }}>
                 <X size={18} />
               </button>
             </div>
@@ -410,20 +534,72 @@ const ChatWidget = () => {
           {/* Chat Content */}
           {!isMinimized && (
             <>
-              {/* Messages */}
+              {/* Chat Header - Hiển thị đang chat với ai */}
               <div
                 style={{
-                  flex: 1,
-                  overflowY: 'auto',
-                  padding: '1rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem',
-                  backgroundColor: '#f8f9fa'
+                  padding: "0.75rem 1rem",
+                  backgroundColor: "#e9ecef",
+                  borderBottom: "1px solid #dee2e6",
+                  fontSize: "0.875rem",
+                  fontWeight: "500",
+                  color: "#495057",
+                }}>
+                {supportAgentName ? (
+                  <>
+                    Đang chat với <strong>{supportAgentName}</strong>
+                  </>
+                ) : (
+                  <>
+                    Đang chat với <strong>Hỗ trợ</strong>
+                  </>
+                )}
+              </div>
+
+              {/* Messages */}
+              <div
+                ref={messagesContainerRef}
+                onWheel={(e) => {
+                  // Prevent scroll propagation to parent page
+                  const container = e.currentTarget;
+                  const { scrollTop, scrollHeight, clientHeight } = container;
+                  const isAtTop = scrollTop === 0;
+                  const isAtBottom =
+                    Math.abs(scrollHeight - clientHeight - scrollTop) < 1;
+
+                  // Only allow propagation if scrolling beyond boundaries
+                  const scrollingUp = e.deltaY < 0;
+                  const scrollingDown = e.deltaY > 0;
+
+                  if (
+                    (isAtTop && scrollingUp) ||
+                    (isAtBottom && scrollingDown)
+                  ) {
+                    // Allow propagation when at boundaries
+                    return;
+                  }
+
+                  // Stop propagation when scrolling within content
+                  e.stopPropagation();
                 }}
-              >
+                style={{
+                  flex: 1,
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  padding: "1rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.75rem",
+                  backgroundColor: "#f8f9fa",
+                  maxHeight: "100%",
+                  position: "relative",
+                }}>
                 {loading && (
-                  <div style={{ textAlign: 'center', color: '#6c757d', padding: '2rem' }}>
+                  <div
+                    style={{
+                      textAlign: "center",
+                      color: "#6c757d",
+                      padding: "2rem",
+                    }}>
                     Đang tải tin nhắn...
                   </div>
                 )}
@@ -431,70 +607,152 @@ const ChatWidget = () => {
                 {error && (
                   <div
                     style={{
-                      padding: '0.75rem',
-                      backgroundColor: '#f8d7da',
-                      color: '#721c24',
-                      borderRadius: '0.25rem',
-                      fontSize: '0.875rem',
-                      marginBottom: '0.5rem'
-                    }}
-                  >
+                      padding: "0.75rem",
+                      backgroundColor: "#f8d7da",
+                      color: "#721c24",
+                      borderRadius: "0.25rem",
+                      fontSize: "0.875rem",
+                      marginBottom: "0.5rem",
+                    }}>
                     {error}
                   </div>
                 )}
 
                 {messages.length === 0 && !loading && (
-                  <div style={{ textAlign: 'center', color: '#6c757d', padding: '2rem' }}>
+                  <div
+                    style={{
+                      textAlign: "center",
+                      color: "#6c757d",
+                      padding: "2rem",
+                    }}>
                     <p>Chưa có tin nhắn nào.</p>
-                    <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                    <p style={{ fontSize: "0.875rem", marginTop: "0.5rem" }}>
                       Hãy gửi tin nhắn để bắt đầu chat với admin!
                     </p>
                   </div>
                 )}
 
                 {messages.map((message, index) => {
-                  const isCustomer = message.senderType === 'CUSTOMER';
-                  // Backend uses idUser (from JWT) as senderId, not idCustomer
-                  const userId = user?.idUser || customer?.idUser || user?.id || customer?.id;
-                  const isMyMessage = isCustomer && (message.senderId === userId);
+                  const isCustomer = message.senderType === "CUSTOMER";
+                  const userId = customer?.idUser || user?.idUser;
+                  const isMyMessage = isCustomer && message.senderId === userId;
+
+                  // Helper function để render nội dung tin nhắn (hỗ trợ link và ảnh)
+                  const renderMessageContent = (text) => {
+                    // Regex để detect URL
+                    const urlRegex = /(https?:\/\/[^\s]+)/g;
+                    // Regex để detect URL ảnh
+                    const imageRegex = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i;
+
+                    const parts = text.split(urlRegex);
+
+                    return parts.map((part, i) => {
+                      if (urlRegex.test(part)) {
+                        // Nếu là URL ảnh, hiển thị ảnh
+                        if (imageRegex.test(part)) {
+                          return (
+                            <div key={i} style={{ marginTop: "0.5rem" }}>
+                              <img
+                                src={part}
+                                alt="Hình ảnh"
+                                style={{
+                                  maxWidth: "200px",
+                                  maxHeight: "200px",
+                                  borderRadius: "0.25rem",
+                                  cursor: "pointer",
+                                }}
+                                onClick={() => window.open(part, "_blank")}
+                              />
+                            </div>
+                          );
+                        }
+                        // Nếu là link thường, hiển thị link
+                        return (
+                          <a
+                            key={i}
+                            href={part}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: isMyMessage ? "#fff" : "#007bff",
+                              textDecoration: "underline",
+                              wordBreak: "break-all",
+                            }}>
+                            {part}
+                          </a>
+                        );
+                      }
+                      return <span key={i}>{part}</span>;
+                    });
+                  };
+
+                  // Format thời gian
+                  const formatTime = (dateString) => {
+                    if (!dateString) return "";
+                    try {
+                      const date = new Date(dateString);
+                      if (isNaN(date.getTime())) return "";
+                      return date.toLocaleTimeString("vi-VN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      });
+                    } catch (e) {
+                      return "";
+                    }
+                  };
 
                   return (
                     <div
                       key={message.idMessage || index}
                       style={{
-                        display: 'flex',
-                        justifyContent: isMyMessage ? 'flex-end' : 'flex-start',
-                        marginBottom: '0.5rem'
-                      }}
-                    >
+                        display: "flex",
+                        justifyContent: isMyMessage ? "flex-end" : "flex-start",
+                        marginBottom: "0.5rem",
+                      }}>
                       <div
                         style={{
-                          maxWidth: '70%',
-                          padding: '0.75rem 1rem',
-                          borderRadius: '0.5rem',
-                          backgroundColor: isMyMessage ? '#007bff' : 'white',
-                          color: isMyMessage ? 'white' : '#495057',
-                          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                        }}
-                      >
-                        <div style={{ fontSize: '0.875rem', marginBottom: '0.25rem', fontWeight: '600' }}>
-                          {message.senderName || (isMyMessage ? 'Bạn' : 'Admin')}
-                        </div>
-                        <div style={{ fontSize: '0.875rem', lineHeight: 1.5 }}>
-                          {message.message}
+                          maxWidth: "70%",
+                          padding: "0.75rem 1rem",
+                          borderRadius: "0.5rem",
+                          backgroundColor: isMyMessage ? "#007bff" : "white",
+                          color: isMyMessage ? "white" : "#495057",
+                          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                        }}>
+                        <div
+                          style={{
+                            fontSize: "0.875rem",
+                            lineHeight: 1.5,
+                            wordWrap: "break-word",
+                          }}>
+                          {renderMessageContent(message.message)}
                         </div>
                         {message.createdAt && (
                           <div
                             style={{
-                              fontSize: '0.75rem',
+                              fontSize: "0.75rem",
                               opacity: 0.7,
-                              marginTop: '0.25rem'
-                            }}
-                          >
-                            {new Date(message.createdAt).toLocaleTimeString('vi-VN', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                              marginTop: "0.25rem",
+                              textAlign: "right",
+                            }}>
+                            {(() => {
+                              try {
+                                const date = parseVietnameseDate(
+                                  message.createdAt
+                                );
+                                if (date && !isNaN(date.getTime())) {
+                                  return date.toLocaleString("vi-VN", {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  });
+                                }
+                                return "";
+                              } catch (e) {
+                                return "";
+                              }
+                            })()}
                           </div>
                         )}
                       </div>
@@ -508,12 +766,11 @@ const ChatWidget = () => {
               <form
                 onSubmit={sendMessage}
                 style={{
-                  padding: '1rem',
-                  borderTop: '1px solid #dee2e6',
-                  display: 'flex',
-                  gap: '0.5rem'
-                }}
-              >
+                  padding: "1rem",
+                  borderTop: "1px solid #dee2e6",
+                  display: "flex",
+                  gap: "0.5rem",
+                }}>
                 <input
                   type="text"
                   value={newMessage}
@@ -522,29 +779,32 @@ const ChatWidget = () => {
                   disabled={!connected}
                   style={{
                     flex: 1,
-                    padding: '0.75rem',
-                    border: '1px solid #dee2e6',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.875rem',
-                    outline: 'none'
+                    padding: "0.75rem",
+                    border: "1px solid #dee2e6",
+                    borderRadius: "0.5rem",
+                    fontSize: "0.875rem",
+                    outline: "none",
                   }}
                 />
                 <button
                   type="submit"
                   disabled={!connected || !newMessage.trim()}
                   style={{
-                    padding: '0.75rem 1rem',
-                    backgroundColor: connected && newMessage.trim() ? '#007bff' : '#6c757d',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '0.5rem',
-                    cursor: connected && newMessage.trim() ? 'pointer' : 'not-allowed',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    opacity: connected && newMessage.trim() ? 1 : 0.6
-                  }}
-                >
+                    padding: "0.75rem 1rem",
+                    backgroundColor:
+                      connected && newMessage.trim() ? "#007bff" : "#6c757d",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "0.5rem",
+                    cursor:
+                      connected && newMessage.trim()
+                        ? "pointer"
+                        : "not-allowed",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: connected && newMessage.trim() ? 1 : 0.6,
+                  }}>
                   <Send size={18} />
                 </button>
               </form>
@@ -557,4 +817,3 @@ const ChatWidget = () => {
 };
 
 export default ChatWidget;
-

@@ -61,6 +61,17 @@ public interface ProductReviewService {
      * Admin/Employee: Xóa đánh giá (bất kỳ lúc nào)
      */
     void deleteReviewByAdmin(Integer reviewId);
+    
+    /**
+     * Admin/Employee: Trả lời đánh giá
+     */
+    ProductReviewDTO replyToReview(Integer reviewId, String adminReply);
+    
+    /**
+     * Customer/Admin/Employee: Lấy danh sách đánh giá theo rating (làm tròn)
+     * Ví dụ: rating = 4 sẽ lấy tất cả reviews có rating từ 4.0 - 4.9 (floor function)
+     */
+    PageResponse<ProductReviewDTO> getProductReviewsByRating(Integer productId, Integer rating, Pageable pageable);
 }
 
 

@@ -54,7 +54,15 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(true);
       const response = await authService.login({ username, password }, rememberMe);
       
-      // Fetch customer info
+      // Check if user is ADMIN or EMPLOYEE -> redirect to admin site
+      if (response?.user?.role === 'ROLE_ADMIN' || response?.user?.role === 'ROLE_EMPLOYEE') {
+        const token = authService.getToken();
+        // Redirect to admin site with token
+        window.location.href = `http://localhost:3000?token=${token}`;
+        return response;
+      }
+      
+      // For CUSTOMER, fetch customer info
       const customerData = await customerService.getMyProfile();
       setCustomer(customerData);
       setUser(customerData);

@@ -37,6 +37,12 @@ public class ChatConversation extends BaseEntity {
     @Column(name = "status")
     @Builder.Default
     private ConversationStatus status = ConversationStatus.OPEN;
+    
+    @Column(name = "last_viewed_by_admin_at")
+    private java.time.LocalDateTime lastViewedByAdminAt;
+    
+    @Column(name = "last_viewed_by_customer_at")
+    private java.time.LocalDateTime lastViewedByCustomerAt;
 }
 
 

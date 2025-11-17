@@ -22,6 +22,8 @@ public class ProductReviewDTO extends BaseDTO {
     private Integer idOrderDetail;
     private Integer rating; // 1-5
     private String comment;
+    private String adminReply;
+    private Integer editCount;
 }
 
 

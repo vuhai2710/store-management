@@ -173,6 +173,22 @@ public class ChatController {
         chatService.closeConversation(id);
         return ResponseEntity.ok(ApiResponse.success("Đóng cuộc hội thoại thành công", null));
     }
+    
+    /**
+     * Đánh dấu conversation đã được xem
+     * PUT /api/v1/chat/conversations/{id}/mark-viewed
+     * 
+     * Cập nhật lastViewedByAdminAt hoặc lastViewedByCustomerAt
+     * Điều này giúp tính unread count chính xác hơn
+     */
+    @PutMapping("/conversations/{id}/mark-viewed")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
+    public ResponseEntity<ApiResponse<Void>> markConversationAsViewed(@PathVariable Integer id) {
+        log.info("Marking conversation ID: {} as viewed", id);
+        
+        chatService.markConversationAsViewed(id);
+        return ResponseEntity.ok(ApiResponse.success("Đã đánh dấu cuộc hội thoại đã xem", null));
+    }
 }
 
 
