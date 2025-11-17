@@ -91,7 +91,13 @@ const Orders = () => {
   const handleStatusFilter = (value) => {
     setStatusFilter(value);
     dispatch(setFilters({ status: value }));
-    resetPagination();
+    resetPagination(); // Reset về page 1
+  };
+
+  const handleCustomerIdFilter = (value) => {
+    setCustomerIdFilter(value);
+    dispatch(setFilters({ customerId: value }));
+    resetPagination(); // Reset về page 1
   };
 
   const handleResetFilters = () => {

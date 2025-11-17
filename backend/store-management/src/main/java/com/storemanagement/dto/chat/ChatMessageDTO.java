@@ -32,6 +32,9 @@ public class ChatMessageDTO {
     @JsonProperty("senderName")
     private String senderName;  // Tên người gửi (lấy từ User/Customer/Employee)
     
+    @JsonProperty("senderRole")
+    private String senderRole;  // Role của người gửi: ADMIN, EMPLOYEE, CUSTOMER
+    
     @JsonProperty("message")
     private String message;
     

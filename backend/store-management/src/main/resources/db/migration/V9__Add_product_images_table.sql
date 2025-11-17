@@ -40,3 +40,8 @@ CREATE INDEX idx_product_images_order ON product_images (id_product, display_ord
 
 
 
+
+
+
+
+

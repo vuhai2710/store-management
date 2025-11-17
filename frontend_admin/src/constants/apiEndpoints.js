@@ -161,5 +161,22 @@ export const API_ENDPOINTS = {
     CONVERSATION_BY_ID: (id) => `/chat/conversations/${id}`,
     CONVERSATION_MESSAGES: (id) => `/chat/conversations/${id}/messages`,
     CLOSE_CONVERSATION: (id) => `/chat/conversations/${id}/close`,
+    MARK_VIEWED: (id) => `/chat/conversations/${id}/mark-viewed`,
+  },
+
+  // Reviews
+  REVIEWS: {
+    PRODUCT_REVIEWS: (productId) => `/products/${productId}/reviews`,
+    ALL_REVIEWS: "/admin/reviews",
+    REVIEW_BY_ID: (reviewId) => `/admin/reviews/${reviewId}`,
+    DELETE_REVIEW: (reviewId) => `/admin/reviews/${reviewId}`,
+  },
+
+  // Promotions
+  PROMOTIONS: {
+    BASE: "/admin/promotions",
+    BY_ID: (id) => `/admin/promotions/${id}`,
+    RULES: "/admin/promotion-rules",
+    RULE_BY_ID: (id) => `/admin/promotion-rules/${id}`,
   },
 };

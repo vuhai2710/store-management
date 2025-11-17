@@ -420,6 +420,40 @@ Khi thêm sản phẩm đã có trong giỏ:
 - Kiểm tra trạng thái sản phẩm trước khi hiển thị nút "Thêm vào giỏ"
 - Thông báo rõ ràng lý do không thể thêm
 
+### Issue: Xóa sản phẩm nhưng vẫn còn trong giỏ (FIXED ✅)
+
+**Nguyên nhân:**
+- Hibernate cache không được clear sau khi delete
+- Khi reload cart từ database, Hibernate trả về cached data chứ không query lại
+
+**Giải pháp (Đã fix):**
+1. Thêm `entityManager.clear()` sau khi `flush()` trong method `removeCartItem()`
+2. Clear toàn bộ EntityManager cache để buộc Hibernate query lại database
+3. Đảm bảo dữ liệu trả về là mới nhất sau khi xóa
+
+**Code fix:**
+```java
+@Override
+public CartDTO removeCartItem(Integer customerId, Integer itemId) {
+    // ... validation code ...
+    
+    // Xóa cart item
+    cartItemRepository.delete(cartItem);
+    
+    // Flush và clear để đảm bảo dữ liệu được commit và cache được xóa
+    cartItemRepository.flush();
+    entityManager.clear(); // ⭐ KEY FIX: Clear cache
+    
+    // Reload cart từ database (sẽ query lại thay vì lấy từ cache)
+    Cart updatedCart = cartRepository.findByCustomerIdCustomer(customerId)
+            .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy giỏ hàng"));
+    
+    return cartMapper.toDTO(updatedCart);
+}
+```
+
+**Date Fixed:** November 16, 2025
+
 ---
 
 ## Liên hệ

@@ -102,7 +102,7 @@ const Categories = () => {
   const handleSearch = (value) => {
     setSearchText(value);
     dispatch(setFilters({ categoryName: value || null }));
-    resetPagination();
+    resetPagination(); // Reset về page 1
   };
 
   const handleTableChange = (p, _filters, sorter) => {

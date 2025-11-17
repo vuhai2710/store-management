@@ -12,6 +12,7 @@ import com.storemanagement.service.CustomerService;
 import com.storemanagement.service.GHNService;
 import com.storemanagement.service.OrderService;
 import com.storemanagement.service.PdfService;
+import com.storemanagement.service.PromotionService;
 import com.storemanagement.utils.PageUtils;
 import com.storemanagement.utils.ProductStatus;
 import com.storemanagement.utils.ReferenceType;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +51,9 @@ public class OrderServiceImpl implements OrderService {
     private final ShipmentRepository shipmentRepository;
     private final EntityManager entityManager;
     private final GHNService ghnService;
+    private final PromotionService promotionService;
+    private final PromotionRepository promotionRepository;
+    private final PromotionRuleRepository promotionRuleRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -179,6 +184,29 @@ public class OrderServiceImpl implements OrderService {
             totalAmount = totalAmount.add(itemTotal);
         }
 
+        // ========== PHASE 3.5: PROMOTION/DISCOUNT CALCULATION ==========
+
+        // Calculate discount using PromotionService
+        String promotionCode = request.getPromotionCode();
+        String customerType = customer.getCustomerType() != null ? customer.getCustomerType().name() : "REGULAR";
+        BigDecimal discount = promotionService.calculateDiscountForOrder(totalAmount, promotionCode, customerType);
+
+        // Get promotion and promotion rule if applicable
+        Promotion promotion = null;
+        PromotionRule promotionRule = null;
+
+        if (promotionCode != null && !promotionCode.trim().isEmpty()) {
+            // If promotion code was used, get the promotion
+            promotion = promotionRepository.findByCodeAndIsActiveTrue(promotionCode.trim()).orElse(null);
+        } else {
+            // If no promotion code, check for automatic discount rule
+            LocalDateTime now = LocalDateTime.now();
+            List<PromotionRule> rules = promotionRuleRepository.findApplicableRules(now, totalAmount, customerType);
+            if (!rules.isEmpty()) {
+                promotionRule = rules.get(0); // Get first rule (highest priority)
+            }
+        }
+
         // ========== PHASE 4: ORDER CREATION ==========
 
         // Tạo order với status = PENDING (chờ xác nhận)
@@ -187,11 +215,14 @@ public class OrderServiceImpl implements OrderService {
                 .employee(null) // Customer order, không có employee
                 .status(Order.OrderStatus.PENDING)
                 .totalAmount(totalAmount)
-                .discount(BigDecimal.ZERO) // Chưa có discount
+                .discount(discount) // Discount from promotion or rule
                 .paymentMethod(request.getPaymentMethod())
                 .notes(request.getNotes())
                 .shippingAddress(shippingAddress) // Reference đến shipping address
                 .shippingAddressSnapshot(shippingAddressSnapshot) // Snapshot để bảo vệ
+                .promotion(promotion) // Promotion if coupon code was used
+                .promotionCode(promotionCode) // Promotion code
+                .promotionRule(promotionRule) // Promotion rule if automatic discount was applied
                 .orderDetails(new ArrayList<>())
                 .build();
 
@@ -244,6 +275,19 @@ public class OrderServiceImpl implements OrderService {
 
         // Refresh entity để load finalAmount (generated column từ database)
         entityManager.refresh(savedOrder);
+
+        // ========== PHASE 5.5: RECORD PROMOTION USAGE ==========
+
+        // Record promotion usage if promotion code was used
+        if (promotion != null && savedOrder.getIdOrder() != null) {
+            try {
+                promotionService.recordPromotionUsage(promotion.getIdPromotion(), savedOrder.getIdOrder(), customerId);
+                log.info("Promotion usage recorded for order ID: {}, promotion ID: {}", savedOrder.getIdOrder(), promotion.getIdPromotion());
+            } catch (Exception e) {
+                log.error("Error recording promotion usage for order ID: {}", savedOrder.getIdOrder(), e);
+                // Don't fail the order creation if promotion usage recording fails
+            }
+        }
 
         // ========== PHASE 6: INVENTORY TRANSACTION ==========
 
@@ -361,6 +405,29 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal totalAmount = product.getPrice()
                 .multiply(BigDecimal.valueOf(request.getQuantity()));
 
+        // ========== PHASE 3.5: PROMOTION/DISCOUNT CALCULATION ==========
+
+        // Calculate discount using PromotionService
+        String promotionCode = request.getPromotionCode();
+        String customerType = customer.getCustomerType() != null ? customer.getCustomerType().name() : "REGULAR";
+        BigDecimal discount = promotionService.calculateDiscountForOrder(totalAmount, promotionCode, customerType);
+
+        // Get promotion and promotion rule if applicable
+        Promotion promotion = null;
+        PromotionRule promotionRule = null;
+
+        if (promotionCode != null && !promotionCode.trim().isEmpty()) {
+            // If promotion code was used, get the promotion
+            promotion = promotionRepository.findByCodeAndIsActiveTrue(promotionCode.trim()).orElse(null);
+        } else {
+            // If no promotion code, check for automatic discount rule
+            LocalDateTime now = LocalDateTime.now();
+            List<PromotionRule> rules = promotionRuleRepository.findApplicableRules(now, totalAmount, customerType);
+            if (!rules.isEmpty()) {
+                promotionRule = rules.get(0); // Get first rule (highest priority)
+            }
+        }
+
         // ========== PHASE 4: ORDER CREATION ==========
 
         Order order = Order.builder()
@@ -368,11 +435,14 @@ public class OrderServiceImpl implements OrderService {
                 .employee(null)
                 .status(Order.OrderStatus.PENDING)
                 .totalAmount(totalAmount)
-                .discount(BigDecimal.ZERO)
+                .discount(discount) // Discount from promotion or rule
                 .paymentMethod(request.getPaymentMethod())
                 .notes(request.getNotes())
                 .shippingAddress(shippingAddress)
                 .shippingAddressSnapshot(shippingAddressSnapshot)
+                .promotion(promotion) // Promotion if coupon code was used
+                .promotionCode(promotionCode) // Promotion code
+                .promotionRule(promotionRule) // Promotion rule if automatic discount was applied
                 .orderDetails(new ArrayList<>())
                 .build();
 
@@ -413,6 +483,19 @@ public class OrderServiceImpl implements OrderService {
 
         // Refresh entity để load finalAmount (generated column từ database)
         entityManager.refresh(savedOrder);
+
+        // ========== PHASE 5.5: RECORD PROMOTION USAGE ==========
+
+        // Record promotion usage if promotion code was used
+        if (promotion != null && savedOrder.getIdOrder() != null) {
+            try {
+                promotionService.recordPromotionUsage(promotion.getIdPromotion(), savedOrder.getIdOrder(), customerId);
+                log.info("Promotion usage recorded for order ID: {}, promotion ID: {}", savedOrder.getIdOrder(), promotion.getIdPromotion());
+            } catch (Exception e) {
+                log.error("Error recording promotion usage for order ID: {}", savedOrder.getIdOrder(), e);
+                // Don't fail the order creation if promotion usage recording fails
+            }
+        }
 
         // ========== PHASE 6: INVENTORY TRANSACTION ==========
 
@@ -1058,15 +1141,35 @@ public class OrderServiceImpl implements OrderService {
         // Nếu GHN enabled và có shipping address, thử tích hợp GHN
         if (ghnService.isEnabled() && shippingAddress != null) {
             try {
-                // Note: ShippingAddress entity hiện tại không có districtId và wardCode
-                // Để tích hợp GHN đầy đủ, cần:
-                // 1. Thêm districtId và wardCode vào ShippingAddress entity
-                // 2. Hoặc parse từ address text (không recommended)
-                // Hiện tại skip GHN integration và chỉ tạo Shipment cơ bản
+                // Kiểm tra có đủ thông tin để tích hợp GHN (districtId, wardCode)
+                if (shippingAddress.getDistrictId() != null && shippingAddress.getWardCode() != null) {
+                    log.info("GHN integration: Using districtId={}, wardCode={} from ShippingAddress",
+                            shippingAddress.getDistrictId(), shippingAddress.getWardCode());
 
-                log.info("GHN integration skipped: ShippingAddress does not have districtId/wardCode. " +
-                        "Creating basic shipment only.");
+                    // TODO: Get shop district_id from config or shop information
+                    // For now, we'll skip full GHN integration until shop district is configured
+                    // This is a placeholder for future implementation
+                    // You can add shopDistrictId to GHNConfig if needed
 
+                    // Calculate shipping fee (if shop district is configured)
+                    // GHNCalculateFeeRequestDTO feeRequest = GHNCalculateFeeRequestDTO.builder()
+                    //     .fromDistrictId(ghnConfig.getShopDistrictId()) // TODO: Add to GHNConfig
+                    //     .toDistrictId(shippingAddress.getDistrictId())
+                    //     .toWardCode(shippingAddress.getWardCode())
+                    //     .weight(calculateTotalWeight(order.getOrderDetails()))
+                    //     .insuranceValue(order.getFinalAmount().intValue())
+                    //     .codAmount(order.getFinalAmount().intValue())
+                    //     .build();
+                    //
+                    // GHNCalculateFeeResponseDTO feeResponse = ghnService.calculateShippingFee(feeRequest);
+                    // shipment.setGhnShippingFee(feeResponse.getTotal());
+
+                    log.info("GHN integration: ShippingAddress has districtId/wardCode. " +
+                            "Full GHN integration can be implemented when shop district is configured.");
+                } else {
+                    log.info("GHN integration skipped: ShippingAddress does not have districtId/wardCode. " +
+                            "Creating basic shipment only.");
+                }
             } catch (Exception e) {
                 log.error("Error integrating GHN for order ID: {}. Creating basic shipment only.",
                         order.getIdOrder(), e);

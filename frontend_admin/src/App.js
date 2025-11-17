@@ -16,7 +16,7 @@ import { useAuth } from "./hooks";
 import AppHeader from "./components/layout/AppHeader";
 import AppSidebar from "./components/layout/AppSidebar";
 import Breadcrumbs from "./components/common/Breadcrumbs";
-import FloatingChatButton from "./components/chat/FloatingChatButton";
+import ChatWidget from "./components/chat/ChatWidget";
 
 // Common Components
 // giữ 1 dòng import duy nhất
@@ -32,6 +32,7 @@ import Orders from "./pages/Orders";
 import OrderDetail from "./pages/OrderDetail";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
+import ProductReviews from "./pages/ProductReviews";
 import Customers from "./pages/Customers";
 import CustomerDetail from "./pages/CustomerDetail";
 import Inventory from "./pages/Inventory";
@@ -44,6 +45,7 @@ import Employees from "./pages/Employees";
 import EmployeeDetail from "./pages/EmployeeDetail";
 import Finance from "./pages/Finance";
 import Reports from "./pages/Reports";
+import Promotions from "./pages/Promotions";
 
 const { Content } = Layout;
 
@@ -84,8 +86,12 @@ function App() {
           background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         }}>
         <div style={{ textAlign: "center", color: "white" }}>
-          <div style={{ fontSize: "24px", marginBottom: "16px" }}>Đang tải...</div>
-          <div style={{ fontSize: "14px", opacity: 0.8 }}>Vui lòng chờ trong giây lát</div>
+          <div style={{ fontSize: "24px", marginBottom: "16px" }}>
+            Đang tải...
+          </div>
+          <div style={{ fontSize: "14px", opacity: 0.8 }}>
+            Vui lòng chờ trong giây lát
+          </div>
         </div>
       </div>
     );
@@ -108,8 +114,12 @@ function App() {
           background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         }}>
         <div style={{ textAlign: "center", color: "white" }}>
-          <div style={{ fontSize: "24px", marginBottom: "16px" }}>Đang chuyển hướng...</div>
-          <div style={{ fontSize: "14px", opacity: 0.8 }}>Vui lòng chờ trong giây lát</div>
+          <div style={{ fontSize: "24px", marginBottom: "16px" }}>
+            Đang chuyển hướng...
+          </div>
+          <div style={{ fontSize: "14px", opacity: 0.8 }}>
+            Vui lòng chờ trong giây lát
+          </div>
         </div>
       </div>
     );
@@ -121,14 +131,13 @@ function App() {
       <AppSidebar />
       <Layout>
         <AppHeader user={user} />
-        <Content 
-          style={{ 
-            margin: "24px 16px", 
-            padding: 24, 
+        <Content
+          style={{
+            margin: "24px 16px",
+            padding: 24,
             minHeight: 280,
             transition: "all 0.2s",
-          }}
-        >
+          }}>
           <Breadcrumbs />
           <Routes>
             {/* Public trong authenticated area */}
@@ -193,6 +202,15 @@ function App() {
                 <ProtectedRoute
                   allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
                   <ProductDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/products/:productId/reviews"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
+                  <ProductReviews />
                 </ProtectedRoute>
               }
             />
@@ -327,12 +345,23 @@ function App() {
               }
             />
 
+            {/* Promotions - ADMIN, EMPLOYEE */}
+            <Route
+              path="/promotions"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
+                  <Promotions />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Catch all - redirect to dashboard */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Content>
       </Layout>
-      <FloatingChatButton />
+      <ChatWidget />
     </Layout>
   );
 }
