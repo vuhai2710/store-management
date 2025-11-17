@@ -35,7 +35,7 @@ public class CartServiceImpl implements CartService {
 
     /**
      * Lấy giỏ hàng của customer
-     * 
+     * <p>
      * Logic:
      * - Kiểm tra customer đã có giỏ hàng chưa
      * - Nếu chưa có → Tự động tạo giỏ hàng mới
@@ -51,15 +51,15 @@ public class CartServiceImpl implements CartService {
 
     /**
      * Thêm sản phẩm vào giỏ hàng
-     * 
+     * <p>
      * Logic xử lý:
      * 1. Lấy hoặc tạo giỏ hàng cho customer
      * 2. Kiểm tra sản phẩm tồn tại
      * 3. Validate trạng thái sản phẩm (không cho OUT_OF_STOCK, DISCONTINUED)
      * 4. Validate tồn kho (stockQuantity >= quantity)
      * 5. Kiểm tra sản phẩm đã có trong giỏ chưa:
-     *    - Nếu đã có → Cộng thêm quantity vào số lượng hiện tại
-     *    - Nếu chưa có → Tạo cart item mới
+     * - Nếu đã có → Cộng thêm quantity vào số lượng hiện tại
+     * - Nếu chưa có → Tạo cart item mới
      * 6. Validate lại tồn kho sau khi cộng (nếu item đã tồn tại)
      * 7. Trả về giỏ hàng đã được cập nhật
      */
@@ -67,7 +67,7 @@ public class CartServiceImpl implements CartService {
     public CartDTO addToCart(Integer customerId, AddToCartRequestDto request) {
         // Bước 1: Lấy hoặc tạo giỏ hàng
         Cart cart = getOrCreateCart(customerId);
-        
+
         // Bước 2: Kiểm tra sản phẩm tồn tại
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy sản phẩm"));
@@ -96,12 +96,12 @@ public class CartServiceImpl implements CartService {
         if (existingItem != null) {
             // Sản phẩm đã có trong giỏ → Cộng thêm quantity
             int newQuantity = existingItem.getQuantity() + request.getQuantity();
-            
+
             // Validate lại tồn kho sau khi cộng
             if (product.getStockQuantity() < newQuantity) {
                 throw new RuntimeException("Số lượng sản phẩm không đủ. Còn lại: " + product.getStockQuantity());
             }
-            
+
             // Cập nhật số lượng
             existingItem.setQuantity(newQuantity);
             cartItemRepository.save(existingItem);
@@ -121,7 +121,7 @@ public class CartServiceImpl implements CartService {
 
     /**
      * Cập nhật số lượng sản phẩm trong giỏ hàng
-     * 
+     * <p>
      * Logic xử lý:
      * 1. Lấy cart và cart item
      * 2. Kiểm tra quyền: Cart item phải thuộc về giỏ hàng của customer hiện tại
@@ -133,7 +133,7 @@ public class CartServiceImpl implements CartService {
     public CartDTO updateCartItem(Integer customerId, Integer itemId, UpdateCartItemRequestDto request) {
         // Lấy giỏ hàng của customer
         Cart cart = getOrCreateCart(customerId);
-        
+
         // Lấy cart item cần cập nhật
         CartItem cartItem = cartItemRepository.findById(itemId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy sản phẩm trong giỏ hàng"));
@@ -146,7 +146,7 @@ public class CartServiceImpl implements CartService {
 
         // Lấy thông tin sản phẩm để validate tồn kho
         Product product = cartItem.getProduct();
-        
+
         // Validate tồn kho: Số lượng mới không được vượt quá số lượng còn lại
         if (product.getStockQuantity() < request.getQuantity()) {
             throw new RuntimeException("Số lượng sản phẩm không đủ. Còn lại: " + product.getStockQuantity());
@@ -160,61 +160,49 @@ public class CartServiceImpl implements CartService {
         return getCart(customerId);
     }
 
-    /**
-     * Xóa sản phẩm khỏi giỏ hàng
-     * 
-     * Logic xử lý:
-     * 1. Lấy cart và cart item
-     * 2. Kiểm tra quyền: Cart item phải thuộc về giỏ hàng của customer hiện tại
-     * 3. Xóa cart item khỏi database
-     * 4. Flush transaction để commit ngay lập tức
-     * 5. Clear EntityManager cache để tránh lấy dữ liệu cũ
-     * 6. Reload cart từ database để đảm bảo dữ liệu mới nhất
-     * 7. Trả về giỏ hàng đã được cập nhật
-     */
-    @Override
-    public CartDTO removeCartItem(Integer customerId, Integer itemId) {
-        // Lấy giỏ hàng của customer
-        Cart cart = getOrCreateCart(customerId);
-        
-        // Lấy cart item cần xóa
-        CartItem cartItem = cartItemRepository.findById(itemId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy sản phẩm trong giỏ hàng"));
+@Override
+public CartDTO removeCartItem(Integer customerId, Integer itemId) {
+    // 1. Lấy cart của customer hiện tại
+    Cart cart = getOrCreateCart(customerId);
 
-        // Kiểm tra quyền: Cart item phải thuộc về giỏ hàng của customer hiện tại
-        if (!cartItem.getCart().getIdCart().equals(cart.getIdCart())) {
-            throw new RuntimeException("Không có quyền xóa sản phẩm này");
-        }
+    // 2. Lấy cart item
+    CartItem cartItem = cartItemRepository.findById(itemId)
+            .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy sản phẩm trong giỏ hàng"));
 
-        // Xóa cart item
-        cartItemRepository.delete(cartItem);
-        
-        // Flush và clear để đảm bảo dữ liệu được commit và cache được xóa
-        cartItemRepository.flush();
-        entityManager.clear(); // Clear cache để tránh lấy dữ liệu cũ
-        
-        // Reload cart từ database để đảm bảo dữ liệu mới nhất (sau khi đã flush và clear cache)
-        Cart updatedCart = cartRepository.findByCustomerIdCustomer(customerId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy giỏ hàng"));
-        
-        return cartMapper.toDTO(updatedCart);
+    // 3. Kiểm tra quyền
+    if (!cartItem.getCart().getIdCart().equals(cart.getIdCart())) {
+        throw new RuntimeException("Không có quyền xóa sản phẩm này");
     }
+
+    // 4. ❗ XOÁ ĐÚNG CÁCH: xoá khỏi collection → Hibernate tự xoá DB
+    cart.getCartItems().remove(cartItem);
+
+    // KHÔNG cần gọi cartItemRepository.delete(cartItem);
+
+    // 5. Lưu lại cart để đảm bảo Hibernate flush
+    cartRepository.save(cart);
+
+    // 6. Trả về giỏ hàng đã được cập nhật
+    return cartMapper.toDTO(cart);
+}
 
     /**
      * Xóa toàn bộ giỏ hàng
-     * 
+     * <p>
      * Logic: Xóa tất cả cart items, giỏ hàng vẫn tồn tại
      */
     @Override
     public void clearCart(Integer customerId) {
         Cart cart = getOrCreateCart(customerId);
         // Xóa tất cả items trong giỏ hàng
-        cartItemRepository.deleteByCartIdCart(cart.getIdCart());
+//        cartItemRepository.deleteByCartIdCart(cart.getIdCart());
+        cart.getCartItems().clear();
+        cartRepository.save(cart);
     }
 
     /**
      * Lấy hoặc tạo giỏ hàng cho customer
-     * 
+     * <p>
      * Logic:
      * - Kiểm tra customer đã có giỏ hàng chưa
      * - Nếu chưa có → Tự động tạo giỏ hàng mới
