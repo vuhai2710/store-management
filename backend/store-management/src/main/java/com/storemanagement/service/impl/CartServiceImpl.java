@@ -35,7 +35,6 @@ public class CartServiceImpl implements CartService {
 
     /**
      * Lấy giỏ hàng của customer
-     * <p>
      * Logic:
      * - Kiểm tra customer đã có giỏ hàng chưa
      * - Nếu chưa có → Tự động tạo giỏ hàng mới
@@ -51,7 +50,6 @@ public class CartServiceImpl implements CartService {
 
     /**
      * Thêm sản phẩm vào giỏ hàng
-     * <p>
      * Logic xử lý:
      * 1. Lấy hoặc tạo giỏ hàng cho customer
      * 2. Kiểm tra sản phẩm tồn tại
@@ -121,7 +119,6 @@ public class CartServiceImpl implements CartService {
 
     /**
      * Cập nhật số lượng sản phẩm trong giỏ hàng
-     * <p>
      * Logic xử lý:
      * 1. Lấy cart và cart item
      * 2. Kiểm tra quyền: Cart item phải thuộc về giỏ hàng của customer hiện tại
@@ -202,7 +199,6 @@ public CartDTO removeCartItem(Integer customerId, Integer itemId) {
 
     /**
      * Lấy hoặc tạo giỏ hàng cho customer
-     * <p>
      * Logic:
      * - Kiểm tra customer đã có giỏ hàng chưa
      * - Nếu chưa có → Tự động tạo giỏ hàng mới
