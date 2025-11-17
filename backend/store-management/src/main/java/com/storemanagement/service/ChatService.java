@@ -3,6 +3,9 @@ package com.storemanagement.service;
 import com.storemanagement.dto.chat.ChatMessageRequest;
 import com.storemanagement.dto.chat.ChatConversationDTO;
 import com.storemanagement.dto.chat.ChatMessageDTO;
+
+import java.security.Principal;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -28,7 +31,7 @@ public interface ChatService {
      * @param request ChatMessageRequest
      * @return ChatMessageDTO đã được lưu
      */
-    ChatMessageDTO sendMessage(ChatMessageRequest request);
+//    ChatMessageDTO sendMessage(ChatMessageRequest request);
     
     /**
      * Lấy lịch sử tin nhắn của conversation (có phân trang)
@@ -70,6 +73,17 @@ public interface ChatService {
      * @return ChatConversationDTO
      */
     ChatConversationDTO getConversationById(Integer conversationId);
+
+    // Thêm Principal parameter
+    ChatMessageDTO sendMessage(ChatMessageRequest request, Principal principal);
+    
+    /**
+     * Đánh dấu conversation đã được xem bởi user hiện tại
+     * Cập nhật lastViewedByAdminAt hoặc lastViewedByCustomerAt
+     * 
+     * @param conversationId ID của conversation
+     */
+    void markConversationAsViewed(Integer conversationId);
 }
 
 

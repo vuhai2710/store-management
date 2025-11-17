@@ -89,13 +89,13 @@ const Customers = () => {
   const handleSearch = (value) => {
     setSearchText(value);
     setCustomerTypeFilter(null); // Clear type filter when searching
-    dispatch(setPagination({ current: 1 }));
+    dispatch(setPagination({ current: 1, pageSize: pagination.pageSize }));
   };
 
   const handleCustomerTypeFilter = (value) => {
     setCustomerTypeFilter(value);
     setSearchText(""); // Clear search when filtering by type
-    dispatch(setPagination({ current: 1 }));
+    dispatch(setPagination({ current: 1, pageSize: pagination.pageSize }));
   };
 
   const handleExportExcel = () => {

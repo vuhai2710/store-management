@@ -78,6 +78,17 @@ public class Order {
     @Column(name = "payment_link_id", length = 255)
     private String paymentLinkId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_promotion")
+    private Promotion promotion;
+
+    @Column(name = "promotion_code", length = 50)
+    private String promotionCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_promotion_rule")
+    private PromotionRule promotionRule;
+
     @PrePersist
     protected void onCreate() {
         if (orderDate == null) {

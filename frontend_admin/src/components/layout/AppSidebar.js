@@ -14,6 +14,7 @@ import {
   UserSwitchOutlined,
   FolderOutlined,
   ImportOutlined,
+  GiftOutlined,
 } from "@ant-design/icons";
 import { USER_ROLES } from "../../constants/roles";
 
@@ -101,6 +102,12 @@ const AppSidebar = () => {
         icon: <BarChartOutlined />,
         label: "Báo cáo",
         roles: [USER_ROLES.ADMIN],
+      },
+      {
+        key: "/promotions",
+        icon: <GiftOutlined />,
+        label: "Khuyến mãi & Giảm giá",
+        roles: [USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE],
       },
     ];
 

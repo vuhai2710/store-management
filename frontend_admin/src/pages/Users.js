@@ -134,8 +134,17 @@ const Users = () => {
             <Input.Search
               allowClear
               placeholder="Tìm theo username hoặc email"
-              onSearch={setSearchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              onSearch={(value) => {
+                setSearchText(value);
+                dispatch(setUsersPagination({ current: 1, pageSize: pagination.pageSize }));
+              }}
+              onChange={(e) => {
+                setSearchText(e.target.value);
+                // Reset về page 1 khi thay đổi search text
+                if (e.target.value === "") {
+                  dispatch(setUsersPagination({ current: 1, pageSize: pagination.pageSize }));
+                }
+              }}
             />
           </Col>
           <Col xs={24} md={8}>

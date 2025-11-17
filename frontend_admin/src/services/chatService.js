@@ -1,5 +1,5 @@
-import api from './api';
-import { API_ENDPOINTS } from '../constants/apiEndpoints';
+import api from "./api";
+import { API_ENDPOINTS } from "../constants/apiEndpoints";
 
 const unwrap = (resp) => {
   // Backend returns { code, message, data }
@@ -17,21 +17,36 @@ export const chatService = {
 
   // Get conversation by ID
   getConversationById: async (conversationId) => {
-    const resp = await api.get(API_ENDPOINTS.CHAT.CONVERSATION_BY_ID(conversationId));
+    const resp = await api.get(
+      API_ENDPOINTS.CHAT.CONVERSATION_BY_ID(conversationId)
+    );
     return unwrap(resp);
   },
 
   // Get conversation messages
-  getConversationMessages: async (conversationId, { pageNo = 1, pageSize = 50 } = {}) => {
+  getConversationMessages: async (
+    conversationId,
+    { pageNo = 1, pageSize = 50 } = {}
+  ) => {
     const params = { pageNo, pageSize };
-    const resp = await api.get(API_ENDPOINTS.CHAT.CONVERSATION_MESSAGES(conversationId), { params });
+    const resp = await api.get(
+      API_ENDPOINTS.CHAT.CONVERSATION_MESSAGES(conversationId),
+      { params }
+    );
     return unwrap(resp);
   },
 
   // Close conversation
   closeConversation: async (conversationId) => {
-    const resp = await api.put(API_ENDPOINTS.CHAT.CLOSE_CONVERSATION(conversationId));
+    const resp = await api.put(
+      API_ENDPOINTS.CHAT.CLOSE_CONVERSATION(conversationId)
+    );
+    return unwrap(resp);
+  },
+
+  // Mark conversation as viewed
+  markConversationAsViewed: async (conversationId) => {
+    const resp = await api.put(API_ENDPOINTS.CHAT.MARK_VIEWED(conversationId));
     return unwrap(resp);
   },
 };
-

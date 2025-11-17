@@ -12,6 +12,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 
+import java.security.Principal;
 import java.time.Instant;
 
 /**
@@ -47,50 +48,28 @@ public class ChatWebSocketController {
      * @param request ChatMessageRequest từ client
      */
     @MessageMapping("/chat.send")
-    public void sendMessage(@Payload ChatMessageRequest request) {
-        log.info("Received WebSocket message from {} ID: {} to conversation ID: {}", 
-                request.getSenderType(), request.getSenderId(), request.getConversationId());
+public void sendMessage(@Payload ChatMessageRequest request, Principal principal) {
+    log.info("Received WebSocket message from {} ID: {} to conversation ID: {}", 
+            request.getSenderType(), request.getSenderId(), request.getConversationId());
+    
+    try {
+        // ⭐ Chỉ cần truyền principal xuống service
+        ChatMessageDTO savedMessage = chatService.sendMessage(request, principal);
         
-        try {
-            // Lưu tin nhắn vào database
-            ChatMessageDTO savedMessage = chatService.sendMessage(request);
-            
-            // Broadcast tin nhắn đến tất cả subscribers của conversation này
-            String destination = "/topic/chat." + request.getConversationId();
-            messagingTemplate.convertAndSend(destination, savedMessage);
-            
-            log.info("Message broadcasted to {}", destination);
-            
-        } catch (AccessDeniedException e) {
-            log.warn("Access denied for message from {} ID: {} to conversation ID: {} - {}", 
-                    request.getSenderType(), request.getSenderId(), request.getConversationId(), e.getMessage());
-            
-            // Gửi error message về cho client qua error topic
-            WebSocketErrorDTO error = WebSocketErrorDTO.builder()
-                    .error("ACCESS_DENIED")
-                    .message(e.getMessage())
-                    .conversationId(request.getConversationId())
-                    .timestamp(Instant.now().toEpochMilli())
-                    .build();
-            
-            String errorDestination = "/topic/chat." + request.getConversationId() + ".errors";
-            messagingTemplate.convertAndSend(errorDestination, error);
-            
-        } catch (Exception e) {
-            log.error("Error sending message: {}", e.getMessage(), e);
-            
-            // Gửi error message về cho client
-            WebSocketErrorDTO error = WebSocketErrorDTO.builder()
-                    .error("ERROR")
-                    .message("Không thể gửi tin nhắn: " + e.getMessage())
-                    .conversationId(request.getConversationId())
-                    .timestamp(Instant.now().toEpochMilli())
-                    .build();
-            
-            String errorDestination = "/topic/chat." + request.getConversationId() + ".errors";
-            messagingTemplate.convertAndSend(errorDestination, error);
-        }
+        // Broadcast tin nhắn
+        String destination = "/topic/chat." + request.getConversationId();
+        messagingTemplate.convertAndSend(destination, savedMessage);
+        
+        log.info("Message broadcasted to {}", destination);
+        
+    } catch (AccessDeniedException e) {
+        log.warn("Access denied for message from {} ID: {} to conversation ID: {} - {}", 
+                request.getSenderType(), request.getSenderId(), 
+                request.getConversationId(), e.getMessage());
+    } catch (Exception e) {
+        log.error("Error sending message: {}", e.getMessage(), e);
     }
+}
     
     /**
      * Xử lý khi user connect (optional)
