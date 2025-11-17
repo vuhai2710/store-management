@@ -92,22 +92,29 @@ const Dashboard = () => {
         });
         const totalProductsCount = productsResponse?.totalElements || 0;
 
-        // Fetch customers - get total count
-        const customersResponse = await customersService.getCustomers({
+        // Fetch customers - get total count (use getAllCustomers -> has 'total')
+        const customersResponse = await customersService.getAllCustomers({
           pageNo: 1,
           pageSize: 1,
           sortBy: "idCustomer",
           sortDirection: "ASC",
         });
-        const totalCustomersCount = customersResponse?.totalElements || 0;
+
+        const totalCustomersCount =
+          customersResponse?.total ??
+          customersResponse?.totalElements ??
+          customersResponse?.page?.totalElements ??
+          (Array.isArray(customersResponse?.data)
+            ? customersResponse.data.length
+            : 0);
 
         setDashboardStats({
           totalOrders: totalOrdersCount,
           totalProducts: totalProductsCount,
           totalCustomers: totalCustomersCount,
           totalRevenue: revenue,
-          recentOrders: ordersData.slice(0, 5), // Get 5 most recent for display
-          allOrdersForRevenue: completedOrders, // All completed orders for revenue chart
+          recentOrders: ordersData.slice(0, 5),
+          allOrdersForRevenue: completedOrders,
           ordersByStatus,
         });
       } catch (error) {

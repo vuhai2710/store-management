@@ -17,6 +17,7 @@ import { PrinterOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchOrderById, updateOrderStatus } from '../store/slices/ordersSlice';
 import { ordersService } from '../services/ordersService';
+import { formatDate } from '../utils/formatUtils';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -255,14 +256,10 @@ const OrderDetail = () => {
             {currentOrder.employeeName || 'N/A'}
           </Descriptions.Item>
           <Descriptions.Item label="Ngày đặt hàng">
-            {currentOrder.orderDate
-              ? new Date(currentOrder.orderDate).toLocaleString('vi-VN')
-              : 'N/A'}
+            {formatDate(currentOrder.orderDate, 'DD/MM/YYYY HH:mm:ss')}
           </Descriptions.Item>
           <Descriptions.Item label="Ngày giao hàng">
-            {currentOrder.deliveredAt
-              ? new Date(currentOrder.deliveredAt).toLocaleString('vi-VN')
-              : 'Chưa giao'}
+            {currentOrder.deliveredAt ? formatDate(currentOrder.deliveredAt, 'DD/MM/YYYY HH:mm:ss') : 'Chưa giao'}
           </Descriptions.Item>
           <Descriptions.Item label="Phương thức thanh toán">
             {currentOrder.paymentMethod

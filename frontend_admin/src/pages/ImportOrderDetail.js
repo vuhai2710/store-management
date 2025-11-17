@@ -14,6 +14,7 @@ import { PrinterOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchImportOrderById } from "../store/slices/importOrdersSlice";
 import { importOrderService } from "../services/importOrderService";
+import { formatDate } from "../utils/formatUtils";
 
 const { Title, Text } = Typography;
 
@@ -137,9 +138,12 @@ const ImportOrderDetail = () => {
             <Text strong>#{importOrderId}</Text>
           </Descriptions.Item>
           <Descriptions.Item label="Ngày nhập">
-            {currentImportOrder.orderDate
-              ? new Date(currentImportOrder.orderDate).toLocaleString("vi-VN")
-              : "N/A"}
+            {formatDate(
+              currentImportOrder.orderDate ??
+                currentImportOrder.createdAt ??
+                currentImportOrder.created_at,
+              "DD/MM/YYYY HH:mm:ss"
+            )}
           </Descriptions.Item>
           <Descriptions.Item label="Nhà cung cấp">
             {currentImportOrder.supplierName || "N/A"}

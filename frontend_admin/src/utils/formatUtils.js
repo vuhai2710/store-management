@@ -5,9 +5,11 @@
 
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 import "dayjs/locale/vi";
 
 dayjs.extend(relativeTime);
+dayjs.extend(customParseFormat);
 dayjs.locale("vi");
 
 /**
@@ -36,14 +38,33 @@ export const formatNumber = (number) => {
 };
 
 /**
- * Format date to Vietnamese format
- * @param {string|Date} date - Date to format
- * @param {string} format - Date format (default: 'DD/MM/YYYY HH:mm')
- * @returns {string} Formatted date string
+ * Format date safely
+ * Supports: 'DD/MM/YYYY HH:mm:ss' (backend), ISO, epoch(ms|s), etc.
  */
 export const formatDate = (date, format = "DD/MM/YYYY HH:mm") => {
-  if (!date) return "N/A";
-  return dayjs(date).format(format);
+  if (date === null || date === undefined || date === "") return "N/A";
+
+  let d;
+
+  if (typeof date === "number") {
+    d = dayjs(date > 1e12 ? date : date * 1000);
+  } else if (typeof date === "string") {
+    const s = date.trim().replace(/(\.\d{3})\d+$/, "$1");
+    const formats = [
+      "DD/MM/YYYY HH:mm:ss", // backend default
+      "DD/MM/YYYY HH:mm",
+      "DD/MM/YYYY",
+      "YYYY-MM-DD HH:mm:ss",
+      "YYYY-MM-DDTHH:mm:ss",
+      "YYYY-MM-DD",
+    ];
+    d = dayjs(s, formats, true);
+    if (!d.isValid()) d = dayjs(s.replace(" ", "T"));
+  } else {
+    d = dayjs(date);
+  }
+
+  return d.isValid() ? d.format(format) : "N/A";
 };
 
 /**

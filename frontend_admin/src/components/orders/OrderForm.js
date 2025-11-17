@@ -142,35 +142,50 @@ const OrderForm = ({ order, onSuccess }) => {
     }
 
     try {
-      // Map to backend format: POST /api/v1/orders/create-for-customer
-      // Backend expects OrderDTO with:
-      // - customerId (optional) - if null, use customerName, customerPhone, customerAddress
-      // - orderItems (List<OrderDetailDTO>) - contains productId and quantity
-      // - paymentMethod (CASH, TRANSFER, ZALOPAY, PAYOS)
-      // - discount (optional)
-      // - notes (optional)
-      // Backend will calculate totalAmount automatically
-      
+      // Lấy thông tin khách hàng đã chọn (nếu là khách có sẵn)
+      const selectedCustomer = values.customerId
+        ? (customers || []).find(c => (c.idCustomer || c.id) === values.customerId)
+        : null;
+
+      // Chuẩn hóa snapshot tên/điện thoại/địa chỉ
+      const customerNameSnapshot =
+        values.customerName ||
+        selectedCustomer?.customerName ||
+        selectedCustomer?.name ||
+        '';
+
+      const customerPhoneSnapshot =
+        values.customerPhone ||
+        selectedCustomer?.phoneNumber ||
+        selectedCustomer?.phone ||
+        '';
+
+      const customerAddressSnapshot =
+        values.customerAddress ||
+        selectedCustomer?.address ||
+        selectedCustomer?.customerAddress ||
+        '';
+
+      if (!customerNameSnapshot) {
+        message.error('Vui lòng chọn/nhập tên khách hàng.');
+        return;
+      }
+
       const orderData = {
-        // Customer: either customerId or customer info for new customer
-        ...(values.customerId 
-          ? { customerId: values.customerId } 
-          : {
-              customerName: values.customerName,
-              customerPhone: values.customerPhone,
-              customerAddress: values.customerAddress || '',
-            }
-        ),
-        // Order items: map to OrderDetailDTO format with productId and quantity
+        // Gửi cả customerId và snapshot để qua được validate backend
+        ...(values.customerId ? { customerId: values.customerId } : {}),
+        customerName: customerNameSnapshot,
+        customerPhone: customerPhoneSnapshot,
+        customerAddress: customerAddressSnapshot,
+
+        // Order items: chỉ cần productId và quantity, backend tự tính tiền
         orderItems: orderItems.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
         })),
-        // Payment method: CASH, TRANSFER, ZALOPAY, PAYOS
+
         paymentMethod: values.paymentMethod || 'CASH',
-        // Discount: optional, default 0
         discount: values.discount ? Number(values.discount) : 0,
-        // Notes: optional
         notes: values.notes || null,
       };
 

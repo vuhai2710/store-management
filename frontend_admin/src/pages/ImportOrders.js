@@ -31,6 +31,7 @@ import EmptyState from "../components/common/EmptyState";
 import LoadingSkeleton from "../components/common/LoadingSkeleton";
 import { exportToExcel, exportToCSV } from "../utils/exportUtils";
 import { DownloadOutlined } from "@ant-design/icons";
+import { formatDate } from "../utils/formatUtils"; // add
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -203,13 +204,13 @@ const ImportOrders = () => {
     },
     {
       title: "Ngày nhập",
-      dataIndex: "orderDate",
       key: "orderDate",
-      width: 150,
-      render: (date) => {
-        if (!date) return "N/A";
-        return new Date(date).toLocaleString("vi-VN");
-      },
+      width: 160,
+      render: (_, record) =>
+        formatDate(
+          record?.orderDate ?? record?.createdAt ?? record?.created_at,
+          "DD/MM/YYYY HH:mm:ss"
+        ),
     },
     {
       title: "Hành động",

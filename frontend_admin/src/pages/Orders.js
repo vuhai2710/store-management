@@ -29,6 +29,10 @@ import StatusBadge from '../components/common/StatusBadge';
 import { exportToExcel, exportToCSV } from '../utils/exportUtils';
 import LoadingSkeleton from '../components/common/LoadingSkeleton';
 import EmptyState from '../components/common/EmptyState';
+import { formatDate } from '../utils/formatUtils';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+dayjs.extend(customParseFormat);
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -141,6 +145,14 @@ const Orders = () => {
     return ORDER_STATUS[statusUpper] || { text: status, color: 'default' };
   };
 
+  // Lấy ngày từ nhiều key (DTO dùng orderDate, phòng khi trả snake_case)
+  const getOrderDateValue = (record) =>
+    record?.orderDate ??
+    record?.order_date ??
+    record?.createdAt ??
+    record?.created_at ??
+    null;
+
   const columns = [
     {
       title: 'Mã đơn hàng',
@@ -192,13 +204,10 @@ const Orders = () => {
     },
     {
       title: 'Ngày đặt',
-      dataIndex: 'orderDate',
       key: 'orderDate',
-      width: 150,
-      render: (date) => {
-        if (!date) return 'N/A';
-        return new Date(date).toLocaleString('vi-VN');
-      },
+      width: 160,
+      // dùng render để tự chọn field và format
+      render: (_, record) => formatDate(getOrderDateValue(record), "DD/MM/YYYY HH:mm"),
     },
     {
       title: 'Hành động',
@@ -255,99 +264,89 @@ const Orders = () => {
     }
   };
 
-  return (
-    <div>
-      <div className="page-header">
-        <Title level={1}>Quản lý Đơn hàng</Title>
-        <p>Quản lý và theo dõi tất cả đơn hàng trong hệ thống</p>
-      </div>
+  useEffect(() => {
+    if (loading) {
+      message.loading({ content: 'Đang tải dữ liệu...', key: 'fetchOrders' });
+    } else {
+      message.destroy('fetchOrders');
+    }
+  }, [loading]);
 
-      <Card className="table-container">
-        {/* Filters */}
-        <div style={{ marginBottom: '16px' }}>
-          <Space wrap>
+  return (
+    <div className="page-orders">
+      <div className="page-header">
+        <Title level={3}>Quản lý đơn hàng</Title>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleCreateOrder}
+        >
+          Tạo đơn hàng
+        </Button>
+      </div>
+      <Card>
+        <div className="table-toolbar">
+          <div className="filters">
             <Select
-              placeholder="Lọc theo trạng thái"
-              style={{ width: 180 }}
-              allowClear
+              placeholder="Trạng thái"
               value={statusFilter}
               onChange={handleStatusFilter}
+              style={{ width: 150, marginRight: 8 }}
             >
-              <Option value="PENDING">Chờ xác nhận</Option>
-              <Option value="CONFIRMED">Đã xác nhận</Option>
-              <Option value="COMPLETED">Hoàn thành</Option>
-              <Option value="CANCELED">Đã hủy</Option>
+              <Option value="">Tất cả</Option>
+              {Object.keys(ORDER_STATUS).map((key) => (
+                <Option key={key} value={key}>
+                  <StatusBadge status={key} statusMap={ORDER_STATUS} />
+                  {ORDER_STATUS[key].text}
+                </Option>
+              ))}
             </Select>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={handleResetFilters}
-            >
-              Xóa lọc
+            <Input.Search
+              placeholder="Tìm theo khách hàng"
+              onSearch={handleCustomerIdFilter}
+              style={{ width: 250 }}
+              allowClear
+            />
+            <Button onClick={handleResetFilters} icon={<ReloadOutlined />}>
+              Đặt lại bộ lọc
             </Button>
+          </div>
+          <div className="export-buttons">
             <Button
               icon={<DownloadOutlined />}
               onClick={handleExportExcel}
+              style={{ marginRight: 8 }}
             >
               Xuất Excel
             </Button>
             <Button
               icon={<DownloadOutlined />}
               onClick={handleExportCSV}
+              type="dashed"
             >
               Xuất CSV
             </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreateOrder}
-            >
-              Tạo đơn hàng mới
-            </Button>
-          </Space>
+          </div>
         </div>
-
-        {/* Table */}
-        {loading && orders.length === 0 ? (
-          <LoadingSkeleton type="table" rows={5} />
-        ) : (
-          <Table
-            columns={columns}
-            dataSource={orders}
-            loading={loading}
-            rowKey={(record) => record.idOrder || record.id}
-            pagination={{
-              ...tablePagination,
-              current: currentPage,
-              pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} của ${total} đơn hàng`,
-            }}
-            onChange={handleTableChange}
-            scroll={{ x: 1200 }}
-            locale={{
-              emptyText: (
-                <EmptyState
-                  description="Chưa có đơn hàng nào"
-                  actionText="Tạo đơn hàng mới"
-                  showAction
-                  onAction={handleCreateOrder}
-                />
-              ),
-            }}
-          />
-        )}
+        <Table
+          columns={columns}
+          dataSource={orders}
+          pagination={tablePagination}
+          loading={loading}
+          onChange={handleTableChange}
+          rowKey={(record) => record.idOrder || record.id}
+          scroll={{ x: 1300 }}
+          locale={{ emptyText: <EmptyState /> }}
+        />
       </Card>
 
-      {/* Order Form Modal */}
+      {/* Modal tạo đơn hàng - chỉ mở khi isModalVisible = true */}
       <Modal
-        title="Tạo đơn hàng mới"
         open={isModalVisible}
+        title="Tạo đơn hàng"
         onCancel={() => setIsModalVisible(false)}
         footer={null}
-        width={800}
+        width={900}
         destroyOnClose
       >
         <OrderForm
