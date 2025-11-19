@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -50,6 +51,25 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     Page<Order> findByFilters(@Param("customerId") Integer customerId,
                               @Param("status") Order.OrderStatus status,
                               Pageable pageable);
+
+    /**
+     * Lấy danh sách product IDs mà customer đã mua gần đây
+     * Sắp xếp theo order_date DESC (mới nhất trước)
+     * 
+     * @param customerId ID của customer
+     * @param limit Số lượng sản phẩm cần lấy
+     * @return Danh sách product IDs (distinct)
+     */
+    @Query(value = """
+            SELECT DISTINCT od.id_product
+            FROM order_details od
+            INNER JOIN orders o ON od.id_order = o.id_order
+            WHERE o.id_customer = :customerId
+            ORDER BY o.order_date DESC
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<Integer> findRecentlyPurchasedProductIds(@Param("customerId") Integer customerId, 
+                                                   @Param("limit") int limit);
 }
 
 

@@ -2,13 +2,18 @@ package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.product.ProductRecommendationDTO;
+import com.storemanagement.model.Customer;
+import com.storemanagement.repository.CustomerRepository;
 import com.storemanagement.service.ProductRecommendationService;
+import com.storemanagement.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Controller xử lý các API liên quan đến gợi ý sản phẩm
@@ -19,9 +24,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/products/recommendations")
 @RequiredArgsConstructor
+@Slf4j
 public class ProductRecommendationController {
 
     private final ProductRecommendationService recommendationService;
+    private final CustomerRepository customerRepository;
 
     /**
      * Lấy danh sách sản phẩm tương tự cho một sản phẩm
@@ -104,8 +111,24 @@ public class ProductRecommendationController {
     public ResponseEntity<ApiResponse<List<ProductRecommendationDTO>>> getHomePageRecommendations(
             @RequestParam(required = false, defaultValue = "10") Integer limit) {
         
+        // Lấy customerId từ JWT token (nếu là CUSTOMER)
+        Integer customerId = null;
+        try {
+            Optional<Integer> userId = SecurityUtils.getCurrentUserId();
+            if (userId.isPresent()) {
+                Optional<Customer> customer = customerRepository.findByUser_IdUser(userId.get());
+                if (customer.isPresent()) {
+                    customerId = customer.get().getIdCustomer();
+                    log.info("Found customer ID: {} for user ID: {}", customerId, userId.get());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not get customer ID from token: {}", e.getMessage());
+            // Tiếp tục với customerId = null (sẽ dùng best sellers làm seed)
+        }
+        
         List<ProductRecommendationDTO> recommendations = 
-                recommendationService.getHomePageRecommendations(limit);
+                recommendationService.getHomePageRecommendations(customerId, limit);
         
         return ResponseEntity.ok(ApiResponse.success(
                 "Lấy danh sách sản phẩm gợi ý trang chủ thành công", 

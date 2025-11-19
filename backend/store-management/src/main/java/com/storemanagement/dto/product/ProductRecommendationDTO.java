@@ -24,3 +24,4 @@ public class ProductRecommendationDTO {
     private String brand;
 }
 
+

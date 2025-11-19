@@ -50,14 +50,22 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
         setFeaturedProducts(featuredData?.content || []);
 
         // Fetch recommendations
-        const recommendationsData = await productsService.getHomeRecommendations({ limit: 6 });
-        // Map recommendations to match ProductCard format (productId -> idProduct)
-        const mappedRecommendations = (recommendationsData || []).map(rec => ({
-          ...rec,
-          idProduct: rec.productId || rec.idProduct || rec.id,
-          productName: rec.name || rec.productName,
-        }));
-        setRecommendations(mappedRecommendations);
+        try {
+          console.log('[HomePage] Fetching recommendations...');
+          const recommendationsData = await productsService.getHomeRecommendations({ limit: 6 });
+          console.log('[HomePage] Recommendations received:', recommendationsData);
+          // Map recommendations to match ProductCard format (productId -> idProduct)
+          const mappedRecommendations = (recommendationsData || []).map(rec => ({
+            ...rec,
+            idProduct: rec.productId || rec.idProduct || rec.id,
+            productName: rec.name || rec.productName,
+          }));
+          console.log('[HomePage] Mapped recommendations:', mappedRecommendations);
+          setRecommendations(mappedRecommendations);
+        } catch (err) {
+          console.error('[HomePage] Error fetching recommendations:', err);
+          setRecommendations([]);
+        }
 
       } catch (err) {
         console.error('Error fetching homepage data:', err);
@@ -310,7 +318,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
       )}
 
       {/* 5. Product Recommendations */}
-      {isAuthenticated && recommendations.length > 0 && (
+      {isAuthenticated && (
         <section style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
           <div style={styles.container}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
@@ -322,16 +330,23 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
                 Xem tất cả →
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
-              {recommendations.map(product => (
-                <ProductCard 
-                  key={product.idProduct || product.productId || product.id} 
-                  product={product} 
-                  handleAddToCart={handleAddToCart} 
-                  handleViewProductDetail={handleViewProductDetail}
-                />
-              ))}
-            </div>
+            {recommendations.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                {recommendations.map(product => (
+                  <ProductCard 
+                    key={product.idProduct || product.productId || product.id} 
+                    product={product} 
+                    handleAddToCart={handleAddToCart} 
+                    handleViewProductDetail={handleViewProductDetail}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+                <p>Đang tải sản phẩm gợi ý...</p>
+                {loading && <LoadingSpinner />}
+              </div>
+            )}
           </div>
         </section>
       )}

@@ -20,11 +20,12 @@ public interface ProductRecommendationService {
     
     /**
      * Lấy danh sách sản phẩm gợi ý cho trang chủ
-     * (Gợi ý dựa trên các sản phẩm phổ biến hoặc sản phẩm mới)
+     * Sử dụng Content-based Filtering dựa trên lịch sử mua hàng của user
      * 
+     * @param customerId ID của customer (null nếu không có)
      * @param limit Số lượng sản phẩm cần lấy (mặc định 10)
-     * @return Danh sách sản phẩm gợi ý
+     * @return Danh sách sản phẩm gợi ý với similarity score
      */
-    List<ProductRecommendationDTO> getHomePageRecommendations(Integer limit);
+    List<ProductRecommendationDTO> getHomePageRecommendations(Integer customerId, Integer limit);
 }
 

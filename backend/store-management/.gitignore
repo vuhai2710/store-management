@@ -1,120 +1,25 @@
-# Maven
-target/
-!**/src/main/**/target/
-!**/src/test/**/target/
-.mvn/wrapper/maven-wrapper.jar
-HELP.md
-
-# Gradle
-.gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-# IDE Files
-## IntelliJ IDEA
-.idea/
-*.iws
-*.iml
-*.ipr
-out/
-
-## Eclipse
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings/
-.springBeans
-.sts4-cache
-.recommenders/
-
-## NetBeans
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-## VS Code
-.vscode/
-!.vscode/extensions.json
-!.vscode/settings.json
-*.code-workspace
-
-## Other IDEs
-*.swp
-*.swo
-*~
-*.sublime-project
-*.sublime-workspace
-
-# OS Files
-## macOS
-.DS_Store
-.DS_Store?
-._*
-.AppleDouble
-.LSOverride
-.Spotlight-V100
-.Trashes
-
-## Windows
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-*.stackdump
-[Dd]esktop.ini
-$RECYCLE.BIN/
-*.lnk
-
-## Linux
-*~
-.directory
-.Trash-*
-
-# Application Specific
-## Uploaded files
-uploads/
-!uploads/.gitkeep
-!uploads/*/.gitkeep
-
-## Logs
-logs/
+# Logs
+logs
 *.log
-*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-## Temporary files
-*.tmp
-*.temp
-*.bak
-*.backup
+node_modules
+dist
+dist-ssr
+*.local
 
-# Security - Configuration files with sensitive data
-application.yaml
-!application.yaml.example
-application.yml
-!application.yml.example
-application.properties
-!application.properties.example
-application-prod.properties
-application-prod.yaml
-application-prod.yml
-*.pem
-*.key
-*.cert
-*.p12
-*.jks
-secrets.yaml
-secrets.json
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Documentation (personal notes - optional)
-*.pdf
-!**/documentation/**/*.pdf
-
-# Sandbox setup guide (contains setup instructions, may contain sensitive info)
-SANDBOX_SETUP_GUIDE.md
-PAYOS_SDK_REFACTOR_NOTES.md
-CART_BUG_FIX.md
-GHN_SHIPPING_UPDATE.md
