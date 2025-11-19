@@ -8,12 +8,6 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-/**
- * ProductMapper - MapStruct mapper cho Product entity
- *
- * Note: Date formatting được xử lý tự động bởi JacksonConfig (global config)
- * Number formatting (tránh scientific notation) được xử lý bởi JacksonConfig
- */
 @Mapper(componentModel = "spring", uses = {ProductImageMapper.class})
 public interface ProductMapper {
 
@@ -32,8 +26,7 @@ public interface ProductMapper {
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "supplier", ignore = true)
     @Mapping(target = "images", ignore = true)
-    @Mapping(target = "stockQuantity", ignore = true) // Read-only field
-    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
+    @Mapping(target = "stockQuantity", ignore = true)
     Product toEntity(ProductDTO dto);
 
     List<ProductDTO> toDTOList(List<Product> entities);

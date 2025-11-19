@@ -15,9 +15,8 @@ public interface CategoryMapper {
     @Mapping(target = "createdAt", source = "createdAt")
     CategoryDTO toDTO(Category entity);
 
-    // CategoryDTO → Category (for create/update)
+    // CategoryDTO → Category
     @Mapping(target = "idCategory", ignore = true)
-    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
     Category toEntity(CategoryDTO dto);
 
     // List mapping

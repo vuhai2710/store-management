@@ -8,9 +8,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO request để gửi tin nhắn chat
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,18 +26,3 @@ public class ChatMessageRequest {
     @NotBlank(message = "Tin nhắn không được để trống")
     private String message;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -5,9 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO cho PayOS Payment Link Creation Response
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

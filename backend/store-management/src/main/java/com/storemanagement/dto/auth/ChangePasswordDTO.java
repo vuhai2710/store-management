@@ -6,10 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO cho đổi mật khẩu
- * Không kế thừa BaseDTO vì không map với entity
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -8,9 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * DTO chứa thông tin tracking đơn hàng từ GHN API
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

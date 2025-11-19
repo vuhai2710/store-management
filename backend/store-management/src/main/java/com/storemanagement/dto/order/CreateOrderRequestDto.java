@@ -12,25 +12,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class CreateOrderRequestDto {
-    private Integer shippingAddressId; // Optional - nếu không có thì dùng default address hoặc customer.address
-    
+    private Integer shippingAddressId;
+
     @NotNull(message = "Phương thức thanh toán không được để trống")
     private Order.PaymentMethod paymentMethod;
     
-    private String notes; // Optional
+    private String notes;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

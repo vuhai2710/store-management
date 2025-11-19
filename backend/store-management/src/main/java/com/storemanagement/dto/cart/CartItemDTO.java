@@ -7,9 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-/**
- * CartItemDTO không kế thừa BaseDTO vì CartItem entity không có timestamps
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
