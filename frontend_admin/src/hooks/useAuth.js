@@ -14,34 +14,51 @@ export const useAuth = () => {
   const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
 
   useEffect(() => {
+    // Set loading true khi bắt đầu check auth
+    dispatch(setLoading(true));
+    
     // Kiểm tra token khi component mount
     const checkAuth = async () => {
-      const token = authService.getToken();
-
-      if (!token) {
-        dispatch(setLoading(false));
-        return;
-      }
-
-      // Kiểm tra token expired
-      if (isTokenExpired(token)) {
-        dispatch(logout());
-        return;
-      }
-
-      // Lấy user info từ localStorage hoặc API
       try {
+        const token = authService.getToken();
+
+        if (!token) {
+          dispatch(setLoading(false));
+          return;
+        }
+
+        // Kiểm tra token expired
+        if (isTokenExpired && isTokenExpired(token)) {
+          dispatch(logout());
+          dispatch(setLoading(false));
+          return;
+        }
+
+        // Lấy user info từ localStorage trước (nhanh hơn)
         const storedUser = authService.getUserFromStorage();
         if (storedUser) {
           dispatch(setUser(storedUser));
+          dispatch(setLoading(false));
+          // Optionally validate với backend trong background
+          authService.getCurrentUser().catch(() => {
+            // Nếu token không hợp lệ, sẽ tự logout
+          });
         } else {
           // Fetch từ API nếu không có trong localStorage
-          const currentUser = await authService.getCurrentUser();
-          dispatch(setUser(currentUser));
+          try {
+            const currentUser = await authService.getCurrentUser();
+            dispatch(setUser(currentUser));
+          } catch (error) {
+            console.error("Error fetching current user:", error);
+            dispatch(logout());
+          } finally {
+            dispatch(setLoading(false));
+          }
         }
       } catch (error) {
         console.error("Error checking auth:", error);
         dispatch(logout());
+        dispatch(setLoading(false));
       }
     };
 

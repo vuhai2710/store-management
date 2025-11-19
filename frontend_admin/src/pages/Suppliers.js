@@ -11,10 +11,13 @@ import {
   Popconfirm,
   Tooltip,
 } from 'antd';
-import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchSuppliers, deleteSupplier } from '../store/slices/suppliersSlice';
 import SupplierForm from '../components/suppliers/SupplierForm';
+import { exportToExcel, exportToCSV } from '../utils/exportUtils';
+import LoadingSkeleton from '../components/common/LoadingSkeleton';
+import EmptyState from '../components/common/EmptyState';
 
 const { Title, Text } = Typography;
 
@@ -93,6 +96,32 @@ const Suppliers = () => {
     },
   ];
 
+  const handleExportExcel = () => {
+    if (!filteredSuppliers || filteredSuppliers.length === 0) {
+      message.warning('Không có dữ liệu để xuất');
+      return;
+    }
+    try {
+      exportToExcel(filteredSuppliers, `nha-cung-cap-${new Date().toISOString().split('T')[0]}`, columns);
+      message.success('Xuất file Excel thành công!');
+    } catch (error) {
+      message.error(error?.message || 'Xuất file Excel thất bại!');
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (!filteredSuppliers || filteredSuppliers.length === 0) {
+      message.warning('Không có dữ liệu để xuất');
+      return;
+    }
+    try {
+      exportToCSV(filteredSuppliers, `nha-cung-cap-${new Date().toISOString().split('T')[0]}`, columns);
+      message.success('Xuất file CSV thành công!');
+    } catch (error) {
+      message.error(error?.message || 'Xuất file CSV thất bại!');
+    }
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -110,19 +139,39 @@ const Suppliers = () => {
               onChange={(e) => setSearchText(e.target.value)}
               enterButton={<SearchOutlined />}
             />
+            <Button icon={<DownloadOutlined />} onClick={handleExportExcel}>
+              Xuất Excel
+            </Button>
+            <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
+              Xuất CSV
+            </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateSupplier}>
               Thêm nhà cung cấp
             </Button>
           </Space>
         </div>
 
-        <Table
-          columns={columns}
-          dataSource={filteredSuppliers}
-          loading={loading}
-          rowKey="idSupplier"
-          pagination={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}
-        />
+        {loading && (!suppliers || suppliers.length === 0) ? (
+          <LoadingSkeleton type="table" rows={5} />
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={filteredSuppliers}
+            loading={loading}
+            rowKey="idSupplier"
+            pagination={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}
+            locale={{
+              emptyText: (
+                <EmptyState
+                  description="Chưa có nhà cung cấp nào"
+                  actionText="Thêm nhà cung cấp"
+                  showAction
+                  onAction={handleCreateSupplier}
+                />
+              ),
+            }}
+          />
+        )}
       </Card>
 
       <Modal

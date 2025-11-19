@@ -29,12 +29,17 @@ import org.springframework.stereotype.Component;
  * @author Store Management Team
  */
 @Component
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 @Slf4j
 public class AppInitConfig implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    public AppInitConfig(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     /**
      * Thông tin tài khoản ADMIN mặc định

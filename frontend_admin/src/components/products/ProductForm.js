@@ -1,9 +1,26 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Form, Input, InputNumber, Select, Button, Space, Typography, message } from "antd";
+import {
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Button,
+  Space,
+  Typography,
+  message,
+  Upload,
+  Image,
+  Card,
+  Divider,
+  Tag,
+} from "antd";
+import { UploadOutlined, DeleteOutlined, StarOutlined, StarFilled, EyeOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { createProduct, updateProduct } from "../../store/slices/productsSlice";
 import { categoriesService } from "../../services/categoriesService";
 import { suppliersService } from "../../services/suppliersService";
+import { productsService } from "../../services/productsService";
+import ImageLightbox from "../common/ImageLightbox";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -19,8 +36,14 @@ const ProductForm = ({ product, onSuccess }) => {
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [loadingMeta, setLoadingMeta] = useState(false);
+  const [productImages, setProductImages] = useState([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [fileList, setFileList] = useState([]);
+  const [lightboxVisible, setLightboxVisible] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const codeType = Form.useWatch("codeType", form);
+  const isEditing = !!product?.idProduct;
 
   const isProductCodeRequired = useMemo(() => codeType && codeType !== "SKU", [codeType]);
 
@@ -45,6 +68,26 @@ const ProductForm = ({ product, onSuccess }) => {
     loadMeta();
   }, []);
 
+  // Load product images when editing
+  useEffect(() => {
+    if (product?.idProduct) {
+      loadProductImages(product.idProduct);
+    } else {
+      setProductImages([]);
+      setFileList([]);
+    }
+  }, [product?.idProduct]);
+
+  const loadProductImages = async (productId) => {
+    try {
+      const images = await productsService.getProductImages(productId);
+      setProductImages(Array.isArray(images) ? images : []);
+    } catch (error) {
+      console.error("Error loading product images:", error);
+      setProductImages([]);
+    }
+  };
+
   useEffect(() => {
     if (product) {
       form.setFieldsValue({
@@ -56,7 +99,7 @@ const ProductForm = ({ product, onSuccess }) => {
         price: product.price,
         stockQuantity: product.stockQuantity,
         status: product.status,
-        imageUrl: product.imageUrl,
+        imageUrl: product.imageUrl, // Keep for backward compatibility
         productCode: product.productCode,
         codeType: product.codeType || "SKU",
         sku: product.sku,
@@ -77,20 +120,46 @@ const ProductForm = ({ product, onSuccess }) => {
       price: Number(values.price),
       stockQuantity: values.stockQuantity != null ? Number(values.stockQuantity) : 0,
       status: values.status || null,
-      imageUrl: values.imageUrl?.trim() || null,
+      imageUrl: values.imageUrl?.trim() || null, // Keep for backward compatibility
       productCode: values.productCode?.trim() || null,
       codeType: values.codeType,
       sku: values.sku?.trim() || null,
     };
 
     try {
+      let createdOrUpdatedProduct;
       if (product?.idProduct) {
-        await dispatch(updateProduct({ id: product.idProduct, data: payload })).unwrap();
+        createdOrUpdatedProduct = await dispatch(updateProduct({ id: product.idProduct, data: payload })).unwrap();
         message.success("Cập nhật sản phẩm thành công!");
       } else {
-        await dispatch(createProduct(payload)).unwrap();
+        createdOrUpdatedProduct = await dispatch(createProduct(payload)).unwrap();
         message.success("Thêm sản phẩm thành công!");
       }
+
+      // Upload images if there are new files (only for new products or when adding new images)
+      if (fileList.length > 0 && fileList.some((file) => file.originFileObj)) {
+        const productId = createdOrUpdatedProduct?.idProduct || product?.idProduct;
+        if (productId) {
+          try {
+            setUploadingImages(true);
+            const filesToUpload = fileList
+              .filter((file) => file.originFileObj)
+              .map((file) => file.originFileObj);
+            if (filesToUpload.length > 0) {
+              await productsService.uploadProductImages(productId, filesToUpload);
+              message.success("Upload ảnh thành công!");
+              // Reload images
+              await loadProductImages(productId);
+            }
+          } catch (error) {
+            message.error("Upload ảnh thất bại: " + (error.message || "Lỗi không xác định"));
+          } finally {
+            setUploadingImages(false);
+            setFileList([]);
+          }
+        }
+      }
+
       onSuccess && onSuccess();
     } catch (e) {
       const errs = e?.errors;
@@ -103,6 +172,40 @@ const ProductForm = ({ product, onSuccess }) => {
         );
       }
       message.error(e?.message || "Dữ liệu không hợp lệ");
+    }
+  };
+
+  const handleImageUpload = (info) => {
+    const { fileList: newFileList } = info;
+    // Limit to 5 images total (existing + new)
+    const maxNewFiles = Math.max(0, 5 - productImages.length);
+    const filteredFileList = newFileList.slice(0, maxNewFiles);
+    setFileList(filteredFileList);
+  };
+
+  const handleDeleteImage = async (imageId) => {
+    try {
+      await productsService.deleteProductImage(imageId);
+      message.success("Xóa ảnh thành công!");
+      // Reload images
+      if (product?.idProduct) {
+        await loadProductImages(product.idProduct);
+      }
+    } catch (error) {
+      message.error("Xóa ảnh thất bại: " + (error.message || "Lỗi không xác định"));
+    }
+  };
+
+  const handleSetPrimaryImage = async (imageId) => {
+    try {
+      await productsService.setImageAsPrimary(imageId);
+      message.success("Đặt ảnh chính thành công!");
+      // Reload images
+      if (product?.idProduct) {
+        await loadProductImages(product.idProduct);
+      }
+    } catch (error) {
+      message.error("Đặt ảnh chính thất bại: " + (error.message || "Lỗi không xác định"));
     }
   };
 
@@ -178,9 +281,102 @@ const ProductForm = ({ product, onSuccess }) => {
         <Select options={STATUSES.map((st) => ({ value: st, label: st }))} />
       </Form.Item>
 
-      <Form.Item name="imageUrl" label="Ảnh (URL)">
+      <Form.Item name="imageUrl" label="Ảnh (URL - tùy chọn, có thể upload ảnh bên dưới)">
         <Input placeholder="https://..." />
       </Form.Item>
+
+      {/* Product Images Section - Only show when editing */}
+      {isEditing && product?.idProduct && (
+        <>
+          <Divider orientation="left">Ảnh sản phẩm</Divider>
+          <Form.Item label="Ảnh hiện có">
+            {productImages.length > 0 ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+                {productImages.map((img) => (
+                  <Card
+                    key={img.idProductImage}
+                    hoverable
+                    style={{ width: 150 }}
+                    cover={
+                      <Image
+                        src={img.imageUrl}
+                        alt="Product"
+                        style={{ width: "100%", height: 150, objectFit: "cover" }}
+                        preview={true}
+                      />
+                    }
+                    actions={[
+                      <Button
+                        type="text"
+                        icon={<EyeOutlined />}
+                        onClick={() => {
+                          setLightboxIndex(productImages.findIndex((i) => i.idProductImage === img.idProductImage));
+                          setLightboxVisible(true);
+                        }}
+                        title="Xem ảnh"
+                      />,
+                      <Button
+                        type="text"
+                        icon={img.isPrimary ? <StarFilled style={{ color: "#faad14" }} /> : <StarOutlined />}
+                        onClick={() => handleSetPrimaryImage(img.idProductImage)}
+                        title={img.isPrimary ? "Ảnh chính" : "Đặt làm ảnh chính"}
+                      />,
+                      <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleDeleteImage(img.idProductImage)}
+                        title="Xóa ảnh"
+                      />,
+                    ]}
+                  >
+                    {img.isPrimary && (
+                      <div style={{ textAlign: "center", marginTop: "8px" }}>
+                        <Tag color="gold">Ảnh chính</Tag>
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Text type="secondary">Chưa có ảnh</Text>
+            )}
+          </Form.Item>
+          <Form.Item label="Thêm ảnh mới (tối đa 5 ảnh)">
+            <Upload
+              listType="picture-card"
+              fileList={fileList}
+              onChange={handleImageUpload}
+              beforeUpload={() => false} // Prevent auto upload
+              accept="image/*"
+              multiple
+              maxCount={Math.max(0, 5 - productImages.length)}
+            >
+              {fileList.length + productImages.length < 5 && (
+                <div>
+                  <UploadOutlined />
+                  <div style={{ marginTop: 8 }}>Upload</div>
+                </div>
+              )}
+            </Upload>
+            <Text type="secondary" style={{ display: "block", marginTop: "8px" }}>
+              Có thể upload tối đa 5 ảnh. Ảnh đầu tiên sẽ là ảnh chính.
+            </Text>
+          </Form.Item>
+        </>
+      )}
+
+      {/* For new products, show upload */}
+      {!isEditing && (
+        <>
+          <Divider orientation="left">Ảnh sản phẩm (sẽ upload sau khi tạo)</Divider>
+          <Form.Item label="Ảnh sẽ được upload sau khi tạo sản phẩm">
+            <Text type="secondary">
+              Sau khi tạo sản phẩm, bạn có thể quay lại để upload ảnh cho sản phẩm.
+            </Text>
+          </Form.Item>
+        </>
+      )}
 
       <Form.Item
         name="codeType"
@@ -218,14 +414,22 @@ const ProductForm = ({ product, onSuccess }) => {
         <Input placeholder="SKU tùy chọn (nếu dùng song song với mã khác)" />
       </Form.Item>
 
-      <div style={{ textAlign: "right", marginTop: 12 }}>
+      <Form.Item>
         <Space>
-          <Button onClick={() => onSuccess && onSuccess()}>Hủy</Button>
-          <Button type="primary" htmlType="submit">
-            {product?.idProduct ? "Cập nhật" : "Thêm"} sản phẩm
+          <Button type="primary" htmlType="submit" loading={loadingMeta || uploadingImages}>
+            {product?.idProduct ? "Cập nhật" : "Tạo mới"}
           </Button>
+          <Button onClick={() => form.resetFields()}>Đặt lại</Button>
         </Space>
-      </div>
+      </Form.Item>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        images={productImages.map((img) => ({ url: img.imageUrl, alt: form.getFieldValue("productName") || "Product" }))}
+        currentIndex={lightboxIndex}
+        visible={lightboxVisible}
+        onClose={() => setLightboxVisible(false)}
+      />
     </Form>
   );
 };

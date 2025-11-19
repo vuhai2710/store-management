@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Table,
   Button,
@@ -6,30 +6,44 @@ import {
   Tag,
   Input,
   Select,
-  DatePicker,
   Card,
   Typography,
   Modal,
   message,
-  Popconfirm,
   Tooltip,
 } from 'antd';
 import {
   PlusOutlined,
   SearchOutlined,
-  EditOutlined,
-  DeleteOutlined,
   EyeOutlined,
   PrinterOutlined,
+  ReloadOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { fetchOrders, deleteOrder, setPagination, setFilters } from '../store/slices/ordersSlice';
+import { fetchOrders, setPagination, setFilters } from '../store/slices/ordersSlice';
 import OrderForm from '../components/orders/OrderForm';
+import { usePagination } from '../hooks/usePagination';
+import StatusBadge from '../components/common/StatusBadge';
+import { exportToExcel, exportToCSV } from '../utils/exportUtils';
+import LoadingSkeleton from '../components/common/LoadingSkeleton';
+import EmptyState from '../components/common/EmptyState';
+import { formatDate } from '../utils/formatUtils';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+dayjs.extend(customParseFormat);
 
 const { Title, Text } = Typography;
 const { Option } = Select;
-const { RangePicker } = DatePicker;
+
+// Order status mapping
+const ORDER_STATUS = {
+  PENDING: { text: 'Chờ xác nhận', color: 'warning' },
+  CONFIRMED: { text: 'Đã xác nhận', color: 'processing' },
+  COMPLETED: { text: 'Hoàn thành', color: 'success' },
+  CANCELED: { text: 'Đã hủy', color: 'error' },
+};
 
 const Orders = () => {
   const dispatch = useDispatch();
@@ -37,29 +51,64 @@ const Orders = () => {
   const { orders, loading, pagination, filters } = useSelector((state) => state.orders);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
-  const [, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState(filters.status || null);
+  const [customerIdFilter, setCustomerIdFilter] = useState(filters.customerId || null);
+
+  // Use pagination hook
+  const {
+    currentPage,
+    pageSize,
+    setTotal,
+    handlePageChange,
+    resetPagination,
+    pagination: tablePagination,
+  } = usePagination(1, 10);
+
+  // Fetch orders when pagination or filters change
+  const fetchOrdersList = useCallback(() => {
+    const params = {
+      pageNo: currentPage,
+      pageSize,
+      sortBy: 'orderDate',
+      sortDirection: 'DESC',
+    };
+
+    if (statusFilter) params.status = statusFilter;
+    if (customerIdFilter) params.customerId = customerIdFilter;
+
+    dispatch(fetchOrders(params));
+  }, [dispatch, currentPage, pageSize, statusFilter, customerIdFilter]);
 
   useEffect(() => {
-    dispatch(fetchOrders({ ...pagination, ...filters }));
-  }, [dispatch, pagination, filters]);
+    fetchOrdersList();
+  }, [fetchOrdersList]);
 
-  const handleTableChange = (pagination, filters, sorter) => {
-    dispatch(setPagination(pagination));
-  };
+  // Sync total from Redux to hook
+  useEffect(() => {
+    setTotal(pagination.total || 0);
+  }, [pagination.total, setTotal]);
 
-  const handleSearch = (value) => {
-    setSearchText(value);
-    dispatch(setFilters({ search: value }));
+  const handleTableChange = (p, _filters, sorter) => {
+    handlePageChange(p.current, p.pageSize);
   };
 
   const handleStatusFilter = (value) => {
+    setStatusFilter(value);
     dispatch(setFilters({ status: value }));
+    resetPagination(); // Reset về page 1
   };
 
-  const handleDateFilter = (dates) => {
-    dispatch(setFilters({ 
-      dateRange: dates ? [dates[0].format('YYYY-MM-DD'), dates[1].format('YYYY-MM-DD')] : null 
-    }));
+  const handleCustomerIdFilter = (value) => {
+    setCustomerIdFilter(value);
+    dispatch(setFilters({ customerId: value }));
+    resetPagination(); // Reset về page 1
+  };
+
+  const handleResetFilters = () => {
+    setStatusFilter(null);
+    setCustomerIdFilter(null);
+    dispatch(setFilters({ status: null, customerId: null }));
+    resetPagination();
   };
 
   const handleCreateOrder = () => {
@@ -67,232 +116,244 @@ const Orders = () => {
     setIsModalVisible(true);
   };
 
-  const handleEditOrder = (order) => {
-    setEditingOrder(order);
-    setIsModalVisible(true);
-  };
-
   const handleViewOrder = (orderId) => {
     navigate(`/orders/${orderId}`);
   };
 
-
-  const handleDeleteOrder = async (orderId) => {
+  const handlePrintInvoice = async (orderId, e) => {
+    e?.stopPropagation();
     try {
-      await dispatch(deleteOrder(orderId)).unwrap();
-      message.success('Xóa đơn hàng thành công!');
+      const { ordersService } = await import('../services/ordersService');
+      const blob = await ordersService.exportOrderToPdf(orderId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `hoa-don-${orderId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      message.success('Xuất hóa đơn thành công!');
     } catch (error) {
-      message.error('Xóa đơn hàng thất bại!');
+      message.error('Xuất hóa đơn thất bại!');
     }
   };
 
-  const handlePrintInvoice = (orderId) => {
-    // Implement print invoice functionality
-    message.info('Chức năng in hóa đơn đang được phát triển');
+  const getStatusInfo = (status) => {
+    if (!status) return { text: status, color: 'default' };
+    const statusUpper = status.toUpperCase();
+    return ORDER_STATUS[statusUpper] || { text: status, color: 'default' };
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed':
-        return 'success';
-      case 'processing':
-        return 'processing';
-      case 'pending':
-        return 'warning';
-      case 'cancelled':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'completed':
-        return 'Hoàn thành';
-      case 'processing':
-        return 'Đang xử lý';
-      case 'pending':
-        return 'Chờ xác nhận';
-      case 'cancelled':
-        return 'Đã hủy';
-      default:
-        return status;
-    }
-  };
+  // Lấy ngày từ nhiều key (DTO dùng orderDate, phòng khi trả snake_case)
+  const getOrderDateValue = (record) =>
+    record?.orderDate ??
+    record?.order_date ??
+    record?.createdAt ??
+    record?.created_at ??
+    null;
 
   const columns = [
     {
       title: 'Mã đơn hàng',
-      dataIndex: 'id',
-      key: 'id',
-      render: (text) => <Text strong>{text}</Text>,
+      dataIndex: 'idOrder',
+      key: 'idOrder',
+      width: 100,
+      render: (text) => <Text strong>#{text}</Text>,
     },
     {
       title: 'Khách hàng',
-      dataIndex: 'customer',
       key: 'customer',
-      render: (customer) => customer?.name || 'N/A',
+      render: (record) => record.customerName || 'N/A',
     },
     {
       title: 'Tổng tiền',
       dataIndex: 'totalAmount',
       key: 'totalAmount',
-      render: (amount) => `${amount?.toLocaleString('vi-VN')} VNĐ`,
+      width: 150,
+      render: (amount) => (
+        <Text strong>{amount ? `${Number(amount).toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}</Text>
+      ),
     },
     {
       title: 'Thanh toán',
       dataIndex: 'paymentMethod',
       key: 'paymentMethod',
-      render: (method) => (
-        <Tag color={method === 'cash' ? 'green' : 'blue'}>
-          {method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản'}
-        </Tag>
-      ),
+      width: 120,
+      render: (method) => {
+        if (!method) return <Tag>N/A</Tag>;
+        const methodUpper = method.toUpperCase();
+        if (methodUpper === 'CASH') {
+          return <Tag color="green">Tiền mặt</Tag>;
+        } else if (methodUpper === 'PAYOS') {
+          return <Tag color="blue">PayOS</Tag>;
+        } else if (methodUpper === 'TRANSFER') {
+          return <Tag color="purple">Chuyển khoản</Tag>;
+        } else if (methodUpper === 'ZALOPAY') {
+          return <Tag color="orange">ZaloPay</Tag>;
+        }
+        return <Tag>{method}</Tag>;
+      },
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      render: (status) => (
-        <Tag color={getStatusColor(status)}>
-          {getStatusText(status)}
-        </Tag>
-      ),
-      filters: [
-        { text: 'Chờ xác nhận', value: 'pending' },
-        { text: 'Đang xử lý', value: 'processing' },
-        { text: 'Hoàn thành', value: 'completed' },
-        { text: 'Đã hủy', value: 'cancelled' },
-      ],
+      width: 130,
+      render: (status) => <StatusBadge status={status} statusMap={ORDER_STATUS} />,
     },
     {
-      title: 'Ngày tạo',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date) => new Date(date).toLocaleDateString('vi-VN'),
+      title: 'Ngày đặt',
+      key: 'orderDate',
+      width: 160,
+      // dùng render để tự chọn field và format
+      render: (_, record) => formatDate(getOrderDateValue(record), "DD/MM/YYYY HH:mm"),
     },
     {
       title: 'Hành động',
       key: 'actions',
-      render: (_, record) => (
-        <Space>
-          <Tooltip title="Xem chi tiết">
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              onClick={() => handleViewOrder(record.id)}
-            />
-          </Tooltip>
-          <Tooltip title="Chỉnh sửa">
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => handleEditOrder(record)}
-            />
-          </Tooltip>
-          <Tooltip title="In hóa đơn">
-            <Button
-              type="text"
-              icon={<PrinterOutlined />}
-              onClick={() => handlePrintInvoice(record.id)}
-            />
-          </Tooltip>
-          <Popconfirm
-            title="Bạn có chắc chắn muốn xóa đơn hàng này?"
-            onConfirm={() => handleDeleteOrder(record.id)}
-            okText="Xóa"
-            cancelText="Hủy"
-          >
-            <Tooltip title="Xóa">
+      width: 120,
+      fixed: 'right',
+      render: (_, record) => {
+        const orderId = record.idOrder || record.id;
+        return (
+          <Space>
+            <Tooltip title="Xem chi tiết">
               <Button
                 type="text"
-                danger
-                icon={<DeleteOutlined />}
+                icon={<EyeOutlined />}
+                onClick={() => handleViewOrder(orderId)}
               />
             </Tooltip>
-          </Popconfirm>
-        </Space>
-      ),
+            <Tooltip title="In hóa đơn">
+              <Button
+                type="text"
+                icon={<PrinterOutlined />}
+                onClick={(e) => handlePrintInvoice(orderId, e)}
+              />
+            </Tooltip>
+          </Space>
+        );
+      },
     },
   ];
 
-  return (
-    <div>
-      <div className="page-header">
-        <Title level={1}>Quản lý Đơn hàng</Title>
-        <p>Quản lý và theo dõi tất cả đơn hàng trong hệ thống</p>
-      </div>
+  const handleExportExcel = () => {
+    if (!orders || orders.length === 0) {
+      message.warning('Không có dữ liệu để xuất');
+      return;
+    }
+    try {
+      exportToExcel(orders, `don-hang-${new Date().toISOString().split('T')[0]}`, columns);
+      message.success('Xuất file Excel thành công!');
+    } catch (error) {
+      message.error(error?.message || 'Xuất file Excel thất bại!');
+    }
+  };
 
-      <Card className="table-container">
-        {/* Filters */}
-        <div style={{ marginBottom: '16px' }}>
-          <Space wrap>
-            <Input.Search
-              placeholder="Tìm kiếm đơn hàng..."
-              style={{ width: 300 }}
-              onSearch={handleSearch}
-              enterButton={<SearchOutlined />}
-            />
+  const handleExportCSV = () => {
+    if (!orders || orders.length === 0) {
+      message.warning('Không có dữ liệu để xuất');
+      return;
+    }
+    try {
+      exportToCSV(orders, `don-hang-${new Date().toISOString().split('T')[0]}`, columns);
+      message.success('Xuất file CSV thành công!');
+    } catch (error) {
+      message.error(error?.message || 'Xuất file CSV thất bại!');
+    }
+  };
+
+  useEffect(() => {
+    if (loading) {
+      message.loading({ content: 'Đang tải dữ liệu...', key: 'fetchOrders' });
+    } else {
+      message.destroy('fetchOrders');
+    }
+  }, [loading]);
+
+  return (
+    <div className="page-orders">
+      <div className="page-header">
+        <Title level={3}>Quản lý đơn hàng</Title>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleCreateOrder}
+        >
+          Tạo đơn hàng
+        </Button>
+      </div>
+      <Card>
+        <div className="table-toolbar">
+          <div className="filters">
             <Select
               placeholder="Trạng thái"
-              style={{ width: 150 }}
-              allowClear
+              value={statusFilter}
               onChange={handleStatusFilter}
+              style={{ width: 150, marginRight: 8 }}
             >
-              <Option value="pending">Chờ xác nhận</Option>
-              <Option value="processing">Đang xử lý</Option>
-              <Option value="completed">Hoàn thành</Option>
-              <Option value="cancelled">Đã hủy</Option>
+              <Option value="">Tất cả</Option>
+              {Object.keys(ORDER_STATUS).map((key) => (
+                <Option key={key} value={key}>
+                  <StatusBadge status={key} statusMap={ORDER_STATUS} />
+                  {ORDER_STATUS[key].text}
+                </Option>
+              ))}
             </Select>
-            <RangePicker
-              placeholder={['Từ ngày', 'Đến ngày']}
-              onChange={handleDateFilter}
+            <Input.Search
+              placeholder="Tìm theo khách hàng"
+              onSearch={handleCustomerIdFilter}
+              style={{ width: 250 }}
+              allowClear
             />
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreateOrder}
-            >
-              Tạo đơn hàng mới
+            <Button onClick={handleResetFilters} icon={<ReloadOutlined />}>
+              Đặt lại bộ lọc
             </Button>
-          </Space>
+          </div>
+          <div className="export-buttons">
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={handleExportExcel}
+              style={{ marginRight: 8 }}
+            >
+              Xuất Excel
+            </Button>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={handleExportCSV}
+              type="dashed"
+            >
+              Xuất CSV
+            </Button>
+          </div>
         </div>
-
-        {/* Table */}
         <Table
           columns={columns}
           dataSource={orders}
+          pagination={tablePagination}
           loading={loading}
-          rowKey="id"
-          pagination={{
-            current: pagination.current,
-            pageSize: pagination.pageSize,
-            total: pagination.total,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} của ${total} đơn hàng`,
-          }}
           onChange={handleTableChange}
-          scroll={{ x: 800 }}
+          rowKey={(record) => record.idOrder || record.id}
+          scroll={{ x: 1300 }}
+          locale={{ emptyText: <EmptyState /> }}
         />
       </Card>
 
-      {/* Order Form Modal */}
+      {/* Modal tạo đơn hàng - chỉ mở khi isModalVisible = true */}
       <Modal
-        title={editingOrder ? 'Chỉnh sửa đơn hàng' : 'Tạo đơn hàng mới'}
         open={isModalVisible}
+        title="Tạo đơn hàng"
         onCancel={() => setIsModalVisible(false)}
         footer={null}
-        width={800}
+        width={900}
         destroyOnClose
       >
         <OrderForm
           order={editingOrder}
           onSuccess={() => {
             setIsModalVisible(false);
-            dispatch(fetchOrders({ ...pagination, ...filters }));
+            fetchOrdersList();
           }}
         />
       </Modal>

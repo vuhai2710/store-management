@@ -21,19 +21,25 @@ const parseBackendDate = (dateString) => {
 };
 
 // Helper function để transform customer data từ Backend sang Frontend format
+// Keep both original backend fields (customerName, phoneNumber) and transformed fields (name, phone) for compatibility
 const transformCustomer = (customer) => ({
   id: customer.idCustomer,
+  idCustomer: customer.idCustomer, // Keep original ID field
   userId: customer.idUser,
+  idUser: customer.idUser,
   name: customer.customerName,
+  customerName: customer.customerName, // Keep original field for backend requests
   fullName: customer.customerName,
   email: customer.email,
   phone: customer.phoneNumber,
-  phoneNumber: customer.phoneNumber,
+  phoneNumber: customer.phoneNumber, // Keep original field for backend requests
   address: customer.address,
   username: customer.username,
   customerType: customer.customerType || "REGULAR",
   status: "active",
+  isActive: customer.isActive,
   avatar: null,
+  avatarUrl: customer.avatarUrl,
   createdAt: parseBackendDate(customer.createdAt),
   updatedAt: parseBackendDate(customer.updatedAt),
 });
@@ -311,18 +317,34 @@ export const customersService = {
     }
   },
 
+  // Lấy thông tin customer của chính mình (CUSTOMER role)
+  // Backend: GET /api/v1/customers/me
+  // Returns: ApiResponse<CustomerDto>
+  getMyCustomerInfo: async () => {
+    try {
+      console.log("Calling getMyCustomerInfo");
+      const response = await api.get("/customers/me");
+      console.log("API Response getMyCustomerInfo:", response.data);
+      return handleSingleCustomerResponse(response.data);
+    } catch (error) {
+      console.error("Error getMyCustomerInfo:", error);
+      throw error;
+    }
+  },
+
   // Cập nhật thông tin customer của chính mình (CUSTOMER role)
   // Backend: PUT /api/v1/customers/me
-  // Body: CustomerDto (customerName, email, phoneNumber, address)
+  // Body: CustomerDto (customerName, phoneNumber, address)
   // Returns: ApiResponse<CustomerDto>
+  // Note: Backend không cho phép cập nhật email
   updateMyCustomerInfo: async (customerData) => {
     try {
-      // Transform frontend data to match CustomerDto with validation
+      // Transform frontend data to match CustomerDto
       const requestData = {
         customerName: customerData.customerName || customerData.name,
-        email: customerData.email, // Must match: ^[A-Za-z0-9._%+-]+@gmail\.com$
-        phoneNumber: customerData.phoneNumber || customerData.phone, // Must match: ^0\d{9}$
+        phoneNumber: customerData.phoneNumber || customerData.phone,
         address: customerData.address,
+        // Note: Email không được phép cập nhật
       };
 
       console.log("Calling updateMyCustomerInfo with data:", requestData);

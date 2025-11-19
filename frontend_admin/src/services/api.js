@@ -58,23 +58,51 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response?.status;
     const url = error.config?.url;
-    const msg = error.response?.data?.message || error.message || 'API Error';
+    const responseData = error.response?.data;
+    
+    // Extract error message from ApiResponse structure
+    let msg = 'API Error';
+    if (responseData) {
+      if (responseData.message) {
+        msg = responseData.message;
+      } else if (responseData.data?.message) {
+        msg = responseData.data.message;
+      } else if (typeof responseData === 'string') {
+        msg = responseData;
+      }
+    } else if (error.message) {
+      msg = error.message;
+    }
+
     console.error(`[API] x- ${status || 'ERR'} ${url || ''}`, {
       message: msg,
-      data: error.response?.data,
+      data: responseData,
+      status,
     });
 
+    // Handle authentication errors
     if (status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      // Redirect to login if not already there
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
 
-    return Promise.reject({
+    // Handle validation errors
+    const errors = responseData?.errors || responseData?.data?.errors || null;
+
+    // Create a more descriptive error object
+    const errorObject = {
       message: msg,
-      errors: error.response?.data?.errors || null,
+      errors,
       status,
       originalError: error,
-    });
+      responseData,
+    };
+
+    return Promise.reject(errorObject);
   }
 );
 

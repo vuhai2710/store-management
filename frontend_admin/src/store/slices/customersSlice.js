@@ -86,7 +86,7 @@ const initialState = {
   error: null,
   pagination: {
     current: 1,
-    pageSize: 10,
+    pageSize: 5, // Default page size: 5
     total: 0,
   },
   filters: {
@@ -120,8 +120,19 @@ const customersSlice = createSlice({
       })
       .addCase(fetchCustomers.fulfilled, (state, action) => {
         state.loading = false;
-        state.customers = action.payload?.data || [];
-        state.pagination.total = action.payload?.total || 0;
+        // customersService returns transformed object: { data, total, pageNo (1-indexed), pageSize, totalPages, ... }
+        const pageResponse = action.payload;
+        if (pageResponse && pageResponse.data) {
+          state.customers = pageResponse.data || [];
+          // pageResponse.pageNo is already 1-indexed from customersService
+          state.pagination.current = pageResponse.pageNo || 1;
+          state.pagination.pageSize = pageResponse.pageSize || 5; // Default page size: 5
+          state.pagination.total = pageResponse.total || 0;
+        } else {
+          // Fallback: if not transformed PageResponse, treat as array
+          state.customers = Array.isArray(pageResponse) ? pageResponse : [];
+          state.pagination.total = state.customers.length;
+        }
         state.error = null;
       })
       .addCase(fetchCustomers.rejected, (state, action) => {

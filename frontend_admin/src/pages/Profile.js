@@ -11,6 +11,7 @@ import {
   Modal,
   Form,
   Input,
+  Upload,
 } from "antd";
 import {
   UserOutlined,
@@ -19,14 +20,23 @@ import {
   PhoneOutlined,
   HomeOutlined,
   CalendarOutlined,
+  CameraOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
+import { useDispatch } from "react-redux";
 import { authService } from "../services/authService";
+import { employeesService } from "../services/employeesService";
+import { customersService } from "../services/customersService";
+import { setUser } from "../store/slices/authSlice";
 import { USER_ROLES } from "../constants/roles";
 
 const Profile = () => {
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isAvatarModalVisible, setIsAvatarModalVisible] = useState(false);
+  const [isViewAvatarModalVisible, setIsViewAvatarModalVisible] = useState(false);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -36,9 +46,33 @@ const Profile = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const data = await authService.getCurrentUser();
-      console.log("Profile data:", data);
-      setProfile(data);
+      // Lấy thông tin user cơ bản
+      const userData = await authService.getCurrentUser();
+      console.log("User data:", userData);
+      
+      // Nếu là EMPLOYEE hoặc CUSTOMER, lấy thêm thông tin chi tiết
+      let detailedData = null;
+      if (userData.role === USER_ROLES.EMPLOYEE) {
+        try {
+          detailedData = await employeesService.getMyProfile();
+          console.log("Employee data:", detailedData);
+        } catch (err) {
+          console.warn("Could not fetch employee details:", err);
+        }
+      } else if (userData.role === USER_ROLES.CUSTOMER) {
+        try {
+          detailedData = await customersService.getMyCustomerInfo();
+          console.log("Customer data:", detailedData);
+        } catch (err) {
+          console.warn("Could not fetch customer details:", err);
+        }
+      }
+      
+      // Merge user data với detailed data
+      setProfile({
+        ...userData,
+        ...(detailedData || {}),
+      });
     } catch (error) {
       console.error("Lỗi lấy thông tin profile:", error);
       message.error("Không thể lấy thông tin người dùng");
@@ -74,21 +108,120 @@ const Profile = () => {
   };
 
   const handleEdit = () => {
-    form.setFieldsValue({
+    const role = profile?.role;
+    const formValues = {
       email: profile?.email,
-      // Có thể thêm các trường khác nếu backend hỗ trợ
-    });
+    };
+    
+    // Thêm các trường theo role
+    if (role === USER_ROLES.EMPLOYEE) {
+      formValues.employeeName = profile?.employeeName;
+      formValues.phoneNumber = profile?.phoneNumber;
+      formValues.address = profile?.address;
+    } else if (role === USER_ROLES.CUSTOMER) {
+      formValues.customerName = profile?.customerName || profile?.name;
+      formValues.phoneNumber = profile?.phoneNumber || profile?.phone;
+      formValues.address = profile?.address;
+    }
+    
+    form.setFieldsValue(formValues);
     setIsEditModalVisible(true);
   };
 
   const handleUpdateProfile = async (values) => {
     try {
-      // TODO: Implement update profile API
+      const role = profile?.role;
+      let response = null;
+
+      // Gọi đúng API theo role
+      if (role === USER_ROLES.ADMIN) {
+        // ADMIN: PUT /api/v1/users/{id}
+        if (!profile?.idUser) {
+          message.error("Không tìm thấy thông tin người dùng");
+          return;
+        }
+        response = await authService.updateProfile(profile.idUser, {
+          email: values.email,
+        });
+      } else if (role === USER_ROLES.EMPLOYEE) {
+        // EMPLOYEE: PUT /api/v1/employees/me
+        response = await employeesService.updateMyProfile({
+          employeeName: values.employeeName,
+          phoneNumber: values.phoneNumber,
+          address: values.address,
+          // Note: Email không được phép cập nhật cho EMPLOYEE
+        });
+      } else if (role === USER_ROLES.CUSTOMER) {
+        // CUSTOMER: PUT /api/v1/customers/me
+        response = await customersService.updateMyCustomerInfo({
+          customerName: values.customerName,
+          phoneNumber: values.phoneNumber,
+          address: values.address,
+          // Note: Email không được phép cập nhật cho CUSTOMER
+        });
+      } else {
+        message.error("Không xác định được vai trò người dùng");
+        return;
+      }
+
+      // Update user in Redux store (nếu response có user data)
+      if (response?.data) {
+        // Nếu response có user data, update Redux
+        const updatedUser = response.data;
+        // Merge với user data hiện tại
+        dispatch(setUser({
+          ...profile,
+          ...updatedUser,
+        }));
+      }
+
       message.success("Cập nhật thông tin thành công");
       setIsEditModalVisible(false);
       fetchProfile();
     } catch (error) {
-      message.error("Cập nhật thông tin thất bại");
+      const errorMessage = error?.response?.data?.message || error?.message || "Cập nhật thông tin thất bại";
+      message.error(errorMessage);
+      console.error("Error updating profile:", error);
+    }
+  };
+
+  const getAvatarUrl = () => {
+    if (profile?.avatarUrl) {
+      if (profile.avatarUrl.startsWith('http://') || profile.avatarUrl.startsWith('https://')) {
+        return profile.avatarUrl;
+      }
+      return `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}${profile.avatarUrl}`;
+    }
+    return null;
+  };
+
+  const handleAvatarClick = () => {
+    if (getAvatarUrl()) {
+      setIsViewAvatarModalVisible(true);
+    } else {
+      setIsAvatarModalVisible(true);
+    }
+  };
+
+  const handleAvatarUpload = async (file) => {
+    try {
+      const response = await authService.updateAvatar(file);
+      // API interceptor đã unwrap response.data.data thành response.data
+      const updatedUser = response?.data || response;
+      if (updatedUser) {
+        // Update Redux state
+        dispatch(setUser(updatedUser));
+        // Update localStorage
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        // Refresh profile
+        await fetchProfile();
+        message.success('Cập nhật ảnh đại diện thành công!');
+        setIsAvatarModalVisible(false);
+      }
+      return false; // Prevent default upload
+    } catch (error) {
+      message.error(error?.response?.data?.message || 'Cập nhật ảnh đại diện thất bại!');
+      return false;
     }
   };
 
@@ -123,16 +256,59 @@ const Profile = () => {
           </Button>
         }>
         <div style={{ display: "flex", gap: "24px", marginBottom: "24px" }}>
-          <Avatar size={120} icon={<UserOutlined />} />
+          <div style={{ position: 'relative', cursor: 'pointer' }} onClick={handleAvatarClick}>
+            <Avatar 
+              size={120} 
+              icon={<UserOutlined />}
+              src={getAvatarUrl()}
+              style={{ border: '2px solid #1890ff' }}
+            />
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              background: '#1890ff',
+              borderRadius: '50%',
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              cursor: 'pointer',
+            }}>
+              {getAvatarUrl() ? <EyeOutlined /> : <CameraOutlined />}
+            </div>
+          </div>
           <div style={{ flex: 1 }}>
             <Descriptions column={1} bordered>
               <Descriptions.Item label="ID">{profile.idUser}</Descriptions.Item>
               <Descriptions.Item label="Tên đăng nhập">
                 {profile.username}
               </Descriptions.Item>
+              {profile?.role === USER_ROLES.EMPLOYEE && profile?.employeeName && (
+                <Descriptions.Item label="Tên nhân viên">
+                  {profile.employeeName}
+                </Descriptions.Item>
+              )}
+              {profile?.role === USER_ROLES.CUSTOMER && (profile?.customerName || profile?.name) && (
+                <Descriptions.Item label="Tên khách hàng">
+                  {profile.customerName || profile.name}
+                </Descriptions.Item>
+              )}
               <Descriptions.Item label="Email" icon={<MailOutlined />}>
                 {profile.email || "Chưa cập nhật"}
               </Descriptions.Item>
+              {(profile?.phoneNumber || profile?.phone) && (
+                <Descriptions.Item label="Số điện thoại" icon={<PhoneOutlined />}>
+                  {profile.phoneNumber || profile.phone}
+                </Descriptions.Item>
+              )}
+              {profile?.address && (
+                <Descriptions.Item label="Địa chỉ" icon={<HomeOutlined />}>
+                  {profile.address}
+                </Descriptions.Item>
+              )}
               <Descriptions.Item label="Vai trò">
                 <Tag color={getRoleColor(profile.role)}>
                   {getRoleText(profile.role)}
@@ -160,15 +336,71 @@ const Profile = () => {
         onCancel={() => setIsEditModalVisible(false)}
         footer={null}>
         <Form form={form} layout="vertical" onFinish={handleUpdateProfile}>
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: "Vui lòng nhập email" },
-              { type: "email", message: "Email không hợp lệ" },
-            ]}>
-            <Input prefix={<MailOutlined />} />
-          </Form.Item>
+          {profile?.role === USER_ROLES.ADMIN && (
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[
+                { required: true, message: "Vui lòng nhập email" },
+                { type: "email", message: "Email không hợp lệ" },
+              ]}>
+              <Input prefix={<MailOutlined />} />
+            </Form.Item>
+          )}
+
+          {profile?.role === USER_ROLES.EMPLOYEE && (
+            <>
+              <Form.Item
+                name="employeeName"
+                label="Tên nhân viên"
+                rules={[
+                  { required: true, message: "Vui lòng nhập tên nhân viên" },
+                ]}>
+                <Input prefix={<UserOutlined />} />
+              </Form.Item>
+              <Form.Item
+                name="phoneNumber"
+                label="Số điện thoại"
+                rules={[
+                  { required: true, message: "Vui lòng nhập số điện thoại" },
+                  { pattern: /^0\d{9,10}$/, message: "Số điện thoại không hợp lệ (10-11 chữ số, bắt đầu bằng 0)" },
+                ]}>
+                <Input prefix={<PhoneOutlined />} />
+              </Form.Item>
+              <Form.Item
+                name="address"
+                label="Địa chỉ">
+                <Input prefix={<HomeOutlined />} />
+              </Form.Item>
+            </>
+          )}
+
+          {profile?.role === USER_ROLES.CUSTOMER && (
+            <>
+              <Form.Item
+                name="customerName"
+                label="Tên khách hàng"
+                rules={[
+                  { required: true, message: "Vui lòng nhập tên khách hàng" },
+                ]}>
+                <Input prefix={<UserOutlined />} />
+              </Form.Item>
+              <Form.Item
+                name="phoneNumber"
+                label="Số điện thoại"
+                rules={[
+                  { required: true, message: "Vui lòng nhập số điện thoại" },
+                  { pattern: /^0\d{9,10}$/, message: "Số điện thoại không hợp lệ (10-11 chữ số, bắt đầu bằng 0)" },
+                ]}>
+                <Input prefix={<PhoneOutlined />} />
+              </Form.Item>
+              <Form.Item
+                name="address"
+                label="Địa chỉ">
+                <Input prefix={<HomeOutlined />} />
+              </Form.Item>
+            </>
+          )}
 
           <Form.Item>
             <Space>
@@ -179,6 +411,66 @@ const Profile = () => {
             </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* View Avatar Modal */}
+      <Modal
+        title="Ảnh đại diện"
+        open={isViewAvatarModalVisible}
+        onCancel={() => setIsViewAvatarModalVisible(false)}
+        footer={[
+          <Button key="edit" type="primary" onClick={() => {
+            setIsViewAvatarModalVisible(false);
+            setIsAvatarModalVisible(true);
+          }}>
+            Sửa ảnh
+          </Button>,
+          <Button key="close" onClick={() => setIsViewAvatarModalVisible(false)}>
+            Đóng
+          </Button>,
+        ]}
+        width={400}
+      >
+        {getAvatarUrl() ? (
+          <img 
+            src={getAvatarUrl()} 
+            alt="Avatar" 
+            style={{ width: '100%', height: 'auto' }}
+          />
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Avatar size={120} icon={<UserOutlined />} />
+            <p style={{ marginTop: 16 }}>Chưa có ảnh đại diện</p>
+          </div>
+        )}
+      </Modal>
+
+      {/* Edit Avatar Modal */}
+      <Modal
+        title="Sửa ảnh đại diện"
+        open={isAvatarModalVisible}
+        onCancel={() => setIsAvatarModalVisible(false)}
+        footer={null}
+      >
+        <Upload
+          beforeUpload={handleAvatarUpload}
+          showUploadList={false}
+          accept="image/*"
+        >
+          <Button icon={<CameraOutlined />} block>
+            Chọn ảnh để tải lên
+          </Button>
+        </Upload>
+        {getAvatarUrl() && (
+          <div style={{ marginTop: 16, textAlign: 'center' }}>
+            <p>Ảnh hiện tại:</p>
+            <img 
+              src={getAvatarUrl()} 
+              alt="Current Avatar" 
+              style={{ maxWidth: '200px', maxHeight: '200px', marginTop: 8 }}
+            />
+          </div>
+        )}
       </Modal>
     </div>
   );

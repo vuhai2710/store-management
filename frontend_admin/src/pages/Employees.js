@@ -8,6 +8,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { fetchEmployees, deleteEmployee, createEmployee, updateEmployee, setPagination, setSort } from '../store/slices/employeesSlice';
 import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import { formatDate } from '../utils/formatUtils';
+dayjs.extend(customParseFormat);
 
 const { Title } = Typography;
 
@@ -41,7 +44,8 @@ const Employees = () => {
       email: record.email,
       phoneNumber: record.phoneNumber,
       username: record.username,
-      hireDate: record.hireDate ? dayjs(record.hireDate) : null,
+      // backend sends 'DD/MM/YYYY'
+      hireDate: record.hireDate ? dayjs(record.hireDate, ['DD/MM/YYYY','DD/MM/YYYY HH:mm:ss'], true) : null,
       address: record.address,
       baseSalary: record.baseSalary,
       password: undefined,
@@ -112,8 +116,8 @@ const Employees = () => {
     dispatch(setSort({ sortBy: nextSortBy, sortDirection: nextSortDir }));
   };
 
-  const fmtDate = (v) => (v ? dayjs(v).format('DD/MM/YYYY') : '-');
-  const fmtDateTime = (v) => (v ? dayjs(v).format('DD/MM/YYYY HH:mm') : '-');
+  const fmtDate = (v) => formatDate(v, 'DD/MM/YYYY');
+  const fmtDateTime = (v) => formatDate(v, 'DD/MM/YYYY HH:mm');
   const fmtMoney = (v) => (v != null ? Number(v).toLocaleString('vi-VN') : '-');
 
   const columns = [

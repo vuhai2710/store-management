@@ -10,12 +10,12 @@ Module xử lý đăng ký, đăng nhập, đăng xuất. Tất cả endpoints �
 
 ## Danh sách Endpoints
 
-| Method | Endpoint | Authentication | Mô tả |
-|--------|----------|----------------|-------|
-| POST | `/api/v1/auth/register` | Không cần | Đăng ký tài khoản khách hàng mới |
-| POST | `/api/v1/auth/login` | Không cần | Đăng nhập vào hệ thống |
-| POST | `/api/v1/auth/logout` | Không cần | Đăng xuất khỏi hệ thống |
-| POST | `/api/v1/auth/forgot-password` | Không cần | **MỚI** - Quên mật khẩu (gửi mật khẩu mới qua email) |
+| Method | Endpoint                       | Authentication | Mô tả                                                |
+| ------ | ------------------------------ | -------------- | ---------------------------------------------------- |
+| POST   | `/api/v1/auth/register`        | Không cần      | Đăng ký tài khoản khách hàng mới                     |
+| POST   | `/api/v1/auth/login`           | Không cần      | Đăng nhập vào hệ thống                               |
+| POST   | `/api/v1/auth/logout`          | Không cần      | Đăng xuất khỏi hệ thống                              |
+| POST   | `/api/v1/auth/forgot-password` | Không cần      | **MỚI** - Quên mật khẩu (gửi mật khẩu mới qua email) |
 
 ---
 
@@ -63,14 +63,7 @@ Module xử lý đăng ký, đăng nhập, đăng xuất. Tất cả endpoints �
   "message": "Đăng ký thành công",
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "...",
-    "user": {
-      "idUser": 1,
-      "username": "customer1",
-      "email": "customer1@example.com",
-      "role": "CUSTOMER",
-      "isActive": true
-    }
+    "authenticated": true
   }
 }
 ```
@@ -122,14 +115,7 @@ Module xử lý đăng ký, đăng nhập, đăng xuất. Tất cả endpoints �
   "message": "Đăng nhập thành công",
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "...",
-    "user": {
-      "idUser": 1,
-      "username": "admin",
-      "email": "admin@example.com",
-      "role": "ADMIN",
-      "isActive": true
-    }
+    "authenticated": true
   }
 }
 ```
@@ -190,11 +176,13 @@ Không cần (có thể gửi body rỗng)
 ### Bước 2: Test Đăng ký
 
 **Request:**
+
 - Method: `POST`
 - URL: `{{base_url}}/auth/register`
 - Headers:
   - `Content-Type: application/json`
 - Body (raw JSON):
+
 ```json
 {
   "username": "customer1",
@@ -207,24 +195,28 @@ Không cần (có thể gửi body rỗng)
 ```
 
 **Test Script (tự động lưu token):**
+
 ```javascript
 if (pm.response.code === 201) {
-    const jsonData = pm.response.json();
-    if (jsonData.data && jsonData.data.token) {
-        pm.environment.set("token", jsonData.data.token);
-        console.log("Token saved:", jsonData.data.token);
-    }
+  const jsonData = pm.response.json();
+  if (jsonData.data && jsonData.data.token) {
+    pm.environment.set("token", jsonData.data.token);
+    console.log("Token saved:", jsonData.data.token);
+    console.log("Authenticated:", jsonData.data.authenticated);
+  }
 }
 ```
 
 ### Bước 3: Test Đăng nhập
 
 **Request:**
+
 - Method: `POST`
 - URL: `{{base_url}}/auth/login`
 - Headers:
   - `Content-Type: application/json`
 - Body (raw JSON):
+
 ```json
 {
   "username": "admin",
@@ -233,30 +225,33 @@ if (pm.response.code === 201) {
 ```
 
 **Test Script (tự động lưu token):**
+
 ```javascript
 if (pm.response.code === 200) {
-    const jsonData = pm.response.json();
-    if (jsonData.data && jsonData.data.token) {
-        pm.environment.set("token", jsonData.data.token);
-        pm.environment.set("admin_token", jsonData.data.token); // Nếu login admin
-        console.log("Token saved:", jsonData.data.token);
-        console.log("User role:", jsonData.data.user.role);
-    }
+  const jsonData = pm.response.json();
+  if (jsonData.data && jsonData.data.token) {
+    pm.environment.set("token", jsonData.data.token);
+    pm.environment.set("admin_token", jsonData.data.token); // Nếu login admin
+    console.log("Token saved:", jsonData.data.token);
+    console.log("Authenticated:", jsonData.data.authenticated);
+  }
 }
 ```
 
 ### Bước 4: Test Đăng xuất
 
 **Request:**
+
 - Method: `POST`
 - URL: `{{base_url}}/auth/logout`
 - Headers: (không cần)
 
 **Test Script (xóa token):**
+
 ```javascript
 if (pm.response.code === 200) {
-    pm.environment.set("token", "");
-    console.log("Logged out, token cleared");
+  pm.environment.set("token", "");
+  console.log("Logged out, token cleared");
 }
 ```
 
@@ -316,16 +311,19 @@ Khi username hoặc email đã tồn tại:
 ## Ví dụ Flow hoàn chỉnh
 
 1. **Đăng ký tài khoản mới:**
+
    - POST `/api/v1/auth/register`
    - Lưu token từ response
    - Sử dụng token cho các request sau
 
 2. **Đăng nhập:**
+
    - POST `/api/v1/auth/login`
    - Lưu token từ response
    - Redirect đến trang dashboard
 
 3. **Sử dụng token:**
+
    - Thêm header: `Authorization: Bearer {token}`
    - Gọi các API khác
 
@@ -384,6 +382,7 @@ Khi username hoặc email đã tồn tại:
 ### Email nhận được
 
 User sẽ nhận được email với nội dung:
+
 - **Tiêu đề**: "Khôi phục mật khẩu - Store Management System"
 - **Nội dung**: Mật khẩu mới (10 ký tự random)
 - **Hướng dẫn**: Đăng nhập và đổi mật khẩu ngay
@@ -391,6 +390,7 @@ User sẽ nhận được email với nội dung:
 ### Lưu ý
 
 ⚠️ **Quan trọng**:
+
 - Mật khẩu mới là **ngẫu nhiên** và chỉ gửi 1 lần
 - Nên **đổi mật khẩu ngay** sau khi đăng nhập
 - Email có thể mất **vài giây** để đến hộp thư
@@ -399,6 +399,7 @@ User sẽ nhận được email với nội dung:
 ### Error Responses
 
 **404 Not Found - Không tìm thấy tài khoản**:
+
 ```json
 {
   "code": 404,
@@ -407,6 +408,7 @@ User sẽ nhận được email với nội dung:
 ```
 
 **500 Internal Server Error - Lỗi gửi email**:
+
 ```json
 {
   "code": 500,
@@ -419,28 +421,3 @@ User sẽ nhận được email với nội dung:
 ## Liên hệ
 
 Nếu có thắc mắc về Authentication Module, vui lòng liên hệ team Backend.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

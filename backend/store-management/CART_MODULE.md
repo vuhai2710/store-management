@@ -146,7 +146,7 @@ Content-Type: application/json
 ### Lỗi có thể xảy ra
 
 - **404 Not Found:** Sản phẩm không tồn tại
-- **400 Bad Request:** 
+- **400 Bad Request:**
   - Sản phẩm đã hết hàng
   - Sản phẩm đã ngừng kinh doanh
   - Số lượng không đủ
@@ -340,14 +340,14 @@ if (pm.response.code === 200) {
 
 ## Error Handling
 
-- **400 Bad Request:** 
+- **400 Bad Request:**
   - Validation fail (quantity < 1)
   - Sản phẩm đã hết hàng
   - Sản phẩm đã ngừng kinh doanh
   - Số lượng không đủ
 - **401 Unauthorized:** Không có token hoặc token không hợp lệ
 - **403 Forbidden:** Không phải CUSTOMER role
-- **404 Not Found:** 
+- **404 Not Found:**
   - Sản phẩm không tồn tại
   - Cart item không tồn tại
 
@@ -402,7 +402,7 @@ Khi thêm sản phẩm đã có trong giỏ:
 
 ### Issue: Lỗi "Số lượng sản phẩm không đủ" khi thêm vào giỏ
 
-**Nguyên nhân:** 
+**Nguyên nhân:**
 - Stock đã thay đổi sau khi customer xem sản phẩm
 - Nhiều customer cùng thêm sản phẩm cuối cùng
 
@@ -419,6 +419,40 @@ Khi thêm sản phẩm đã có trong giỏ:
 **Giải pháp:**
 - Kiểm tra trạng thái sản phẩm trước khi hiển thị nút "Thêm vào giỏ"
 - Thông báo rõ ràng lý do không thể thêm
+
+### Issue: Xóa sản phẩm nhưng vẫn còn trong giỏ (FIXED ✅)
+
+**Nguyên nhân:**
+- Hibernate cache không được clear sau khi delete
+- Khi reload cart từ database, Hibernate trả về cached data chứ không query lại
+
+**Giải pháp (Đã fix):**
+1. Thêm `entityManager.clear()` sau khi `flush()` trong method `removeCartItem()`
+2. Clear toàn bộ EntityManager cache để buộc Hibernate query lại database
+3. Đảm bảo dữ liệu trả về là mới nhất sau khi xóa
+
+**Code fix:**
+```java
+@Override
+public CartDTO removeCartItem(Integer customerId, Integer itemId) {
+    // ... validation code ...
+    
+    // Xóa cart item
+    cartItemRepository.delete(cartItem);
+    
+    // Flush và clear để đảm bảo dữ liệu được commit và cache được xóa
+    cartItemRepository.flush();
+    entityManager.clear(); // ⭐ KEY FIX: Clear cache
+    
+    // Reload cart từ database (sẽ query lại thay vì lấy từ cache)
+    Cart updatedCart = cartRepository.findByCustomerIdCustomer(customerId)
+            .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy giỏ hàng"));
+    
+    return cartMapper.toDTO(updatedCart);
+}
+```
+
+**Date Fixed:** November 16, 2025
 
 ---
 

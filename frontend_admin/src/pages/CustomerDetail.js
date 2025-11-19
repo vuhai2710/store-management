@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -20,6 +20,9 @@ import {
   deleteCustomer,
 } from "../store/slices/customersSlice";
 import CustomerForm from "../components/customers/CustomerForm";
+import { ordersService } from "../services/ordersService";
+import { usePagination } from "../hooks/usePagination";
+import { formatCurrency, formatDate } from "../utils/formatUtils";
 
 const { Title } = Typography;
 
@@ -29,12 +32,49 @@ const CustomerDetail = () => {
   const navigate = useNavigate();
   const { currentCustomer, loading } = useSelector((state) => state.customers);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const {
+    currentPage,
+    pageSize,
+    setTotal,
+    handlePageChange,
+    pagination: ordersPagination,
+  } = usePagination(1, 5);
 
   useEffect(() => {
     if (id) {
       dispatch(fetchCustomerById(id));
     }
   }, [dispatch, id]);
+
+  const fetchCustomerOrders = useCallback(async () => {
+    if (!id) return;
+    try {
+      setOrdersLoading(true);
+      const res = await ordersService.getOrders({
+        pageNo: currentPage,
+        pageSize,
+        sortBy: "orderDate",
+        sortDirection: "DESC",
+        customerId: Number(id),
+      });
+      const list = res?.content || res?.list || [];
+      setOrders(list);
+      setTotal(res?.totalElements || 0);
+    } catch (e) {
+      console.error("Failed to load customer orders:", e);
+      message.error("Không thể tải lịch sử đơn hàng");
+      setOrders([]);
+      setTotal(0);
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, [id, currentPage, pageSize, setTotal]);
+
+  useEffect(() => {
+    fetchCustomerOrders();
+  }, [fetchCustomerOrders]);
 
   const handleEdit = () => {
     setIsEditModalVisible(true);
@@ -61,28 +101,28 @@ const CustomerDetail = () => {
   const orderColumns = [
     {
       title: "Mã đơn hàng",
-      dataIndex: "id",
-      key: "id",
+      dataIndex: "idOrder",
+      key: "idOrder",
     },
     {
       title: "Ngày đặt",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date) => new Date(date).toLocaleDateString("vi-VN"),
+      dataIndex: "orderDate",
+      key: "orderDate",
+      render: (date) => (date ? formatDate(date) : ""),
     },
     {
       title: "Tổng tiền",
-      dataIndex: "totalAmount",
-      key: "totalAmount",
-      render: (amount) => `${amount?.toLocaleString("vi-VN")} VNĐ`,
+      dataIndex: "finalAmount",
+      key: "finalAmount",
+      render: (amount) => (amount != null ? formatCurrency(amount) : ""),
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <Tag color={status === "completed" ? "success" : "processing"}>
-          {status === "completed" ? "Hoàn thành" : "Đang xử lý"}
+        <Tag color={status === "COMPLETED" ? "success" : status === "CANCELED" ? "red" : "processing"}>
+          {status}
         </Tag>
       ),
     },
@@ -165,9 +205,11 @@ const CustomerDetail = () => {
       <Card title="Lịch sử đơn hàng">
         <Table
           columns={orderColumns}
-          dataSource={currentCustomer.orders || []}
-          rowKey="id"
-          pagination={{ pageSize: 5 }}
+          dataSource={orders}
+          rowKey="idOrder"
+          loading={ordersLoading}
+          pagination={ordersPagination}
+          onChange={(p) => handlePageChange(p.current, p.pageSize)}
         />
       </Card>
 

@@ -26,11 +26,12 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     // Lọc theo brand (thương hiệu)
     Page<Product> findByBrandIgnoreCase(String brand, Pageable pageable);
-    
+
     // Lọc theo supplier (nhà cung cấp) - nếu cần
     Page<Product> findBySupplier_IdSupplier(Integer idSupplier, Pageable pageable);
 
     // Tìm kiếm và lọc kết hợp - ĐÃ THÊM JOIN FETCH để tránh N+1 query
+    // Thêm lọc theo trạng thái tồn kho (inventoryStatus)
     @Query("""
             SELECT DISTINCT p FROM Product p
             LEFT JOIN FETCH p.category
@@ -41,6 +42,12 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             AND (:brand IS NULL OR LOWER(p.brand) = LOWER(:brand))
             AND (:minPrice IS NULL OR p.price >= :minPrice)
             AND (:maxPrice IS NULL OR p.price <= :maxPrice)
+            AND (
+                :inventoryStatus IS NULL OR
+                (:inventoryStatus = 'COMING_SOON' AND (p.stockQuantity = 0 OR p.stockQuantity IS NULL) AND p.status != 'DISCONTINUED') OR
+                (:inventoryStatus = 'IN_STOCK' AND p.stockQuantity > 0) OR
+                (:inventoryStatus = 'OUT_OF_STOCK' AND (p.stockQuantity = 0 OR p.stockQuantity IS NULL) AND p.status = 'OUT_OF_STOCK')
+            )
             """)
     Page<Product> searchProducts(
             @Param("productCode") String productCode,
@@ -49,9 +56,10 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             @Param("brand") String brand,
             @Param("minPrice") Double minPrice,
             @Param("maxPrice") Double maxPrice,
+            @Param("inventoryStatus") String inventoryStatus,
             Pageable pageable
     );
-    
+
     // Lấy danh sách product IDs của sản phẩm bán chạy (best sellers)
     // Tính từ order_details, sort theo tổng số lượng đã bán
     @Query(value = """
@@ -68,7 +76,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             @Param("limit") int limit,
             @Param("offset") int offset
     );
-    
+
     // Count tổng số sản phẩm đã bán
     @Query(value = """
             SELECT COUNT(DISTINCT od.id_product)
@@ -77,11 +85,11 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             WHERE (:status IS NULL OR o.status = :status)
             """, nativeQuery = true)
     Long countBestSellingProducts(@Param("status") String status);
-    
+
     // Lấy danh sách brands unique (chỉ sản phẩm có status = IN_STOCK)
     @Query("SELECT DISTINCT p.brand FROM Product p WHERE p.status = 'IN_STOCK' AND p.brand IS NOT NULL ORDER BY p.brand")
     List<String> findDistinctBrandsByStatus();
-    
+
     // Lấy sản phẩm liên quan: cùng category, khác productId, status = IN_STOCK
     @Query("""
             SELECT p FROM Product p
@@ -95,7 +103,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             @Param("productId") Integer productId,
             Pageable pageable
     );
-    
+
     // Lấy sản phẩm mới: status = IN_STOCK, sắp xếp theo createdAt DESC
     @Query("""
             SELECT p FROM Product p
@@ -103,7 +111,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             ORDER BY p.createdAt DESC
             """)
     Page<Product> findNewProductsByStatus(Pageable pageable);
-    
+
     // Lấy product với đầy đủ thông tin category và supplier (JOIN FETCH)
     @Query("""
             SELECT p FROM Product p

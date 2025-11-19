@@ -43,7 +43,7 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
 
     /**
      * Tạo địa chỉ giao hàng mới
-     * 
+     *
      * Logic xử lý:
      * 1. Kiểm tra customer tồn tại
      * 2. Map DTO sang entity
@@ -64,6 +64,9 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
                 .phoneNumber(request.getPhoneNumber())
                 .address(request.getAddress())
                 .isDefault(request.getIsDefault() != null ? request.getIsDefault() : false)
+                .provinceId(request.getProvinceId())
+                .districtId(request.getDistrictId())
+                .wardCode(request.getWardCode())
                 .customer(customer)
                 .build();
 
@@ -75,7 +78,7 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
                     .findByCustomerIdCustomerAndIsDefaultTrue(customerId)
                     .stream()
                     .toList();
-            
+
             // Unset tất cả địa chỉ mặc định khác
             defaultAddresses.forEach(addr -> addr.setIsDefault(false));
             shippingAddressRepository.saveAll(defaultAddresses);
@@ -96,19 +99,30 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
         address.setRecipientName(request.getRecipientName());
         address.setPhoneNumber(request.getPhoneNumber());
         address.setAddress(request.getAddress());
-        
+
+        // Update GHN fields if provided
+        if (request.getProvinceId() != null) {
+            address.setProvinceId(request.getProvinceId());
+        }
+        if (request.getDistrictId() != null) {
+            address.setDistrictId(request.getDistrictId());
+        }
+        if (request.getWardCode() != null) {
+            address.setWardCode(request.getWardCode());
+        }
+
         ShippingAddress updatedAddress = shippingAddressRepository.save(address);
         return shippingAddressMapper.toDTO(updatedAddress);
     }
 
     /**
      * Đặt địa chỉ làm mặc định
-     * 
+     *
      * Logic xử lý:
      * 1. Kiểm tra địa chỉ tồn tại và thuộc về customer
      * 2. Unset tất cả địa chỉ mặc định khác
      * 3. Set địa chỉ này làm mặc định
-     * 
+     *
      * Đảm bảo: Chỉ có một địa chỉ mặc định tại một thời điểm
      */
     @Override
@@ -136,14 +150,14 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
 
     /**
      * Xóa địa chỉ giao hàng
-     * 
+     *
      * Logic xử lý:
      * 1. Kiểm tra địa chỉ tồn tại và thuộc về customer
      * 2. Kiểm tra địa chỉ mặc định:
      *    - Nếu là địa chỉ mặc định duy nhất → Không cho phép xóa
      *    - Nếu có nhiều địa chỉ mặc định → Cho phép xóa
      * 3. Xóa địa chỉ
-     * 
+     *
      * Bảo vệ: Không cho xóa địa chỉ mặc định duy nhất để đảm bảo luôn có địa chỉ mặc định
      */
     @Override
@@ -161,7 +175,7 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
                     .stream()
                     .filter(ShippingAddress::getIsDefault)
                     .count();
-            
+
             // Nếu chỉ có 1 địa chỉ mặc định → Không cho phép xóa
             if (defaultCount == 1) {
                 throw new RuntimeException("Không thể xóa địa chỉ mặc định duy nhất");

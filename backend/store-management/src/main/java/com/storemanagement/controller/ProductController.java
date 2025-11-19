@@ -29,7 +29,9 @@ public class ProductController {
     /**
      * Lấy danh sách sản phẩm (có phân trang, lọc, tìm kiếm)
      * GET /api/v1/products
-     * Params: pageNo, pageSize, sortBy, sortDirection, code, name, categoryId, brand, minPrice, maxPrice
+     * Params: pageNo, pageSize, sortBy, sortDirection, code, name, categoryId, brand, minPrice, maxPrice, inventoryStatus
+     *
+     * inventoryStatus: COMING_SOON (hàng sắp về), IN_STOCK (còn hàng), OUT_OF_STOCK (hết hàng)
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
@@ -43,7 +45,8 @@ public class ProductController {
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) String brand,
             @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice) {
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) String inventoryStatus) {
 
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
@@ -51,8 +54,8 @@ public class ProductController {
         PageResponse<ProductDTO> productPage;
 
         // Nếu có bất kỳ tham số tìm kiếm/lọc nào, dùng searchProducts
-        if (code != null || name != null || categoryId != null || brand != null || minPrice != null || maxPrice != null) {
-            productPage = productService.searchProducts(code, name, categoryId, brand, minPrice, maxPrice, pageable);
+        if (code != null || name != null || categoryId != null || brand != null || minPrice != null || maxPrice != null || inventoryStatus != null) {
+            productPage = productService.searchProducts(code, name, categoryId, brand, minPrice, maxPrice, inventoryStatus, pageable);
         } else {
             productPage = productService.getAllProductsPaginated(pageable);
         }
@@ -142,7 +145,7 @@ public class ProductController {
         PageResponse<ProductDTO> productPage = productService.getProductsByBrand(brand, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách sản phẩm theo thương hiệu thành công", productPage));
     }
-    
+
     /**
      * Lọc sản phẩm theo supplierId (nhà cung cấp)
      * GET /api/v1/products/supplier/{supplierId}
@@ -205,10 +208,24 @@ public class ProductController {
     }
 
     /**
+     * Lấy top 5 sản phẩm bán chạy
+     * GET /api/v1/products/best-sellers/top-5?status=COMPLETED
+     * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
+     */
+    @GetMapping("/best-sellers/top-5")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
+    public ResponseEntity<ApiResponse<List<ProductDTO>>> getTop5BestSellingProducts(
+            @RequestParam(required = false) String status) {
+
+        List<ProductDTO> top5Products = productService.getTop5BestSellingProducts(status);
+        return ResponseEntity.ok(ApiResponse.success("Lấy top 5 sản phẩm bán chạy thành công", top5Products));
+    }
+
+    /**
      * Lấy sản phẩm mới (sắp xếp theo createdAt DESC)
      * GET /api/v1/products/new?pageNo=1&pageSize=10&limit=20
      * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
-     * 
+     *
      * Logic: Lấy sản phẩm có status = IN_STOCK, sắp xếp theo createdAt DESC
      * Dùng cho: Trang chủ, banner "Sản phẩm mới"
      */
@@ -228,7 +245,7 @@ public class ProductController {
      * Lấy sản phẩm liên quan (cùng category)
      * GET /api/v1/products/{id}/related?limit=8
      * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
-     * 
+     *
      * Logic: Lấy sản phẩm cùng categoryId, khác productId, status = IN_STOCK, giới hạn số lượng
      * Dùng cho: Trang chi tiết sản phẩm - hiển thị "Sản phẩm liên quan"
      */
@@ -246,7 +263,7 @@ public class ProductController {
      * Lấy danh sách tất cả thương hiệu (brands)
      * GET /api/v1/products/brands
      * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
-     * 
+     *
      * Logic: Lấy danh sách brand names unique từ products có status = IN_STOCK
      * Dùng cho: Dropdown/bộ lọc thương hiệu trong trang sản phẩm
      */
@@ -262,7 +279,7 @@ public class ProductController {
      * POST /api/v1/products
      * Content-Type: application/json
      * Body: ProductDTO (JSON object)
-     * 
+     *
      * Đây là cách đơn giản hơn, phù hợp với Postman và frontend React.
      * Sau khi tạo, có thể upload ảnh qua endpoint POST /api/v1/products/{id}/images
      */
@@ -278,7 +295,7 @@ public class ProductController {
      * PUT /api/v1/products/{id}
      * Content-Type: application/json
      * Body: ProductDTO (JSON object)
-     * 
+     *
      * Để upload ảnh mới, sử dụng endpoint POST /api/v1/products/{id}/images
      */
     @PutMapping(value = "/{id}", consumes = {"application/json"})
@@ -300,17 +317,17 @@ public class ProductController {
         productService.deleteProduct(id);
         return ResponseEntity.ok(ApiResponse.success("Xóa sản phẩm thành công", null));
     }
-    
+
     // ============================================================
     // PRODUCT IMAGE ENDPOINTS - Quản lý nhiều ảnh cho sản phẩm
     // ============================================================
-    
+
     /**
      * Upload nhiều ảnh cho sản phẩm (tối đa 5 ảnh)
      * POST /api/v1/products/{id}/images
      * Content-Type: multipart/form-data
      * Body: images (array of files)
-     * 
+     *
      * Business Rules:
      * - Tối đa 5 ảnh mỗi sản phẩm
      * - Ảnh đầu tiên sẽ là ảnh chính
@@ -323,7 +340,7 @@ public class ProductController {
         List<ProductImageDTO> uploadedImages = productImageService.uploadProductImages(id, images);
         return ResponseEntity.ok(ApiResponse.success("Upload ảnh thành công", uploadedImages));
     }
-    
+
     /**
      * Thêm một ảnh cho sản phẩm
      * POST /api/v1/products/{id}/images/single
@@ -338,7 +355,7 @@ public class ProductController {
         ProductImageDTO addedImage = productImageService.addProductImage(id, image);
         return ResponseEntity.ok(ApiResponse.success("Thêm ảnh thành công", addedImage));
     }
-    
+
     /**
      * Lấy tất cả ảnh của sản phẩm
      * GET /api/v1/products/{id}/images
@@ -349,11 +366,11 @@ public class ProductController {
         List<ProductImageDTO> images = productImageService.getProductImages(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách ảnh thành công", images));
     }
-    
+
     /**
      * Xóa một ảnh của sản phẩm
      * DELETE /api/v1/products/images/{imageId}
-     * 
+     *
      * Nếu xóa ảnh chính, ảnh tiếp theo sẽ trở thành ảnh chính
      */
     @DeleteMapping("/images/{imageId}")
@@ -362,7 +379,7 @@ public class ProductController {
         productImageService.deleteProductImage(imageId);
         return ResponseEntity.ok(ApiResponse.success("Xóa ảnh thành công", null));
     }
-    
+
     /**
      * Đặt một ảnh làm ảnh chính
      * PUT /api/v1/products/images/{imageId}/primary

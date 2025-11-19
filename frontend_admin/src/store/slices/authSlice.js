@@ -6,13 +6,18 @@ export const login = createAsyncThunk(
   "auth/login",
   async (credentials, { rejectWithValue }) => {
     try {
+      // Backend returns { token, authenticated } (NO user field)
       const response = await authService.login(credentials);
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("user", JSON.stringify(response.user));
-      return response;
+      // authService.login already saves token and fetches user info from /users/profile
+      const user = authService.getUserFromStorage();
+      return {
+        token: response.token,
+        authenticated: response.authenticated,
+        user: user, // User info fetched from /users/profile in authService
+      };
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Đăng nhập thất bại"
+        error.response?.data?.message || error.message || "Đăng nhập thất bại"
       );
     }
   }
@@ -68,7 +73,7 @@ const initialState = {
   isAuthenticated: !!localStorage.getItem("token"),
   user: getUserFromLocalStorage(),
   token: localStorage.getItem("token") || null,
-  loading: false,
+  loading: true, // Set loading = true khi khởi tạo để check auth trước
   error: null,
 };
 

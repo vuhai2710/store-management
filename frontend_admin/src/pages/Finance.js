@@ -1,19 +1,64 @@
-import React, { useEffect } from 'react';
-import { Card, Typography, Row, Col, Statistic, Table, Button } from 'antd';
-import { DollarOutlined, ArrowUpOutlined, ArrowDownOutlined, WalletOutlined } from '@ant-design/icons';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchFinancialData, fetchPayroll } from '../store/slices/financeSlice';
+import React, { useEffect, useState } from 'react';
+import { Card, Typography, Row, Col, Statistic, Table, Empty, Spin, message } from 'antd';
+import { DollarOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
+import { ordersService } from '../services/ordersService';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const Finance = () => {
-  const dispatch = useDispatch();
-  const { financialData, payroll, loading } = useSelector((state) => state.finance);
+  const [financialData, setFinancialData] = useState({
+    revenue: 0,
+    expenses: 0,
+    profit: 0,
+    payroll: [],
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    dispatch(fetchFinancialData());
-    dispatch(fetchPayroll());
-  }, [dispatch]);
+    loadFinancialData();
+  }, []);
+
+  const loadFinancialData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch all completed orders to calculate revenue
+      const ordersResponse = await ordersService.getOrders({
+        pageNo: 1,
+        pageSize: 1000, // Get all orders
+        status: 'COMPLETED',
+        sortBy: 'orderDate',
+        sortDirection: 'DESC',
+      });
+
+      const completedOrders = ordersResponse?.content || [];
+      
+      // Calculate revenue from completed orders
+      const revenue = completedOrders.reduce((sum, order) => {
+        const amount = Number(order.totalAmount) || 0;
+        const discount = Number(order.discount) || 0;
+        const finalAmount = Number(order.finalAmount) || (amount - discount);
+        return sum + finalAmount;
+      }, 0);
+
+      // Expenses: Can be calculated from import orders or set to 0 if not available
+      // For now, we'll estimate expenses as 70% of revenue (30% profit margin)
+      const expenses = revenue * 0.7;
+      const profit = revenue - expenses;
+
+      setFinancialData({
+        revenue,
+        expenses,
+        profit,
+        payroll: [], // Payroll data not available from backend
+      });
+    } catch (error) {
+      console.error('Error loading financial data:', error);
+      message.error('Lỗi khi tải dữ liệu tài chính');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const payrollColumns = [
     {
@@ -22,101 +67,111 @@ const Finance = () => {
       key: 'employeeName',
     },
     {
+      title: 'Vị trí',
+      dataIndex: 'position',
+      key: 'position',
+      render: (text) => text || 'N/A',
+    },
+    {
       title: 'Lương cơ bản',
       dataIndex: 'baseSalary',
       key: 'baseSalary',
-      render: (salary) => `${salary?.toLocaleString('vi-VN')} VNĐ`,
+      render: (salary) => (salary ? `${Number(salary).toLocaleString('vi-VN')} VNĐ` : 'N/A'),
     },
     {
       title: 'Thưởng',
       dataIndex: 'bonus',
       key: 'bonus',
-      render: (bonus) => `${bonus?.toLocaleString('vi-VN')} VNĐ`,
+      render: (bonus) => (bonus ? `${Number(bonus).toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'),
     },
     {
       title: 'Tổng lương',
-      dataIndex: 'totalSalary',
-      key: 'totalSalary',
-      render: (total) => `${total?.toLocaleString('vi-VN')} VNĐ`,
-    },
-    {
-      title: 'Tháng',
-      dataIndex: 'month',
-      key: 'month',
+      key: 'total',
+      render: (_, record) => {
+        const base = Number(record.baseSalary) || 0;
+        const bonus = Number(record.bonus) || 0;
+        return `${(base + bonus).toLocaleString('vi-VN')} VNĐ`;
+      },
     },
   ];
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <div>
       <div className="page-header">
         <Title level={1}>Quản lý Tài chính</Title>
-        <p>Theo dõi doanh thu, chi phí và quản lý lương nhân viên</p>
+        <p>Theo dõi doanh thu, chi phí và lợi nhuận</p>
       </div>
 
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} sm={6}>
+        <Col xs={24} sm={8}>
           <Card>
             <Statistic
-              title="Tổng doanh thu"
-              value={financialData.revenue || 0}
+              title="Doanh thu"
+              value={financialData.revenue.toLocaleString('vi-VN')}
               prefix={<DollarOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              valueStyle={{ color: '#3f8600' }}
               suffix="VNĐ"
             />
           </Card>
         </Col>
-        <Col xs={24} sm={6}>
+        <Col xs={24} sm={8}>
           <Card>
             <Statistic
-              title="Tổng chi phí"
-              value={financialData.expenses || 0}
-              prefix={<ArrowDownOutlined />}
-              valueStyle={{ color: '#ff4d4f' }}
+              title="Chi phí (ước tính)"
+              value={financialData.expenses.toLocaleString('vi-VN')}
+              prefix={<DollarOutlined />}
+              valueStyle={{ color: '#cf1322' }}
               suffix="VNĐ"
             />
+            <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '8px' }}>
+              * Ước tính từ doanh thu (70% chi phí, 30% lợi nhuận)
+            </Text>
           </Card>
         </Col>
-        <Col xs={24} sm={6}>
+        <Col xs={24} sm={8}>
           <Card>
             <Statistic
-              title="Lợi nhuận"
-              value={financialData.profit || 0}
-              prefix={<ArrowUpOutlined />}
+              title="Lợi nhuận (ước tính)"
+              value={financialData.profit.toLocaleString('vi-VN')}
+              prefix={<DollarOutlined />}
               valueStyle={{ color: '#1890ff' }}
               suffix="VNĐ"
             />
-          </Card>
-        </Col>
-        <Col xs={24} sm={6}>
-          <Card>
-            <Statistic
-              title="Tổng lương tháng"
-              value={payroll.reduce((sum, item) => sum + (item.totalSalary || 0), 0)}
-              prefix={<WalletOutlined />}
-              suffix="VNĐ"
-            />
+            <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '8px' }}>
+              * Ước tính từ doanh thu
+            </Text>
           </Card>
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]}>
-        <Col span={24}>
-          <Card title="Bảng lương nhân viên" className="table-container">
-            <div style={{ marginBottom: '16px' }}>
-              <Button type="primary">
-                Xuất báo cáo
-              </Button>
-            </div>
-            <Table
-              columns={payrollColumns}
-              dataSource={payroll}
-              loading={loading}
-              rowKey="id"
-              pagination={{ pageSize: 10 }}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <Card title="Bảng lương nhân viên" style={{ marginBottom: '24px' }}>
+        {financialData.payroll && financialData.payroll.length > 0 ? (
+          <Table
+            columns={payrollColumns}
+            dataSource={financialData.payroll}
+            rowKey="id"
+            pagination={false}
+          />
+        ) : (
+          <Empty description="Chưa có dữ liệu bảng lương" />
+        )}
+      </Card>
+
+      <Card title="Lưu ý">
+        <Text type="secondary">
+          Dữ liệu tài chính được tính toán từ các đơn hàng đã hoàn thành. 
+          Chi phí và lợi nhuận là ước tính dựa trên tỷ lệ 70/30. 
+          Để có dữ liệu chính xác hơn, vui lòng tích hợp với hệ thống kế toán.
+        </Text>
+      </Card>
     </div>
   );
 };

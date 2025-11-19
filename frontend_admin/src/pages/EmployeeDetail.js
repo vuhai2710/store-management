@@ -4,12 +4,12 @@ import { Card, Typography, Descriptions, Tag, Button, Avatar } from 'antd';
 import { EditOutlined, UserOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEmployeeById } from '../store/slices/employeesSlice';
-import dayjs from 'dayjs';
+import { formatDate } from '../utils/formatUtils';
 
 const { Title } = Typography;
 
-const fmtDate = (v) => (v ? dayjs(v).format('DD/MM/YYYY') : '-');
-const fmtDateTime = (v) => (v ? dayjs(v).format('DD/MM/YYYY HH:mm') : '-');
+const fmtDate = (v) => formatDate(v, 'DD/MM/YYYY');
+const fmtDateTime = (v) => formatDate(v, 'DD/MM/YYYY HH:mm');
 const fmtMoney = (v) => (v != null ? Number(v).toLocaleString('vi-VN') : '-');
 
 const EmployeeDetail = () => {

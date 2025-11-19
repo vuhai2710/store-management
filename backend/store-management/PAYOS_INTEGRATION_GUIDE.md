@@ -35,9 +35,46 @@ PayOS là một cổng thanh toán trực tuyến tại Việt Nam, cho phép kh
    - **API Key**: Key để authenticate khi gọi PayOS API
    - **Checksum Key**: Key để verify webhook signature (HMAC)
 
-### 1.4. Cấu hình môi trường Local
+### 1.4. PayOS Java SDK Dependency
 
-#### 4.1. Cài đặt ngrok
+**Project đã có PayOS Java SDK dependency:**
+```xml
+<dependency>
+    <groupId>vn.payos</groupId>
+    <artifactId>payos-java</artifactId>
+    <version>2.0.1</version>
+</dependency>
+```
+
+**Code đã được refactor sang PayOS SDK:**
+- `PayOSConfig` tạo PayOS SDK instance với credentials
+- `PayOSServiceImpl` sử dụng PayOS SDK methods thay vì RestTemplate
+- SDK tự động xử lý authentication, request/response serialization
+- SDK tự động detect sandbox/production từ credentials
+
+**Sau khi download dependency:**
+```bash
+mvn clean install
+```
+
+Xem `PAYOS_SDK_REFACTOR_NOTES.md` để verify SDK API methods nếu cần.
+
+### 1.5. Cấu hình môi trường Local
+
+#### 1.5.1. Download PayOS SDK Dependency
+
+Trước khi cấu hình, cần download PayOS SDK:
+
+```bash
+# Chạy Maven để download PayOS SDK
+mvn clean install
+```
+
+hoặc trong IDE, reload Maven project.
+
+**Lưu ý:** Code sử dụng reflection để gọi PayOS SDK methods, sẽ hoạt động sau khi SDK được download.
+
+#### 1.5.2. Cài đặt ngrok
 
 **Windows:**
 ```bash
@@ -53,7 +90,7 @@ choco install ngrok
 brew install ngrok
 ```
 
-#### 4.2. Chạy ngrok để expose backend
+#### 1.5.3. Chạy ngrok để expose backend
 
 ```bash
 # Chạy ngrok để expose port 8080 (Spring Boot)
@@ -67,27 +104,33 @@ Forwarding  https://abc123.ngrok.io -> http://localhost:8080
 
 **Copy HTTPS URL** (ví dụ: `https://abc123.ngrok.io`)
 
-#### 4.3. Cập nhật PayOS Webhook URL
+#### 1.5.4. Cập nhật PayOS Webhook URL
 
 1. Vào PayOS dashboard → **Webhook Settings**
 2. Cập nhật Webhook URL: `https://abc123.ngrok.io/api/v1/payments/payos/webhook`
 3. Lưu cấu hình
 
-#### 4.4. Cập nhật application.yaml
+#### 1.5.5. Cập nhật application.yaml
 
 Mở file `src/main/resources/application.yaml` và cập nhật:
 
 ```yaml
 payos:
-  client-id: "YOUR_CLIENT_ID"  # Thay bằng Client ID từ PayOS
-  api-key: "YOUR_API_KEY"       # Thay bằng API Key từ PayOS
-  checksum-key: "YOUR_CHECKSUM_KEY"  # Thay bằng Checksum Key từ PayOS
-  webhook-url: "https://abc123.ngrok.io/api/v1/payments/payos/webhook"  # Ngrok URL
+  client-id: "${PAYOS_CLIENT_ID:YOUR_CLIENT_ID}"  # Thay bằng Client ID từ PayOS
+  api-key: "${PAYOS_API_KEY:YOUR_API_KEY}"       # Thay bằng API Key từ PayOS
+  checksum-key: "${PAYOS_CHECKSUM_KEY:YOUR_CHECKSUM_KEY}"  # Thay bằng Checksum Key từ PayOS
+  webhook-url: "${PAYOS_WEBHOOK_URL:https://abc123.ngrok.io/api/v1/payments/payos/webhook}"  # Ngrok URL
   return-url: "http://localhost:3000/payment/success"  # ReactJS frontend
   cancel-url: "http://localhost:3000/payment/cancel"   # ReactJS frontend
   environment: "sandbox"  # sandbox hoặc production
-  base-url: "https://api-merchant.payos.vn"  # PayOS API base URL
+  base-url: "https://api-merchant.payos.vn"  # PayOS API base URL (SDK sẽ tự động sử dụng)
 ```
+
+**Lưu ý về PayOS SDK:**
+- PayOS SDK tự động detect sandbox/production từ credentials
+- `base-url` có thể không cần thiết nếu SDK tự động xử lý
+- SDK sẽ tự động sử dụng credentials để authenticate
+- Code sử dụng reflection để gọi SDK methods (sẽ hoạt động sau khi download SDK)
 
 ---
 
@@ -199,15 +242,20 @@ Frontend Request → PaymentController.createPaymentLink() → PayOSService.crea
    - Lấy order từ database
    - Validate: order phải có `paymentMethod = PAYOS`, `status = PENDING`
    - Gọi `PayOSService.createPaymentLink(order)`
-3. PayOSService:
-   - Build `PayOSPaymentRequestDTO` từ order
-   - Gọi PayOS API: `POST /v2/payment-requests`
-   - Headers: `x-client-id`, `x-api-key`
-   - Body: JSON với orderCode, amount, description, items, returnUrl, cancelUrl
-4. PayOS trả về:
+3. PayOSService (sử dụng PayOS SDK):
+   - Build `PaymentData` từ order (SDK model)
+   - Gọi PayOS SDK: `payOS.createPaymentLink(paymentData)`
+   - SDK tự động xử lý:
+     - Authentication (Client ID, API Key)
+     - Request/Response serialization
+     - Error handling
+     - Environment detection (sandbox/production)
+4. PayOS SDK trả về `CheckoutResponseData`:
    - `paymentLinkId`: ID của payment link
    - `checkoutUrl`: URL để thanh toán
+   - `qrCode`: QR code (optional)
 5. Backend:
+   - Convert SDK response sang DTO
    - Lưu `paymentLinkId` vào `order.paymentLinkId`
    - Trả về `paymentLinkUrl` cho frontend
 
@@ -244,14 +292,16 @@ PayOS → PaymentController.webhook() → Verify Signature → Update Order → 
    - PayOS gửi POST request đến `/api/v1/payments/payos/webhook`
    - Body: JSON với code, desc, data, signature
 
-2. **Verify HMAC signature:**
+2. **Verify HMAC signature (sử dụng PayOS SDK):**
    ```java
+   // PayOS SDK tự động xử lý signature verification
    // Algorithm: HMAC SHA256
-   // Key: checksumKey từ PayOSConfig
-   // Data: JSON string của request body (không format)
+   // Key: checksumKey từ PayOSConfig (đã được set trong PayOS instance)
+   // Data: JSON string của request body
    boolean isValid = payOSService.verifyWebhookSignature(requestBody, signature);
    ```
    - **Bắt buộc verify** để đảm bảo webhook đến từ PayOS thật
+   - PayOS SDK tự động xử lý signature verification
    - Nếu signature không hợp lệ → Reject và return 200 OK (để PayOS không retry)
 
 3. **Parse webhook data:**
@@ -362,19 +412,19 @@ const handlePayOSPayment = async () => {
       paymentMethod: 'PAYOS',
       shippingAddressId: selectedAddressId
     });
-    
+
     const orderId = orderResponse.data.data.idOrder;
-    
+
     // 2. Tạo payment link
     const paymentResponse = await axios.post(
       `/api/v1/payments/payos/create/${orderId}`
     );
-    
+
     const paymentLinkUrl = paymentResponse.data.data.paymentLinkUrl;
-    
+
     // 3. Redirect đến PayOS
     window.location.href = paymentLinkUrl;
-    
+
   } catch (error) {
     console.error('Error creating payment link:', error);
     // Show error message
@@ -420,22 +470,22 @@ function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const orderId = searchParams.get('orderId');
-  
+
   useEffect(() => {
     if (orderId) {
       // Check order status
       checkOrderStatus(orderId);
     }
   }, [orderId]);
-  
+
   const checkOrderStatus = async (orderId) => {
     try {
       const response = await axios.get(
         `/api/v1/payments/payos/status/${orderId}`
       );
-      
+
       const status = response.data.data.status;
-      
+
       if (status === 'CONFIRMED') {
         // Show success message
         setMessage('Thanh toán thành công!');
@@ -447,7 +497,7 @@ function PaymentSuccess() {
       console.error('Error checking order status:', error);
     }
   };
-  
+
   return (
     <div>
       <h1>Thanh toán thành công!</h1>
@@ -466,7 +516,7 @@ function PaymentSuccess() {
 function PaymentCancel() {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('orderId');
-  
+
   return (
     <div>
       <h1>Thanh toán đã bị hủy</h1>
@@ -491,13 +541,13 @@ const startPolling = (orderId) => {
       const response = await axios.get(
         `/api/v1/payments/payos/status/${orderId}`
       );
-      
+
       const status = response.data.data.status;
-      
+
       if (status === 'CONFIRMED' || status === 'CANCELED') {
         // Stop polling
         clearInterval(interval);
-        
+
         if (status === 'CONFIRMED') {
           // Show success
           setMessage('Thanh toán thành công!');
@@ -510,7 +560,7 @@ const startPolling = (orderId) => {
       console.error('Error polling order status:', error);
     }
   }, 3000); // Poll every 3 seconds
-  
+
   // Stop polling after 2 minutes
   setTimeout(() => {
     clearInterval(interval);
@@ -528,7 +578,7 @@ import axios from 'axios';
 
 function PaymentButton({ orderData, onSuccess, onError }) {
   const [loading, setLoading] = useState(false);
-  
+
   const handlePayment = async () => {
     setLoading(true);
     try {
@@ -537,9 +587,9 @@ function PaymentButton({ orderData, onSuccess, onError }) {
         ...orderData,
         paymentMethod: 'PAYOS'
       });
-      
+
       const orderId = orderResponse.data.data.idOrder;
-      
+
       // Create payment link
       const paymentResponse = await axios.post(
         `/api/v1/payments/payos/create/${orderId}`,
@@ -550,12 +600,12 @@ function PaymentButton({ orderData, onSuccess, onError }) {
           }
         }
       );
-      
+
       const paymentLinkUrl = paymentResponse.data.data.paymentLinkUrl;
-      
+
       // Redirect to PayOS
       window.location.href = paymentLinkUrl;
-      
+
     } catch (error) {
       console.error('Payment error:', error);
       onError?.(error.response?.data?.message || 'Có lỗi xảy ra');
@@ -563,10 +613,10 @@ function PaymentButton({ orderData, onSuccess, onError }) {
       setLoading(false);
     }
   };
-  
+
   return (
-    <button 
-      onClick={handlePayment} 
+    <button
+      onClick={handlePayment}
       disabled={loading}
       className="payos-button"
     >
@@ -613,10 +663,12 @@ export default api;
    - Client ID
    - API Key
    - Checksum Key
-3. **Cấu hình `application.yaml`** với credentials
-4. **Cài đặt ngrok:** `ngrok http 8080`
-5. **Copy ngrok HTTPS URL** và cập nhật vào PayOS webhook URL
-6. **Cập nhật `application.yaml`** với ngrok URL
+3. **Download PayOS SDK:** Chạy `mvn clean install` để download dependency
+4. **Cấu hình `application.yaml`** với credentials
+5. **Cài đặt ngrok:** `ngrok http 8080`
+6. **Copy ngrok HTTPS URL** và cập nhật vào PayOS webhook URL
+7. **Cập nhật `application.yaml`** với ngrok URL
+8. **Verify PayOS SDK methods** (xem `PAYOS_SDK_REFACTOR_NOTES.md` nếu cần)
 
 ### 5.2. Test tạo Payment Link
 
@@ -640,6 +692,7 @@ Authorization: Bearer {token}
 
 **Step 3: Verify response**
 - Response phải có `paymentLinkUrl`
+- Logs hiển thị "using PayOS SDK" để confirm đang dùng SDK
 - Mở `paymentLinkUrl` trong browser để test thanh toán
 
 ### 5.3. Test Webhook Callback
@@ -737,8 +790,15 @@ Content-Type: application/json
 logging:
   level:
     com.storemanagement.service.PayOSService: DEBUG
+    com.storemanagement.service.impl.PayOSServiceImpl: DEBUG
     com.storemanagement.controller.PaymentController: DEBUG
 ```
+
+**Logs sẽ hiển thị:**
+- "using PayOS SDK" - confirm đang dùng SDK
+- SDK method calls và responses
+- Reflection calls (nếu có)
+- Signature verification results
 
 #### Check Logs
 - Payment link creation logs
@@ -756,15 +816,21 @@ logging:
 
 **Issue 2: Signature verification failed**
 - Verify Checksum Key đúng
-- Check HMAC algorithm (SHA256)
-- Verify data format (JSON string không format)
+- **Check PayOS SDK đã được download**: Chạy `mvn clean install`
+- Check PayOS SDK verifyPaymentWebhookData method hoạt động
+- Check HMAC algorithm (SHA256) - SDK tự động xử lý
+- Verify data format (JSON string của request body)
 - Log signature để compare
+- Check PayOS SDK reflection calls không có lỗi (check logs)
 
 **Issue 3: Payment link không tạo được**
+- **Check PayOS SDK đã được download**: Chạy `mvn clean install`
 - Check Client ID và API Key đúng
-- Check PayOS API base URL (sandbox vs production)
-- Check request body format theo PayOS API docs
+- Check PayOS SDK methods hoạt động (xem logs có "using PayOS SDK")
+- Check PayOS SDK API methods (xem `PAYOS_SDK_REFACTOR_NOTES.md`)
+- Check PayOS API base URL (sandbox vs production) - SDK tự động detect
 - Check network connection
+- Verify PayOS SDK reflection calls không có lỗi (check logs)
 
 **Issue 4: Order status không update**
 - Check webhook handler logs
@@ -795,22 +861,22 @@ logging:
 
 **Bắt buộc verify signature** để đảm bảo webhook đến từ PayOS thật:
 
+**Sử dụng PayOS SDK (Recommended):**
 ```java
-// PayOSServiceImpl.java
+// PayOSServiceImpl.java - Sử dụng PayOS SDK
 public boolean verifyWebhookSignature(String data, String signature) {
-    Mac mac = Mac.getInstance("HmacSHA256");
-    SecretKeySpec secretKeySpec = new SecretKeySpec(
-        payOSConfig.getChecksumKey().getBytes(StandardCharsets.UTF_8),
-        "HmacSHA256"
-    );
-    mac.init(secretKeySpec);
-    
-    byte[] hashBytes = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-    String calculatedSignature = Base64.getEncoder().encodeToString(hashBytes);
-    
-    return calculatedSignature.equals(signature);
+    // PayOS SDK tự động xử lý signature verification
+    // SDK sử dụng checksumKey đã được set trong PayOS instance
+    Webhook webhook = payOS.verifyPaymentWebhookData(data, signature);
+    return webhook != null && webhook.isSuccess();
 }
 ```
+
+**Lưu ý:**
+- PayOS SDK tự động xử lý HMAC SHA256 algorithm
+- SDK sử dụng checksumKey từ PayOSConfig
+- SDK tự động encode Base64
+- Code sử dụng reflection để gọi SDK method (sẽ hoạt động sau khi download SDK)
 
 ### 6.2. Secure Storage của Credentials
 
@@ -839,17 +905,23 @@ public boolean verifyWebhookSignature(String data, String signature) {
 
 ## Kết luận
 
-Tài liệu này cung cấp hướng dẫn chi tiết để tích hợp PayOS payment gateway vào hệ thống store management. 
+Tài liệu này cung cấp hướng dẫn chi tiết để tích hợp PayOS payment gateway vào hệ thống store management.
 
 **Lưu ý quan trọng:**
+- **Code đã được refactor sang PayOS Java SDK** - sử dụng SDK thay vì RestTemplate
+- **Download PayOS SDK:** Chạy `mvn clean install` trước khi test
 - Luôn test với PayOS sandbox trước khi deploy production
-- Verify webhook signature trong mọi trường hợp
+- Verify webhook signature trong mọi trường hợp (SDK tự động xử lý)
 - Xử lý các edge cases (timeout, duplicate webhook, etc.)
-- Log đầy đủ để debug
+- Log đầy đủ để debug (logs sẽ hiển thị "using PayOS SDK")
+- Xem `PAYOS_SDK_REFACTOR_NOTES.md` để verify SDK API methods nếu cần
 
 **Tài liệu tham khảo:**
 - PayOS API Documentation: https://payos.vn/docs/api/
+- PayOS Java SDK Documentation: https://payos.vn/docs/sdks/back-end/java/
 - PayOS Dashboard: https://my.payos.vn
+- PayOS SDK Refactor Notes: `PAYOS_SDK_REFACTOR_NOTES.md` (hướng dẫn verify SDK API methods)
+- Sandbox Setup Guide: `SANDBOX_SETUP_GUIDE.md` (hướng dẫn setup sandbox cho học tập)
 
 
 

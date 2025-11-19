@@ -1,45 +1,130 @@
 // src/components/shared/ProductCard.js
-import React from 'react';
-import { Heart } from 'lucide-react';
+import React, { useState, useRef } from 'react';
 import styles from '../../styles/styles';
 import StarRating from '../layout/StarRating';
+import { getImageUrl, formatPrice } from '../../utils/formatUtils';
+import { INVENTORY_STATUS, INVENTORY_STATUS_LABELS, INVENTORY_STATUS_COLORS } from '../../constants/inventoryStatus';
 
-const ProductCard = ({ product, handleAddToCart, handleAddToWishlist, isInWishlist, handleViewProductDetail }) => (
-  <div style={styles.card}>
-    {/* Vùng ảnh và thông tin có thể click để xem chi tiết */}
-    <div 
-        onClick={() => handleViewProductDetail(product.id)} // <- Gọi hàm handleViewProductDetail
-        style={{ cursor: 'pointer' }}
-    >
-        <div style={styles.cardImage}>
-          {product.image}
-          <button 
-            // Dừng sự kiện lan truyền để chỉ kích hoạt Wishlist, không kích hoạt xem chi tiết
-            onClick={(e) => { e.stopPropagation(); handleAddToWishlist(product); }}
-            style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: 'white', padding: '0.5rem', borderRadius: '50%', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: 'none', cursor: 'pointer' }}
-          >
-            <Heart size={18} style={{ fill: isInWishlist(product.id) ? 'red' : 'none', color: isInWishlist(product.id) ? 'red' : '#495057' }} />
-          </button>
-        </div>
-        <div style={styles.cardContent}>
-          <h3 style={styles.cardTitle}>{product.name}</h3>
-          <div style={{ marginBottom: '0.5rem' }}>
-            <StarRating rating={product.rating} />
-            <p style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.25rem' }}>({product.reviews})</p>
+const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
+  const [imageError, setImageError] = useState(false);
+  const addToCartButtonRef = useRef(null);
+  
+  // Get product image URL
+  const getProductImage = () => {
+    if (imageError) return null;
+    // Try to get image from product.images array (first image)
+    if (product.images && product.images.length > 0) {
+      return getImageUrl(product.images[0].imageUrl || product.images[0].url);
+    }
+    // Try to get image from product.imageUrl
+    if (product.imageUrl) {
+      return getImageUrl(product.imageUrl);
+    }
+    // Fallback to emoji if no image
+    return null;
+  };
+
+  const productImage = getProductImage();
+  const productName = product.productName || product.name;
+  const productPrice = product.price || 0;
+  const status = product.status || product.inventoryStatus || INVENTORY_STATUS.IN_STOCK;
+  const isOutOfStock = status === INVENTORY_STATUS.OUT_OF_STOCK;
+
+  return (
+    <div style={styles.card}>
+      {/* Vùng ảnh và thông tin có thể click để xem chi tiết */}
+      <div 
+          onClick={() => handleViewProductDetail(product.idProduct || product.id)} 
+          style={{ cursor: 'pointer' }}
+      >
+          <div style={styles.cardImage}>
+            {productImage ? (
+              <img 
+                src={productImage} 
+                alt={productName}
+                onError={() => setImageError(true)}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '0.5rem' }}
+              />
+            ) : (
+              <div style={{ 
+                width: '100%', 
+                height: '100%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                fontSize: '4rem',
+                backgroundColor: '#e9ecef'
+              }}>
+                {product.image || '📦'}
+              </div>
+            )}
+            {isOutOfStock && (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                backgroundColor: 'rgba(220, 53, 69, 0.9)',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: '0.25rem',
+                fontWeight: 'bold',
+                fontSize: '0.875rem'
+              }}>
+                Hết hàng
+              </div>
+            )}
           </div>
-          <p style={styles.cardPrice}>${product.price}.00</p>
-        </div>
+          <div style={styles.cardContent}>
+            <h3 style={styles.cardTitle}>{productName}</h3>
+            <div style={{ marginBottom: '0.5rem' }}>
+              <StarRating rating={product.rating || 0} />
+              {(product.reviews || product.reviewCount) && (
+                <p style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.25rem' }}>
+                  ({product.reviews || product.reviewCount || 0})
+                </p>
+              )}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <p style={styles.cardPrice}>{formatPrice(productPrice)}</p>
+              {status && (
+                <span style={{
+                  fontSize: '0.75rem',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '0.25rem',
+                  backgroundColor: INVENTORY_STATUS_COLORS[status] + '20',
+                  color: INVENTORY_STATUS_COLORS[status],
+                  fontWeight: '600'
+                }}>
+                  {INVENTORY_STATUS_LABELS[status] || status}
+                </span>
+              )}
+            </div>
+          </div>
+      </div>
+      {/* Nút Add to Cart (riêng biệt) */}
+      <div style={{ padding: '0 1rem 1rem' }}>
+          <button 
+              ref={addToCartButtonRef}
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                handleAddToCart(product, addToCartButtonRef.current); 
+              }}
+              disabled={isOutOfStock}
+              style={{ 
+                ...styles.buttonSecondary, 
+                width: '100%', 
+                padding: '0.5rem', 
+                fontSize: '0.875rem',
+                opacity: isOutOfStock ? 0.5 : 1,
+                cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+              }}
+          >
+              {isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ'}
+          </button>
+      </div>
     </div>
-    {/* Nút Add to Cart (riêng biệt) */}
-    <div style={{ padding: '0 1rem 1rem' }}>
-        <button 
-            onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }} // Add to cart
-            style={{ ...styles.buttonSecondary, width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
-        >
-            ADD
-        </button>
-    </div>
-  </div>
-);
+  );
+};
 
 export default ProductCard;
