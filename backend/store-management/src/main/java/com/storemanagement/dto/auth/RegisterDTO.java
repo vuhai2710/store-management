@@ -9,11 +9,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO cho đăng ký tài khoản khách hàng
- * Không kế thừa BaseDTO vì không map trực tiếp với entity
- * Sử dụng để tạo cả User và Customer
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

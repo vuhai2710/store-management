@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * InventoryTransactionDTO không kế thừa BaseDTO vì InventoryTransaction entity không có timestamps
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

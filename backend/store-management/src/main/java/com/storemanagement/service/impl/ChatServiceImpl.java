@@ -26,15 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-/**
- * Service implementation cho Chat System
- * <p>
- * Business Logic:
- * - Mỗi customer có thể có nhiều conversations (nhưng chỉ 1 OPEN tại một thời điểm)
- * - Admin và Employee có thể xem và trả lời tất cả conversations
- * - Tin nhắn được lưu vào database để có thể xem lại lịch sử
- * - Khi gửi tin nhắn, conversation.updatedAt được cập nhật tự động
- */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -180,11 +171,6 @@ public class ChatServiceImpl implements ChatService {
         return toConversationDto(conversation);
     }
 
-    // ============================================================
-    // PRIVATE HELPER METHODS
-    // ============================================================
-
-    //  Helper method - extract userId từ Principal
     private Integer extractUserIdFromPrincipal(Principal principal) {
         if (principal instanceof JwtAuthenticationToken) {
             JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) principal;
@@ -200,7 +186,7 @@ public class ChatServiceImpl implements ChatService {
         return null;
     }
 
-    //  Helper method - extract role từ Principal
+    //  role từ Principal
     private Optional<String> extractRoleFromPrincipal(Principal principal) {
         if (principal instanceof JwtAuthenticationToken) {
             JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) principal;
@@ -226,10 +212,6 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
-    /**
-     * Validate conversation access - đảm bảo customer chỉ có thể truy cập conversation của mình
-     * Admin và Employee có thể truy cập tất cả conversations
-     */
     private void validateConversationAccess(Integer conversationId) {
         Optional<Integer> currentUserId = SecurityUtils.getCurrentUserId();
         if (currentUserId.isEmpty()) {
@@ -269,13 +251,6 @@ public class ChatServiceImpl implements ChatService {
                 .build();
     }
 
-    /**
-     * Tính số tin nhắn chưa đọc
-     * Logic mới: Sử dụng lastViewedAt thay vì lastMessageTime
-     * - Nếu là customer: đếm tin nhắn từ ADMIN/EMPLOYEE sau lastViewedByCustomerAt
-     * - Nếu là admin/employee: đếm tin nhắn từ CUSTOMER sau lastViewedByAdminAt
-     * - Nếu không xác định được user: trả về 0
-     */
     private Long calculateUnreadCount(Integer conversationId) {
         Optional<Integer> currentUserId = SecurityUtils.getCurrentUserId();
         Optional<String> currentRole = SecurityUtils.getCurrentRole();
@@ -410,5 +385,3 @@ public class ChatServiceImpl implements ChatService {
         log.info("Conversation {} marked as viewed by user {} at {}", conversationId, currentUserId.get(), now);
     }
 }
-
-

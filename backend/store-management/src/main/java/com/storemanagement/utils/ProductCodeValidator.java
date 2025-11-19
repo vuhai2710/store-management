@@ -2,9 +2,6 @@ package com.storemanagement.utils;
 
 import java.util.regex.Pattern;
 
-/**
- * Validator cho product_code theo code_type
- */
 public class ProductCodeValidator {
     
     // IMEI: 15 chữ số
@@ -76,4 +73,3 @@ public class ProductCodeValidator {
         }
     }
 }
-

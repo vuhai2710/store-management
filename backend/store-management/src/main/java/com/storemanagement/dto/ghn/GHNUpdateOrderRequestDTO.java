@@ -6,9 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Request DTO để cập nhật đơn hàng GHN
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

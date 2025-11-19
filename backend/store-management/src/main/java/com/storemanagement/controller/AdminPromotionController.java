@@ -21,14 +21,6 @@ public class AdminPromotionController {
 
     private final PromotionService promotionService;
 
-    // ========== PROMOTION ENDPOINTS ==========
-
-    /**
-     * Admin: Create promotion
-     *
-     * Endpoint: POST /api/v1/admin/promotions
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
     @PostMapping("/promotions")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PromotionDTO>> createPromotion(
@@ -37,12 +29,6 @@ public class AdminPromotionController {
         return ResponseEntity.ok(ApiResponse.success("Tạo mã giảm giá thành công", promotion));
     }
 
-    /**
-     * Admin: Get all promotions
-     *
-     * Endpoint: GET /api/v1/admin/promotions
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
     @GetMapping("/promotions")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PageResponse<PromotionDTO>>> getAllPromotions(
@@ -57,12 +43,6 @@ public class AdminPromotionController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách mã giảm giá thành công", promotions));
     }
 
-    /**
-     * Admin: Get promotion by ID
-     *
-     * Endpoint: GET /api/v1/admin/promotions/{id}
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
     @GetMapping("/promotions/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PromotionDTO>> getPromotionById(@PathVariable Integer id) {
@@ -70,12 +50,6 @@ public class AdminPromotionController {
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin mã giảm giá thành công", promotion));
     }
 
-    /**
-     * Admin: Update promotion
-     *
-     * Endpoint: PUT /api/v1/admin/promotions/{id}
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
     @PutMapping("/promotions/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PromotionDTO>> updatePromotion(
@@ -85,12 +59,6 @@ public class AdminPromotionController {
         return ResponseEntity.ok(ApiResponse.success("Cập nhật mã giảm giá thành công", promotion));
     }
 
-    /**
-     * Admin: Delete promotion
-     *
-     * Endpoint: DELETE /api/v1/admin/promotions/{id}
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
     @DeleteMapping("/promotions/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<Void>> deletePromotion(@PathVariable Integer id) {
@@ -98,14 +66,6 @@ public class AdminPromotionController {
         return ResponseEntity.ok(ApiResponse.success("Xóa mã giảm giá thành công", null));
     }
 
-    // ========== PROMOTION RULE ENDPOINTS ==========
-
-    /**
-     * Admin: Create promotion rule
-     *
-     * Endpoint: POST /api/v1/admin/promotion-rules
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
     @PostMapping("/promotion-rules")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PromotionRuleDTO>> createPromotionRule(
@@ -114,12 +74,6 @@ public class AdminPromotionController {
         return ResponseEntity.ok(ApiResponse.success("Tạo quy tắc giảm giá thành công", rule));
     }
 
-    /**
-     * Admin: Get all promotion rules
-     *
-     * Endpoint: GET /api/v1/admin/promotion-rules
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
     @GetMapping("/promotion-rules")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PageResponse<PromotionRuleDTO>>> getAllPromotionRules(
@@ -134,12 +88,6 @@ public class AdminPromotionController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách quy tắc giảm giá thành công", rules));
     }
 
-    /**
-     * Admin: Get promotion rule by ID
-     *
-     * Endpoint: GET /api/v1/admin/promotion-rules/{id}
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
     @GetMapping("/promotion-rules/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PromotionRuleDTO>> getPromotionRuleById(@PathVariable Integer id) {
@@ -147,12 +95,6 @@ public class AdminPromotionController {
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin quy tắc giảm giá thành công", rule));
     }
 
-    /**
-     * Admin: Update promotion rule
-     *
-     * Endpoint: PUT /api/v1/admin/promotion-rules/{id}
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
     @PutMapping("/promotion-rules/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PromotionRuleDTO>> updatePromotionRule(
@@ -162,12 +104,6 @@ public class AdminPromotionController {
         return ResponseEntity.ok(ApiResponse.success("Cập nhật quy tắc giảm giá thành công", rule));
     }
 
-    /**
-     * Admin: Delete promotion rule
-     *
-     * Endpoint: DELETE /api/v1/admin/promotion-rules/{id}
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
     @DeleteMapping("/promotion-rules/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<Void>> deletePromotionRule(@PathVariable Integer id) {

@@ -6,9 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Response DTO chứa thời gian giao hàng dự kiến
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

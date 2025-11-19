@@ -21,8 +21,6 @@ public class Product extends BaseEntity {
     @Column(name = "id_product")
     private Integer idProduct;
 
-    // JOIN để lấy category name
-    // Fetch type LAZY để tối ưu performance, JOIN FETCH khi cần
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_category")
     private Category category;
@@ -31,11 +29,11 @@ public class Product extends BaseEntity {
     private String productName;
     
     @Column(name = "brand", length = 100)
-    private String brand;  // Thương hiệu: Apple, Samsung, Dell, Sony, ...
+    private String brand;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_supplier")
-    private Supplier supplier;  // Nhà cung cấp thực sự (optional)
+    private Supplier supplier;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
@@ -52,11 +50,9 @@ public class Product extends BaseEntity {
     @Builder.Default
     private ProductStatus status = ProductStatus.IN_STOCK;
 
-    // Giữ lại để backward compatibility - lưu ảnh chính
     @Column(name = "image_url", length = 500)
     private String imageUrl;
-    
-    // Relationship với ProductImage - một sản phẩm có nhiều ảnh
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<ProductImage> images = new ArrayList<>();

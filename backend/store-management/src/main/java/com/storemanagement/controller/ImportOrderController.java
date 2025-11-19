@@ -25,10 +25,7 @@ public class ImportOrderController {
 
     private final ImportOrderService importOrderService;
 
-    /**
-     * Tạo đơn nhập hàng mới
-     * POST /api/v1/import-orders
-     */
+
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PurchaseOrderDTO>> createImportOrder(
@@ -41,10 +38,6 @@ public class ImportOrderController {
         return ResponseEntity.ok(ApiResponse.success("Tạo đơn nhập hàng thành công", createdOrder));
     }
 
-    /**
-     * Xem chi tiết đơn nhập hàng
-     * GET /api/v1/import-orders/{id}
-     */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PurchaseOrderDTO>> getImportOrderById(@PathVariable Integer id) {
@@ -52,10 +45,6 @@ public class ImportOrderController {
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin đơn nhập hàng thành công", order));
     }
 
-    /**
-     * Lấy danh sách đơn nhập hàng (có phân trang)
-     * GET /api/v1/import-orders
-     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PageResponse<PurchaseOrderDTO>>> getAllImportOrders(
@@ -71,10 +60,6 @@ public class ImportOrderController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đơn nhập hàng thành công", orders));
     }
 
-    /**
-     * Lấy danh sách đơn nhập hàng theo supplier
-     * GET /api/v1/import-orders/supplier/{supplierId}
-     */
     @GetMapping("/supplier/{supplierId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PageResponse<PurchaseOrderDTO>>> getImportOrdersBySupplier(
@@ -91,10 +76,6 @@ public class ImportOrderController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đơn nhập hàng theo nhà cung cấp thành công", orders));
     }
 
-    /**
-     * Lấy lịch sử nhập hàng trong khoảng thời gian
-     * GET /api/v1/import-orders/history?startDate=2025-01-01T00:00:00&endDate=2025-01-31T23:59:59
-     */
     @GetMapping("/history")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PageResponse<PurchaseOrderDTO>>> getImportOrderHistory(
@@ -124,10 +105,6 @@ public class ImportOrderController {
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử nhập hàng thành công", orders));
     }
 
-    /**
-     * Xuất/In phiếu nhập hàng ra PDF
-     * GET /api/v1/import-orders/{id}/pdf
-     */
     @GetMapping("/{id}/pdf")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<byte[]> exportImportOrderToPdf(@PathVariable Integer id) {
@@ -143,4 +120,3 @@ public class ImportOrderController {
     }
 
 }
-

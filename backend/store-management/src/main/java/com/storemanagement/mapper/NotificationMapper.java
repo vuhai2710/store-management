@@ -22,17 +22,6 @@ public interface NotificationMapper {
     // NotificationDTO → Notification (for create/update)
     @Mapping(target = "idNotification", ignore = true)
     @Mapping(target = "user", ignore = true)
-    @Mapping(target = "createdAt", ignore = true) // Set in service via @PrePersist
+    @Mapping(target = "createdAt", ignore = true)
     Notification toEntity(NotificationDTO dto);
 }
-
-
-
-
-
-
-
-
-
-
-

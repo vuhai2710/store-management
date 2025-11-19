@@ -6,9 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Response DTO từ GHN API khi tạo đơn hàng thành công
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

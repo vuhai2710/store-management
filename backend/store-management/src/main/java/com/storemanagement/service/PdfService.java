@@ -16,20 +16,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Service tái sử dụng để tạo PDF từ HTML
- * Tập trung tất cả logic generate HTML và PDF tại đây
- */
 @Service
 @Slf4j
 public class PdfService {
 
-    /**
-     * Tạo PDF từ HTML content
-     *
-     * @param htmlContent HTML content
-     * @return Byte array của PDF file
-     */
     public byte[] generatePdfFromHtml(String htmlContent) {
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -52,9 +42,6 @@ public class PdfService {
 
     /**
      * Tạo PDF cho phiếu nhập hàng
-     *
-     * @param purchaseOrderDTO DTO của đơn nhập hàng
-     * @return Byte array của PDF file
      */
     public byte[] generateImportOrderPdf(PurchaseOrderDTO purchaseOrderDTO) {
         String htmlContent = generateImportOrderHtml(purchaseOrderDTO);
@@ -64,9 +51,6 @@ public class PdfService {
 
     /**
      * Tạo PDF cho hóa đơn bán hàng
-     *
-     * @param orderDTO DTO của đơn hàng
-     * @return Byte array của PDF file
      */
     public byte[] generateInvoicePdf(OrderDTO orderDTO) {
         String htmlContent = generateInvoiceHtml(orderDTO);
@@ -339,8 +323,6 @@ public class PdfService {
         if (dto.getPaymentMethod() != null) {
             String paymentMethodText = switch (dto.getPaymentMethod()) {
                 case CASH -> "Tiền mặt";
-                case TRANSFER -> "Chuyển khoản";
-                case ZALOPAY -> "ZaloPay";
                 case PAYOS -> "PayOS";
             };
             html.append("""
@@ -492,26 +474,3 @@ public class PdfService {
         return String.format("%,.0f đ", amount.doubleValue());
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
