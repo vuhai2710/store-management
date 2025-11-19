@@ -6,9 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO chứa thông tin chi tiết đơn hàng từ GHN API
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

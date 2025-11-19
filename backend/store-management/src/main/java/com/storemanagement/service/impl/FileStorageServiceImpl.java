@@ -15,9 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Service implementation cho File Storage
- */
 @Service
 @Slf4j
 public class FileStorageServiceImpl implements FileStorageService {

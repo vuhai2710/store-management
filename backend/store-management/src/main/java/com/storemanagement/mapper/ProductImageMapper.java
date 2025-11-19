@@ -7,9 +7,6 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-/**
- * Mapper cho ProductImage entity <-> ProductImageDTO
- */
 @Mapper(componentModel = "spring")
 public interface ProductImageMapper {
     
@@ -21,19 +18,8 @@ public interface ProductImageMapper {
     
     List<ProductImageDTO> toDTOList(List<ProductImage> productImages);
 
-    // ProductImageDTO → ProductImage (for create/update)
+    // ProductImageDTO → ProductImage
     @Mapping(target = "idProductImage", ignore = true)
     @Mapping(target = "product", ignore = true)
-    // createdAt is inherited from BaseEntity and managed by JPA/Hibernate
     ProductImage toEntity(ProductImageDTO dto);
 }
-
-
-
-
-
-
-
-
-
-

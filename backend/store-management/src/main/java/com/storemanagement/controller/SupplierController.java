@@ -15,15 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * Controller xử lý các API liên quan đến Nhà cung cấp (Supplier)
- * Base URL: /api/v1/suppliers
- * 
- * Tất cả các endpoint yêu cầu authentication với role ADMIN hoặc EMPLOYEE
- * Header: Authorization: Bearer {JWT_TOKEN}
- * 
- * @author Store Management Team
- */
 @RestController
 @RequestMapping("/api/v1/suppliers")
 @RequiredArgsConstructor
@@ -107,29 +98,3 @@ public class SupplierController {
         return ResponseEntity.ok(ApiResponse.success("Xóa nhà cung cấp thành công", null));
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

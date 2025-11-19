@@ -25,15 +25,11 @@ public interface EmployeeMapper {
     // EmployeeDTO → Employee (for create/update)
     @Mapping(target = "idEmployee", ignore = true)
     @Mapping(target = "user", ignore = true)
-    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
-    // password, username, email are in EmployeeDTO but handled via User entity in service
     Employee toEntity(EmployeeDTO dto);
 
     // Update Employee từ EmployeeDTO
     @Mapping(target = "idEmployee", ignore = true)
     @Mapping(target = "user", ignore = true)
-    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
-    // password, username, email are in EmployeeDTO but handled via User entity in service
     void updateEntityFromDto(EmployeeDTO dto, @MappingTarget Employee entity);
 }
 

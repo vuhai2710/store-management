@@ -7,9 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-/**
- * DTO cho PayOS Item (sản phẩm trong đơn hàng)
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -23,12 +23,6 @@ public class PromotionController {
     private final PromotionService promotionService;
     private final CustomerService customerService;
 
-    /**
-     * Customer: Validate coupon code
-     *
-     * Endpoint: POST /api/v1/promotions/validate
-     * Authentication: Required (CUSTOMER role)
-     */
     @PostMapping("/validate")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<ValidatePromotionResponseDTO>> validatePromotion(
@@ -37,12 +31,6 @@ public class PromotionController {
         return ResponseEntity.ok(ApiResponse.success("Validate promotion code", response));
     }
 
-    /**
-     * Customer: Calculate automatic discount
-     *
-     * Endpoint: POST /api/v1/promotions/calculate
-     * Authentication: Required (CUSTOMER role)
-     */
     @PostMapping("/calculate")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<CalculateDiscountResponseDTO>> calculateDiscount(

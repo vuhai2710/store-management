@@ -16,16 +16,14 @@ public interface ShippingAddressMapper {
     
     List<ShippingAddressDTO> toDTOList(List<ShippingAddress> entities);
     
-    // ShippingAddressDTO → ShippingAddress (for create/update)
+    // ShippingAddressDTO → ShippingAddress
     @Mapping(target = "idShippingAddress", ignore = true)
     @Mapping(target = "customer", ignore = true)
-    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
     ShippingAddress toEntity(ShippingAddressDTO dto);
     
-    // Update ShippingAddress from ShippingAddressDTO
+    // Update ShippingAddress từ ShippingAddressDTO
     @Mapping(target = "idShippingAddress", ignore = true)
     @Mapping(target = "customer", ignore = true)
-    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
     void updateEntityFromDto(ShippingAddressDTO dto, @org.mapstruct.MappingTarget ShippingAddress entity);
 }
 

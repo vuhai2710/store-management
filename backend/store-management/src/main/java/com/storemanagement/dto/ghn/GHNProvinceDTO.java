@@ -6,9 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO cho Tỉnh/Thành phố từ GHN API
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

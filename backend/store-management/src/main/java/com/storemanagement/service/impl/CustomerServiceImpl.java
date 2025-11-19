@@ -253,29 +253,6 @@ public class CustomerServiceImpl implements CustomerService {
         return customerMapper.toDTO(updatedCustomer);
     }
 
-    /**
-     * Tạo customer không có user account (cho walk-in customers)
-     * 
-     * Walk-in customers là khách hàng mua trực tiếp tại cửa hàng mà không có tài khoản đăng nhập.
-     * Customer này sẽ có:
-     * - id_user = NULL (không có User account)
-     * - Chỉ lưu thông tin cơ bản: tên, số điện thoại, địa chỉ
-     * - Vẫn có thể theo dõi lịch sử mua hàng qua Customer record
-     * 
-     * Logic:
-     * 1. Kiểm tra số điện thoại đã tồn tại chưa (phone number là unique)
-     * 2. Nếu đã tồn tại → Throw exception (không tạo trùng)
-     * 3. Nếu chưa tồn tại → Tạo customer mới với user = null
-     * 
-     * Lưu ý: Method này được gọi từ OrderService khi tạo đơn cho walk-in customer.
-     * Nếu customer đã tồn tại với số điện thoại, OrderService sẽ sử dụng customer hiện tại.
-     * 
-     * @param customerName Tên khách hàng (required)
-     * @param phoneNumber Số điện thoại (required, unique)
-     * @param address Địa chỉ (optional)
-     * @return CustomerDTO của customer vừa tạo
-     * @throws RuntimeException nếu số điện thoại đã được sử dụng
-     */
     @Override
     public CustomerDTO createCustomerWithoutUser(String customerName, String phoneNumber, String address) {
         // Kiểm tra phone number đã tồn tại chưa

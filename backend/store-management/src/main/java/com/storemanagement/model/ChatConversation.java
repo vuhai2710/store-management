@@ -4,17 +4,6 @@ import com.storemanagement.utils.ConversationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
-/**
- * Entity cho ChatConversation (Hội thoại chat)
- * 
- * Mỗi khách hàng có thể có một hoặc nhiều cuộc hội thoại
- * Admin và Employee có thể xem và trả lời tất cả cuộc hội thoại
- * 
- * Business Rules:
- * - Một customer có thể có nhiều conversations (lịch sử chat)
- * - Status OPEN: đang hoạt động, CLOSED: đã kết thúc
- * - updated_at tự động cập nhật khi có tin nhắn mới
- */
 @Entity
 @Table(name = "chat_conversations")
 @Data
@@ -44,28 +33,3 @@ public class ChatConversation extends BaseEntity {
     @Column(name = "last_viewed_by_customer_at")
     private java.time.LocalDateTime lastViewedByCustomerAt;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

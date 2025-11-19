@@ -43,8 +43,5 @@ public class ProductReview extends BaseEntity {
     
     @Column(name = "edit_count", nullable = false)
     @Builder.Default
-    private Integer editCount = 0; // Số lần đã edit, chỉ cho phép edit 1 lần
+    private Integer editCount = 0;
 }
-
-
-

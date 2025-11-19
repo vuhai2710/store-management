@@ -8,9 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * Request DTO để tạo đơn hàng GHN
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
