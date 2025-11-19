@@ -26,19 +26,6 @@ public class ProductReviewController {
     private final ProductReviewService productReviewService;
     private final CustomerService customerService;
 
-    /**
-     * Customer: Tạo đánh giá sản phẩm
-     *
-     * Endpoint: POST /api/v1/products/{productId}/reviews
-     * Authentication: Required (CUSTOMER role)
-     *
-     * Request body:
-     * {
-     *   "orderDetailId": 1,
-     *   "rating": 5,
-     *   "comment": "Sản phẩm tốt"
-     * }
-     */
     @PostMapping("/products/{productId}/reviews")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<ProductReviewDTO>> createReview(
@@ -52,15 +39,6 @@ public class ProductReviewController {
         return ResponseEntity.ok(ApiResponse.success("Tạo đánh giá thành công", review));
     }
 
-    /**
-     * Customer/Admin/Employee: Lấy danh sách đánh giá của sản phẩm
-     *
-     * Endpoint: GET /api/v1/products/{productId}/reviews
-     * Authentication: Required (CUSTOMER, ADMIN, EMPLOYEE)
-     * 
-     * Query params:
-     * - rating: Lọc theo rating (1-5), nếu lẻ sẽ làm tròn (4.1 → 4)
-     */
     @GetMapping("/products/{productId}/reviews")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<PageResponse<ProductReviewDTO>>> getProductReviews(
@@ -85,12 +63,6 @@ public class ProductReviewController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đánh giá thành công", reviews));
     }
 
-    /**
-     * Customer: Lấy danh sách đánh giá của customer hiện tại
-     *
-     * Endpoint: GET /api/v1/reviews/my-reviews
-     * Authentication: Required (CUSTOMER role)
-     */
     @GetMapping("/reviews/my-reviews")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<PageResponse<ProductReviewDTO>>> getMyReviews(
@@ -109,12 +81,6 @@ public class ProductReviewController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đánh giá thành công", reviews));
     }
 
-    /**
-     * Customer: Chỉnh sửa đánh giá (trong 24h)
-     *
-     * Endpoint: PUT /api/v1/reviews/{reviewId}
-     * Authentication: Required (CUSTOMER role)
-     */
     @PutMapping("/reviews/{reviewId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<ProductReviewDTO>> updateReview(
@@ -128,12 +94,6 @@ public class ProductReviewController {
         return ResponseEntity.ok(ApiResponse.success("Cập nhật đánh giá thành công", review));
     }
 
-    /**
-     * Customer: Xóa đánh giá (trong 24h)
-     *
-     * Endpoint: DELETE /api/v1/reviews/{reviewId}
-     * Authentication: Required (CUSTOMER role)
-     */
     @DeleteMapping("/reviews/{reviewId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<Void>> deleteReview(@PathVariable Integer reviewId) {
@@ -145,12 +105,6 @@ public class ProductReviewController {
         return ResponseEntity.ok(ApiResponse.success("Xóa đánh giá thành công", null));
     }
 
-    /**
-     * Admin/Employee: Xem tất cả đánh giá
-     *
-     * Endpoint: GET /api/v1/admin/reviews
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
     @GetMapping("/admin/reviews")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PageResponse<ProductReviewDTO>>> getAllReviews(
@@ -165,12 +119,6 @@ public class ProductReviewController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đánh giá thành công", reviews));
     }
 
-    /**
-     * Admin/Employee: Xem chi tiết đánh giá
-     *
-     * Endpoint: GET /api/v1/admin/reviews/{reviewId}
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
     @GetMapping("/admin/reviews/{reviewId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<ProductReviewDTO>> getReviewById(@PathVariable Integer reviewId) {
@@ -178,25 +126,13 @@ public class ProductReviewController {
         return ResponseEntity.ok(ApiResponse.success("Lấy chi tiết đánh giá thành công", review));
     }
 
-    /**
-     * Admin/Employee: Xóa đánh giá (bất kỳ lúc nào)
-     *
-     * Endpoint: DELETE /api/v1/admin/reviews/{reviewId}
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
     @DeleteMapping("/admin/reviews/{reviewId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<Void>> deleteReviewByAdmin(@PathVariable Integer reviewId) {
         productReviewService.deleteReviewByAdmin(reviewId);
         return ResponseEntity.ok(ApiResponse.success("Xóa đánh giá thành công", null));
     }
-    
-    /**
-     * Admin/Employee: Trả lời đánh giá
-     *
-     * Endpoint: POST /api/v1/admin/reviews/{reviewId}/reply
-     * Authentication: Required (ADMIN, EMPLOYEE)
-     */
+
     @PostMapping("/admin/reviews/{reviewId}/reply")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<ProductReviewDTO>> replyToReview(
@@ -206,6 +142,3 @@ public class ProductReviewController {
         return ResponseEntity.ok(ApiResponse.success("Trả lời đánh giá thành công", review));
     }
 }
-
-
-

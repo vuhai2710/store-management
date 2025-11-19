@@ -1,0 +1,84 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: store-management
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/store_management?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    baseline-version: 0
+    validate-on-migrate: false
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_USERNAME:}
+    password: ${EMAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+file:
+  upload:
+    directory: uploads
+
+jwt:
+  secret: dev-secret-key-for-store-management-min-32-chars-change-in-production
+  signerKey: "dev-signer-key-base64-encoded-for-store-management-change-in-production-min-32-chars"
+  expiration: 86400000 # 24 hours in milliseconds
+
+logging:
+  level:
+    com.storemanagement: DEBUG
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+
+payos:
+  client-id: "${PAYOS_CLIENT_ID:}" # Điền Client ID từ PayOS dashboard
+  api-key: "${PAYOS_API_KEY:}" # Điền API Key từ PayOS dashboard
+  checksum-key: "${PAYOS_CHECKSUM_KEY:}" # Điền Checksum Key từ PayOS dashboard
+  webhook-url: "${PAYOS_WEBHOOK_URL:https://your-ngrok-url.ngrok.io/api/v1/payments/payos/webhook}" # Điền webhook URL (cần HTTPS)
+  return-url: "http://localhost:3000/payment/success"
+  cancel-url: "http://localhost:3000/payment/cancel"
+  environment: "sandbox" # Options: sandbox, production
+  base-url: "https://api-merchant.payos.vn"
+
+ghn:
+  token: "${GHN_TOKEN:}" # Điền Token API từ GHN dashboard
+  shop-id: ${GHN_SHOP_ID:0} # Điền Shop ID từ GHN dashboard
+  base-url: "https://dev-online-gateway.ghn.vn"
+  webhook-url: "${GHN_WEBHOOK_URL:https://your-ngrok-url.ngrok.io/api/v1/ghn/webhook}" # Điền webhook URL (cần HTTPS)
+  enabled: false # Đặt true khi đã có token và muốn sử dụng GHN
+  environment: "sandbox" # Options: sandbox, production
+

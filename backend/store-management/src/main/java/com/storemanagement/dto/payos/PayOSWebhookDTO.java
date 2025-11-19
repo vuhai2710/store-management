@@ -5,9 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO cho PayOS Webhook Callback
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

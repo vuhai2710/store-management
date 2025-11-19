@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * CategoryDTO không kế thừa BaseDTO vì Category entity không extend BaseEntity (chỉ có createdAt, không có updatedAt trong entity)
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

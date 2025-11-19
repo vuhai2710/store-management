@@ -26,26 +26,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Service implementation cho Import Order (Đơn nhập hàng)
- * 
- * Chức năng chính:
- * 1. Tạo đơn nhập hàng từ nhà cung cấp
- * 2. Tự động cập nhật stock quantity của sản phẩm
- * 3. Tự động tạo inventory transactions để track lịch sử nhập/xuất kho
- * 4. Xuất phiếu nhập hàng ra PDF
- * 
- * Business Logic:
- * - Khi tạo đơn nhập hàng:
- *   1. Validate supplier và products
- *   2. Tính tổng tiền từ các sản phẩm
- *   3. Lưu đơn nhập hàng
- *   4. Cập nhật stock quantity cho từng sản phẩm (tăng)
- *   5. Tạo inventory transaction (type: IN) cho mỗi sản phẩm
- *   6. Cập nhật product status nếu cần (OUT_OF_STOCK -> IN_STOCK)
- * 
- * @author Store Management Team
- */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -60,22 +40,6 @@ public class ImportOrderServiceImpl implements ImportOrderService {
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final PdfService pdfService;
 
-    /**
-     * Tạo đơn nhập hàng mới
-     * 
-     * Flow xử lý:
-     * 1. Validate supplier tồn tại
-     * 2. Validate từng sản phẩm trong danh sách
-     * 3. Tính tổng tiền (quantity * importPrice cho mỗi sản phẩm)
-     * 4. Tạo và lưu ImportOrder
-     * 5. Cập nhật stock quantity cho từng sản phẩm (tăng số lượng)
-     * 6. Tạo InventoryTransaction (type: IN) để track lịch sử
-     * 7. Cập nhật product status nếu cần
-     * 
-     * @param importOrderDto DTO chứa thông tin đơn nhập hàng
-     * @param employeeId ID của nhân viên tạo đơn (lấy từ JWT token)
-     * @return ImportOrderDto đã được tạo với ID
-     */
     @Override
     public PurchaseOrderDTO createImportOrder(PurchaseOrderDTO purchaseOrderDTO, Integer employeeId) {
         log.info("Creating import order for supplier: {}", purchaseOrderDTO.getIdSupplier());
@@ -311,4 +275,3 @@ public class ImportOrderServiceImpl implements ImportOrderService {
         return pdfService.generateImportOrderPdf(purchaseOrderDTO);
     }
 }
-

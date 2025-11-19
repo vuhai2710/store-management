@@ -6,9 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO cho một sự kiện tracking từ GHN API
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,18 +24,3 @@ public class GHNTrackingEventDTO {
     @JsonProperty("location")
     private String location;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

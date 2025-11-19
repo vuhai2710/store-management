@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * NotificationDTO không kế thừa BaseDTO vì Notification entity chỉ có createdAt, không có updatedAt
- */
 @Data
 @Builder
 @NoArgsConstructor

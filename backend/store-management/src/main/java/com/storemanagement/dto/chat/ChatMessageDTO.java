@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * ChatMessageDTO không kế thừa BaseDTO vì ChatMessage entity chỉ có created_at (không có updated_at)
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

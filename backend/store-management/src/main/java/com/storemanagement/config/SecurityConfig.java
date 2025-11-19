@@ -26,9 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Configuration class cho Spring Security
- */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity

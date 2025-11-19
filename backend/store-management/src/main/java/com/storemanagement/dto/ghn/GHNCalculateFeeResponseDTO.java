@@ -8,9 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-/**
- * Response DTO từ GHN API khi tính phí vận chuyển
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

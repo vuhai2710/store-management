@@ -21,65 +21,65 @@ import java.util.Map;
 
 /**
  * WebSocket Authentication Interceptor
- * 
+ * <p>
  * Xác thực WebSocket connections bằng JWT token
  * Token có thể được gửi qua:
  * 1. Query parameter: ws://localhost:8080/ws?token=JWT_TOKEN
  * 2. STOMP header: Authorization: Bearer JWT_TOKEN
- * 
+ * <p>
  * Sau khi xác thực thành công, set Authentication vào session để sử dụng trong @MessageMapping
  */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class WebSocketAuthInterceptor implements ChannelInterceptor {
-    
+
     private final JwtDecoder jwtDecoder;
     private final JwtAuthenticationConverter jwtAuthenticationConverter;
-    
+
     @Override
-public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
-    StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-    
-    if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-        // Lấy token từ query parameter hoặc header
-        String token = extractToken(accessor);
-        
-        if (token != null && !token.isEmpty()) {
-            try {
-                // Validate và decode JWT token
-                Jwt jwt = jwtDecoder.decode(token);
-                
-                // Convert JWT thành Authentication object
-                Authentication authentication = jwtAuthenticationConverter.convert(jwt);
-                
-                // Set authentication vào session
-                accessor.setUser(authentication);
-                
-                //  THÊM: Set authentication vào SecurityContext để SecurityUtils có thể lấy được
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                
-                log.info("WebSocket authenticated for user: {}", authentication.getName());
-            } catch (Exception e) {
-                log.error("WebSocket authentication failed: {}", e.getMessage());
-                // Reject connection nếu token không hợp lệ
-                throw new RuntimeException("Authentication failed: " + e.getMessage());
+    public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
+        StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+
+        if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
+            // Lấy token từ query parameter hoặc header
+            String token = extractToken(accessor);
+
+            if (token != null && !token.isEmpty()) {
+                try {
+                    // Validate và decode JWT token
+                    Jwt jwt = jwtDecoder.decode(token);
+
+                    // Convert JWT thành Authentication object
+                    Authentication authentication = jwtAuthenticationConverter.convert(jwt);
+
+                    // Set authentication vào session
+                    accessor.setUser(authentication);
+
+                    //  THÊM: Set authentication vào SecurityContext để SecurityUtils có thể lấy được
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                    log.info("WebSocket authenticated for user: {}", authentication.getName());
+                } catch (Exception e) {
+                    log.error("WebSocket authentication failed: {}", e.getMessage());
+                    // Reject connection nếu token không hợp lệ
+                    throw new RuntimeException("Authentication failed: " + e.getMessage());
+                }
+            } else {
+                log.warn("WebSocket connection attempt without token");
+                throw new RuntimeException("Authentication token required");
             }
-        } else {
-            log.warn("WebSocket connection attempt without token");
-            throw new RuntimeException("Authentication token required");
         }
+
+        //  THÊM: Set authentication cho tất cả các message (không chỉ CONNECT)
+        if (accessor != null && accessor.getUser() instanceof Authentication) {
+            Authentication authentication = (Authentication) accessor.getUser();
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        }
+
+        return message;
     }
-    
-    //  THÊM: Set authentication cho tất cả các message (không chỉ CONNECT)
-    if (accessor != null && accessor.getUser() instanceof Authentication) {
-        Authentication authentication = (Authentication) accessor.getUser();
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-    }
-    
-    return message;
-}
-    
+
     /**
      * Extract JWT token từ query parameter hoặc STOMP header
      */
@@ -92,7 +92,7 @@ public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel c
                 return tokenParams.get(0);
             }
         }
-        
+
         // 2. Thử lấy từ STOMP header Authorization
         List<String> authHeaders = accessor.getNativeHeader("Authorization");
         if (authHeaders != null && !authHeaders.isEmpty()) {
@@ -101,7 +101,7 @@ public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel c
                 return authHeader.substring(7);
             }
         }
-        
+
         // 3. Thử lấy từ session attributes (nếu đã set từ handshake)
         Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
         if (sessionAttributes != null) {
@@ -110,7 +110,7 @@ public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel c
                 return tokenObj.toString();
             }
         }
-        
+
         return null;
     }
 }

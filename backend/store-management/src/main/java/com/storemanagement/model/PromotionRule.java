@@ -35,7 +35,7 @@ public class PromotionRule extends BaseEntity {
 
     @Column(name = "customer_type", length = 20)
     @Builder.Default
-    private String customerType = "ALL"; // VIP, REGULAR, or ALL (stored as String to support ALL value)
+    private String customerType = "ALL"; // VIP, REGULAR
 
     @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;

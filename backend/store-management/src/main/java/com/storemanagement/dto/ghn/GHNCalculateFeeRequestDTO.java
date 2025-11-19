@@ -6,11 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Request DTO để tính phí vận chuyển từ GHN API
- * 
- * Endpoint: POST /shiip/public-api/v2/shipping-order/fee
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -30,11 +30,11 @@ public class ProductDTO extends BaseDTO {
     @NotBlank(message = "Tên sản phẩm không được để trống")
     private String productName;
     
-    private String brand;  // Thương hiệu sản phẩm
+    private String brand;
     
-    private Integer idSupplier;  // Optional - nhà cung cấp
+    private Integer idSupplier;
     
-    private String supplierName;  // Optional
+    private String supplierName;
 
     private String description;
 
@@ -42,24 +42,19 @@ public class ProductDTO extends BaseDTO {
     @Min(value = 0, message = "Giá phải lớn hơn hoặc bằng 0")
     private BigDecimal price;
 
-    // READ ONLY - Stock quantity chỉ được cập nhật từ inventory transactions (ImportOrder, Order)
-    // Không cho phép set giá trị này khi tạo/sửa sản phẩm
     @Min(value = 0, message = "Số lượng tồn kho phải lớn hơn hoặc bằng 0")
     private Integer stockQuantity;
 
     private ProductStatus status;
 
-    private String imageUrl;  // Giữ lại để backward compatibility - ảnh chính
-    
-    // Danh sách tất cả ảnh của sản phẩm (bao gồm cả ảnh chính)
+    private String imageUrl;
+
     private List<ProductImageDTO> images;
 
-    // productCode: có thể để trống nếu codeType = SKU (sẽ tự sinh)
     private String productCode;
 
     @NotNull(message = "Loại mã sản phẩm không được để trống")
     private CodeType codeType;
 
-    // SKU: tự động sinh hoặc tự nhập
     private String sku;
 }

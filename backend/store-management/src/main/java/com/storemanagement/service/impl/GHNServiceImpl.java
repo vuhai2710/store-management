@@ -14,23 +14,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
-/**
- * Service implementation cho GHN (Giao Hàng Nhanh) API Integration
- * 
- * Mục đích:
- * - Implement các method để tương tác với GHN API
- * - Xử lý tính phí vận chuyển, tạo đơn hàng, tracking, etc.
- * 
- * GHN API Documentation: https://api.ghn.vn/
- * GHN Sandbox: https://dev-online-gateway.ghn.vn
- * 
- * Logic chung:
- * 1. Kiểm tra GHN enabled (feature flag)
- * 2. Build request với headers (Token, Shop ID)
- * 3. Gọi GHN API
- * 4. Parse response và xử lý lỗi
- * 5. Return DTO
- */
 @Service
 @Slf4j
 public class GHNServiceImpl implements GHNService {
@@ -46,15 +29,7 @@ public class GHNServiceImpl implements GHNService {
         this.ghnRestTemplate = ghnRestTemplate;
         this.objectMapper = objectMapper;
     }
-    
-    /**
-     * Build headers chung cho tất cả GHN API requests
-     * 
-     * Headers bắt buộc:
-     * - Token: API token từ GHNConfig
-     * - ShopId: Shop ID từ GHNConfig
-     * - Content-Type: application/json
-     */
+
     private HttpHeaders buildHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -62,27 +37,12 @@ public class GHNServiceImpl implements GHNService {
         headers.set("ShopId", String.valueOf(ghnConfig.getShopId()));
         return headers;
     }
-    
-    /**
-     * Kiểm tra GHN integration có được bật không
-     * 
-     * Nếu disabled, các method sẽ throw exception hoặc return default values
-     */
+
     @Override
     public boolean isEnabled() {
         return ghnConfig.getEnabled() != null && ghnConfig.getEnabled();
     }
-    
-    /**
-     * Lấy danh sách tỉnh/thành phố
-     * 
-     * Endpoint: GET /shiip/public-api/master-data/province
-     * 
-     * Logic:
-     * 1. Kiểm tra GHN enabled
-     * 2. Gọi GHN API GET /shiip/public-api/master-data/province
-     * 3. Parse response và trả về danh sách tỉnh/thành phố
-     */
+
     @Override
     public List<GHNProvinceDTO> getProvinces() {
         log.info("Getting provinces from GHN API");
@@ -124,17 +84,7 @@ public class GHNServiceImpl implements GHNService {
             throw new RuntimeException("Failed to get provinces from GHN: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * Lấy danh sách quận/huyện theo tỉnh/thành phố
-     * 
-     * Endpoint: GET /shiip/public-api/master-data/district?province_id={id}
-     * 
-     * Logic:
-     * 1. Kiểm tra GHN enabled
-     * 2. Gọi GHN API với province_id parameter
-     * 3. Parse response và trả về danh sách quận/huyện
-     */
+
     @Override
     public List<GHNDistrictDTO> getDistricts(Integer provinceId) {
         log.info("Getting districts from GHN API for province ID: {}", provinceId);
@@ -176,17 +126,7 @@ public class GHNServiceImpl implements GHNService {
             throw new RuntimeException("Failed to get districts from GHN: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * Lấy danh sách phường/xã theo quận/huyện
-     * 
-     * Endpoint: GET /shiip/public-api/master-data/ward?district_id={id}
-     * 
-     * Logic:
-     * 1. Kiểm tra GHN enabled
-     * 2. Gọi GHN API với district_id parameter
-     * 3. Parse response và trả về danh sách phường/xã
-     */
+
     @Override
     public List<GHNWardDTO> getWards(Integer districtId) {
         log.info("Getting wards from GHN API for district ID: {}", districtId);
@@ -228,19 +168,7 @@ public class GHNServiceImpl implements GHNService {
             throw new RuntimeException("Failed to get wards from GHN: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * Tính phí vận chuyển
-     * 
-     * Endpoint: POST /shiip/public-api/v2/shipping-order/fee
-     * 
-     * Logic:
-     * 1. Kiểm tra GHN enabled
-     * 2. Build request body từ GHNCalculateFeeRequestDTO
-     * 3. Gọi GHN API POST /shiip/public-api/v2/shipping-order/fee
-     * 4. Parse response và trả về GHNCalculateFeeResponseDTO
-     * 5. Response chứa total (tổng phí vận chuyển) và các phí chi tiết
-     */
+
     @Override
     public GHNCalculateFeeResponseDTO calculateShippingFee(GHNCalculateFeeRequestDTO request) {
         log.info("Calculating shipping fee from GHN API: fromDistrictId={}, toDistrictId={}", 
@@ -295,20 +223,7 @@ public class GHNServiceImpl implements GHNService {
             throw new RuntimeException("Failed to calculate shipping fee from GHN: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * Tạo đơn hàng GHN
-     * 
-     * Endpoint: POST /shiip/public-api/v2/shipping-order/create
-     * 
-     * Logic:
-     * 1. Kiểm tra GHN enabled
-     * 2. Build request body từ GHNCreateOrderRequestDTO
-     * 3. Gọi GHN API POST /shiip/public-api/v2/shipping-order/create
-     * 4. Parse response và trả về GHNCreateOrderResponseDTO
-     * 5. Response chứa order_code (quan trọng, dùng để tracking)
-     * 6. order_code được lưu vào Shipment.ghnOrderCode
-     */
+
     @Override
     public GHNCreateOrderResponseDTO createOrder(GHNCreateOrderRequestDTO request) {
         log.info("Creating GHN order: clientOrderCode={}, toName={}, toPhone={}", 
@@ -353,16 +268,7 @@ public class GHNServiceImpl implements GHNService {
         }
     }
     
-    /**
-     * Lấy thông tin đơn hàng từ GHN
-     * 
-     * Endpoint: GET /shiip/public-api/v2/shipping-order/detail
-     * 
-     * Logic:
-     * 1. Kiểm tra GHN enabled
-     * 2. Gọi GHN API GET /shiip/public-api/v2/shipping-order/detail?order_code={code}
-     * 3. Parse response và trả về GHNOrderInfoDTO
-     */
+
     @Override
     public GHNOrderInfoDTO getOrderInfo(String ghnOrderCode) {
         log.info("Getting GHN order info: orderCode={}", ghnOrderCode);
@@ -401,18 +307,7 @@ public class GHNServiceImpl implements GHNService {
             throw new RuntimeException("Failed to get GHN order info: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * Hủy đơn hàng GHN
-     * 
-     * Endpoint: POST /shiip/public-api/v2/shipping-order/cancel
-     * 
-     * Logic:
-     * 1. Kiểm tra GHN enabled
-     * 2. Build request body với order_code và reason
-     * 3. Gọi GHN API POST /shiip/public-api/v2/shipping-order/cancel
-     * 4. Xử lý response (thường chỉ cần check code == 200)
-     */
+
     @Override
     public void cancelOrder(String ghnOrderCode, String reason) {
         log.info("Cancelling GHN order: orderCode={}, reason={}", ghnOrderCode, reason);
@@ -460,17 +355,7 @@ public class GHNServiceImpl implements GHNService {
             throw new RuntimeException("Failed to cancel GHN order: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * Lấy danh sách dịch vụ vận chuyển có sẵn
-     * 
-     * Endpoint: GET /shiip/public-api/v2/shipping-order/available-services
-     * 
-     * Logic:
-     * 1. Kiểm tra GHN enabled
-     * 2. Gọi GHN API với from_district_id và to_district_id
-     * 3. Parse response và trả về danh sách dịch vụ
-     */
+
     @Override
     public List<GHNServiceDTO> getShippingServices(Integer fromDistrictId, Integer toDistrictId) {
         log.info("Getting shipping services from GHN: fromDistrictId={}, toDistrictId={}", 
@@ -511,18 +396,7 @@ public class GHNServiceImpl implements GHNService {
             throw new RuntimeException("Failed to get shipping services from GHN: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * Lấy thời gian giao hàng dự kiến
-     * 
-     * Endpoint: POST /shiip/public-api/v2/shipping-order/leadtime
-     * 
-     * Logic:
-     * 1. Kiểm tra GHN enabled
-     * 2. Build request body từ GHNExpectedDeliveryTimeRequestDTO
-     * 3. Gọi GHN API POST /shiip/public-api/v2/shipping-order/leadtime
-     * 4. Parse response và trả về thời gian giao hàng dự kiến (ISO 8601 datetime string)
-     */
+
     @Override
     public String getExpectedDeliveryTime(GHNExpectedDeliveryTimeRequestDTO request) {
         log.info("Getting expected delivery time from GHN: fromDistrictId={}, toDistrictId={}", 
@@ -563,17 +437,7 @@ public class GHNServiceImpl implements GHNService {
             throw new RuntimeException("Failed to get expected delivery time from GHN: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * Theo dõi đơn hàng
-     * 
-     * Endpoint: GET /shiip/public-api/v2/shipping-order/tracking
-     * 
-     * Logic:
-     * 1. Kiểm tra GHN enabled
-     * 2. Gọi GHN API GET /shiip/public-api/v2/shipping-order/tracking?order_code={code}
-     * 3. Parse response và trả về GHNTrackingDTO với lịch sử cập nhật trạng thái
-     */
+
     @Override
     public GHNTrackingDTO trackOrder(String ghnOrderCode) {
         log.info("Tracking GHN order: orderCode={}", ghnOrderCode);
@@ -612,18 +476,7 @@ public class GHNServiceImpl implements GHNService {
             throw new RuntimeException("Failed to track GHN order: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * In vận đơn (PDF)
-     * 
-     * Endpoint: GET /shiip/public-api/v2/shipping-order/print
-     * 
-     * Logic:
-     * 1. Kiểm tra GHN enabled
-     * 2. Gọi GHN API GET /shiip/public-api/v2/shipping-order/print?order_code={code}
-     * 3. Response là PDF file (byte array)
-     * 4. Trả về byte array của PDF
-     */
+
     @Override
     public byte[] printOrder(String ghnOrderCode) {
         log.info("Printing GHN order: orderCode={}", ghnOrderCode);
@@ -661,18 +514,7 @@ public class GHNServiceImpl implements GHNService {
             throw new RuntimeException("Failed to print GHN order: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * Cập nhật đơn hàng GHN
-     * 
-     * Endpoint: POST /shiip/public-api/v2/shipping-order/update
-     * 
-     * Logic:
-     * 1. Kiểm tra GHN enabled
-     * 2. Build request body từ GHNUpdateOrderRequestDTO
-     * 3. Gọi GHN API POST /shiip/public-api/v2/shipping-order/update
-     * 4. Xử lý response (thường chỉ cần check code == 200)
-     */
+
     @Override
     public void updateOrder(GHNUpdateOrderRequestDTO request) {
         log.info("Updating GHN order: orderCode={}", request.getOrderCode());

@@ -17,26 +17,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Cấu hình global cho Jackson ObjectMapper
- *
- * Định dạng ngày tháng chuẩn cho toàn bộ dự án:
- * - LocalDate: dd/MM/yyyy
- * - LocalDateTime: dd/MM/yyyy HH:mm:ss
- *
- * Định dạng số:
- * - BigDecimal: Không dùng scientific notation, hiển thị đầy đủ số
- * - Double: Không dùng scientific notation, hiển thị đầy đủ số
- *
- * Áp dụng cho tất cả JSON response/request
- */
 @Configuration
 public class JacksonConfig {
 
-    // Format chuẩn cho LocalDate
+    // Format cho LocalDate
     private static final String DATE_FORMAT = "dd/MM/yyyy";
 
-    // Format chuẩn cho LocalDateTime
+    // Format cho LocalDateTime
     private static final String DATETIME_FORMAT = "dd/MM/yyyy HH:mm:ss";
 
     @Bean
@@ -66,13 +53,11 @@ public class JacksonConfig {
                 if (value == null) {
                     gen.writeNull();
                 } else {
-                    // Sử dụng toPlainString() để tránh scientific notation, sau đó write raw value
                     gen.writeRawValue(value.toPlainString());
                 }
             }
         });
         
-        // Custom serializer cho Double - không dùng scientific notation
         numberModule.addSerializer(Double.class, new com.fasterxml.jackson.databind.JsonSerializer<Double>() {
             @Override
             public void serialize(Double value, com.fasterxml.jackson.core.JsonGenerator gen, 
@@ -80,7 +65,6 @@ public class JacksonConfig {
                 if (value == null) {
                     gen.writeNull();
                 } else {
-                    // Convert Double sang BigDecimal để tránh scientific notation
                     BigDecimal bd = BigDecimal.valueOf(value);
                     gen.writeRawValue(bd.toPlainString());
                 }
@@ -93,4 +77,3 @@ public class JacksonConfig {
                 .build();
     }
 }
-

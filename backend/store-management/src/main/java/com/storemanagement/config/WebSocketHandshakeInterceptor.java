@@ -11,23 +11,23 @@ import java.util.Map;
 
 /**
  * WebSocket Handshake Interceptor
- * 
+ * <p>
  * Extract JWT token từ query parameter trong quá trình handshake
  * và lưu vào session attributes để sử dụng trong WebSocketAuthInterceptor
  */
 @Slf4j
 public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
-    
+
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                    WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
-        
+
         if (request instanceof ServletServerHttpRequest) {
             ServletServerHttpRequest servletRequest = (ServletServerHttpRequest) request;
-            
+
             // Lấy token từ query parameter
             String token = servletRequest.getServletRequest().getParameter("token");
-            
+
             if (token != null && !token.isEmpty()) {
                 // Lưu token vào session attributes
                 attributes.put("token", token);
@@ -42,10 +42,10 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
                 }
             }
         }
-        
+
         return true;
     }
-    
+
     @Override
     public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                WebSocketHandler wsHandler, Exception exception) {

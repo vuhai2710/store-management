@@ -21,16 +21,6 @@ import vn.payos.PayOS;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Service implementation cho PayOS Payment Gateway
- *
- * Mục đích:
- * - Implement các method để tương tác với PayOS API sử dụng PayOS Java SDK
- * - Xử lý tạo payment link, verify webhook signature, etc.
- *
- * PayOS API Documentation: https://payos.vn/docs/api/
- * PayOS Java SDK: https://payos.vn/docs/sdks/back-end/java/
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -39,28 +29,6 @@ public class PayOSServiceImpl implements PayOSService {
     private final PayOSConfig payOSConfig;
     private final PayOS payOS;
 
-    /**
-     * Tạo payment link từ PayOS API sử dụng PayOS Java SDK
-     *
-     * Logic chi tiết:
-     * 1. Validate order: phải có paymentMethod = PAYOS, status = PENDING
-     * 2. Build PaymentData từ Order entity:
-     *    - orderCode: orderId (Long)
-     *    - amount: order.finalAmount (Long VND)
-     *    - description: "Thanh toan don hang #" + orderId
-     *    - items: Convert từ order.orderDetails
-     *    - returnUrl: từ PayOSConfig
-     *    - cancelUrl: từ PayOSConfig
-     * 3. Gọi PayOS SDK createPaymentLink():
-     *    - SDK tự động xử lý authentication, request/response
-     *    - SDK tự động detect sandbox/production từ credentials
-     * 4. Convert SDK response sang PayOSPaymentResponseDTO
-     * 5. Return PayOSPaymentResponseDTO
-     *
-     * Error handling:
-     * - Nếu PayOS API trả về error: SDK sẽ throw exception
-     * - Nếu network error: SDK sẽ throw exception
-     */
     @Override
     public PayOSPaymentResponseDTO createPaymentLink(Order order) {
         log.info("Creating PayOS payment link for order ID: {} using PayOS SDK", order.getIdOrder());
@@ -106,18 +74,6 @@ public class PayOSServiceImpl implements PayOSService {
         }
     }
 
-    /**
-     * Build PaymentData từ Order entity để sử dụng với PayOS SDK
-     *
-     * Logic:
-     * - Convert orderId sang Long (orderCode)
-     * - Convert finalAmount sang Long VND (PayOS SDK yêu cầu số nguyên)
-     * - Build description từ orderId
-     * - Convert orderDetails sang ItemData list
-     * - Lấy returnUrl và cancelUrl từ PayOSConfig
-     *
-     * TODO: Return type sẽ là PaymentData sau khi uncomment imports
-     */
     private Object buildPaymentData(Order order) {
         // Convert orderId to Long (PayOS yêu cầu orderCode là Long)
         Long orderCode = Long.valueOf(order.getIdOrder());
@@ -194,12 +150,6 @@ public class PayOSServiceImpl implements PayOSService {
         }
     }
 
-    /**
-     * Convert PayOS SDK CheckoutResponseData sang PayOSPaymentResponseDTO
-     *
-     * @param checkoutResponse SDK response từ PayOS (Object type để tránh compile error)
-     * @return PayOSPaymentResponseDTO
-     */
     private PayOSPaymentResponseDTO convertToResponseDTO(Object checkoutResponse) {
         try {
             // Build PaymentDataDTO từ SDK response sử dụng reflection
@@ -231,9 +181,6 @@ public class PayOSServiceImpl implements PayOSService {
         }
     }
 
-    /**
-     * Helper method để get orderCode từ PaymentData object (sử dụng reflection)
-     */
     private Long getOrderCodeFromPaymentData(Object paymentData) {
         try {
             return (Long) paymentData.getClass().getMethod("getOrderCode").invoke(paymentData);
@@ -243,9 +190,6 @@ public class PayOSServiceImpl implements PayOSService {
         }
     }
 
-    /**
-     * Helper method để gọi PayOS SDK createPaymentLink (sử dụng reflection)
-     */
     private Object callPayOSCreatePaymentLink(Object paymentData) {
         try {
             // Gọi payOS.createPaymentLink(paymentData) sử dụng reflection
@@ -256,24 +200,6 @@ public class PayOSServiceImpl implements PayOSService {
         }
     }
 
-    /**
-     * Xác thực webhook signature từ PayOS sử dụng PayOS SDK
-     *
-     * Logic chi tiết:
-     * 1. PayOS gửi webhook với HMAC SHA256 signature
-     * 2. Sử dụng PayOS SDK verifyPaymentWebhookData() method
-     * 3. SDK tự động xử lý:
-     *    - Algorithm: HMAC SHA256
-     *    - Key: checksumKey từ PayOSConfig (đã được set trong PayOS instance)
-     *    - Data: JSON string của request body
-     *    - Encode: Base64
-     * 4. Return true nếu webhook.isSuccess() == true, false nếu không
-     *
-     * Lưu ý quan trọng:
-     * - PayOS SDK sử dụng method verifyPaymentWebhookData() và trả về Webhook object
-     * - Data để verify là JSON string của request body
-     * - SDK sử dụng checksumKey đã được set trong PayOS instance
-     */
     @Override
     public boolean verifyWebhookSignature(String data, String signature) {
         try {
@@ -327,16 +253,6 @@ public class PayOSServiceImpl implements PayOSService {
         }
     }
 
-    /**
-     * Lấy thông tin payment link từ PayOS sử dụng PayOS SDK
-     *
-     * Logic:
-     * 1. Gọi PayOS SDK getPaymentLinkInformation(paymentLinkId)
-     * 2. SDK tự động xử lý authentication và request/response
-     * 3. Convert SDK response sang DTO
-     *
-     * Lưu ý: PayOS SDK có thể có method name khác, cần kiểm tra documentation
-     */
     @Override
     public PayOSPaymentResponseDTO getPaymentLinkInfo(String paymentLinkId) {
         log.info("Getting PayOS payment link info using SDK. PaymentLinkId: {}", paymentLinkId);
@@ -372,16 +288,6 @@ public class PayOSServiceImpl implements PayOSService {
         }
     }
 
-    /**
-     * Hủy payment link trên PayOS sử dụng PayOS SDK
-     *
-     * Logic:
-     * 1. Gọi PayOS SDK cancelPaymentLink(paymentLinkId)
-     * 2. SDK tự động xử lý authentication và request
-     * 3. Payment link sẽ không còn sử dụng được
-     *
-     * Lưu ý: PayOS SDK có thể có method name khác, cần kiểm tra documentation
-     */
     @Override
     public void cancelPaymentLink(String paymentLinkId) {
         log.info("Cancelling PayOS payment link using SDK. PaymentLinkId: {}", paymentLinkId);

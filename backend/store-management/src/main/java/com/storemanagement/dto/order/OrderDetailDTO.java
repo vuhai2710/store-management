@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-/**
- * OrderDetailDTO không kế thừa BaseDTO vì OrderDetail entity không có timestamps
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
