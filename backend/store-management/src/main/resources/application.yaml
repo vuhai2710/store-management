@@ -8,7 +8,7 @@ spring:
   datasource:
     url: jdbc:mysql://turntable.proxy.rlwy.net:28840/railway
     username: root
-    password: bbifrWuzfhUDuOfSuGVhxIVOUlKrBFpx
+    password: "bbifrWuzfhUDuOFSuGVhxIVOUlKrBFpx"
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
