@@ -1,6 +1,6 @@
 # Dùng Maven để build
 FROM maven:3.8.5-openjdk-17 AS build
-COPY . .
+COPY backend/store-management .
 RUN mvn clean package -DskipTests
 
 # Dùng OpenJDK để chạy
