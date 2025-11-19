@@ -162,19 +162,6 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
     }
 
-    /**
-     * Đổi mật khẩu cho user
-     * 
-     * Logic xử lý:
-     * 1. Kiểm tra user tồn tại
-     * 2. Verify mật khẩu hiện tại bằng passwordEncoder.matches()
-     * 3. Encode mật khẩu mới bằng BCrypt
-     * 4. Cập nhật mật khẩu mới vào database
-     * 
-     * Security:
-     * - Mật khẩu được hash bằng BCrypt trước khi lưu
-     * - So sánh mật khẩu hiện tại bằng passwordEncoder.matches() (an toàn)
-     */
     @Override
     public void changePassword(String username, String currentPassword, String newPassword) {
         // Kiểm tra user tồn tại
@@ -192,18 +179,6 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    /**
-     * Upload ảnh đại diện cho user
-     * 
-     * Logic:
-     * 1. Kiểm tra user tồn tại
-     * 2. Upload ảnh vào thư mục uploads/users/
-     * 3. Lưu URL vào database
-     * 
-     * @param username Username của user
-     * @param avatar File ảnh
-     * @return UserDTO đã được cập nhật
-     */
     @Override
     public UserDTO uploadAvatar(String username, MultipartFile avatar) {
         log.info("Uploading avatar for user: {}", username);
@@ -226,14 +201,6 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    /**
-     * Cập nhật ảnh đại diện cho user
-     * Sẽ xóa ảnh cũ (nếu có) và upload ảnh mới
-     * 
-     * @param username Username của user
-     * @param avatar File ảnh mới
-     * @return UserDTO đã được cập nhật
-     */
     @Override
     public UserDTO updateAvatar(String username, MultipartFile avatar) {
         log.info("Updating avatar for user: {}", username);
@@ -262,11 +229,6 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    /**
-     * Xóa ảnh đại diện của user
-     * 
-     * @param username Username của user
-     */
     @Override
     public void deleteAvatar(String username) {
         log.info("Deleting avatar for user: {}", username);

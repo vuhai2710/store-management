@@ -27,6 +27,5 @@ public interface CustomerService {
     void deleteCustomerByUser(User user);
     CustomerDTO updateMyCustomerInfo(String username, CustomerDTO customerDTO);
     
-    // Tạo customer không có user account (cho walk-in customers)
     CustomerDTO createCustomerWithoutUser(String customerName, String phoneNumber, String address);
 }

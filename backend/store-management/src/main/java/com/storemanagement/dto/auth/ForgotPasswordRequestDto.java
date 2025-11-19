@@ -7,10 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO cho yêu cầu quên mật khẩu
- * Chỉ cần email để tìm tài khoản và gửi mật khẩu mới
- */
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,18 +17,3 @@ public class ForgotPasswordRequestDto {
     @Email(message = "Email không hợp lệ")
     private String email;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -22,10 +22,6 @@ public class InventoryTransactionController {
 
     private final InventoryTransactionService inventoryTransactionService;
 
-    /**
-     * Lấy tất cả lịch sử nhập/xuất kho (phân trang)
-     * GET /api/v1/inventory-transactions
-     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> getAllTransactions(
@@ -41,10 +37,6 @@ public class InventoryTransactionController {
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử nhập/xuất kho thành công", transactions));
     }
 
-    /**
-     * Lấy lịch sử nhập/xuất kho của một sản phẩm
-     * GET /api/v1/inventory-transactions/product/{productId}
-     */
     @GetMapping("/product/{productId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> getTransactionsByProduct(
@@ -62,10 +54,6 @@ public class InventoryTransactionController {
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử nhập/xuất kho của sản phẩm thành công", transactions));
     }
 
-    /**
-     * Lấy transactions theo reference_type và reference_id
-     * GET /api/v1/inventory-transactions/reference?referenceType=PURCHASE_ORDER&referenceId=1
-     */
     @GetMapping("/reference")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> getTransactionsByReference(
@@ -84,10 +72,6 @@ public class InventoryTransactionController {
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử nhập/xuất kho theo reference thành công", transactions));
     }
 
-    /**
-     * Lấy lịch sử nhập/xuất kho trong khoảng thời gian
-     * GET /api/v1/inventory-transactions/history?startDate=2025-01-01T00:00:00&endDate=2025-01-31T23:59:59
-     */
     @GetMapping("/history")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> getTransactionHistory(
@@ -118,10 +102,6 @@ public class InventoryTransactionController {
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử nhập/xuất kho thành công", transactions));
     }
 
-    /**
-     * Lấy transactions theo loại giao dịch (IN/OUT)
-     * GET /api/v1/inventory-transactions/by-type?transactionType=IN
-     */
     @GetMapping("/by-type")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> getTransactionsByType(
@@ -140,17 +120,6 @@ public class InventoryTransactionController {
                 (transactionType == TransactionType.IN ? "nhập kho" : "xuất kho") + " thành công", transactions));
     }
 
-    /**
-     * Lọc transactions theo nhiều criteria (transactionType, productId, dateRange)
-     * GET /api/v1/inventory-transactions/filter?transactionType=IN&productId=1&startDate=2025-01-01T00:00:00&endDate=2025-01-31T23:59:59
-     * 
-     * Params:
-     * - transactionType: IN hoặc OUT (optional)
-     * - productId: ID sản phẩm (optional)
-     * - startDate: Thời gian bắt đầu (optional, default: 1 tháng trước)
-     * - endDate: Thời gian kết thúc (optional, default: hiện tại)
-     * - pageNo, pageSize, sortBy, sortDirection: Phân trang
-     */
     @GetMapping("/filter")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> filterTransactions(
@@ -176,25 +145,3 @@ public class InventoryTransactionController {
         return ResponseEntity.ok(ApiResponse.success("Lọc lịch sử nhập/xuất kho thành công", transactions));
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

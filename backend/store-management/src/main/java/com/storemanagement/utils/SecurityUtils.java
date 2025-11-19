@@ -7,17 +7,11 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 
 import java.util.Optional;
 
-/**
- * Utility class để lấy thông tin từ JWT token và SecurityContext
- * Tối ưu hóa bằng cách lấy trực tiếp từ JWT claims thay vì query database
- */
 public class SecurityUtils {
 
     /**
      * Lấy employeeId từ JWT token
      * Trả về Optional.empty() nếu không phải employee hoặc không có trong token
-     * 
-     * @return Optional<Integer> employeeId
      */
     public static Optional<Integer> getCurrentEmployeeId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -49,8 +43,6 @@ public class SecurityUtils {
 
     /**
      * Lấy userId từ JWT token
-     * 
-     * @return Optional<Integer> userId
      */
     public static Optional<Integer> getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -80,8 +72,6 @@ public class SecurityUtils {
 
     /**
      * Lấy username từ authentication
-     * 
-     * @return Optional<String> username
      */
     public static Optional<String> getCurrentUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -93,8 +83,6 @@ public class SecurityUtils {
 
     /**
      * Lấy role từ JWT token
-     * 
-     * @return Optional<String> role
      */
     public static Optional<String> getCurrentRole() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -114,54 +102,3 @@ public class SecurityUtils {
         return Optional.of(roleClaim.toString());
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

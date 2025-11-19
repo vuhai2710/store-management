@@ -6,9 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO cho WebSocket error messages
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

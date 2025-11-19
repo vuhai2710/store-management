@@ -11,10 +11,6 @@ import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
-/**
- * DTO cho conversation chat
- * Bao gồm thông tin khách hàng và tin nhắn mới nhất
- */
 @Data
 @NoArgsConstructor
 @SuperBuilder

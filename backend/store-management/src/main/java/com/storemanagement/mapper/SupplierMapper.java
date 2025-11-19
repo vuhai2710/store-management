@@ -15,47 +15,10 @@ public interface SupplierMapper {
     @Mapping(target = "createdAt", source = "createdAt")
     SupplierDTO toDTO(Supplier entity);
 
-    // SupplierDTO → Supplier (for create/update)
+    // SupplierDTO → Supplier
     @Mapping(target = "idSupplier", ignore = true)
-    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
     Supplier toEntity(SupplierDTO dto);
 
     // List mapping
     List<SupplierDTO> toDTOList(List<Supplier> entities);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -8,25 +8,17 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-/**
- * CustomerMapper - MapStruct mapper cho Customer entity
- *
- * Note: Date formatting được xử lý tự động bởi JacksonConfig (global config)
- * Không cần custom formatDate method nữa
- */
 @Mapper(componentModel = "spring", uses = {UserMapper.class})
 public interface CustomerMapper {
-    // RegisterDTO → Customer (for registration)
+    // RegisterDTO → Customer
     @Mapping(target = "idCustomer", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "customerType", constant = "REGULAR")
     Customer toEntity(RegisterDTO dto);
 
-    // CustomerDTO → Customer (for create/update)
+    // CustomerDTO → Customer
     @Mapping(target = "idCustomer", ignore = true)
     @Mapping(target = "user", ignore = true)
-    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
-    // password is in CustomerDTO but not in Customer entity (it's in User entity)
     Customer toEntity(CustomerDTO dto);
 
     // Customer → CustomerDTO

@@ -18,15 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Service implementation cho ProductImage
- * 
- * Business Rules:
- * - Tối đa 5 ảnh mỗi sản phẩm
- * - Ảnh đầu tiên được upload là ảnh chính (isPrimary = true)
- * - Khi xóa ảnh chính, ảnh có display_order nhỏ nhất tiếp theo sẽ trở thành ảnh chính
- * - Khi xóa ảnh, file vật lý cũng bị xóa
- */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -234,13 +225,3 @@ public class ProductImageServiceImpl implements ProductImageService {
         return productImageMapper.toDTOList(images);
     }
 }
-
-
-
-
-
-
-
-
-
-

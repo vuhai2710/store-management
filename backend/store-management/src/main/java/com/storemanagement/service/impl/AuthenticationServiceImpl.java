@@ -91,17 +91,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         jwsObject.sign(signer);
         return jwsObject.serialize();
     }
-    
-    /**
-     * Quên mật khẩu - Generate password mới và gửi qua email
-     * 
-     * Flow:
-     * 1. Tìm user theo email
-     * 2. Generate random password (10 ký tự: chữ + số)
-     * 3. Hash password và update vào DB
-     * 4. Gửi email với password mới
-     * 5. Return success message
-     */
+
     @Override
     public String forgotPassword(String email) {
         log.info("Processing forgot password for email: {}", email);
@@ -131,14 +121,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         
         return "Mật khẩu mới đã được gửi đến email: " + email;
     }
-    
-    /**
-     * Generate random password với độ dài cho trước
-     * Password gồm chữ hoa, chữ thường, và số
-     * 
-     * @param length Độ dài password (tối thiểu 8)
-     * @return Random password
-     */
+
     private String generateRandomPassword(int length) {
         if (length < 8) {
             length = 8; // Tối thiểu 8 ký tự để đảm bảo bảo mật

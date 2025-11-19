@@ -23,24 +23,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-/**
- * Service implementation cho Product (Sản phẩm)
- *
- * Chức năng chính:
- * 1. CRUD operations cho sản phẩm
- * 2. Upload và quản lý ảnh sản phẩm
- * 3. Xử lý product code và SKU (tự động sinh hoặc validate)
- * 4. Tìm kiếm và lọc sản phẩm (theo category, brand, price, etc.)
- * 5. Quản lý stock quantity và status
- *
- * Business Logic quan trọng:
- * - Product Code: Có thể là SKU (tự sinh) hoặc MANUAL (tự nhập)
- * - SKU: Tự động sinh theo format: {category_prefix}-{sequence}
- * - Image: Upload vào thư mục uploads/products/, lưu URL vào database
- * - Stock: Tự động cập nhật khi có đơn nhập hàng (ImportOrderService)
- *
- * @author Store Management Team
- */
 @Service
 @RequiredArgsConstructor
 @Transactional
