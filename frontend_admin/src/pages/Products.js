@@ -23,7 +23,6 @@ import {
   DeleteOutlined,
   ReloadOutlined,
   EyeOutlined,
-  StarOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import {
@@ -165,7 +164,6 @@ const Products = () => {
   // Nút Tìm kiếm: quay về trang 1 và để effect tự fetch
   const onSearch = () => {
     handlePageChange(1, pageSize);
-    // fetchList sẽ được gọi tự động qua useEffect khi currentPage thay đổi
   };
 
   // Nút Xóa lọc: reset filters + reset phân trang + reset sort
@@ -215,10 +213,6 @@ const Products = () => {
 
   const handleView = (idProduct) => {
     navigate(`/products/${idProduct}`);
-  };
-  
-  const handleViewReviews = (idProduct) => {
-    navigate(`/products/${idProduct}/reviews`);
   };
 
   const columns = useMemo(
@@ -284,19 +278,13 @@ const Products = () => {
         title: "Hành động",
         key: "actions",
         fixed: "right",
-        width: 200,
+        width: 170,
         render: (_, record) => (
           <Space>
             <Button
               type="text"
               icon={<EyeOutlined />}
               onClick={() => handleView(record.idProduct)}
-            />
-            <Button
-              type="text"
-              icon={<StarOutlined />}
-              onClick={() => handleViewReviews(record.idProduct)}
-              title="Xem đánh giá"
             />
             <Button
               type="text"
@@ -365,7 +353,6 @@ const Products = () => {
               placeholder="Mã sản phẩm"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              onPressEnter={onSearch}
               allowClear
             />
           </Col>
@@ -374,7 +361,6 @@ const Products = () => {
               placeholder="Tên sản phẩm"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              onPressEnter={onSearch}
               allowClear
             />
           </Col>
@@ -382,10 +368,7 @@ const Products = () => {
             <Select
               placeholder="Danh mục"
               value={categoryId}
-              onChange={(value) => {
-                setCategoryId(value);
-                handlePageChange(1, pageSize);
-              }}
+              onChange={setCategoryId}
               allowClear
               style={{ width: "100%" }}
               showSearch
@@ -400,10 +383,7 @@ const Products = () => {
             <Select
               placeholder="Nhà cung cấp"
               value={supplierId}
-              onChange={(value) => {
-                setSupplierId(value);
-                handlePageChange(1, pageSize);
-              }}
+              onChange={setSupplierId}
               allowClear
               style={{ width: "100%" }}
               showSearch
@@ -420,7 +400,6 @@ const Products = () => {
               placeholder="Thương hiệu"
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
-              onPressEnter={onSearch}
               allowClear
             />
           </Col>
@@ -429,8 +408,7 @@ const Products = () => {
             <InputNumber
               placeholder="Giá từ"
               value={minPrice}
-              onChange={(value) => setMinPrice(value)}
-              onPressEnter={onSearch}
+              onChange={setMinPrice}
               min={0}
               style={{ width: "100%" }}
             />
@@ -439,8 +417,7 @@ const Products = () => {
             <InputNumber
               placeholder="Giá đến"
               value={maxPrice}
-              onChange={(value) => setMaxPrice(value)}
-              onPressEnter={onSearch}
+              onChange={setMaxPrice}
               min={0}
               style={{ width: "100%" }}
             />
@@ -450,10 +427,7 @@ const Products = () => {
             <Select
               placeholder="Trạng thái tồn kho"
               value={inventoryStatusFilter}
-              onChange={(value) => {
-                setInventoryStatusFilter(value);
-                handlePageChange(1, pageSize);
-              }}
+              onChange={setInventoryStatusFilter}
               allowClear
               style={{ width: "100%" }}>
               <Option value="COMING_SOON">Hàng sắp về</Option>

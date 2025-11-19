@@ -201,14 +201,12 @@ const Header = ({
   cartItemCount,
   searchTerm,
   setSearchTerm,
-  isAuthenticated,
+  isLoggedIn,
   user,
   handleLogout,
   cartIconRef,
 }) => {
-  const isLoggedIn = isAuthenticated;
-  const userName =
-    user?.customerName || user?.name || user?.username || "Guest";
+  const userName = user?.name || "Guest";
 
   return (
     <header style={styles.headerMain}>

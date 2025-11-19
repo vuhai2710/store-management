@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   Table,
@@ -16,17 +16,17 @@ import {
   Popconfirm,
   Row,
   Col,
-} from 'antd';
+} from "antd";
 import {
   ArrowLeftOutlined,
   MessageOutlined,
   DeleteOutlined,
   FilterOutlined,
   ReloadOutlined,
-} from '@ant-design/icons';
-import { reviewService } from '../services/reviewService';
-import { productsService } from '../services/productsService';
-import dayjs from 'dayjs';
+} from "@ant-design/icons";
+import { reviewService } from "../services/reviewService";
+import { productsService } from "../services/productsService";
+import dayjs from "dayjs";
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -46,7 +46,7 @@ const ProductReviews = () => {
   const [ratingFilter, setRatingFilter] = useState(null);
   const [replyModalVisible, setReplyModalVisible] = useState(false);
   const [selectedReview, setSelectedReview] = useState(null);
-  const [adminReply, setAdminReply] = useState('');
+  const [adminReply, setAdminReply] = useState("");
   const [replyLoading, setReplyLoading] = useState(false);
 
   useEffect(() => {
@@ -59,7 +59,7 @@ const ProductReviews = () => {
       const data = await productsService.getProductById(productId);
       setProduct(data);
     } catch (error) {
-      message.error('Không thể tải thông tin sản phẩm');
+      message.error("Không thể tải thông tin sản phẩm");
     }
   };
 
@@ -72,14 +72,14 @@ const ProductReviews = () => {
         rating: ratingFilter,
       };
       const response = await reviewService.getProductReviews(productId, params);
-      
+
       setReviews(response.content || []);
       setPagination({
         ...pagination,
         total: response.totalElements || 0,
       });
     } catch (error) {
-      message.error('Không thể tải danh sách đánh giá');
+      message.error("Không thể tải danh sách đánh giá");
       setReviews([]);
     } finally {
       setLoading(false);
@@ -88,26 +88,28 @@ const ProductReviews = () => {
 
   const handleReply = (review) => {
     setSelectedReview(review);
-    setAdminReply(review.adminReply || '');
+    setAdminReply(review.adminReply || "");
     setReplyModalVisible(true);
   };
 
   const handleSubmitReply = async () => {
     if (!adminReply.trim()) {
-      message.warning('Vui lòng nhập nội dung trả lời');
+      message.warning("Vui lòng nhập nội dung trả lời");
       return;
     }
 
     setReplyLoading(true);
     try {
       await reviewService.replyToReview(selectedReview.idReview, adminReply);
-      message.success('Trả lời đánh giá thành công');
+      message.success("Trả lời đánh giá thành công");
       setReplyModalVisible(false);
-      setAdminReply('');
+      setAdminReply("");
       setSelectedReview(null);
       fetchReviews();
     } catch (error) {
-      message.error(error.response?.data?.message || 'Không thể trả lời đánh giá');
+      message.error(
+        error.response?.data?.message || "Không thể trả lời đánh giá"
+      );
     } finally {
       setReplyLoading(false);
     }
@@ -116,39 +118,39 @@ const ProductReviews = () => {
   const handleDelete = async (reviewId) => {
     try {
       await reviewService.deleteReview(reviewId);
-      message.success('Xóa đánh giá thành công');
+      message.success("Xóa đánh giá thành công");
       fetchReviews();
     } catch (error) {
-      message.error(error.response?.data?.message || 'Không thể xóa đánh giá');
+      message.error(error.response?.data?.message || "Không thể xóa đánh giá");
     }
   };
 
   const columns = [
     {
-      title: 'Khách hàng',
-      dataIndex: 'customerName',
-      key: 'customerName',
+      title: "Khách hàng",
+      dataIndex: "customerName",
+      key: "customerName",
       width: 150,
       render: (text) => <Text strong>{text}</Text>,
     },
     {
-      title: 'Đánh giá',
-      key: 'rating',
+      title: "Đánh giá",
+      key: "rating",
       width: 150,
       render: (_, record) => (
         <Space direction="vertical" size="small">
           <Rate disabled value={record.rating} style={{ fontSize: 16 }} />
           <Text type="secondary" style={{ fontSize: 12 }}>
-            {dayjs(record.createdAt).format('DD/MM/YYYY HH:mm')}
+            {dayjs(record.createdAt).format("DD/MM/YYYY HH:mm")}
           </Text>
         </Space>
       ),
     },
     {
-      title: 'Nhận xét',
-      key: 'comment',
+      title: "Nhận xét",
+      key: "comment",
       render: (_, record) => (
-        <Space direction="vertical" size="small" style={{ width: '100%' }}>
+        <Space direction="vertical" size="small" style={{ width: "100%" }}>
           <Paragraph ellipsis={{ rows: 2, expandable: true }}>
             {record.comment}
           </Paragraph>
@@ -156,8 +158,10 @@ const ProductReviews = () => {
             <Tag color="blue">Đã chỉnh sửa {record.editCount} lần</Tag>
           )}
           {record.adminReply && (
-            <Card size="small" style={{ backgroundColor: '#f0f2f5' }}>
-              <Text type="secondary" strong>Phản hồi từ Admin:</Text>
+            <Card size="small" style={{ backgroundColor: "#f0f2f5" }}>
+              <Text type="secondary" strong>
+                Phản hồi từ Admin:
+              </Text>
               <Paragraph style={{ marginTop: 8, marginBottom: 0 }}>
                 {record.adminReply}
               </Paragraph>
@@ -167,20 +171,20 @@ const ProductReviews = () => {
       ),
     },
     {
-      title: 'Đơn hàng',
-      dataIndex: 'idOrder',
-      key: 'idOrder',
+      title: "Đơn hàng",
+      dataIndex: "idOrder",
+      key: "idOrder",
       width: 100,
       render: (id) => <Text>#{id}</Text>,
     },
     {
-      title: 'Thao tác',
-      key: 'action',
+      title: "Thao tác",
+      key: "action",
       width: 120,
-      fixed: 'right',
+      fixed: "right",
       render: (_, record) => (
         <Space>
-          <Tooltip title={record.adminReply ? 'Sửa trả lời' : 'Trả lời'}>
+          <Tooltip title={record.adminReply ? "Sửa trả lời" : "Trả lời"}>
             <Button
               type="primary"
               size="small"
@@ -192,8 +196,7 @@ const ProductReviews = () => {
             title="Bạn có chắc muốn xóa đánh giá này?"
             onConfirm={() => handleDelete(record.idReview)}
             okText="Xóa"
-            cancelText="Hủy"
-          >
+            cancelText="Hủy">
             <Tooltip title="Xóa">
               <Button danger size="small" icon={<DeleteOutlined />} />
             </Tooltip>
@@ -221,28 +224,33 @@ const ProductReviews = () => {
     { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, total: 0, sum: 0 }
   );
 
-  const avgRating = ratingStats.total > 0 ? (ratingStats.sum / ratingStats.total).toFixed(1) : 0;
+  const avgRating =
+    ratingStats.total > 0
+      ? (ratingStats.sum / ratingStats.total).toFixed(1)
+      : 0;
 
   return (
     <div>
       <Card>
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
           {/* Header */}
           <Row justify="space-between" align="middle">
             <Col>
               <Space>
-                <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/products')}>
+                <Button
+                  icon={<ArrowLeftOutlined />}
+                  onClick={() => navigate("/products")}>
                   Quay lại
                 </Button>
                 <Title level={4} style={{ margin: 0 }}>
-                  Đánh giá sản phẩm: {product?.productName || 'Đang tải...'}
+                  Đánh giá sản phẩm: {product?.productName || "Đang tải..."}
                 </Title>
               </Space>
             </Col>
           </Row>
 
           {/* Statistics */}
-          <Card size="small" style={{ backgroundColor: '#fafafa' }}>
+          <Card size="small" style={{ backgroundColor: "#fafafa" }}>
             <Row gutter={16}>
               <Col span={6}>
                 <Space direction="vertical" size="small">
@@ -261,7 +269,12 @@ const ProductReviews = () => {
                   <Space direction="vertical" size="small">
                     <Space>
                       <Text>{star}</Text>
-                      <Rate disabled value={1} count={1} style={{ fontSize: 12 }} />
+                      <Rate
+                        disabled
+                        value={1}
+                        count={1}
+                        style={{ fontSize: 12 }}
+                      />
                     </Space>
                     <Title level={4} style={{ margin: 0 }}>
                       {ratingStats[star]}
@@ -280,8 +293,7 @@ const ProductReviews = () => {
               allowClear
               value={ratingFilter}
               onChange={setRatingFilter}
-              suffixIcon={<FilterOutlined />}
-            >
+              suffixIcon={<FilterOutlined />}>
               <Select.Option value={5}>5 sao</Select.Option>
               <Select.Option value={4}>4 sao</Select.Option>
               <Select.Option value={3}>3 sao</Select.Option>
@@ -308,26 +320,27 @@ const ProductReviews = () => {
 
       {/* Reply Modal */}
       <Modal
-        title={selectedReview?.adminReply ? 'Sửa trả lời' : 'Trả lời đánh giá'}
+        title={selectedReview?.adminReply ? "Sửa trả lời" : "Trả lời đánh giá"}
         open={replyModalVisible}
         onOk={handleSubmitReply}
         onCancel={() => {
           setReplyModalVisible(false);
-          setAdminReply('');
+          setAdminReply("");
           setSelectedReview(null);
         }}
         confirmLoading={replyLoading}
         okText="Gửi"
         cancelText="Hủy"
-        width={600}
-      >
+        width={600}>
         {selectedReview && (
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            <Card size="small" style={{ backgroundColor: '#f0f2f5' }}>
+          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+            <Card size="small" style={{ backgroundColor: "#f0f2f5" }}>
               <Space direction="vertical" size="small">
                 <Text strong>{selectedReview.customerName}</Text>
                 <Rate disabled value={selectedReview.rating} />
-                <Paragraph style={{ marginBottom: 0 }}>{selectedReview.comment}</Paragraph>
+                <Paragraph style={{ marginBottom: 0 }}>
+                  {selectedReview.comment}
+                </Paragraph>
               </Space>
             </Card>
             <TextArea

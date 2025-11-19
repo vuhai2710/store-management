@@ -13,12 +13,23 @@ import {
   Tabs,
   Row,
   Col,
+  Form,
+  Input,
+  Select,
+  InputNumber,
+  DatePicker,
+  Switch,
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
 import {
   fetchPromotions,
   fetchPromotionRules,
+  createPromotion,
+  updatePromotion,
   deletePromotion,
+  createPromotionRule,
+  updatePromotionRule,
   deletePromotionRule,
 } from "../store/slices/promotionsSlice";
 import { usePagination } from "../hooks/usePagination";
@@ -33,6 +44,12 @@ const Promotions = () => {
   const dispatch = useDispatch();
   const { promotions, rules } = useSelector((state) => state.promotions || {});
   const [activeTab, setActiveTab] = useState("promotions");
+  const [promoForm] = Form.useForm();
+  const [ruleForm] = Form.useForm();
+  const [promoModalVisible, setPromoModalVisible] = useState(false);
+  const [ruleModalVisible, setRuleModalVisible] = useState(false);
+  const [editingPromo, setEditingPromo] = useState(null);
+  const [editingRule, setEditingRule] = useState(null);
 
   // Pagination cho promotions
   const {
@@ -114,6 +131,107 @@ const Promotions = () => {
     }
   };
 
+  // Promotion Modal handlers
+  const showPromoModal = (promo = null) => {
+    setEditingPromo(promo);
+    if (promo) {
+      promoForm.setFieldsValue({
+        ...promo,
+        startDate: dayjs(promo.startDate),
+        endDate: dayjs(promo.endDate),
+      });
+    } else {
+      promoForm.resetFields();
+    }
+    setPromoModalVisible(true);
+  };
+
+  const handlePromoSubmit = async () => {
+    try {
+      const values = await promoForm.validateFields();
+      
+      const formattedData = {
+        code: values.code,
+        discountType: values.discountType,
+        discountValue: Number(values.discountValue),
+        minOrderAmount: Number(values.minOrderAmount) || 0,
+        usageLimit: values.usageLimit ? Number(values.usageLimit) : null,
+        startDate: values.startDate?.format("DD/MM/YYYY HH:mm:ss") || null,
+        endDate: values.endDate?.format("DD/MM/YYYY HH:mm:ss") || null,
+        isActive: values.isActive !== undefined ? values.isActive : true,
+      };
+
+      if (editingPromo) {
+        await dispatch(updatePromotion({ id: editingPromo.idPromotion, promotionData: formattedData })).unwrap();
+        message.success("Cập nhật mã giảm giá thành công!");
+      } else {
+        await dispatch(createPromotion(formattedData)).unwrap();
+        message.success("Tạo mã giảm giá thành công!");
+      }
+      setPromoModalVisible(false);
+      promoForm.resetFields();
+      fetchPromotionsList();
+    } catch (error) {
+      console.error("Error submitting promotion:", error);
+      if (error.errorFields) {
+        message.error("Vui lòng kiểm tra lại thông tin!");
+      } else {
+        message.error(error?.message || error || "Thao tác thất bại!");
+      }
+    }
+  };
+
+  // Rule Modal handlers
+  const showRuleModal = (rule = null) => {
+    setEditingRule(rule);
+    if (rule) {
+      ruleForm.setFieldsValue({
+        ...rule,
+        startDate: dayjs(rule.startDate),
+        endDate: dayjs(rule.endDate),
+      });
+    } else {
+      ruleForm.resetFields();
+    }
+    setRuleModalVisible(true);
+  };
+
+  const handleRuleSubmit = async () => {
+    try {
+      const values = await ruleForm.validateFields();
+      
+      const formattedData = {
+        ruleName: values.ruleName,
+        discountType: values.discountType,
+        discountValue: Number(values.discountValue),
+        minOrderAmount: Number(values.minOrderAmount) || 0,
+        customerType: values.customerType || "ALL",
+        priority: Number(values.priority) || 0,
+        startDate: values.startDate?.format("DD/MM/YYYY HH:mm:ss") || null,
+        endDate: values.endDate?.format("DD/MM/YYYY HH:mm:ss") || null,
+        isActive: values.isActive !== undefined ? values.isActive : true,
+      };
+
+      if (editingRule) {
+        await dispatch(updatePromotionRule({ id: editingRule.idRule, ruleData: formattedData })).unwrap();
+        message.success("Cập nhật quy tắc giảm giá thành công!");
+      } else {
+        await dispatch(createPromotionRule(formattedData)).unwrap();
+        message.success("Tạo quy tắc giảm giá thành công!");
+      }
+      setRuleModalVisible(false);
+      ruleForm.resetFields();
+      fetchRulesList();
+    } catch (error) {
+      console.error("Error submitting rule:", error);
+      if (error.errorFields) {
+        message.error("Vui lòng kiểm tra lại thông tin!");
+      } else {
+        message.error(error?.message || error || "Thao tác thất bại!");
+      }
+    }
+  };
+
   const promotionColumns = [
     {
       title: "Mã",
@@ -176,6 +294,9 @@ const Promotions = () => {
       key: "actions",
       render: (_, record) => (
         <Space>
+          <Button type="link" icon={<EditOutlined />} size="small" onClick={() => showPromoModal(record)}>
+            Sửa
+          </Button>
           <Popconfirm
             title="Bạn có chắc muốn xóa mã giảm giá này?"
             onConfirm={() => handleDeletePromotion(record.idPromotion)}
@@ -253,6 +374,9 @@ const Promotions = () => {
       key: "actions",
       render: (_, record) => (
         <Space>
+          <Button type="link" icon={<EditOutlined />} size="small" onClick={() => showRuleModal(record)}>
+            Sửa
+          </Button>
           <Popconfirm
             title="Bạn có chắc muốn xóa quy tắc này?"
             onConfirm={() => handleDeleteRule(record.idRule)}
@@ -279,7 +403,7 @@ const Promotions = () => {
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
           <TabPane tab="Mã giảm giá" key="promotions">
             <Space style={{ marginBottom: 16 }}>
-              <Button type="primary" icon={<PlusOutlined />}>
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => showPromoModal()}>
                 Thêm mã giảm giá
               </Button>
               <Button icon={<ReloadOutlined />} onClick={fetchPromotionsList}>
@@ -311,7 +435,7 @@ const Promotions = () => {
 
           <TabPane tab="Quy tắc giảm giá tự động" key="rules">
             <Space style={{ marginBottom: 16 }}>
-              <Button type="primary" icon={<PlusOutlined />}>
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => showRuleModal()}>
                 Thêm quy tắc
               </Button>
               <Button icon={<ReloadOutlined />} onClick={fetchRulesList}>
@@ -342,6 +466,235 @@ const Promotions = () => {
           </TabPane>
         </Tabs>
       </Card>
+
+      {/* Modal Promotion */}
+      <Modal
+        title={editingPromo ? "Chỉnh sửa mã giảm giá" : "Thêm mã giảm giá"}
+        open={promoModalVisible}
+        onOk={handlePromoSubmit}
+        onCancel={() => {
+          setPromoModalVisible(false);
+          promoForm.resetFields();
+        }}
+        width={700}
+        okText={editingPromo ? "Cập nhật" : "Tạo mới"}
+        cancelText="Hủy"
+      >
+        <Form form={promoForm} layout="vertical" initialValues={{ isActive: true, discountType: "PERCENTAGE" }}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Mã giảm giá"
+                name="code"
+                rules={[{ required: true, message: "Vui lòng nhập mã giảm giá!" }]}
+              >
+                <Input placeholder="VD: PROMO2024" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Loại giảm giá"
+                name="discountType"
+                rules={[{ required: true, message: "Vui lòng chọn loại giảm giá!" }]}
+              >
+                <Select>
+                  <Select.Option value="PERCENTAGE">Phần trăm (%)</Select.Option>
+                  <Select.Option value="FIXED_AMOUNT">Số tiền cố định (VNĐ)</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, currentValues) => prevValues.discountType !== currentValues.discountType}
+              >
+                {({ getFieldValue }) => (
+                  <Form.Item
+                    label="Giá trị giảm"
+                    name="discountValue"
+                    rules={[{ required: true, message: "Vui lòng nhập giá trị giảm!" }]}
+                  >
+                    <InputNumber
+                      style={{ width: "100%" }}
+                      min={0}
+                      max={getFieldValue("discountType") === "PERCENTAGE" ? 100 : undefined}
+                      placeholder={getFieldValue("discountType") === "PERCENTAGE" ? "VD: 10" : "VD: 50000"}
+                      addonAfter={getFieldValue("discountType") === "PERCENTAGE" ? "%" : "VNĐ"}
+                    />
+                  </Form.Item>
+                )}
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Đơn hàng tối thiểu" name="minOrderAmount">
+                <InputNumber style={{ width: "100%" }} min={0} placeholder="0" addonAfter="VNĐ" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Giới hạn số lần sử dụng" name="usageLimit">
+                <InputNumber style={{ width: "100%" }} min={1} placeholder="Không giới hạn" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Trạng thái" name="isActive" valuePropName="checked">
+                <Switch checkedChildren="Hoạt động" unCheckedChildren="Tạm dừng" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Ngày bắt đầu"
+                name="startDate"
+                rules={[{ required: true, message: "Vui lòng chọn ngày bắt đầu!" }]}
+              >
+                <DatePicker showTime style={{ width: "100%" }} format="DD/MM/YYYY HH:mm" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Ngày kết thúc"
+                name="endDate"
+                rules={[{ required: true, message: "Vui lòng chọn ngày kết thúc!" }]}
+              >
+                <DatePicker showTime style={{ width: "100%" }} format="DD/MM/YYYY HH:mm" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
+
+      {/* Modal Promotion Rule */}
+      <Modal
+        title={editingRule ? "Chỉnh sửa quy tắc giảm giá" : "Thêm quy tắc giảm giá"}
+        open={ruleModalVisible}
+        onOk={handleRuleSubmit}
+        onCancel={() => {
+          setRuleModalVisible(false);
+          ruleForm.resetFields();
+        }}
+        width={700}
+        okText={editingRule ? "Cập nhật" : "Tạo mới"}
+        cancelText="Hủy"
+      >
+        <Form
+          form={ruleForm}
+          layout="vertical"
+          initialValues={{ isActive: true, discountType: "PERCENTAGE", customerType: "ALL", priority: 0 }}
+        >
+          <Form.Item
+            label="Tên quy tắc"
+            name="ruleName"
+            rules={[{ required: true, message: "Vui lòng nhập tên quy tắc!" }]}
+          >
+            <Input placeholder="VD: Giảm 10% cho đơn > 500k" />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Loại giảm giá"
+                name="discountType"
+                rules={[{ required: true, message: "Vui lòng chọn loại giảm giá!" }]}
+              >
+                <Select>
+                  <Select.Option value="PERCENTAGE">Phần trăm (%)</Select.Option>
+                  <Select.Option value="FIXED_AMOUNT">Số tiền cố định (VNĐ)</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, currentValues) => prevValues.discountType !== currentValues.discountType}
+              >
+                {({ getFieldValue }) => (
+                  <Form.Item
+                    label="Giá trị giảm"
+                    name="discountValue"
+                    rules={[{ required: true, message: "Vui lòng nhập giá trị giảm!" }]}
+                  >
+                    <InputNumber
+                      style={{ width: "100%" }}
+                      min={0}
+                      max={getFieldValue("discountType") === "PERCENTAGE" ? 100 : undefined}
+                      placeholder={getFieldValue("discountType") === "PERCENTAGE" ? "VD: 10" : "VD: 50000"}
+                      addonAfter={getFieldValue("discountType") === "PERCENTAGE" ? "%" : "VNĐ"}
+                    />
+                  </Form.Item>
+                )}
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Đơn hàng tối thiểu" name="minOrderAmount">
+                <InputNumber style={{ width: "100%" }} min={0} placeholder="0" addonAfter="VNĐ" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Loại khách hàng"
+                name="customerType"
+                rules={[{ required: true, message: "Vui lòng chọn loại khách hàng!" }]}
+              >
+                <Select>
+                  <Select.Option value="ALL">Tất cả</Select.Option>
+                  <Select.Option value="VIP">VIP</Select.Option>
+                  <Select.Option value="REGULAR">Thường</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Độ ưu tiên"
+                name="priority"
+                tooltip="Số càng cao càng được ưu tiên"
+                rules={[{ required: true, message: "Vui lòng nhập độ ưu tiên!" }]}
+              >
+                <InputNumber style={{ width: "100%" }} min={0} placeholder="0" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Trạng thái" name="isActive" valuePropName="checked">
+                <Switch checkedChildren="Hoạt động" unCheckedChildren="Tạm dừng" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Ngày bắt đầu"
+                name="startDate"
+                rules={[{ required: true, message: "Vui lòng chọn ngày bắt đầu!" }]}
+              >
+                <DatePicker showTime style={{ width: "100%" }} format="DD/MM/YYYY HH:mm" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Ngày kết thúc"
+                name="endDate"
+                rules={[{ required: true, message: "Vui lòng chọn ngày kết thúc!" }]}
+              >
+                <DatePicker showTime style={{ width: "100%" }} format="DD/MM/YYYY HH:mm" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </div>
   );
 };

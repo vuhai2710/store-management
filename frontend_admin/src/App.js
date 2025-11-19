@@ -16,7 +16,7 @@ import { useAuth } from "./hooks";
 import AppHeader from "./components/layout/AppHeader";
 import AppSidebar from "./components/layout/AppSidebar";
 import Breadcrumbs from "./components/common/Breadcrumbs";
-import ChatWidget from "./components/chat/ChatWidget";
+import FloatingChatButton from "./components/chat/FloatingChatButton";
 
 // Common Components
 // giữ 1 dòng import duy nhất
@@ -32,7 +32,6 @@ import Orders from "./pages/Orders";
 import OrderDetail from "./pages/OrderDetail";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
-import ProductReviews from "./pages/ProductReviews";
 import Customers from "./pages/Customers";
 import CustomerDetail from "./pages/CustomerDetail";
 import Inventory from "./pages/Inventory";
@@ -46,6 +45,7 @@ import EmployeeDetail from "./pages/EmployeeDetail";
 import Finance from "./pages/Finance";
 import Reports from "./pages/Reports";
 import Promotions from "./pages/Promotions";
+import ProductReviews from "./pages/ProductReviews";
 
 const { Content } = Layout;
 
@@ -205,15 +205,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/products/:productId/reviews"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
-                  <ProductReviews />
-                </ProtectedRoute>
-              }
-            />
 
             {/* Customers - ADMIN, EMPLOYEE */}
             <Route
@@ -262,6 +253,28 @@ function App() {
                 <ProtectedRoute
                   allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
                   <Categories />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Promotions - ADMIN, EMPLOYEE */}
+            <Route
+              path="/promotions"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
+                  <Promotions />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Product Reviews - ADMIN, EMPLOYEE */}
+            <Route
+              path="/reviews"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
+                  <ProductReviews />
                 </ProtectedRoute>
               }
             />
@@ -345,23 +358,12 @@ function App() {
               }
             />
 
-            {/* Promotions - ADMIN, EMPLOYEE */}
-            <Route
-              path="/promotions"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
-                  <Promotions />
-                </ProtectedRoute>
-              }
-            />
-
             {/* Catch all - redirect to dashboard */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Content>
       </Layout>
-      <ChatWidget />
+      <FloatingChatButton />
     </Layout>
   );
 }

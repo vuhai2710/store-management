@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 /**
  * Review Service cho Admin
@@ -13,9 +13,16 @@ export const reviewService = {
    * GET /api/v1/admin/reviews
    */
   getAllReviews: async (params = {}) => {
-    const { pageNo = 1, pageSize = 10, sortBy = 'createdAt', sortDirection = 'DESC' } = params;
+    const {
+      pageNo = 1,
+      pageSize = 10,
+      sortBy = "createdAt",
+      sortDirection = "DESC",
+    } = params;
     const queryParams = { pageNo, pageSize, sortBy, sortDirection };
-    const resp = await api.get('/api/v1/admin/reviews', { params: queryParams });
+    const resp = await api.get("/api/v1/admin/reviews", {
+      params: queryParams,
+    });
     return unwrap(resp);
   },
 
@@ -33,12 +40,20 @@ export const reviewService = {
    * GET /api/v1/products/{productId}/reviews
    */
   getProductReviews: async (productId, params = {}) => {
-    const { pageNo = 1, pageSize = 10, rating = null, sortBy = 'createdAt', sortDirection = 'DESC' } = params;
+    const {
+      pageNo = 1,
+      pageSize = 10,
+      rating = null,
+      sortBy = "createdAt",
+      sortDirection = "DESC",
+    } = params;
     const queryParams = { pageNo, pageSize, sortBy, sortDirection };
     if (rating !== null && rating !== undefined) {
       queryParams.rating = rating;
     }
-    const resp = await api.get(`/api/v1/products/${productId}/reviews`, { params: queryParams });
+    const resp = await api.get(`/api/v1/products/${productId}/reviews`, {
+      params: queryParams,
+    });
     return unwrap(resp);
   },
 
@@ -47,7 +62,9 @@ export const reviewService = {
    * POST /api/v1/admin/reviews/{reviewId}/reply
    */
   replyToReview: async (reviewId, adminReply) => {
-    const resp = await api.post(`/api/v1/admin/reviews/${reviewId}/reply`, { adminReply });
+    const resp = await api.post(`/api/v1/admin/reviews/${reviewId}/reply`, {
+      adminReply,
+    });
     return unwrap(resp);
   },
 

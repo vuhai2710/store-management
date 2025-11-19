@@ -1,8 +1,5 @@
 // App.js
-import React, { useState, useEffect, useRef } from "react";
-
-// Import context
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import React, { useState } from "react";
 
 // Import components
 import Header from "./components/layout/Header";
@@ -11,273 +8,139 @@ import HomePage from "./components/pages/HomePage";
 import ShopPage from "./components/pages/ShopPage";
 import BlogPage from "./components/pages/BlogPage";
 import CartPage from "./components/pages/CartPage";
+import WishlistPage from "./components/pages/WishlistPage";
 import ContactPage from "./components/pages/ContactPage";
 import ProductDetailPage from "./components/pages/ProductDetailPage";
 import LoginPage from "./components/pages/LoginPage";
 import RegisterPage from "./components/pages/RegisterPage";
-import CheckoutPage from "./components/pages/CheckoutPage";
-import OrdersPage from "./components/pages/OrdersPage";
-import ProfilePage from "./components/pages/ProfilePage";
-import PaymentSuccessPage from "./components/pages/PaymentSuccessPage";
-import PaymentCancelPage from "./components/pages/PaymentCancelPage";
-import ProtectedRoute from "./components/common/ProtectedRoute";
-import ErrorBoundary from "./components/common/ErrorBoundary";
-import ChatWidget from "./components/chat/ChatWidget";
-import FlyingCartIcon from "./components/common/FlyingCartIcon";
 
-// Import services
-import { cartService } from "./services/cartService";
-
-// Import data (for fallback/initial state)
+// Import data
 import { products, initialCart } from "./data/data";
 
-function AppContent() {
-  const {
-    isAuthenticated,
-    user,
-    customer,
-    logout,
-    isLoading: authLoading,
-  } = useAuth();
-
+export default function OganiApp() {
   // --- STATE HOOKS ---
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(() => {
-    // Restore page from localStorage on mount
-    const savedPage = localStorage.getItem('currentPage');
-    return savedPage || 'home';
-  });
-  const [selectedProductId, setSelectedProductId] = useState(() => {
-    // Restore selected product from localStorage on mount
-    const savedProductId = localStorage.getItem('selectedProductId');
-    return savedProductId ? parseInt(savedProductId) : null;
-  });
-  const [cart, setCart] = useState([]);
-  const [cartData, setCartData] = useState(null);
-  const [cartLoading, setCartLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState("home");
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [wishlist, setWishlist] = useState([]);
+  const [cart, setCart] = useState(initialCart);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortOption, setSortOption] = useState("default");
 
-  // Cart animation state
-  const [showFlyingCart, setShowFlyingCart] = useState(false);
-  const [animationSource, setAnimationSource] = useState(null);
-  const [animationTarget, setAnimationTarget] = useState(null);
-  const cartIconRef = useRef(null);
-
-  // Save currentPage to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('currentPage', currentPage);
-  }, [currentPage]);
-
-  // Save selectedProductId to localStorage whenever it changes
-  useEffect(() => {
-    if (selectedProductId) {
-      localStorage.setItem('selectedProductId', selectedProductId.toString());
-    } else {
-      localStorage.removeItem('selectedProductId');
-    }
-  }, [selectedProductId]);
-
-  // --- CART MANAGEMENT ---
-  // Load cart from API when user is authenticated
-  useEffect(() => {
-    const loadCart = async () => {
-      if (isAuthenticated && !authLoading) {
-        try {
-          setCartLoading(true);
-          const cartDataResponse = await cartService.getCart();
-          setCartData(cartDataResponse);
-          setCart(cartDataResponse.cartItems || cartDataResponse.items || []);
-        } catch (error) {
-          console.error("Error loading cart:", error);
-          setCart([]);
-          setCartData(null);
-        } finally {
-          setCartLoading(false);
-        }
-      } else {
-        // Clear cart when user logs out
-        setCart([]);
-        setCartData(null);
-      }
-    };
-
-    loadCart();
-  }, [isAuthenticated, authLoading]);
+  // --- AUTH STATE ---
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState({ name: "Guest" });
 
   // --- AUTH LOGIC ---
-  const handleLogout = async () => {
-    try {
-      await logout();
+  const handleLogin = (username, password) => {
+    if (username && password) {
+      setUser({ name: username });
+      setIsLoggedIn(true);
       setCurrentPage("home");
-      setCart([]);
-    } catch (error) {
-      console.error("Logout error:", error);
+      alert(`Đăng nhập thành công với tài khoản: ${username}`);
+    } else {
+      alert("Tên đăng nhập hoặc mật khẩu không hợp lệ.");
     }
   };
 
-  // --- CART HANDLERS ---
-  const handleAddToCart = async (product, sourceElement = null) => {
-    if (!isAuthenticated) {
-      // Redirect to login if not authenticated
-      setCurrentPage("login");
-      return;
-    }
-
-    try {
-      const productId = product.idProduct || product.id || product.productId;
-      const quantity = product.qty || product.quantity || 1;
-
-      if (!productId) {
-        alert("Không tìm thấy ID sản phẩm");
-        return;
-      }
-
-      // Get source position for animation
-      let sourcePos = null;
-      if (sourceElement) {
-        const rect = sourceElement.getBoundingClientRect();
-        sourcePos = {
-          x: rect.left + rect.width / 2,
-          y: rect.top + rect.height / 2,
-        };
-      }
-
-      // Get target position (cart icon in header) - use setTimeout to ensure DOM is ready
-      const triggerAnimation = () => {
-        let targetPos = null;
-
-        // Try cartIconRef first
-        if (cartIconRef.current) {
-          const rect = cartIconRef.current.getBoundingClientRect();
-          targetPos = {
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2,
-          };
-        } else {
-          // Fallback: try to find cart icon by querying DOM
-          const cartButton = document.querySelector('[title="Giỏ hàng"]');
-          if (cartButton) {
-            const rect = cartButton.getBoundingClientRect();
-            targetPos = {
-              x: rect.left + rect.width / 2,
-              y: rect.top + rect.height / 2,
-            };
-          }
-        }
-
-        // Trigger animation if we have both positions
-        if (sourcePos && targetPos) {
-          setAnimationSource(sourcePos);
-          setAnimationTarget(targetPos);
-          setShowFlyingCart(true);
-        }
-      };
-
-      // Use requestAnimationFrame to ensure DOM is updated
-      requestAnimationFrame(() => {
-        setTimeout(triggerAnimation, 50);
-      });
-
-      await cartService.addToCart({
-        productId,
-        quantity,
-      });
-
-      // Reload cart
-      try {
-        const cartDataResponse = await cartService.getCart();
-        setCartData(cartDataResponse);
-        setCart(cartDataResponse.cartItems || cartDataResponse.items || []);
-      } catch (cartError) {
-        console.error("Error reloading cart:", cartError);
-        // Still continue even if reload fails
-      }
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      const errorMessage =
-        error?.message ||
-        error?.response?.data?.message ||
-        "Không thể thêm sản phẩm vào giỏ hàng";
-      alert(errorMessage);
-      throw error; // Re-throw to let component handle it
+  const handleRegister = (name, email, password) => {
+    if (name && email && password) {
+      setUser({ name: name });
+      setIsLoggedIn(true);
+      setCurrentPage("home");
+      alert(`Đăng ký thành công! Chào mừng, ${name}.`);
+    } else {
+      alert("Vui lòng điền đầy đủ thông tin.");
     }
   };
 
-  const handleUpdateQty = async (itemId, newQty) => {
-    if (!isAuthenticated) {
-      return;
-    }
-
-    try {
-      if (newQty <= 0) {
-        await handleRemoveFromCart(itemId);
-      } else {
-        await cartService.updateCartItem(itemId, { quantity: newQty });
-        // Reload cart
-        const cartDataResponse = await cartService.getCart();
-        setCartData(cartDataResponse);
-        setCart(cartDataResponse.cartItems || cartDataResponse.items || []);
-      }
-    } catch (error) {
-      console.error("Error updating cart:", error);
-      alert(error?.message || "Không thể cập nhật giỏ hàng");
-    }
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUser({ name: "Guest" });
+    setCurrentPage("home");
+    alert("Đã đăng xuất.");
   };
 
-  const handleRemoveFromCart = async (itemId) => {
-    if (!isAuthenticated) {
-      return;
+  // Các hàm xử lý giỏ hàng/wishlist
+  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+  let currentProducts = products.filter(
+    (p) =>
+      (selectedCategory === "All" || p.category === selectedCategory) &&
+      p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const sortedProducts = [...currentProducts].sort((a, b) => {
+    switch (sortOption) {
+      case "price-asc":
+        return a.price - b.price;
+      case "price-desc":
+        return b.price - a.price;
+      case "rating-desc":
+        return b.rating - a.rating;
+      case "reviews-desc":
+        return b.reviews - a.reviews;
+      case "default":
+      default:
+        return a.id - b.id;
     }
+  });
 
-    try {
-      console.log("[App] Removing cart item:", itemId);
-      const response = await cartService.removeCartItem(itemId);
-      console.log("[App] Remove cart item response:", response);
-
-      // Backend returns the updated cart in response.data
-      const updatedCart = response?.data || response;
-      console.log("[App] Updated cart after remove:", updatedCart);
-
-      setCartData(updatedCart);
-      setCart(updatedCart.cartItems || updatedCart.items || []);
-    } catch (error) {
-      console.error("Error removing from cart:", error);
-      alert(error?.message || "Không thể xóa sản phẩm khỏi giỏ hàng");
-    }
-  };
-
-  // --- PRODUCT HANDLERS ---
   const handleViewProductDetail = (productId) => {
     setSelectedProductId(productId);
     setCurrentPage("product-detail");
     window.scrollTo(0, 0);
   };
 
-  // Calculate cart total - use cartData.totalAmount if available, otherwise calculate from items
-  const cartTotal = cartData?.totalAmount
-    ? Number(cartData.totalAmount)
-    : cart.reduce((sum, item) => {
-        const price =
-          item.productPrice || item.price || item.product?.price || 0;
-        const quantity = item.quantity || item.qty || 0;
-        const subtotal = item.subtotal || price * quantity;
-        return sum + Number(subtotal);
-      }, 0);
+  const handleAddToCart = (product) => {
+    const qtyToAdd = product.qty || 1;
+    const existing = cart.find((item) => item.id === product.id);
+    if (existing) {
+      setCart(
+        cart.map((item) =>
+          item.id === product.id ? { ...item, qty: item.qty + qtyToAdd } : item
+        )
+      );
+    } else {
+      setCart([...cart, { ...product, qty: qtyToAdd }]);
+    }
+  };
 
-  const cartItemCount = cartData?.totalItems
-    ? Number(cartData.totalItems)
-    : cart.reduce((sum, item) => sum + (item.quantity || item.qty || 0), 0);
+  const handleUpdateQty = (id, newQty) => {
+    if (newQty <= 0) {
+      handleRemoveFromCart(id);
+    } else {
+      setCart(
+        cart.map((item) => (item.id === id ? { ...item, qty: newQty } : item))
+      );
+    }
+  };
+
+  const handleRemoveFromCart = (id) => {
+    setCart(cart.filter((item) => item.id !== id));
+  };
+
+  const handleAddToWishlist = (product) => {
+    if (wishlist.find((item) => item.id === product.id)) {
+      setWishlist(wishlist.filter((item) => item.id !== product.id));
+    } else {
+      setWishlist([...wishlist, product]);
+    }
+  };
+
+  const isInWishlist = (id) => wishlist.some((item) => item.id === id);
 
   // --- ROUTER/RENDER LOGIC ---
   const renderPage = () => {
     const pageProps = {
       setCurrentPage,
       handleAddToCart,
+      handleAddToWishlist,
+      isInWishlist,
       handleViewProductDetail,
-      isAuthenticated,
-      user: user || customer,
+      isLoggedIn,
+      user,
     };
 
     switch (currentPage) {
@@ -288,11 +151,11 @@ function AppContent() {
         return (
           <ShopPage
             {...pageProps}
+            filteredProducts={sortedProducts}
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
             sortOption={sortOption}
             setSortOption={setSortOption}
-            searchTerm={searchTerm}
           />
         );
 
@@ -304,67 +167,56 @@ function AppContent() {
 
       case "cart":
         return (
-          <ProtectedRoute>
-            <CartPage
-              {...pageProps}
-              cart={cart}
-              cartTotal={cartTotal}
-              handleUpdateQty={handleUpdateQty}
-              handleRemoveFromCart={handleRemoveFromCart}
-              cartLoading={cartLoading}
-            />
-          </ProtectedRoute>
+          <CartPage
+            {...pageProps}
+            cart={cart}
+            cartTotal={cartTotal}
+            handleUpdateQty={handleUpdateQty}
+            handleRemoveFromCart={handleRemoveFromCart}
+          />
         );
 
+      case "wishlist":
+        return <WishlistPage {...pageProps} wishlist={wishlist} />;
+
       case "product-detail":
+        const product = products.find((p) => p.id === selectedProductId);
+        if (!product) {
+          return (
+            <ShopPage
+              {...pageProps}
+              filteredProducts={sortedProducts}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              sortOption={sortOption}
+              setSortOption={setSortOption}
+            />
+          );
+        }
         return (
           <ProductDetailPage
             {...pageProps}
-            productId={selectedProductId}
+            product={product}
+            products={products}
             cart={cart}
             handleUpdateQty={handleUpdateQty}
           />
         );
 
       case "login":
-        return <LoginPage setCurrentPage={setCurrentPage} />;
+        return (
+          <LoginPage
+            setCurrentPage={setCurrentPage}
+            handleLogin={handleLogin}
+          />
+        );
 
       case "register":
-        return <RegisterPage setCurrentPage={setCurrentPage} />;
-
-      case "orders":
         return (
-          <ProtectedRoute>
-            <OrdersPage setCurrentPage={setCurrentPage} />
-          </ProtectedRoute>
-        );
-
-      case "profile":
-        return (
-          <ProtectedRoute>
-            <ProfilePage setCurrentPage={setCurrentPage} />
-          </ProtectedRoute>
-        );
-
-      case "checkout":
-        return (
-          <ProtectedRoute>
-            <CheckoutPage setCurrentPage={setCurrentPage} />
-          </ProtectedRoute>
-        );
-
-      case "payment-success":
-        return (
-          <ProtectedRoute>
-            <PaymentSuccessPage setCurrentPage={setCurrentPage} />
-          </ProtectedRoute>
-        );
-
-      case "payment-cancel":
-        return (
-          <ProtectedRoute>
-            <PaymentCancelPage setCurrentPage={setCurrentPage} />
-          </ProtectedRoute>
+          <RegisterPage
+            setCurrentPage={setCurrentPage}
+            handleRegister={handleRegister}
+          />
         );
 
       default:
@@ -375,21 +227,6 @@ function AppContent() {
   // ✅ KIỂM TRA: Nếu là trang Login hoặc Register thì KHÔNG hiển thị Header/Footer
   const isAuthPage = currentPage === "login" || currentPage === "register";
 
-  // Show loading if auth is loading
-  if (authLoading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}>
-        <div>Đang tải...</div>
-      </div>
-    );
-  }
-
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "white" }}>
       {/* Chỉ hiển thị Header nếu KHÔNG phải trang auth */}
@@ -399,14 +236,13 @@ function AppContent() {
           setCurrentPage={setCurrentPage}
           mobileMenuOpen={mobileMenuOpen}
           setMobileMenuOpen={setMobileMenuOpen}
+          wishlist={wishlist}
           cart={cart}
-          cartItemCount={cartItemCount}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
-          isAuthenticated={isAuthenticated}
-          user={user || customer}
+          isLoggedIn={isLoggedIn}
+          user={user}
           handleLogout={handleLogout}
-          cartIconRef={cartIconRef}
         />
       )}
 
@@ -414,32 +250,6 @@ function AppContent() {
 
       {/* Chỉ hiển thị Footer nếu KHÔNG phải trang auth */}
       {!isAuthPage && <Footer />}
-
-      {/* Chat Widget - Only show if authenticated */}
-      {isAuthenticated && <ChatWidget />}
-
-      {/* Flying Cart Animation */}
-      {showFlyingCart && animationSource && animationTarget && (
-        <FlyingCartIcon
-          sourcePosition={animationSource}
-          targetPosition={animationTarget}
-          onComplete={() => {
-            setShowFlyingCart(false);
-            setAnimationSource(null);
-            setAnimationTarget(null);
-          }}
-        />
-      )}
     </div>
-  );
-}
-
-export default function OganiApp() {
-  return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </ErrorBoundary>
   );
 }
