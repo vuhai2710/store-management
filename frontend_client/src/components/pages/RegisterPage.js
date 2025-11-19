@@ -104,7 +104,18 @@ const RegisterPage = ({ setCurrentPage }) => {
         setCurrentPage("home");
       } catch (error) {
         console.error("Register error:", error);
-        setApiError(error?.message || "Đăng ký thất bại. Vui lòng thử lại.");
+        // Extract error message from different possible locations
+        let errorMessage = "Đăng ký thất bại. Vui lòng thử lại.";
+        if (error?.message) {
+          errorMessage = error.message;
+        } else if (error?.responseData?.message) {
+          errorMessage = error.responseData.message;
+        } else if (error?.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+        setApiError(errorMessage);
       } finally {
         setIsLoading(false);
       }

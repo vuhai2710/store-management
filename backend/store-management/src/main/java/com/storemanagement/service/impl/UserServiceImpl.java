@@ -35,6 +35,21 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO createCustomerUser(RegisterDTO request) {
+        // Kiểm tra username đã tồn tại chưa
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new RuntimeException("Tên đăng nhập đã tồn tại");
+        }
+        
+        // Kiểm tra email đã tồn tại chưa
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("Email đã được sử dụng");
+        }
+        
+        // Kiểm tra số điện thoại đã tồn tại chưa (trong Customer)
+        if (customerService.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new RuntimeException("Số điện thoại đã được sử dụng");
+        }
+        
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         User savedUser = userRepository.save(user);

@@ -237,6 +237,33 @@ export const productsService = {
     const resp = await api.get(API_ENDPOINTS.PRODUCTS.IMAGES(id));
     return unwrap(resp);
   },
+
+  /**
+   * Get home page recommendations
+   * GET /api/v1/products/recommendations/home?limit=6
+   * @param {Object} params - Query parameters
+   * @returns {Promise<ProductRecommendationDTO[]>}
+   */
+  getHomeRecommendations: async ({ limit = 6 } = {}) => {
+    try {
+      const params = { limit };
+      const resp = await api.get(API_ENDPOINTS.PRODUCTS.HOME_RECOMMENDATIONS, { params });
+      const data = unwrap(resp);
+      // Handle ApiResponse format: { code, message, data }
+      if (data && data.code === 200 && data.data) {
+        return data.data;
+      }
+      return data || [];
+    } catch (error) {
+      // If 401, return empty array (public endpoint should not require auth)
+      if (error?.status === 401) {
+        console.warn('Recommendations endpoint requires authentication, returning empty array');
+        return [];
+      }
+      console.error('Error fetching recommendations:', error);
+      return [];
+    }
+  },
 };
 
 

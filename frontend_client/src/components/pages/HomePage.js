@@ -16,6 +16,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
   const [bestSellers, setBestSellers] = useState([]);
   const [newProducts, setNewProducts] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
@@ -47,6 +48,16 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
         // Fetch featured products (first 6 products)
         const featuredData = await productsService.getProducts({ pageNo: 1, pageSize: 6 });
         setFeaturedProducts(featuredData?.content || []);
+
+        // Fetch recommendations
+        const recommendationsData = await productsService.getHomeRecommendations({ limit: 6 });
+        // Map recommendations to match ProductCard format (productId -> idProduct)
+        const mappedRecommendations = (recommendationsData || []).map(rec => ({
+          ...rec,
+          idProduct: rec.productId || rec.idProduct || rec.id,
+          productName: rec.name || rec.productName,
+        }));
+        setRecommendations(mappedRecommendations);
 
       } catch (err) {
         console.error('Error fetching homepage data:', err);
@@ -298,8 +309,34 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
         </section>
       )}
 
+      {/* 5. Product Recommendations */}
+      {isAuthenticated && recommendations.length > 0 && (
+        <section style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
+          <div style={styles.container}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+              <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold' }}>💡 Sản phẩm gợi ý cho bạn</h2>
+              <button 
+                onClick={() => setCurrentPage('shop')}
+                style={{ color: '#007bff', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Xem tất cả →
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+              {recommendations.map(product => (
+                <ProductCard 
+                  key={product.idProduct || product.productId || product.id} 
+                  product={product} 
+                  handleAddToCart={handleAddToCart} 
+                  handleViewProductDetail={handleViewProductDetail}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
-      {/* 5. Best Sellers */}
+      {/* 6. Best Sellers */}
       {isAuthenticated && bestSellers.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>
@@ -326,7 +363,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
         </section>
       )}
       
-      {/* 6. Featured Products */}
+      {/* 7. Featured Products */}
       {isAuthenticated && featuredProducts.length > 0 && (
         <section style={{ padding: '4rem 0', backgroundColor: '#f8f8f8' }}>
           <div style={styles.container}>
@@ -345,7 +382,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
         </section>
       )}
       
-      {/* 7. New Products */}
+      {/* 8. New Products */}
       {isAuthenticated && newProducts.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>

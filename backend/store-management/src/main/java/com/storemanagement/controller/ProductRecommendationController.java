@@ -1,0 +1,115 @@
+package com.storemanagement.controller;
+
+import com.storemanagement.dto.ApiResponse;
+import com.storemanagement.dto.product.ProductRecommendationDTO;
+import com.storemanagement.service.ProductRecommendationService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * Controller xử lý các API liên quan đến gợi ý sản phẩm
+ * Base URL: /api/v1/products/recommendations
+ * 
+ * Sử dụng Content-based Filtering với Python script
+ */
+@RestController
+@RequestMapping("/api/v1/products/recommendations")
+@RequiredArgsConstructor
+public class ProductRecommendationController {
+
+    private final ProductRecommendationService recommendationService;
+
+    /**
+     * Lấy danh sách sản phẩm tương tự cho một sản phẩm
+     * 
+     * Endpoint: GET /api/v1/products/recommendations/{productId}
+     * Query Parameters:
+     *   - topN: Số lượng sản phẩm tương tự cần lấy (mặc định: 5)
+     * 
+     * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
+     * 
+     * Dùng cho: Trang chi tiết sản phẩm - hiển thị "Sản phẩm tương tự"
+     * 
+     * Example: GET /api/v1/products/recommendations/1?topN=5
+     * 
+     * Response:
+     * {
+     *   "code": 200,
+     *   "message": "Lấy danh sách sản phẩm gợi ý thành công",
+     *   "data": [
+     *     {
+     *       "productId": 2,
+     *       "name": "Samsung Galaxy S24 Ultra",
+     *       "similarity": 0.85,
+     *       "imageUrl": "https://example.com/image.jpg",
+     *       "price": 24990000,
+     *       "category": "Điện thoại",
+     *       "brand": "Samsung"
+     *     },
+     *     ...
+     *   ]
+     * }
+     */
+    @GetMapping("/{productId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
+    public ResponseEntity<ApiResponse<List<ProductRecommendationDTO>>> getRecommendedProducts(
+            @PathVariable Integer productId,
+            @RequestParam(required = false, defaultValue = "5") Integer topN) {
+        
+        List<ProductRecommendationDTO> recommendations = 
+                recommendationService.getRecommendedProducts(productId, topN);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                "Lấy danh sách sản phẩm gợi ý thành công", 
+                recommendations));
+    }
+
+    /**
+     * Lấy danh sách sản phẩm gợi ý cho trang chủ
+     * 
+     * Endpoint: GET /api/v1/products/recommendations/home
+     * Query Parameters:
+     *   - limit: Số lượng sản phẩm cần lấy (mặc định: 10)
+     * 
+     * Authentication: Required (ADMIN, EMPLOYEE, CUSTOMER)
+     * 
+     * Dùng cho: Trang chủ - hiển thị "Sản phẩm gợi ý cho bạn"
+     * 
+     * Example: GET /api/v1/products/recommendations/home?limit=10
+     * 
+     * Response:
+     * {
+     *   "code": 200,
+     *   "message": "Lấy danh sách sản phẩm gợi ý trang chủ thành công",
+     *   "data": [
+     *     {
+     *       "productId": 1,
+     *       "name": "iPhone 15 Pro Max 256GB",
+     *       "similarity": 1.0,
+     *       "imageUrl": "https://example.com/image.jpg",
+     *       "price": 29990000,
+     *       "category": "Điện thoại",
+     *       "brand": "Apple"
+     *     },
+     *     ...
+     *   ]
+     * }
+     */
+    @GetMapping("/home")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
+    public ResponseEntity<ApiResponse<List<ProductRecommendationDTO>>> getHomePageRecommendations(
+            @RequestParam(required = false, defaultValue = "10") Integer limit) {
+        
+        List<ProductRecommendationDTO> recommendations = 
+                recommendationService.getHomePageRecommendations(limit);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                "Lấy danh sách sản phẩm gợi ý trang chủ thành công", 
+                recommendations));
+    }
+}
+

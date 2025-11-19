@@ -299,4 +299,9 @@ public class CustomerServiceImpl implements CustomerService {
         Customer savedCustomer = customerRepository.save(customer);
         return customerMapper.toDTO(savedCustomer);
     }
+
+    @Override
+    public boolean existsByPhoneNumber(String phoneNumber) {
+        return customerRepository.findByPhoneNumber(phoneNumber).isPresent();
+    }
 }

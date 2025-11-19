@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
     RELATED: (id) => `/products/${id}/related`,
     BRANDS: "/products/brands",
     IMAGES: (id) => `/products/${id}/images`,
+    HOME_RECOMMENDATIONS: "/products/recommendations/home",
   },
 
   // Cart

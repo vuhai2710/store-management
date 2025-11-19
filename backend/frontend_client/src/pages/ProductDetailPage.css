@@ -1,0 +1,26 @@
+.product-detail-page {
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+.product-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 40px;
+}
+
+.product-detail-container h1 {
+  font-size: 32px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.product-detail-container p {
+  font-size: 16px;
+  color: #666;
+}
+
