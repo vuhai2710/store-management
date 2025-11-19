@@ -1,1 +1,20 @@
-abc -- -syawr
+server:
+  port: 8080
+
+spring:
+  application:
+    name: store-management
+
+  datasource:
+    url: jdbc:mysql://turntable.proxy.rlwy.net:28840/railway
+    username: root
+    password: bbifrWuzfhUDuOfSuGVhxIVOUlKrBFpx
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
