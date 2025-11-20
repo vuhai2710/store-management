@@ -18,3 +18,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+cloudinary:
+  cloud-name: dpmptlswe
+  api-key: 593827271151324
+  api-secret: QyB_JC8u02WFwwixGMqFKdkz0uI
