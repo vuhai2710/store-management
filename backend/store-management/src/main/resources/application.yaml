@@ -69,8 +69,8 @@ payos:
   api-key: "${PAYOS_API_KEY:}" # Điền API Key từ PayOS dashboard
   checksum-key: "${PAYOS_CHECKSUM_KEY:}" # Điền Checksum Key từ PayOS dashboard
   webhook-url: "${PAYOS_WEBHOOK_URL:https://your-ngrok-url.ngrok.io/api/v1/payments/payos/webhook}" # Điền webhook URL (cần HTTPS)
-  return-url: "http://localhost:3000/payment/success"
-  cancel-url: "http://localhost:3000/payment/cancel"
+  return-url: "http://localhost:8080/api/v1/payments/payos/return"
+  cancel-url: "http://localhost:8080/api/v1/payments/payos/cancel"
   environment: "sandbox" # Options: sandbox, production
   base-url: "https://api-merchant.payos.vn"
 

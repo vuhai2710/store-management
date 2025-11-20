@@ -426,17 +426,16 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
       }
 
       // Create order directly using buy-now API
-      const order = await ordersService.buyNow({
-        productId: product.idProduct || product.id,
+      const productWithQty = {
+        ...product,
+        qty,
         quantity: qty,
-        shippingAddressId: defaultAddressId,
-        paymentMethod: 'CASH', // Default to CASH for buy now
-        notes: null,
-      });
-
-      // If order created successfully, redirect to orders page
-      alert('Đặt hàng thành công!');
-      setCurrentPage('orders');
+        idProduct: product.idProduct || product.id,
+        productId: product.idProduct || product.id,
+      };
+      await handleAddToCart(productWithQty);
+      setCurrentPage('checkout');
+      return;
     } catch (error) {
       console.error('Error in buy now:', error);
       let errorMessage = 'Không thể đặt hàng. Vui lòng thử lại.';

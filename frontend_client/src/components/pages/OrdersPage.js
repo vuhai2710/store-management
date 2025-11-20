@@ -1,9 +1,10 @@
 // src/components/pages/OrdersPage.js
 import React, { useState, useEffect } from 'react';
-import { Package, Search, Filter, X, Eye, XCircle, CheckCircle } from 'lucide-react';
+import { Package, Search, Filter, X, Eye, XCircle, CheckCircle, CreditCard } from 'lucide-react';
 import styles from '../../styles/styles';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { ordersService } from '../../services/ordersService';
+import { paymentService } from '../../services/paymentService';
 import { formatPrice, formatDate, formatOrderStatus } from '../../utils/formatUtils';
 import { ORDER_STATUS, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants/orderStatus';
 
@@ -17,6 +18,7 @@ const OrdersPage = ({ setCurrentPage }) => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [statusFilter, setStatusFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCreatingPayOSLink, setIsCreatingPayOSLink] = useState(false);
 
   // Fetch orders
   useEffect(() => {
@@ -94,6 +96,32 @@ const OrdersPage = ({ setCurrentPage }) => {
     } catch (error) {
       console.error('Error fetching order detail:', error);
       alert(error?.message || 'Không thể tải chi tiết đơn hàng.');
+    }
+  };
+
+  const handlePayWithPayOS = async (order) => {
+    if (!order) return;
+
+    const orderId = order.idOrder || order.id;
+    if (!orderId) {
+      alert('Không tìm thấy mã đơn hàng để thanh toán.');
+      return;
+    }
+
+    try {
+      setIsCreatingPayOSLink(true);
+      const paymentData = await paymentService.createPayOSPaymentLink(orderId);
+
+      if (paymentData && paymentData.paymentLinkUrl) {
+        window.location.href = paymentData.paymentLinkUrl;
+      } else {
+        alert('Không nhận được liên kết thanh toán PayOS. Vui lòng thử lại.');
+        setIsCreatingPayOSLink(false);
+      }
+    } catch (error) {
+      console.error('Error creating PayOS payment link:', error);
+      alert(error?.message || 'Không thể tạo liên kết thanh toán PayOS. Vui lòng thử lại.');
+      setIsCreatingPayOSLink(false);
     }
   };
 
@@ -476,6 +504,39 @@ const OrdersPage = ({ setCurrentPage }) => {
                 )}
               </div>
 
+              {selectedOrder.paymentMethod === 'PAYOS' && selectedOrder.status === ORDER_STATUS.PENDING && (
+                <div
+                  style={{
+                    marginTop: '1rem',
+                    paddingTop: '1rem',
+                    borderTop: '1px solid #e9ecef',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                  }}
+                >
+                  <button
+                    onClick={() => handlePayWithPayOS(selectedOrder)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: '#007bff',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.25rem',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                    }}
+                    disabled={isCreatingPayOSLink}
+                  >
+                    <CreditCard size={16} />
+                    {isCreatingPayOSLink ? 'Đang tạo link PayOS...' : 'Thanh toán qua PayOS'}
+                  </button>
+                </div>
+              )}
+
               {/* Order Items */}
               {selectedOrder.orderDetails && selectedOrder.orderDetails.length > 0 && (
                 <div>
@@ -518,6 +579,44 @@ const OrdersPage = ({ setCurrentPage }) => {
           </div>
         )}
       </div>
+
+      {isCreatingPayOSLink && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1100,
+            padding: '1rem',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '0.5rem',
+              padding: '2rem',
+              minWidth: '260px',
+              maxWidth: '90vw',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '1rem',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <LoadingSpinner />
+            <p style={{ margin: 0, color: '#495057', textAlign: 'center' }}>
+              Đang tạo liên kết thanh toán PayOS. Vui lòng chờ trong giây lát...
+            </p>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

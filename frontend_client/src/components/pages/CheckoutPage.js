@@ -43,6 +43,8 @@ const CheckoutPage = ({ setCurrentPage }) => {
   const [loadingPromotion, setLoadingPromotion] = useState(false);
   const [automaticDiscount, setAutomaticDiscount] = useState(0);
   const [automaticDiscountInfo, setAutomaticDiscountInfo] = useState(null);
+  const cartItems = cart?.cartItems || cart?.items || [];
+  const cartTotal = cart?.totalAmount || cart?.total || 0;
   
   // Default shop district ID (should be configured in backend, using placeholder for now)
   // TODO: Get this from backend config or API endpoint
@@ -63,6 +65,13 @@ const CheckoutPage = ({ setCurrentPage }) => {
         // Fetch cart
         const cartData = await cartService.getCart();
         setCart(cartData);
+
+        // Set automatic discount from backend (CartDTO)
+        const autoDiscountFromBackend = cartData?.automaticDiscount
+          ? Number(cartData.automaticDiscount)
+          : 0;
+        setAutomaticDiscount(autoDiscountFromBackend);
+        setAutomaticDiscountInfo(autoDiscountFromBackend > 0 ? { discount: autoDiscountFromBackend } : null);
 
         // Fetch shipping addresses
         const addressesData = await shippingAddressService.getAllAddresses();
@@ -163,44 +172,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
     calculateShippingFee();
   }, [selectedAddressId, shippingAddresses, cart]);
   
-  // Calculate automatic discount when cart total changes
-  useEffect(() => {
-    const calculateAutomaticDiscount = async () => {
-      if (!cart || !cartItems || cartItems.length === 0) {
-        setAutomaticDiscount(0);
-        setAutomaticDiscountInfo(null);
-        return;
-      }
-      
-      const cartTotal = cart.totalAmount || cart.total || 0;
-      if (cartTotal <= 0) {
-        setAutomaticDiscount(0);
-        setAutomaticDiscountInfo(null);
-        return;
-      }
-      
-      try {
-        const discountResponse = await promotionService.calculateDiscount({
-          totalAmount: cartTotal,
-          items: cartItems,
-        });
-        
-        if (discountResponse && discountResponse.applicable && discountResponse.discount > 0) {
-          setAutomaticDiscount(Number(discountResponse.discount));
-          setAutomaticDiscountInfo(discountResponse);
-        } else {
-          setAutomaticDiscount(0);
-          setAutomaticDiscountInfo(null);
-        }
-      } catch (error) {
-        console.error('Error calculating automatic discount:', error);
-        setAutomaticDiscount(0);
-        setAutomaticDiscountInfo(null);
-      }
-    };
-    
-    calculateAutomaticDiscount();
-  }, [cart, cartItems]);
+  // automaticDiscount đã được tính sẵn ở backend và set trong fetchData
   
   const handleAddressFormChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -293,10 +265,8 @@ const CheckoutPage = ({ setCurrentPage }) => {
             paymentErrorMessage = paymentError.response.data.error;
           }
           
-          // Check for specific PayOS configuration errors
-          if (paymentErrorMessage.includes('credentials') || 
-              paymentErrorMessage.includes('configured') ||
-              paymentErrorMessage.includes('PayOS')) {
+          // Check for specific PayOS configuration errors (thiếu clientId/apiKey/checksumKey)
+          if (paymentErrorMessage.includes('PayOS credentials are not configured')) {
             paymentErrorMessage = 'PayOS chưa được cấu hình đúng. Vui lòng liên hệ admin hoặc thử phương thức thanh toán khác.';
           }
           
@@ -376,8 +346,6 @@ const CheckoutPage = ({ setCurrentPage }) => {
     );
   }
 
-  const cartItems = cart?.cartItems || cart?.items || [];
-  const cartTotal = cart?.totalAmount || cart?.total || 0;
   const totalDiscount = promotionDiscount + automaticDiscount;
   const finalTotal = Math.max(0, cartTotal + shippingFee - totalDiscount);
 
@@ -596,9 +564,13 @@ const CheckoutPage = ({ setCurrentPage }) => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {cartItems.map(item => {
                   const productName = item.productName || item.product?.productName || item.name || 'Sản phẩm không xác định';
-                  const productPrice = item.productPrice || item.price || item.product?.price || 0;
+                  const originalUnitPrice = item.productPrice || item.price || item.product?.price || 0;
                   const quantity = item.quantity || item.qty || 0;
-                  const itemTotal = item.subtotal || (productPrice * quantity);
+                  const originalSubtotal = item.subtotal || (originalUnitPrice * quantity);
+                  const discountedSubtotal = item.discountedSubtotal != null ? item.discountedSubtotal : originalSubtotal;
+                  const discountedUnitPrice = item.discountedUnitPrice != null && quantity
+                    ? item.discountedUnitPrice
+                    : (discountedSubtotal / (quantity || 1));
                   const productImage = item.productImageUrl || item.productImage || item.product?.imageUrl || item.imageUrl;
 
                   return (
@@ -630,10 +602,29 @@ const CheckoutPage = ({ setCurrentPage }) => {
                       <div style={{ flex: 1 }}>
                         <h4 style={{ fontWeight: '600', marginBottom: '0.5rem', color: '#212529' }}>{productName}</h4>
                         <p style={{ color: '#6c757d', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                          {formatPrice(productPrice)} × {quantity}
+                          {discountedUnitPrice != null && discountedUnitPrice < originalUnitPrice ? (
+                            <>
+                              <span style={{ textDecoration: 'line-through', marginRight: '0.5rem' }}>
+                                {formatPrice(originalUnitPrice)}
+                              </span>
+                              <span>{formatPrice(discountedUnitPrice)}</span>
+                            </>
+                          ) : (
+                            <span>{formatPrice(originalUnitPrice)}</span>
+                          )} 
+                          × {quantity}
                         </p>
                         <p style={{ fontWeight: '600', color: '#007bff' }}>
-                          {formatPrice(itemTotal)}
+                          {discountedSubtotal < originalSubtotal ? (
+                            <>
+                              <span style={{ textDecoration: 'line-through', marginRight: '0.5rem', color: '#6c757d', fontSize: '0.875rem' }}>
+                                {formatPrice(originalSubtotal)}
+                              </span>
+                              <span>{formatPrice(discountedSubtotal)}</span>
+                            </>
+                          ) : (
+                            <span>{formatPrice(originalSubtotal)}</span>
+                          )}
                         </p>
                       </div>
                     </div>

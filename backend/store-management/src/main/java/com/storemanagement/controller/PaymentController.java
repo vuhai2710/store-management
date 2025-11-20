@@ -56,6 +56,50 @@ public class PaymentController {
             throw new IllegalArgumentException("Order status phải là PENDING để tạo payment link");
         }
 
+        BigDecimal finalAmount = order.getFinalAmount() != null ? order.getFinalAmount() : BigDecimal.ZERO;
+
+        if (finalAmount.compareTo(BigDecimal.ZERO) == 0) {
+            log.info(
+                    "Order ID {} có finalAmount = 0 (giảm 100%). Đánh dấu COMPLETED và bỏ qua gọi PayOS, redirect thẳng về payment/success.",
+                    orderId);
+
+            if (order.getStatus() == Order.OrderStatus.PENDING) {
+                order.setStatus(Order.OrderStatus.COMPLETED);
+                orderRepository.save(order);
+            }
+
+            if (order.getOrderDetails() != null) {
+                order.getOrderDetails().forEach(orderDetail -> {
+                    Product product = orderDetail.getProduct();
+                    Integer newStockQuantity = product.getStockQuantity() - orderDetail.getQuantity();
+                    product.setStockQuantity(newStockQuantity);
+                    if (newStockQuantity == 0) {
+                        product.setStatus(ProductStatus.OUT_OF_STOCK);
+                    }
+                    productRepository.save(product);
+
+                    InventoryTransaction transaction = InventoryTransaction.builder()
+                            .product(product)
+                            .transactionType(TransactionType.OUT)
+                            .quantity(orderDetail.getQuantity())
+                            .referenceType(ReferenceType.SALE_ORDER)
+                            .referenceId(order.getIdOrder())
+                            .notes("Đơn hàng 0đ - tự động xác nhận thanh toán (không qua PayOS)")
+                            .build();
+
+                    inventoryTransactionRepository.save(transaction);
+                });
+            }
+
+            Map<String, Object> zeroAmountData = new HashMap<>();
+            zeroAmountData.put("paymentLinkUrl", "http://localhost:3003/payment/success?orderId=" + orderId);
+            zeroAmountData.put("paymentLinkId", null);
+            zeroAmountData.put("orderId", orderId);
+
+            return ResponseEntity
+                    .ok(ApiResponse.success("Đơn hàng 0đ, không cần thanh toán PayOS", zeroAmountData));
+        }
+
         // Validate customer ownership (nếu là CUSTOMER role)
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication.getAuthorities().stream()
@@ -186,7 +230,7 @@ public class PaymentController {
 
         // Redirect về frontend success page
         // Frontend sẽ handle việc hiển thị kết quả và check order status
-        String redirectUrl = "http://localhost:3000/payment/success";
+        String redirectUrl = "http://localhost:3003/payment/success";
         if (orderCode != null) {
             redirectUrl += "?orderId=" + orderCode;
         }
@@ -201,7 +245,7 @@ public class PaymentController {
         log.info("PayOS cancel URL called. OrderCode: {}", orderCode);
 
         // Redirect về frontend cancel page
-        String redirectUrl = "http://localhost:3000/payment/cancel";
+        String redirectUrl = "http://localhost:3003/payment/cancel";
         if (orderCode != null) {
             redirectUrl += "?orderId=" + orderCode;
         }
@@ -218,6 +262,61 @@ public class PaymentController {
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Order không tồn tại với ID: " + orderId));
+
+        if (order.getPaymentMethod() == Order.PaymentMethod.PAYOS
+                && order.getStatus() == Order.OrderStatus.PENDING
+                && order.getPaymentLinkId() != null) {
+            try {
+                PayOSPaymentResponseDTO payOSInfo = payOSService.getPaymentLinkInfo(order.getPaymentLinkId());
+
+                if (payOSInfo != null && payOSInfo.getData() != null) {
+                    String payOSStatus = payOSInfo.getData().getStatus();
+                    log.info("PayOS payment link info for order ID {}: status={} (paymentLinkId={})",
+                            orderId, payOSStatus, order.getPaymentLinkId());
+
+                    if (payOSStatus != null) {
+                        String normalized = payOSStatus.toUpperCase();
+
+                        if (normalized.contains("PAID") || normalized.contains("SUCCESS")) {
+                            if (order.getStatus() == Order.OrderStatus.PENDING) {
+                                order.setStatus(Order.OrderStatus.COMPLETED);
+                                orderRepository.save(order);
+
+                                if (order.getOrderDetails() != null) {
+                                    order.getOrderDetails().forEach(orderDetail -> {
+                                        Product product = orderDetail.getProduct();
+                                        Integer newStockQuantity = product.getStockQuantity() - orderDetail.getQuantity();
+                                        product.setStockQuantity(newStockQuantity);
+                                        if (newStockQuantity == 0) {
+                                            product.setStatus(ProductStatus.OUT_OF_STOCK);
+                                        }
+                                        productRepository.save(product);
+
+                                        InventoryTransaction transaction = InventoryTransaction.builder()
+                                                .product(product)
+                                                .transactionType(TransactionType.OUT)
+                                                .quantity(orderDetail.getQuantity())
+                                                .referenceType(ReferenceType.SALE_ORDER)
+                                                .referenceId(order.getIdOrder())
+                                                .notes("Thanh toán PayOS thành công (sync từ getPaymentStatus) - Order #" + order.getIdOrder())
+                                                .build();
+
+                                        inventoryTransactionRepository.save(transaction);
+                                    });
+                                }
+                            }
+                        } else if (normalized.contains("CANCEL")) {
+                            if (order.getStatus() == Order.OrderStatus.PENDING) {
+                                order.setStatus(Order.OrderStatus.CANCELED);
+                                orderRepository.save(order);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error syncing PayOS status for order ID: {}", orderId, e);
+            }
+        }
 
         Map<String, Object> data = new HashMap<>();
         data.put("orderId", orderId);

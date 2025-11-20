@@ -313,30 +313,7 @@ public class PromotionServiceImpl implements PromotionService {
 
     @Override
     public void recordPromotionUsage(Integer promotionId, Integer orderId, Integer customerId) {
-        log.info("Recording promotion usage: promotionId={}, orderId={}, customerId={}",
+        log.info("recordPromotionUsage called (no-op): promotionId={}, orderId={}, customerId={}",
                 promotionId, orderId, customerId);
-
-        Promotion promotion = promotionRepository.findById(promotionId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy mã giảm giá"));
-
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng"));
-
-        Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng"));
-
-        PromotionUsage usage = PromotionUsage.builder()
-                .promotion(promotion)
-                .order(order)
-                .customer(customer)
-                .build();
-
-        promotionUsageRepository.save(usage);
-
-        // Update promotion usage count
-        promotion.setUsageCount(promotion.getUsageCount() + 1);
-        promotionRepository.save(promotion);
-
-        log.info("Promotion usage recorded successfully");
     }
 }

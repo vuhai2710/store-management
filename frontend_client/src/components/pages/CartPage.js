@@ -5,7 +5,7 @@ import styles from '../../styles/styles';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { formatPrice, getImageUrl } from '../../utils/formatUtils';
 
-const CartPage = ({ cart, cartTotal, setCurrentPage, handleUpdateQty, handleRemoveFromCart, cartLoading }) => {
+const CartPage = ({ cart, cartTotal, cartSubtotal, cartAutomaticDiscount, setCurrentPage, handleUpdateQty, handleRemoveFromCart, cartLoading }) => {
   
   if (cartLoading) {
     return (
@@ -50,9 +50,13 @@ const CartPage = ({ cart, cartTotal, setCurrentPage, handleUpdateQty, handleRemo
                 <tbody>
                   {cart.map(item => {
                     const productName = item.productName || item.product?.productName || item.name || 'Sản phẩm không xác định';
-                    const productPrice = item.productPrice || item.price || item.product?.price || 0;
+                    const originalUnitPrice = item.productPrice || item.price || item.product?.price || 0;
                     const quantity = item.quantity || item.qty || 0;
-                    const itemTotal = item.subtotal || (productPrice * quantity);
+                    const originalSubtotal = item.subtotal || (originalUnitPrice * quantity);
+                    const discountedSubtotal = item.discountedSubtotal != null ? item.discountedSubtotal : originalSubtotal;
+                    const discountedUnitPrice = item.discountedUnitPrice != null && quantity
+                      ? item.discountedUnitPrice
+                      : (discountedSubtotal / (quantity || 1));
                     const itemId = item.idCartItem || item.id;
                     const productId = item.idProduct || item.productId || item.product?.idProduct || item.product?.id;
                     const productImage = item.productImageUrl || item.productImage || item.product?.imageUrl || item.imageUrl;
@@ -87,7 +91,18 @@ const CartPage = ({ cart, cartTotal, setCurrentPage, handleUpdateQty, handleRemo
                           </div>
                         </td>
                         <td style={{ padding: '1rem', fontWeight: '600' }}>
-                          {formatPrice(productPrice)}
+                          {discountedUnitPrice != null && discountedUnitPrice < originalUnitPrice ? (
+                            <div>
+                              <div style={{ textDecoration: 'line-through', color: '#6c757d', fontSize: '0.875rem' }}>
+                                {formatPrice(originalUnitPrice)}
+                              </div>
+                              <div>
+                                {formatPrice(discountedUnitPrice)}
+                              </div>
+                            </div>
+                          ) : (
+                            <span>{formatPrice(originalUnitPrice)}</span>
+                          )}
                         </td>
                         <td style={{ padding: '1rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -124,8 +139,21 @@ const CartPage = ({ cart, cartTotal, setCurrentPage, handleUpdateQty, handleRemo
                             </button>
                           </div>
                         </td>
-                        <td style={{ padding: '1rem', fontWeight: '600', color: '#007bff' }}>
-                          {formatPrice(itemTotal)}
+                        <td style={{ padding: '1rem' }}>
+                          {discountedSubtotal < originalSubtotal ? (
+                            <div style={{ fontWeight: '600', color: '#007bff' }}>
+                              <div style={{ textDecoration: 'line-through', color: '#6c757d', fontSize: '0.875rem' }}>
+                                {formatPrice(originalSubtotal)}
+                              </div>
+                              <div>
+                                {formatPrice(discountedSubtotal)}
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ fontWeight: '600', color: '#007bff' }}>
+                              {formatPrice(originalSubtotal)}
+                            </span>
+                          )}
                         </td>
                         <td style={{ padding: '1rem', textAlign: 'center' }}>
                           <button 
@@ -161,8 +189,14 @@ const CartPage = ({ cart, cartTotal, setCurrentPage, handleUpdateQty, handleRemo
                 <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #dee2e6', paddingBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#495057' }}>
                     <span>Tạm tính</span>
-                    <span>{formatPrice(cartTotal)}</span>
+                    <span>{formatPrice(cartSubtotal ?? cartTotal)}</span>
                   </div>
+                  {cartAutomaticDiscount > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#28a745' }}>
+                      <span>Giảm giá tự động</span>
+                      <span>-{formatPrice(cartAutomaticDiscount)}</span>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6c757d', fontSize: '0.875rem' }}>
                     <span>Phí vận chuyển</span>
                     <span>Tính khi thanh toán</span>

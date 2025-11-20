@@ -7,17 +7,14 @@ import com.storemanagement.service.PayOSService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-// PayOS SDK imports
-// Lưu ý: Sau khi Maven download dependency, cần verify package names và class names
-// Có thể cần điều chỉnh imports dựa trên PayOS SDK documentation
-// Xem PAYOS_SDK_REFACTOR_NOTES.md để biết cách verify
-import vn.payos.PayOS;
-// TODO: Uncomment và verify sau khi download SDK
-// import vn.payos.model.CheckoutResponseData;
-// import vn.payos.model.ItemData;
-// import vn.payos.model.PaymentData;
-// import vn.payos.model.Webhook;
 
+import vn.payos.PayOS;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
+import vn.payos.model.v2.paymentRequests.PaymentLinkItem;
+
+
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,29 +39,75 @@ public class PayOSServiceImpl implements PayOSService {
         }
 
         try {
-            // Build PaymentData từ Order entity
-            // TODO: Uncomment sau khi verify PayOS SDK imports
-            // PaymentData paymentData = buildPaymentData(order);
+            Long orderCode = Long.valueOf(order.getIdOrder());
+            Long amount = order.getFinalAmount().longValue();
+            String description = "Thanh toan don hang #" + order.getIdOrder();
 
-            // Temporary: Sử dụng reflection hoặc Object để tránh compile error
-            // Sau khi download SDK, uncomment code trên và remove code dưới
-            Object paymentData = buildPaymentData(order);
+            CreatePaymentLinkRequest.CreatePaymentLinkRequestBuilder builder =
+                    CreatePaymentLinkRequest.builder()
+                            .orderCode(orderCode)
+                            .amount(amount)
+                            .description(description)
+                            .cancelUrl(payOSConfig.getCancelUrl())
+                            .returnUrl(payOSConfig.getReturnUrl());
 
-            log.debug("Calling PayOS SDK createPaymentLink for orderCode: {}",
-                getOrderCodeFromPaymentData(paymentData));
+            if (order.getOrderDetails() != null && !order.getOrderDetails().isEmpty()) {
+                boolean hasDiscount = order.getDiscount() != null
+                        && order.getDiscount().compareTo(BigDecimal.ZERO) > 0;
 
-            // Gọi PayOS SDK để tạo payment link
-            // SDK tự động xử lý authentication, request/response, error handling
-            // TODO: Uncomment sau khi verify PayOS SDK method name
-            // CheckoutResponseData checkoutResponse = payOS.createPaymentLink(paymentData);
-            Object checkoutResponse = callPayOSCreatePaymentLink(paymentData);
+                if (hasDiscount) {
+                    String itemName = "Đơn hàng #" + order.getIdOrder();
+                    PaymentLinkItem item = PaymentLinkItem.builder()
+                            .name(itemName)
+                            .price(amount)
+                            .quantity(1)
+                            .build();
+                    builder.item(item);
+                } else {
+                    order.getOrderDetails().forEach(orderDetail -> {
+                        String productName = orderDetail.getProductNameSnapshot() != null ?
+                                orderDetail.getProductNameSnapshot() :
+                                (orderDetail.getProduct() != null ? orderDetail.getProduct().getProductName()
+                                        : "Product");
+                        Long itemPrice = orderDetail.getPrice().longValue();
+                        int quantity = orderDetail.getQuantity();
 
-            // Convert SDK response sang DTO
-            PayOSPaymentResponseDTO responseDto = convertToResponseDTO(checkoutResponse);
+                        PaymentLinkItem item = PaymentLinkItem.builder()
+                                .name(productName)
+                                .price(itemPrice)
+                                .quantity(quantity)
+                                .build();
+                        builder.item(item);
+                    });
+                }
+            }
+
+            CreatePaymentLinkRequest paymentRequest = builder.build();
+
+            log.debug("Calling PayOS SDK paymentRequests().create for orderCode: {}", orderCode);
+
+            CreatePaymentLinkResponse response = payOS.paymentRequests().create(paymentRequest);
+
+            PayOSPaymentDataDTO dataDto = PayOSPaymentDataDTO.builder()
+                    .paymentLinkId(response.getPaymentLinkId())
+                    .checkoutUrl(response.getCheckoutUrl())
+                    .qrCode(response.getQrCode())
+                    .orderCode(response.getOrderCode())
+                    .amount(response.getAmount() != null ?
+                            java.math.BigDecimal.valueOf(response.getAmount()) : null)
+                    .description(response.getDescription())
+                    .status(response.getStatus() != null ? response.getStatus().name() : null)
+                    .build();
+
+            PayOSPaymentResponseDTO responseDto = PayOSPaymentResponseDTO.builder()
+                    .code("00")
+                    .desc("success")
+                    .data(dataDto)
+                    .build();
 
             log.info("PayOS payment link created successfully using SDK. PaymentLinkId: {}, CheckoutUrl: {}",
-                responseDto.getData().getPaymentLinkId(),
-                responseDto.getData().getCheckoutUrl());
+                    response.getPaymentLinkId(),
+                    response.getCheckoutUrl());
 
             return responseDto;
 
@@ -86,8 +129,8 @@ public class PayOSServiceImpl implements PayOSService {
         String description = "Thanh toan don hang #" + order.getIdOrder();
 
         // Build items list
-        // TODO: Uncomment sau khi verify PayOS SDK ItemData class
-        // List<ItemData> items = new ArrayList<>();
+        // PayOS Java SDK (v2.0.1) sử dụng package vn.payos.type.ItemData
+        // Ở đây dùng reflection để tránh phụ thuộc cứng, nhưng phải trỏ đúng FQCN
         List<Object> items = new ArrayList<>();
         if (order.getOrderDetails() != null && !order.getOrderDetails().isEmpty()) {
             for (var orderDetail : order.getOrderDetails()) {
@@ -99,17 +142,9 @@ public class PayOSServiceImpl implements PayOSService {
                 // PayOS SDK ItemData yêu cầu: name, quantity, price (Long VND)
                 Long itemPrice = orderDetail.getPrice().longValue();
 
-                // PayOS SDK ItemData sử dụng constructor hoặc setter methods
-                // TODO: Uncomment sau khi verify PayOS SDK ItemData
-                // ItemData item = new ItemData();
-                // item.setName(productName);
-                // item.setQuantity(orderDetail.getQuantity());
-                // item.setPrice(itemPrice);
-                // items.add(item);
-
-                // Temporary: Sử dụng reflection để tạo ItemData
+                // Sử dụng reflection để tạo ItemData (vn.payos.type.ItemData)
                 try {
-                    Class<?> itemDataClass = Class.forName("vn.payos.model.ItemData");
+                    Class<?> itemDataClass = Class.forName("vn.payos.type.ItemData");
                     Object item = itemDataClass.getDeclaredConstructor().newInstance();
                     itemDataClass.getMethod("setName", String.class).invoke(item, productName);
                     itemDataClass.getMethod("setQuantity", Integer.class).invoke(item, orderDetail.getQuantity());
@@ -122,20 +157,9 @@ public class PayOSServiceImpl implements PayOSService {
             }
         }
 
-        // Build PaymentData sử dụng PayOS SDK setter methods
-        // TODO: Uncomment sau khi verify PayOS SDK PaymentData class
-        // PaymentData paymentData = new PaymentData();
-        // paymentData.setOrderCode(orderCode);
-        // paymentData.setAmount(amount);
-        // paymentData.setDescription(description);
-        // paymentData.setItems(items);
-        // paymentData.setReturnUrl(payOSConfig.getReturnUrl());
-        // paymentData.setCancelUrl(payOSConfig.getCancelUrl());
-        // return paymentData;
-
-        // Temporary: Sử dụng reflection để tạo PaymentData
+        // Build PaymentData sử dụng reflection với đúng FQCN (vn.payos.type.PaymentData)
         try {
-            Class<?> paymentDataClass = Class.forName("vn.payos.model.PaymentData");
+            Class<?> paymentDataClass = Class.forName("vn.payos.type.PaymentData");
             Object paymentData = paymentDataClass.getDeclaredConstructor().newInstance();
             paymentDataClass.getMethod("setOrderCode", Long.class).invoke(paymentData, orderCode);
             paymentDataClass.getMethod("setAmount", Long.class).invoke(paymentData, amount);
@@ -163,10 +187,53 @@ public class PayOSServiceImpl implements PayOSService {
             String checkoutUrl = (String) responseClass.getMethod("getCheckoutUrl").invoke(checkoutResponse);
             String qrCode = (String) responseClass.getMethod("getQrCode").invoke(checkoutResponse);
 
+            Long orderCode = null;
+            try {
+                Object orderCodeObj = responseClass.getMethod("getOrderCode").invoke(checkoutResponse);
+                if (orderCodeObj instanceof Long) {
+                    orderCode = (Long) orderCodeObj;
+                } else if (orderCodeObj instanceof Integer) {
+                    orderCode = ((Integer) orderCodeObj).longValue();
+                }
+            } catch (NoSuchMethodException ignored) {
+            }
+
+            java.math.BigDecimal amount = null;
+            try {
+                Object amountObj = responseClass.getMethod("getAmount").invoke(checkoutResponse);
+                if (amountObj instanceof Long) {
+                    amount = java.math.BigDecimal.valueOf((Long) amountObj);
+                } else if (amountObj instanceof Integer) {
+                    amount = java.math.BigDecimal.valueOf(((Integer) amountObj).longValue());
+                } else if (amountObj instanceof java.math.BigDecimal) {
+                    amount = (java.math.BigDecimal) amountObj;
+                }
+            } catch (NoSuchMethodException ignored) {
+            }
+
+            String description = null;
+            try {
+                description = (String) responseClass.getMethod("getDescription").invoke(checkoutResponse);
+            } catch (NoSuchMethodException ignored) {
+            }
+
+            String status = null;
+            try {
+                Object statusObj = responseClass.getMethod("getStatus").invoke(checkoutResponse);
+                if (statusObj != null) {
+                    status = statusObj.toString();
+                }
+            } catch (NoSuchMethodException ignored) {
+            }
+
             PayOSPaymentDataDTO dataDto = PayOSPaymentDataDTO.builder()
                     .paymentLinkId(paymentLinkId)
                     .checkoutUrl(checkoutUrl)
                     .qrCode(qrCode)
+                    .orderCode(orderCode)
+                    .amount(amount)
+                    .description(description)
+                    .status(status)
                     .build();
 
             // Build response DTO

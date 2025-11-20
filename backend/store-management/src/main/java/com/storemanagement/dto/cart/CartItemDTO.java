@@ -21,4 +21,9 @@ public class CartItemDTO {
     private Integer productStockQuantity;
     private Integer quantity;
     private BigDecimal subtotal; // quantity * productPrice
+
+    // Các trường bên dưới chỉ dùng để hiển thị giá sau giảm trong giỏ hàng
+    private BigDecimal discountedUnitPrice; // Đơn giá sau khi phân bổ giảm giá tự động
+    private BigDecimal discountedSubtotal;  // Thành tiền sau giảm cho dòng này
+    private BigDecimal discountAmount;      // Số tiền giảm của dòng này
 }

@@ -106,3 +106,5 @@ secrets.json
 # Documentation (personal notes - optional)
 *.pdf
 !**/documentation/**/*.pdf
+
+EnvChecker.java
