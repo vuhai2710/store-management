@@ -82,3 +82,6 @@ ghn:
   enabled: false # Đặt true khi đã có token và muốn sử dụng GHN
   environment: "sandbox" # Options: sandbox, production
 
+recommender:
+  base-url: http://localhost:5000
+

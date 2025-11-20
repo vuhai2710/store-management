@@ -6,6 +6,9 @@ import com.storemanagement.dto.product.ProductDTO;
 import com.storemanagement.dto.product.ProductImageDTO;
 import com.storemanagement.service.ProductImageService;
 import com.storemanagement.service.ProductService;
+import com.storemanagement.service.ProductViewService;
+import com.storemanagement.utils.SecurityUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -15,16 +18,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
+@Slf4j
 public class ProductController {
 
     private final ProductService productService;
     private final ProductImageService productImageService;
+    private final ProductViewService productViewService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
@@ -58,8 +64,23 @@ public class ProductController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
-    public ResponseEntity<ApiResponse<ProductDTO>> getProductById(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<ProductDTO>> getProductById(
+            @PathVariable Integer id,
+            HttpServletRequest request) {
         ProductDTO product = productService.getProductById(id);
+        
+        // Log the view - don't block response if it fails
+        try {
+            Integer userId = SecurityUtils.getCurrentUserId().orElse(null);
+            String sessionId = request.getSession().getId();
+            log.info("Attempting to log product view: userId={}, sessionId={}, productId={}", userId, sessionId, id);
+            productViewService.logView(userId, sessionId, id);
+        } catch (Exception e) {
+            // Log error but don't fail the request
+            log.error("Failed to log product view for productId: {}, userId: {}, error: {}", 
+                    id, SecurityUtils.getCurrentUserId().orElse(null), e.getMessage(), e);
+        }
+        
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin sản phẩm thành công", product));
     }
 

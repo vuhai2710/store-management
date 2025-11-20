@@ -16,6 +16,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
   const [bestSellers, setBestSellers] = useState([]);
   const [newProducts, setNewProducts] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
@@ -47,6 +48,16 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
         // Fetch featured products (first 6 products)
         const featuredData = await productsService.getProducts({ pageNo: 1, pageSize: 6 });
         setFeaturedProducts(featuredData?.content || []);
+
+        // Fetch recommended products
+        try {
+          const recommendedData = await productsService.getRecommendedProducts();
+          console.log('Recommended products data:', recommendedData);
+          setRecommendedProducts(Array.isArray(recommendedData) ? recommendedData : []);
+        } catch (recError) {
+          console.error('Error fetching recommended products:', recError);
+          setRecommendedProducts([]);
+        }
 
       } catch (err) {
         console.error('Error fetching homepage data:', err);
@@ -255,7 +266,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
         </section>
       )}
 
-      {/* 4. Deal of the Week (Banner ưu đãi) */}
+      {/* 5. Deal of the Week (Banner ưu đãi) */}
       {isAuthenticated && dealProduct && (
         <section style={{ padding: '4rem 0', backgroundColor: '#f0f4f8' }}>
           <div style={styles.container}>
@@ -298,8 +309,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
         </section>
       )}
 
-
-      {/* 5. Best Sellers */}
+      {/* 6. Best Sellers */}
       {isAuthenticated && bestSellers.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>
@@ -325,8 +335,49 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
           </div>
         </section>
       )}
+
+      {/* 6.5. Recommended Products - After Best Sellers */}
+      {isAuthenticated && (
+        <section style={{ padding: '4rem 0', backgroundColor: '#f0f4f8' }}>
+          <div style={styles.container}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+              <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold' }}>Gợi ý dành cho bạn ⭐</h2>
+              <button 
+                onClick={() => setCurrentPage('shop')}
+                style={{ color: '#007bff', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Xem tất cả →
+              </button>
+            </div>
+            {recommendedProducts.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                {recommendedProducts.slice(0, 8).map(product => (
+                  <ProductCard 
+                    key={product.idProduct || product.id} 
+                    product={product} 
+                    handleAddToCart={handleAddToCart} 
+                    handleViewProductDetail={handleViewProductDetail}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#6c757d' }}>
+                <p style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>
+                  Chưa có gợi ý sản phẩm. Hãy xem một số sản phẩm để chúng tôi có thể gợi ý cho bạn!
+                </p>
+                <button 
+                  onClick={() => setCurrentPage('shop')}
+                  style={{ ...styles.buttonPrimary, padding: '0.75rem 1.5rem' }}
+                >
+                  Khám phá sản phẩm
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
       
-      {/* 6. Featured Products */}
+      {/* 7. Featured Products */}
       {isAuthenticated && featuredProducts.length > 0 && (
         <section style={{ padding: '4rem 0', backgroundColor: '#f8f8f8' }}>
           <div style={styles.container}>
@@ -345,7 +396,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
         </section>
       )}
       
-      {/* 7. New Products */}
+      {/* 8. New Products */}
       {isAuthenticated && newProducts.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>

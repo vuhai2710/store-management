@@ -105,6 +105,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/payments/payos/webhook").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/test/**").permitAll() // Test endpoint
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
 
