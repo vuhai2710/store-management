@@ -1,14 +1,15 @@
 package com.storemanagement.service.impl;
 
-import com.storemanagement.dto.auth.RegisterDTO;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.storemanagement.dto.PageResponse;
+import com.storemanagement.dto.auth.RegisterDTO;
 import com.storemanagement.dto.user.UserDTO;
 import com.storemanagement.mapper.UserMapper;
 import com.storemanagement.model.User;
 import com.storemanagement.repository.UserRepository;
 import com.storemanagement.service.CustomerService;
 import com.storemanagement.service.UserService;
-import com.storemanagement.service.FileStorageService;
 import com.storemanagement.utils.PageUtils;
 import com.storemanagement.utils.Role;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +34,9 @@ public class UserServiceImpl implements UserService {
     private final CustomerService customerService;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
-    private final FileStorageService fileStorageService;
+    
+    // Thay thế FileStorageService bằng Cloudinary
+    private final Cloudinary cloudinary;
 
     @Override
     public UserDTO createCustomerUser(RegisterDTO request) {
@@ -164,14 +169,12 @@ public class UserServiceImpl implements UserService {
 
     /**
      * Đổi mật khẩu cho user
-     * 
-     * Logic xử lý:
+     * * Logic xử lý:
      * 1. Kiểm tra user tồn tại
      * 2. Verify mật khẩu hiện tại bằng passwordEncoder.matches()
      * 3. Encode mật khẩu mới bằng BCrypt
      * 4. Cập nhật mật khẩu mới vào database
-     * 
-     * Security:
+     * * Security:
      * - Mật khẩu được hash bằng BCrypt trước khi lưu
      * - So sánh mật khẩu hiện tại bằng passwordEncoder.matches() (an toàn)
      */
@@ -194,13 +197,11 @@ public class UserServiceImpl implements UserService {
 
     /**
      * Upload ảnh đại diện cho user
-     * 
-     * Logic:
+     * * Logic:
      * 1. Kiểm tra user tồn tại
-     * 2. Upload ảnh vào thư mục uploads/users/
+     * 2. Upload ảnh lên Cloudinary
      * 3. Lưu URL vào database
-     * 
-     * @param username Username của user
+     * * @param username Username của user
      * @param avatar File ảnh
      * @return UserDTO đã được cập nhật
      */
@@ -212,25 +213,28 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
         
         try {
-            // Upload ảnh vào thư mục uploads/users/
-            String avatarUrl = fileStorageService.saveImage(avatar, "users");
+            // Upload ảnh lên Cloudinary vào folder "users"
+            Map uploadResult = cloudinary.uploader().upload(avatar.getBytes(), 
+                    ObjectUtils.asMap("folder", "users"));
+            
+            String avatarUrl = (String) uploadResult.get("secure_url");
+            
             user.setAvatarUrl(avatarUrl);
             User savedUser = userRepository.save(user);
             
-            log.info("Avatar uploaded successfully: {}", avatarUrl);
+            log.info("Avatar uploaded to Cloudinary successfully: {}", avatarUrl);
             return userMapper.toDTO(savedUser);
             
-        } catch (Exception e) {
-            log.error("Error uploading avatar: {}", e.getMessage(), e);
+        } catch (IOException e) {
+            log.error("Error uploading avatar to Cloudinary: {}", e.getMessage(), e);
             throw new RuntimeException("Không thể upload ảnh đại diện: " + e.getMessage());
         }
     }
 
     /**
      * Cập nhật ảnh đại diện cho user
-     * Sẽ xóa ảnh cũ (nếu có) và upload ảnh mới
-     * 
-     * @param username Username của user
+     * Sẽ upload ảnh mới và cập nhật URL
+     * * @param username Username của user
      * @param avatar File ảnh mới
      * @return UserDTO đã được cập nhật
      */
@@ -242,21 +246,21 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
         
         try {
-            // Xóa ảnh cũ nếu có
-            if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
-                fileStorageService.deleteImage(user.getAvatarUrl());
-                log.info("Deleted old avatar: {}", user.getAvatarUrl());
-            }
+            // Lưu ý: Tạm thời không xóa ảnh cũ trên Cloudinary để tránh lỗi public_id
             
-            // Upload ảnh mới
-            String avatarUrl = fileStorageService.saveImage(avatar, "users");
+            // Upload ảnh mới lên Cloudinary
+            Map uploadResult = cloudinary.uploader().upload(avatar.getBytes(), 
+                    ObjectUtils.asMap("folder", "users"));
+            
+            String avatarUrl = (String) uploadResult.get("secure_url");
+            
             user.setAvatarUrl(avatarUrl);
             User savedUser = userRepository.save(user);
             
             log.info("Avatar updated successfully: {}", avatarUrl);
             return userMapper.toDTO(savedUser);
             
-        } catch (Exception e) {
+        } catch (IOException e) {
             log.error("Error updating avatar: {}", e.getMessage(), e);
             throw new RuntimeException("Không thể cập nhật ảnh đại diện: " + e.getMessage());
         }
@@ -264,8 +268,7 @@ public class UserServiceImpl implements UserService {
 
     /**
      * Xóa ảnh đại diện của user
-     * 
-     * @param username Username của user
+     * * @param username Username của user
      */
     @Override
     public void deleteAvatar(String username) {
@@ -279,14 +282,11 @@ public class UserServiceImpl implements UserService {
         }
         
         try {
-            // Xóa file ảnh
-            fileStorageService.deleteImage(user.getAvatarUrl());
-            
-            // Xóa URL trong database
+            // Tạm thời chỉ xóa URL trong database
             user.setAvatarUrl(null);
             userRepository.save(user);
             
-            log.info("Avatar deleted successfully");
+            log.info("Avatar deleted from database successfully");
             
         } catch (Exception e) {
             log.error("Error deleting avatar: {}", e.getMessage(), e);
