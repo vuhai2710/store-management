@@ -71,16 +71,17 @@ public class SecurityConfig {
 public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
 
-    // Cho phép domain thực tế của bạn
     configuration.setAllowedOriginPatterns(List.of(
             "https://store-admin-xi.vercel.app",
             "https://store-client-xi.vercel.app",
             "http://localhost:*",
-            "https://*.vercel.app"
+            "https://*.vercel.app",
+            "*"
     ));
 
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("*"));
+    configuration.setExposedHeaders(List.of("*"));
     configuration.setAllowCredentials(true);
     configuration.setMaxAge(3600L);
 
@@ -88,6 +89,7 @@ public CorsConfigurationSource corsConfigurationSource() {
     source.registerCorsConfiguration("/**", configuration);
     return source;
 }
+
 
 
     /**
