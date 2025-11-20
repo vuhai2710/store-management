@@ -6,7 +6,7 @@ import com.storemanagement.model.Product;
 import com.storemanagement.model.ProductImage;
 import com.storemanagement.repository.ProductImageRepository;
 import com.storemanagement.repository.ProductRepository;
-import com.storemanagement.service.FileStorageService;
+import com.storemanagement.service.ImageUploadService;
 import com.storemanagement.service.ProductImageService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -14,259 +14,158 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils; // Có thể cần thêm cái này
-import java.util.Map;
-import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Service implementation cho ProductImage
- * 
- * Business Rules:
- * - Tối đa 5 ảnh mỗi sản phẩm
- * - Ảnh đầu tiên được upload là ảnh chính (isPrimary = true)
- * - Khi xóa ảnh chính, ảnh có display_order nhỏ nhất tiếp theo sẽ trở thành ảnh chính
- * - Khi xóa ảnh, file vật lý cũng bị xóa
- */
 @Service
 @RequiredArgsConstructor
 @Transactional
 @Slf4j
 public class ProductImageServiceImpl implements ProductImageService {
-    
+
     private final ProductImageRepository productImageRepository;
     private final ProductRepository productRepository;
-    private final FileStorageService fileStorageService;
+    private final ImageUploadService imageUploadService;
     private final ProductImageMapper productImageMapper;
-    
+
     private static final int MAX_IMAGES_PER_PRODUCT = 5;
-    
+
     @Override
     public List<ProductImageDTO> uploadProductImages(Integer productId, List<MultipartFile> images) {
-        log.info("Uploading {} images for product ID: {}", images.size(), productId);
-        
-        // Validate product tồn tại
+
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + productId));
-        
-        // Kiểm tra số lượng ảnh hiện tại
-        long currentImageCount = productImageRepository.countByProduct_IdProduct(productId);
-        if (currentImageCount + images.size() > MAX_IMAGES_PER_PRODUCT) {
-            throw new RuntimeException("Không thể upload. Sản phẩm chỉ được có tối đa " + MAX_IMAGES_PER_PRODUCT + " ảnh");
+                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại"));
+
+        long currentCount = productImageRepository.countByProduct_IdProduct(productId);
+        if (currentCount + images.size() > MAX_IMAGES_PER_PRODUCT) {
+            throw new RuntimeException("Tối đa " + MAX_IMAGES_PER_PRODUCT + " ảnh");
         }
-        
-        List<ProductImage> uploadedImages = new ArrayList<>();
-        boolean isFirstImage = currentImageCount == 0;
-        
+
+        List<ProductImage> savedImages = new ArrayList<>();
+        boolean isFirstImage = currentCount == 0;
+
         for (int i = 0; i < images.size(); i++) {
-            MultipartFile image = images.get(i);
-            
-            try {
-                // Upload ảnh và lấy URL
-                String imageUrl = fileStorageService.saveImage(image, "products");
-                
-                // Tạo ProductImage entity
-                ProductImage productImage = ProductImage.builder()
-                        .product(product)
-                        .imageUrl(imageUrl)
-                        .isPrimary(isFirstImage && i == 0) // Ảnh đầu tiên là ảnh chính
-                        .displayOrder((int) currentImageCount + i)
-                        .build();
-                
-                ProductImage saved = productImageRepository.save(productImage);
-                uploadedImages.add(saved);
-                
-                // Cập nhật imageUrl trong Product entity nếu là ảnh chính
-                if (productImage.getIsPrimary()) {
-                    product.setImageUrl(imageUrl);
-                    productRepository.save(product);
-                }
-                
-                log.info("Image uploaded successfully: {} (isPrimary: {})", imageUrl, productImage.getIsPrimary());
-                
-            } catch (Exception e) {
-                log.error("Error uploading image {}: {}", i, e.getMessage());
-                // Rollback các ảnh đã upload
-                for (ProductImage uploaded : uploadedImages) {
-                    try {
-                        fileStorageService.deleteImage(uploaded.getImageUrl());
-                    } catch (Exception ex) {
-                        log.error("Error deleting rolled back image: {}", ex.getMessage());
-                    }
-                }
-                throw new RuntimeException("Không thể upload ảnh: " + e.getMessage());
-            }
-        }
-        
-        return productImageMapper.toDTOList(uploadedImages);
-    }
-    
-    @Override
-    public ProductImageDTO addProductImage(Integer productId, MultipartFile image) {
-        log.info("Adding single image for product ID: {}", productId);
-        
-        // Validate product tồn tại
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + productId));
-        
-        // Kiểm tra số lượng ảnh hiện tại
-        long currentImageCount = productImageRepository.countByProduct_IdProduct(productId);
-        if (currentImageCount >= MAX_IMAGES_PER_PRODUCT) {
-            throw new RuntimeException("Không thể thêm ảnh. Sản phẩm chỉ được có tối đa " + MAX_IMAGES_PER_PRODUCT + " ảnh");
-        }
-        
-        try {
-            // Upload ảnh
-            String imageUrl = fileStorageService.saveImage(image, "products");
-            
-            // Tạo ProductImage entity
-            boolean isFirstImage = currentImageCount == 0;
-            ProductImage productImage = ProductImage.builder()
+            MultipartFile file = images.get(i);
+
+            // Upload Cloudinary
+            String url = imageUploadService.uploadImage(file);
+
+            ProductImage pi = ProductImage.builder()
                     .product(product)
-                    .imageUrl(imageUrl)
-                    .isPrimary(isFirstImage)
-                    .displayOrder((int) currentImageCount)
+                    .imageUrl(url)
+                    .isPrimary(isFirstImage && i == 0)
+                    .displayOrder((int) (currentCount + i))
                     .build();
-            
-            ProductImage saved = productImageRepository.save(productImage);
-            
-            // Cập nhật imageUrl trong Product entity nếu là ảnh chính
-            if (productImage.getIsPrimary()) {
-                product.setImageUrl(imageUrl);
+
+            pi = productImageRepository.save(pi);
+            savedImages.add(pi);
+
+            // Nếu là ảnh chính → cập nhật vào bảng products
+            if (pi.getIsPrimary()) {
+                product.setImageUrl(url);
                 productRepository.save(product);
             }
-            
-            log.info("Image added successfully: {} (isPrimary: {})", imageUrl, productImage.getIsPrimary());
-            return productImageMapper.toDTO(saved);
-            
-        } catch (Exception e) {
-            log.error("Error adding image: {}", e.getMessage());
-            throw new RuntimeException("Không thể thêm ảnh: " + e.getMessage());
         }
+
+        return productImageMapper.toDTOList(savedImages);
     }
-    
+
     @Override
-    public void deleteProductImage(Integer imageId) {
-        log.info("Deleting product image ID: {}", imageId);
-        
-        ProductImage productImage = productImageRepository.findById(imageId)
-                .orElseThrow(() -> new EntityNotFoundException("Ảnh không tồn tại với ID: " + imageId));
-        
-        Integer productId = productImage.getProduct().getIdProduct();
-        boolean wasPrimary = productImage.getIsPrimary();
-        String imageUrl = productImage.getImageUrl();
-        
-        // Xóa entity khỏi database
-        productImageRepository.delete(productImage);
-        
-        // Xóa file vật lý
-        try {
-            fileStorageService.deleteImage(imageUrl);
-            log.info("Physical image file deleted: {}", imageUrl);
-        } catch (Exception e) {
-            log.error("Error deleting physical image file: {}", e.getMessage());
-            // Không throw exception vì entity đã bị xóa
+    public ProductImageDTO addProductImage(Integer productId, MultipartFile image) {
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại"));
+
+        long count = productImageRepository.countByProduct_IdProduct(productId);
+        if (count >= MAX_IMAGES_PER_PRODUCT) {
+            throw new RuntimeException("Tối đa " + MAX_IMAGES_PER_PRODUCT + " ảnh");
         }
-        
-        // Nếu ảnh bị xóa là ảnh chính, promote ảnh tiếp theo
-        if (wasPrimary) {
-            productImageRepository.findFirstByProductId(productId)
-                    .ifPresent(newPrimaryImage -> {
-                        newPrimaryImage.setIsPrimary(true);
-                        productImageRepository.save(newPrimaryImage);
-                        
-                        // Cập nhật imageUrl trong Product entity
-                        Product product = productRepository.findById(productId).orElse(null);
-                        if (product != null) {
-                            product.setImageUrl(newPrimaryImage.getImageUrl());
-                            productRepository.save(product);
-                        }
-                        
-                        log.info("Promoted image ID {} to primary", newPrimaryImage.getIdProductImage());
-                    });
-        }
-        
-        log.info("Product image deleted successfully");
-    }
-    
-    @Override
-    public ProductImageDTO setImageAsPrimary(Integer imageId) {
-        log.info("Setting image ID {} as primary", imageId);
-        
-        ProductImage productImage = productImageRepository.findById(imageId)
-                .orElseThrow(() -> new EntityNotFoundException("Ảnh không tồn tại với ID: " + imageId));
-        
-        Integer productId = productImage.getProduct().getIdProduct();
-        
-        // Bỏ isPrimary của ảnh chính hiện tại
-        productImageRepository.findByProduct_IdProductAndIsPrimaryTrue(productId)
-                .ifPresent(currentPrimary -> {
-                    currentPrimary.setIsPrimary(false);
-                    productImageRepository.save(currentPrimary);
-                    log.info("Removed primary flag from image ID {}", currentPrimary.getIdProductImage());
-                });
-        
-        // Đặt ảnh mới làm ảnh chính
-        productImage.setIsPrimary(true);
-        ProductImage saved = productImageRepository.save(productImage);
-        
-        // Cập nhật imageUrl trong Product entity
-        Product product = productRepository.findById(productId).orElse(null);
-        if (product != null) {
-            product.setImageUrl(productImage.getImageUrl());
+
+        String url = imageUploadService.uploadImage(image);
+
+        boolean isFirst = count == 0;
+
+        ProductImage pi = ProductImage.builder()
+                .product(product)
+                .imageUrl(url)
+                .isPrimary(isFirst)
+                .displayOrder((int) count)
+                .build();
+
+        pi = productImageRepository.save(pi);
+
+        if (pi.getIsPrimary()) {
+            product.setImageUrl(url);
             productRepository.save(product);
         }
-        
-        log.info("Image set as primary successfully");
-        return productImageMapper.toDTO(saved);
+
+        return productImageMapper.toDTO(pi);
     }
-    
+
     @Override
-    @Transactional(readOnly = true)
-    public List<ProductImageDTO> getProductImages(Integer productId) {
-        log.info("Getting all images for product ID: {}", productId);
-        
-        // Validate product tồn tại
-        if (!productRepository.existsById(productId)) {
-            throw new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + productId);
+    public void deleteProductImage(Integer imageId) {
+
+        ProductImage productImage = productImageRepository.findById(imageId)
+                .orElseThrow(() -> new EntityNotFoundException("Ảnh không tồn tại"));
+
+        Integer productId = productImage.getProduct().getIdProduct();
+        boolean wasPrimary = productImage.getIsPrimary();
+
+        productImageRepository.delete(productImage);
+
+        // Nếu xoá ảnh chính → chuyển ảnh tiếp theo thành primary
+        if (wasPrimary) {
+            productImageRepository.findFirstByProductId(productId)
+                    .ifPresent(newPrimary -> {
+                        newPrimary.setIsPrimary(true);
+                        productImageRepository.save(newPrimary);
+
+                        Product product = productRepository.findById(productId).orElse(null);
+                        if (product != null) {
+                            product.setImageUrl(newPrimary.getImageUrl());
+                            productRepository.save(product);
+                        }
+                    });
         }
-        
-        List<ProductImage> images = productImageRepository.findByProduct_IdProductOrderByDisplayOrderAsc(productId);
+    }
+
+    @Override
+    public ProductImageDTO setImageAsPrimary(Integer imageId) {
+
+        ProductImage newPrimary = productImageRepository.findById(imageId)
+                .orElseThrow(() -> new EntityNotFoundException("Ảnh không tồn tại"));
+
+        Integer productId = newPrimary.getProduct().getIdProduct();
+
+        productImageRepository.findByProduct_IdProductAndIsPrimaryTrue(productId)
+                .ifPresent(old -> {
+                    old.setIsPrimary(false);
+                    productImageRepository.save(old);
+                });
+
+        newPrimary.setIsPrimary(true);
+        productImageRepository.save(newPrimary);
+
+        Product product = productRepository.findById(productId).orElse(null);
+        if (product != null) {
+            product.setImageUrl(newPrimary.getImageUrl());
+            productRepository.save(product);
+        }
+
+        return productImageMapper.toDTO(newPrimary);
+    }
+
+    @Override
+    public List<ProductImageDTO> getProductImages(Integer productId) {
+
+        if (!productRepository.existsById(productId)) {
+            throw new EntityNotFoundException("Sản phẩm không tồn tại");
+        }
+
+        List<ProductImage> images = productImageRepository
+                .findByProduct_IdProductOrderByDisplayOrderAsc(productId);
+
         return productImageMapper.toDTOList(images);
     }
-
-    // Khai báo dependency
-@Autowired
-private Cloudinary cloudinary;
-
-// Trong hàm upload
-public String uploadImage(MultipartFile file) {
-    try {
-        // Code cũ: Lưu vào ổ cứng -> XÓA ĐI
-        
-        // Code mới: Upload lên Cloudinary
-        Map data = cloudinary.uploader().upload(file.getBytes(), Map.of());
-        
-        // Lấy đường dẫn ảnh online về
-        String urlAnhOnline = (String) data.get("secure_url");
-        
-        return urlAnhOnline; // Lưu cái link này vào Database
-    } catch (IOException e) {
-        throw new RuntimeException("Lỗi upload ảnh");
-    }
 }
-}
-
-
-
-
-
-
-
-
-
-
