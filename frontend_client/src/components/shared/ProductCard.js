@@ -149,17 +149,6 @@ const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
                   </span>
                   <span style={styles.cardPrice}>{formatPrice(finalPrice)}</span>
                 </div>
-                {autoDiscountInfo?.ruleName && (
-                  <span
-                    style={{
-                      fontSize: '0.75rem',
-                      color: '#28a745',
-                      marginTop: '0.25rem',
-                    }}
-                  >
-                    {autoDiscountInfo.ruleName}
-                  </span>
-                )}
               </div>
             ) : (
               <p style={styles.cardPrice}>{formatPrice(productPrice)}</p>

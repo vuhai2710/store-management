@@ -1027,10 +1027,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 
             {autoDiscount > 0 && autoDiscountInfo && (
               <p style={{ color: '#28a745', fontWeight: '600', marginTop: '-0.75rem', marginBottom: '1rem', fontSize: '0.95rem' }}>
-                Đang áp dụng giảm giá tự động
-                {autoDiscountInfo.ruleName ? ` (${autoDiscountInfo.ruleName})` : ''}:
-                {' '}-
-                {formatPrice(autoDiscount)}
+                Đang áp dụng giảm giá tự động: -{formatPrice(autoDiscount)}
               </p>
             )}
 

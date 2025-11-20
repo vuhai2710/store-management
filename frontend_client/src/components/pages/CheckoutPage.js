@@ -821,7 +821,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                 )}
                 {automaticDiscount > 0 && automaticDiscountInfo && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: '#28a745' }}>
-                    <span>Giảm giá tự động {automaticDiscountInfo.ruleName ? `(${automaticDiscountInfo.ruleName})` : ''}</span>
+                    <span>Giảm giá tự động</span>
                     <span>-{formatPrice(automaticDiscount)}</span>
                   </div>
                 )}
