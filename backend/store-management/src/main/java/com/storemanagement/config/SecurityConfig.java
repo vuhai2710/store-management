@@ -23,7 +23,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -35,16 +34,19 @@ public class SecurityConfig {
     @Value("${jwt.signerKey}")
     private String SIGNER_KEY;
 
+    // ADMIN ONLY
     private static final String[] ADMIN_URLS = {
             "/api/v1/admin/**"
     };
 
+    // ADMIN + EMPLOYEE
     private static final String[] EMPLOYEE_URLS = {
             "/api/v1/orders/**",
             "/api/v1/inventory/**",
             "/api/v1/suppliers/**"
     };
 
+    // CUSTOMER ONLY
     private static final String[] CUSTOMER_URLS = {
             "/api/v1/cart/**",
             "/api/v1/orders/checkout",
@@ -62,55 +64,65 @@ public class SecurityConfig {
             "/api/v1/employees/**"
     };
 
+
+    // =====================================================================
+    // CORS CONFIG — đã fix đầy đủ cho Render + Vercel
+    // =====================================================================
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+
+        config.setAllowedOriginPatterns(List.of(
+                "https://store-admin-xi.vercel.app",
+                "https://store-client-xi.vercel.app",
+                "https://*.vercel.app",
+                "http://localhost:*",
+                "*"
+        ));
+
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
+
+    // =====================================================================
+    // SECURITY FILTER CHAIN
+    // =====================================================================
     @Bean
-public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration configuration = new CorsConfiguration();
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            JwtAuthenticationEntryPoint jwtEntryPoint,
+            CorsConfigurationSource corsConfigurationSource
+    ) throws Exception {
 
-    configuration.setAllowedOriginPatterns(List.of(
-            "https://store-admin-xi.vercel.app",
-            "https://store-client-xi.vercel.app",
-            "http://localhost:*",
-            "https://*.vercel.app",
-            "*"
-    ));
-
-    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-    configuration.setAllowedHeaders(List.of("*"));
-    configuration.setExposedHeaders(List.of("*"));
-    configuration.setAllowCredentials(true);
-    configuration.setMaxAge(3600L);
-
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration);
-    return source;
-}
-
-
-
-    /**
-     * SecurityFilterChain chính cho các API endpoints
-     * Có OAuth2 Resource Server với JWT authentication
-     */
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   JwtAuthenticationEntryPoint jwtEntryPoint,
-                                                   CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .authorizeHttpRequests(authz -> authz
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers(
+                                "/api/v1/auth/**",
+                                "/uploads/**"
+                        )
+                )
+                .authorizeHttpRequests(auth -> auth
+                        // OPTIONS must be always allowed
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Public endpoints
+
+                        // PUBLIC endpoints
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/payos/**").permitAll()
+                        .requestMatchers("/api/v1/payments/payos/webhook").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
-                        // WebSocket endpoints (authentication handled at WebSocket layer)
                         .requestMatchers("/ws/**").permitAll()
-                        // Protected endpoints
+
+                        // PROTECTED endpoints
                         .requestMatchers(CUSTOMER_URLS).hasRole("CUSTOMER")
                         .requestMatchers(EMPLOYEE_SELF_SERVICE_URLS).hasRole("EMPLOYEE")
                         .requestMatchers(ADMIN_EMPLOYEE_MANAGEMENT_URLS).hasRole("ADMIN")
@@ -121,6 +133,8 @@ public CorsConfigurationSource corsConfigurationSource() {
                         .requestMatchers("/api/v1/orders/create-for-customer").hasAnyRole("ADMIN", "EMPLOYEE")
                         .requestMatchers(ADMIN_URLS).hasRole("ADMIN")
                         .requestMatchers(EMPLOYEE_URLS).hasAnyRole("ADMIN", "EMPLOYEE")
+
+                        // Anything else requires authentication
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -130,36 +144,41 @@ public CorsConfigurationSource corsConfigurationSource() {
                         )
                         .authenticationEntryPoint(jwtEntryPoint)
                 )
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers(
-                                "/api/v1/auth/**",
-                                "/uploads/**"
-                        )
-                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();
     }
 
+
+    // =====================================================================
+    // JWT Config
+    // =====================================================================
+
     @Bean
     public JwtAuthenticationConverter jwtConverter() {
-        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        authoritiesConverter.setAuthorityPrefix("ROLE_");
-        authoritiesConverter.setAuthoritiesClaimName("role");
+        JwtGrantedAuthoritiesConverter conv = new JwtGrantedAuthoritiesConverter();
+        conv.setAuthorityPrefix("ROLE_");
+        conv.setAuthoritiesClaimName("role");
 
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
+        converter.setJwtGrantedAuthoritiesConverter(conv);
         return converter;
     }
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        SecretKeySpec secretKey = new SecretKeySpec(
-                SIGNER_KEY.getBytes(StandardCharsets.UTF_8), "HmacSHA256"
+        SecretKeySpec key = new SecretKeySpec(
+                SIGNER_KEY.getBytes(StandardCharsets.UTF_8),
+                "HmacSHA256"
         );
-        return NimbusJwtDecoder.withSecretKey(secretKey)
+        return NimbusJwtDecoder.withSecretKey(key)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
     }
 
     @Bean
