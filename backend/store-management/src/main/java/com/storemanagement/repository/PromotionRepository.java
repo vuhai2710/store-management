@@ -23,6 +23,3 @@ public interface PromotionRepository extends JpaRepository<Promotion, Integer> {
 
     Optional<Promotion> findByCodeAndIsActiveTrue(String code);
 }
-
-
-

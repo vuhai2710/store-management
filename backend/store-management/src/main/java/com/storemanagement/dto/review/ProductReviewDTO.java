@@ -25,6 +25,3 @@ public class ProductReviewDTO extends BaseDTO {
     private String adminReply;
     private Integer editCount;
 }
-
-
-

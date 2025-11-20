@@ -19,6 +19,3 @@ public interface PromotionUsageRepository extends JpaRepository<PromotionUsage, 
     @Query("SELECT COUNT(pu) FROM PromotionUsage pu WHERE pu.promotion.idPromotion = :promotionId")
     Long countByPromotionId(@Param("promotionId") Integer promotionId);
 }
-
-
-

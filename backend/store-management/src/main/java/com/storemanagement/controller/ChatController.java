@@ -139,5 +139,3 @@ public class ChatController {
         return ResponseEntity.ok(ApiResponse.success("Đã đánh dấu cuộc hội thoại đã xem", null));
     }
 }
-
-

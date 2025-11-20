@@ -9,12 +9,6 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 
 import java.util.Map;
 
-/**
- * WebSocket Handshake Interceptor
- * <p>
- * Extract JWT token từ query parameter trong quá trình handshake
- * và lưu vào session attributes để sử dụng trong WebSocketAuthInterceptor
- */
 @Slf4j
 public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
 
@@ -47,9 +41,6 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
     }
 
     @Override
-    public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                               WebSocketHandler wsHandler, Exception exception) {
-        // No-op
-    }
+    public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Exception exception) {}
 }
 

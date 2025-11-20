@@ -67,24 +67,19 @@ public class ShipmentServiceImpl implements ShipmentService {
         }
         
         try {
-            // Gọi GHN API để lấy thông tin mới nhất
             var orderInfo = ghnService.getOrderInfo(shipment.getGhnOrderCode());
-            
-            // Cập nhật shipment với thông tin từ GHN
+
             shipment.setGhnStatus(orderInfo.getStatus());
             shipment.setGhnUpdatedAt(LocalDateTime.now());
             
             if (orderInfo.getNote() != null && !orderInfo.getNote().isEmpty()) {
                 shipment.setGhnNote(orderInfo.getNote());
             }
-            
-            // Sync shippingStatus
+
             syncShippingStatus(shipment, orderInfo.getStatus());
-            
-            // Lưu shipment
+
             shipmentRepository.save(shipment);
-            
-            // Sync Order.status nếu cần
+
             if (shipment.getOrder() != null) {
                 syncOrderStatus(shipment.getOrder(), orderInfo.getStatus());
             }
@@ -118,7 +113,6 @@ public class ShipmentServiceImpl implements ShipmentService {
         }
         
         try {
-            // Gọi GHN API để lấy tracking info
             GHNTrackingDTO tracking = ghnService.trackOrder(shipment.getGhnOrderCode());
             
             log.info("Successfully got tracking info for shipment: shipmentId={}", shipmentId);

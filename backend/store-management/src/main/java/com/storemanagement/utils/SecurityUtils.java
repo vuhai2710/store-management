@@ -9,10 +9,6 @@ import java.util.Optional;
 
 public class SecurityUtils {
 
-    /**
-     * Lấy employeeId từ JWT token
-     * Trả về Optional.empty() nếu không phải employee hoặc không có trong token
-     */
     public static Optional<Integer> getCurrentEmployeeId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         
@@ -41,9 +37,6 @@ public class SecurityUtils {
         return Optional.empty();
     }
 
-    /**
-     * Lấy userId từ JWT token
-     */
     public static Optional<Integer> getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         
@@ -70,9 +63,6 @@ public class SecurityUtils {
         return Optional.empty();
     }
 
-    /**
-     * Lấy username từ authentication
-     */
     public static Optional<String> getCurrentUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
@@ -81,9 +71,6 @@ public class SecurityUtils {
         return Optional.ofNullable(authentication.getName());
     }
 
-    /**
-     * Lấy role từ JWT token
-     */
     public static Optional<String> getCurrentRole() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         

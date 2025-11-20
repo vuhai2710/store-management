@@ -27,18 +27,3 @@ public class BuyNowRequestDto {
     
     private String notes; // Optional
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

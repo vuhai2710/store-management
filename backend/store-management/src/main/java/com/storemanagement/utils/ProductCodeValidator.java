@@ -60,10 +60,7 @@ public class ProductCodeValidator {
                 throw new RuntimeException("Loại mã không hợp lệ");
         }
     }
-    
-    /**
-     * Kiểm tra xem productCode có hợp lệ không (không throw exception)
-     */
+
     public static boolean isValid(String productCode, CodeType codeType) {
         try {
             validate(productCode, codeType);

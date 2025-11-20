@@ -19,6 +19,3 @@ public class CalculateDiscountResponseDTO {
     private String ruleName;
     private Integer ruleId;
 }
-
-
-

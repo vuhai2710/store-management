@@ -151,15 +151,3 @@ public class NotificationServiceImpl implements NotificationService {
         log.info("Deleted notification {} for user: {}", notificationId, username);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-

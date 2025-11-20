@@ -12,4 +12,3 @@ public interface CartRepository extends JpaRepository<Cart, Integer> {
     @EntityGraph(attributePaths = {"cartItems", "cartItems.product"})
     Optional<Cart> findByCustomerIdCustomer(Integer customerId);
 }
-

@@ -111,4 +111,3 @@ public class AdminPromotionController {
         return ResponseEntity.ok(ApiResponse.success("Xóa quy tắc giảm giá thành công", null));
     }
 }
-

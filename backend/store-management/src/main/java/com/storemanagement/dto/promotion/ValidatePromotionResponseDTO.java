@@ -19,6 +19,3 @@ public class ValidatePromotionResponseDTO {
     private Promotion.DiscountType discountType;
     private String code;
 }
-
-
-

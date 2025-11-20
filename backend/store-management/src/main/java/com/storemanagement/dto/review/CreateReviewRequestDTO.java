@@ -23,6 +23,3 @@ public class CreateReviewRequestDTO {
     @NotBlank(message = "Comment không được để trống")
     private String comment;
 }
-
-
-

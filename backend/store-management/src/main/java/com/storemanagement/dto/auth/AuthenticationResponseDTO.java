@@ -14,4 +14,3 @@ public class AuthenticationResponseDTO {
     private String token;
     private boolean authenticated;
 }
-

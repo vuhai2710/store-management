@@ -15,7 +15,3 @@ public interface CartService {
     
     void clearCart(Integer customerId);
 }
-
-
-
-

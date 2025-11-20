@@ -28,6 +28,3 @@ public class PromotionRuleDTO extends BaseDTO {
     private Boolean isActive;
     private Integer priority;
 }
-
-
-

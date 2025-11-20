@@ -40,7 +40,6 @@ public class PromotionServiceImpl implements PromotionService {
     public ValidatePromotionResponseDTO validatePromotion(ValidatePromotionRequestDTO request) {
         log.info("Validating promotion code: {}", request.getCode());
 
-        // Find promotion by code
         Promotion promotion = promotionRepository.findByCodeAndIsActiveTrue(request.getCode())
                 .orElse(null);
 
@@ -53,7 +52,6 @@ public class PromotionServiceImpl implements PromotionService {
 
         LocalDateTime now = LocalDateTime.now();
 
-        // Check if promotion is within valid date range
         if (now.isBefore(promotion.getStartDate()) || now.isAfter(promotion.getEndDate())) {
             return ValidatePromotionResponseDTO.builder()
                     .valid(false)
@@ -61,7 +59,6 @@ public class PromotionServiceImpl implements PromotionService {
                     .build();
         }
 
-        // Check usage limit
         if (promotion.getUsageLimit() != null && promotion.getUsageCount() >= promotion.getUsageLimit()) {
             return ValidatePromotionResponseDTO.builder()
                     .valid(false)
@@ -69,7 +66,6 @@ public class PromotionServiceImpl implements PromotionService {
                     .build();
         }
 
-        // Check min order amount
         if (request.getTotalAmount().compareTo(promotion.getMinOrderAmount()) < 0) {
             return ValidatePromotionResponseDTO.builder()
                     .valid(false)
@@ -77,7 +73,6 @@ public class PromotionServiceImpl implements PromotionService {
                     .build();
         }
 
-        // Calculate discount
         BigDecimal discount = calculateDiscountFromPromotion(promotion, request.getTotalAmount());
 
         return ValidatePromotionResponseDTO.builder()
@@ -96,7 +91,6 @@ public class PromotionServiceImpl implements PromotionService {
 
         LocalDateTime now = LocalDateTime.now();
 
-        // Get applicable rules
         List<PromotionRule> rules = promotionRuleRepository.findApplicableRules(
                 now,
                 request.getTotalAmount(),
@@ -110,10 +104,8 @@ public class PromotionServiceImpl implements PromotionService {
                     .build();
         }
 
-        // Get first rule (highest priority)
         PromotionRule rule = rules.get(0);
 
-        // Calculate discount
         BigDecimal discount = calculateDiscountFromRule(rule, request.getTotalAmount());
 
         return CalculateDiscountResponseDTO.builder()
@@ -131,7 +123,6 @@ public class PromotionServiceImpl implements PromotionService {
         log.info("Calculating discount for order: totalAmount={}, promotionCode={}, customerType={}",
                 totalAmount, promotionCode, customerType);
 
-        // If promotion code provided, validate and apply coupon
         if (promotionCode != null && !promotionCode.trim().isEmpty()) {
             ValidatePromotionRequestDTO validateRequest = ValidatePromotionRequestDTO.builder()
                     .code(promotionCode.trim())
@@ -146,7 +137,6 @@ public class PromotionServiceImpl implements PromotionService {
             }
         }
 
-        // If no coupon code or coupon invalid, calculate automatic discount
         CalculateDiscountRequestDTO calculateRequest = CalculateDiscountRequestDTO.builder()
                 .totalAmount(totalAmount)
                 .customerType(customerType)
@@ -159,13 +149,9 @@ public class PromotionServiceImpl implements PromotionService {
             return calculateResponse.getDiscount();
         }
 
-        // No discount applicable
         return BigDecimal.ZERO;
     }
 
-    /**
-     * Calculate discount amount from promotion
-     */
     private BigDecimal calculateDiscountFromPromotion(Promotion promotion, BigDecimal totalAmount) {
         if (promotion.getDiscountType() == Promotion.DiscountType.PERCENTAGE) {
             // Percentage discount
@@ -180,19 +166,12 @@ public class PromotionServiceImpl implements PromotionService {
         }
     }
 
-    /**
-     * Calculate discount amount from promotion rule
-     */
     private BigDecimal calculateDiscountFromRule(PromotionRule rule, BigDecimal totalAmount) {
         if (rule.getDiscountType() == PromotionRule.DiscountType.PERCENTAGE) {
-            // Percentage discount
             BigDecimal discount = totalAmount.multiply(rule.getDiscountValue())
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-            // Discount cannot exceed total amount
             return discount.min(totalAmount);
         } else {
-            // Fixed amount discount
-            // Discount cannot exceed total amount
             return rule.getDiscountValue().min(totalAmount);
         }
     }
@@ -201,7 +180,6 @@ public class PromotionServiceImpl implements PromotionService {
     public PromotionDTO createPromotion(PromotionDTO promotionDTO) {
         log.info("Creating promotion: {}", promotionDTO.getCode());
 
-        // Check if code already exists
         if (promotionRepository.findByCode(promotionDTO.getCode()).isPresent()) {
             throw new RuntimeException("Mã giảm giá đã tồn tại");
         }
@@ -240,7 +218,6 @@ public class PromotionServiceImpl implements PromotionService {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy mã giảm giá"));
 
-        // Update fields
         promotion.setCode(promotionDTO.getCode());
         promotion.setDiscountType(promotionDTO.getDiscountType());
         promotion.setDiscountValue(promotionDTO.getDiscountValue());
@@ -305,7 +282,6 @@ public class PromotionServiceImpl implements PromotionService {
         PromotionRule rule = promotionRuleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy quy tắc giảm giá"));
 
-        // Update fields
         rule.setRuleName(ruleDTO.getRuleName());
         rule.setDiscountType(ruleDTO.getDiscountType());
         rule.setDiscountValue(ruleDTO.getDiscountValue());
@@ -347,7 +323,6 @@ public class PromotionServiceImpl implements PromotionService {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng"));
 
-        // Create promotion usage record
         PromotionUsage usage = PromotionUsage.builder()
                 .promotion(promotion)
                 .order(order)

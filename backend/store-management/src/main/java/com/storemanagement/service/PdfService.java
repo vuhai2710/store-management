@@ -40,27 +40,18 @@ public class PdfService {
         }
     }
 
-    /**
-     * Tạo PDF cho phiếu nhập hàng
-     */
     public byte[] generateImportOrderPdf(PurchaseOrderDTO purchaseOrderDTO) {
         String htmlContent = generateImportOrderHtml(purchaseOrderDTO);
         String fullHtml = wrapHtmlTemplate("PHIẾU NHẬP HÀNG", htmlContent);
         return generatePdfFromHtml(fullHtml);
     }
 
-    /**
-     * Tạo PDF cho hóa đơn bán hàng
-     */
     public byte[] generateInvoicePdf(OrderDTO orderDTO) {
         String htmlContent = generateInvoiceHtml(orderDTO);
         String fullHtml = wrapHtmlTemplate("HÓA ĐƠN BÁN HÀNG", htmlContent);
         return generatePdfFromHtml(fullHtml);
     }
 
-    /**
-     * Generate HTML content cho phiếu nhập hàng
-     */
     private String generateImportOrderHtml(PurchaseOrderDTO dto) {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         
@@ -187,9 +178,6 @@ public class PdfService {
         return html.toString();
     }
 
-    /**
-     * Generate HTML content cho hóa đơn bán hàng
-     */
     private String generateInvoiceHtml(OrderDTO dto) {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -464,9 +452,6 @@ public class PdfService {
             """.formatted(title, content);
     }
 
-    /**
-     * Format số tiền thành chuỗi tiền tệ Việt Nam
-     */
     private String formatCurrency(BigDecimal amount) {
         if (amount == null) {
             return "0 đ";

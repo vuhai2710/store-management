@@ -19,16 +19,6 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 
-/**
- * WebSocket Authentication Interceptor
- * <p>
- * Xác thực WebSocket connections bằng JWT token
- * Token có thể được gửi qua:
- * 1. Query parameter: ws://localhost:8080/ws?token=JWT_TOKEN
- * 2. STOMP header: Authorization: Bearer JWT_TOKEN
- * <p>
- * Sau khi xác thực thành công, set Authentication vào session để sử dụng trong @MessageMapping
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -114,4 +104,3 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         return null;
     }
 }
-
