@@ -202,7 +202,7 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<OrderDTO>> updateOrderStatus(
             @PathVariable Integer id,
-            @RequestBody @Valid OrderDTO request) {
+            @RequestBody OrderDTO request) {
 
         OrderDTO order = orderService.updateOrderStatus(id, request.getStatus());
         return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái đơn hàng thành công", order));

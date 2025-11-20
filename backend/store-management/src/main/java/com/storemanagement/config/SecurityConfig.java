@@ -35,6 +35,7 @@ public class SecurityConfig {
     @Value("${jwt.signerKey}")
     private String SIGNER_KEY;
 
+    // Role URL groups
     private static final String[] ADMIN_URLS = {
             "/api/v1/admin/**"
     };
@@ -81,25 +82,33 @@ public class SecurityConfig {
         return source;
     }
 
-    /**
-     * SecurityFilterChain chính cho các API endpoints
-     * Có OAuth2 Resource Server với JWT authentication
-     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtAuthenticationEntryPoint jwtEntryPoint,
                                                    CorsConfigurationSource corsConfigurationSource) throws Exception {
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers(
+                                "/api/v1/auth/**",
+                                "/uploads/**",
+                                "/api/v1/payments/payos/webhook",
+                                "/api/v1/payos/register-webhook"
+                        )
+                )
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Public endpoints
+
+                        // --- PUBLIC ENDPOINTS (NO AUTH) ---
+                        .requestMatchers("/api/v1/payos/**").permitAll()
+                        .requestMatchers("/api/v1/payments/payos/webhook").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
-                        // WebSocket endpoints (authentication handled at WebSocket layer)
                         .requestMatchers("/ws/**").permitAll()
-                        // Protected endpoints
+
+                        // --- PROTECTED ENDPOINTS ---
                         .requestMatchers(CUSTOMER_URLS).hasRole("CUSTOMER")
                         .requestMatchers(EMPLOYEE_SELF_SERVICE_URLS).hasRole("EMPLOYEE")
                         .requestMatchers(ADMIN_EMPLOYEE_MANAGEMENT_URLS).hasRole("ADMIN")
@@ -110,6 +119,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/orders/create-for-customer").hasAnyRole("ADMIN", "EMPLOYEE")
                         .requestMatchers(ADMIN_URLS).hasRole("ADMIN")
                         .requestMatchers(EMPLOYEE_URLS).hasAnyRole("ADMIN", "EMPLOYEE")
+
+                        // --- OTHER ENDPOINTS ---
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -118,12 +129,6 @@ public class SecurityConfig {
                                 .jwtAuthenticationConverter(jwtConverter())
                         )
                         .authenticationEntryPoint(jwtEntryPoint)
-                )
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers(
-                                "/api/v1/auth/**",
-                                "/uploads/**"
-                        )
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
@@ -143,9 +148,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        SecretKeySpec secretKey = new SecretKeySpec(
-                SIGNER_KEY.getBytes(StandardCharsets.UTF_8), "HmacSHA256"
-        );
+        SecretKeySpec secretKey = new SecretKeySpec(SIGNER_KEY.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
         return NimbusJwtDecoder.withSecretKey(secretKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();

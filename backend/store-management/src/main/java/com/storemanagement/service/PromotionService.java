@@ -10,7 +10,6 @@ public interface PromotionService {
 
     ValidatePromotionResponseDTO validatePromotion(ValidatePromotionRequestDTO request);
 
-
     CalculateDiscountResponseDTO calculateAutomaticDiscount(CalculateDiscountRequestDTO request, String customerType);
 
     BigDecimal calculateDiscountForOrder(BigDecimal totalAmount, String promotionCode, String customerType);
@@ -37,4 +36,3 @@ public interface PromotionService {
 
     void recordPromotionUsage(Integer promotionId, Integer orderId, Integer customerId);
 }
-

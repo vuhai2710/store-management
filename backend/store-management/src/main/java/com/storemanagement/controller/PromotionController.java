@@ -38,10 +38,10 @@ public class PromotionController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         String customerType = customerService.getCustomerByUsername(username)
-                .getCustomerType() != null ? customerService.getCustomerByUsername(username).getCustomerType().name() : "REGULAR";
+                .getCustomerType() != null ? customerService.getCustomerByUsername(username).getCustomerType().name()
+                        : "REGULAR";
 
         CalculateDiscountResponseDTO response = promotionService.calculateAutomaticDiscount(request, customerType);
         return ResponseEntity.ok(ApiResponse.success("Calculate automatic discount", response));
     }
 }
-

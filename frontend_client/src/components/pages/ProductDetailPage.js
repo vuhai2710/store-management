@@ -7,6 +7,7 @@ import ProductCard from '../shared/ProductCard';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ReviewSection from '../common/ReviewSection';
 import { productsService } from '../../services/productsService';
+import { promotionService } from '../../services/promotionService';
 import { getImageUrl, formatPrice } from '../../utils/formatUtils';
 import { INVENTORY_STATUS, INVENTORY_STATUS_LABELS, INVENTORY_STATUS_COLORS } from '../../constants/inventoryStatus';
 import { useAuth } from '../../hooks/useAuth';
@@ -27,10 +28,10 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
   const [canReview, setCanReview] = useState(false); // Check if user can review this product
   const [buyNowLoading, setBuyNowLoading] = useState(false);
   const addToCartButtonRef = useRef(null);
-  
+
   // User orders for review
   const [userOrders, setUserOrders] = useState([]);
-  
+
   // Reviews state
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
@@ -46,6 +47,10 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
   const [submittingReview, setSubmittingReview] = useState(false);
   const [editingReviewId, setEditingReviewId] = useState(null);
   const [orderDetailsForReview, setOrderDetailsForReview] = useState([]); // Order details that can be reviewed
+
+  // Automatic promotion discount for this product (single-item order approximation)
+  const [autoDiscount, setAutoDiscount] = useState(0);
+  const [autoDiscountInfo, setAutoDiscountInfo] = useState(null);
 
   // Fetch product details
   useEffect(() => {
@@ -86,16 +91,16 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
         if (isAuthenticated) {
           try {
             // Get all completed orders
-            const ordersData = await ordersService.getMyOrders({ 
-              pageNo: 1, 
+            const ordersData = await ordersService.getMyOrders({
+              pageNo: 1,
               pageSize: 100,
-              status: 'COMPLETED' 
+              status: 'COMPLETED'
             });
             const completedOrders = ordersData?.content || [];
-            
+
             // Save user orders for ReviewSection component
             setUserOrders(completedOrders);
-            
+
             // Check if any completed order contains this product
             const currentProductId = productId ? Number(productId) : null;
             const orderDetails = [];
@@ -112,7 +117,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                 }
               });
             });
-            
+
             setOrderDetailsForReview(orderDetails);
             setCanReview(orderDetails.length > 0);
           } catch (orderError) {
@@ -136,12 +141,56 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 
     fetchProduct();
   }, [productId, isAuthenticated]);
-  
+
+  // Calculate automatic discount for this product (approximate: single product order)
+  useEffect(() => {
+    const calculateProductAutoDiscount = async () => {
+      if (!isAuthenticated || !product) {
+        setAutoDiscount(0);
+        setAutoDiscountInfo(null);
+        return;
+      }
+
+      const basePrice = product.price || 0;
+      if (!basePrice || basePrice <= 0) {
+        setAutoDiscount(0);
+        setAutoDiscountInfo(null);
+        return;
+      }
+
+      try {
+        const response = await promotionService.calculateDiscount({
+          totalAmount: basePrice,
+          items: [
+            {
+              productId: product.idProduct || product.id,
+              quantity: 1,
+            },
+          ],
+        });
+
+        if (response && response.applicable && response.discount > 0) {
+          setAutoDiscount(Number(response.discount));
+          setAutoDiscountInfo(response);
+        } else {
+          setAutoDiscount(0);
+          setAutoDiscountInfo(null);
+        }
+      } catch (discountError) {
+        console.error('Error calculating product automatic discount:', discountError);
+        setAutoDiscount(0);
+        setAutoDiscountInfo(null);
+      }
+    };
+
+    calculateProductAutoDiscount();
+  }, [isAuthenticated, product]);
+
   // Fetch reviews when page changes
   useEffect(() => {
     const fetchReviews = async () => {
       if (!productId) return;
-      
+
       try {
         setReviewsLoading(true);
         const reviewsData = await reviewService.getProductReviews(productId, {
@@ -150,7 +199,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
           sortBy: 'createdAt',
           sortDirection: 'DESC',
         });
-        
+
         setReviews(reviewsData?.content || []);
         setReviewsTotalPages(reviewsData?.totalPages || 1);
         setReviewsTotalElements(reviewsData?.totalElements || 0);
@@ -161,10 +210,10 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
         setReviewsLoading(false);
       }
     };
-    
+
     fetchReviews();
   }, [productId, reviewsPage]);
-  
+
   // Set default orderDetailId when orderDetailsForReview changes
   useEffect(() => {
     if (orderDetailsForReview.length > 0) {
@@ -184,13 +233,13 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
   const handleQuantityChange = (delta) => {
     setQty(prev => Math.max(1, prev + delta));
   };
-  
+
   const handleCreateReview = async () => {
     if (!reviewForm.orderDetailId || !reviewForm.comment.trim()) {
       alert('Vui lòng điền đầy đủ thông tin đánh giá');
       return;
     }
-    
+
     try {
       setSubmittingReview(true);
       await reviewService.createReview(productId, {
@@ -198,7 +247,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
         rating: reviewForm.rating,
         comment: reviewForm.comment.trim(),
       });
-      
+
       // Refresh reviews
       const reviewsData = await reviewService.getProductReviews(productId, {
         pageNo: reviewsPage,
@@ -206,11 +255,11 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
         sortBy: 'createdAt',
         sortDirection: 'DESC',
       });
-      
+
       setReviews(reviewsData?.content || []);
       setReviewsTotalPages(reviewsData?.totalPages || 1);
       setReviewsTotalElements(reviewsData?.totalElements || 0);
-      
+
       // Reset form
       setShowReviewForm(false);
       setReviewForm({
@@ -218,7 +267,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
         rating: 5,
         comment: '',
       });
-      
+
       alert('Đánh giá đã được gửi thành công!');
     } catch (error) {
       console.error('Error creating review:', error);
@@ -227,20 +276,20 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
       setSubmittingReview(false);
     }
   };
-  
+
   const handleUpdateReview = async (reviewId) => {
     if (!reviewForm.comment.trim()) {
       alert('Vui lòng điền đầy đủ thông tin đánh giá');
       return;
     }
-    
+
     try {
       setSubmittingReview(true);
       await reviewService.updateReview(reviewId, {
         rating: reviewForm.rating,
         comment: reviewForm.comment.trim(),
       });
-      
+
       // Refresh reviews
       const reviewsData = await reviewService.getProductReviews(productId, {
         pageNo: reviewsPage,
@@ -248,11 +297,11 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
         sortBy: 'createdAt',
         sortDirection: 'DESC',
       });
-      
+
       setReviews(reviewsData?.content || []);
       setReviewsTotalPages(reviewsData?.totalPages || 1);
       setReviewsTotalElements(reviewsData?.totalElements || 0);
-      
+
       // Reset form
       setEditingReviewId(null);
       setShowReviewForm(false);
@@ -261,7 +310,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
         rating: 5,
         comment: '',
       });
-      
+
       alert('Đánh giá đã được cập nhật thành công!');
     } catch (error) {
       console.error('Error updating review:', error);
@@ -270,15 +319,15 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
       setSubmittingReview(false);
     }
   };
-  
+
   const handleDeleteReview = async (reviewId) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) {
       return;
     }
-    
+
     try {
       await reviewService.deleteReview(reviewId);
-      
+
       // Refresh reviews
       const reviewsData = await reviewService.getProductReviews(productId, {
         pageNo: reviewsPage,
@@ -286,18 +335,18 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
         sortBy: 'createdAt',
         sortDirection: 'DESC',
       });
-      
+
       setReviews(reviewsData?.content || []);
       setReviewsTotalPages(reviewsData?.totalPages || 1);
       setReviewsTotalElements(reviewsData?.totalElements || 0);
-      
+
       alert('Đánh giá đã được xóa thành công!');
     } catch (error) {
       console.error('Error deleting review:', error);
       alert(error?.message || 'Không thể xóa đánh giá. Vui lòng thử lại.');
     }
   };
-  
+
   const handleAddToCartClick = async () => {
     if (!isAuthenticated) {
       setCurrentPage('login');
@@ -310,8 +359,8 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
     }
 
     try {
-      const productWithQty = { 
-        ...product, 
+      const productWithQty = {
+        ...product,
         qty,
         quantity: qty,
         idProduct: product.idProduct || product.id,
@@ -324,7 +373,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
       console.error('Error adding to cart:', error);
     }
   };
-  
+
   const handleBuyNow = async () => {
     if (!isAuthenticated) {
       setCurrentPage('login');
@@ -338,7 +387,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 
     try {
       setBuyNowLoading(true);
-      
+
       // Get shipping addresses to find default address
       let defaultAddressId = null;
       try {
@@ -354,8 +403,8 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
       // If no shipping address, redirect to checkout page (user needs to add address first)
       if (!defaultAddressId) {
         // Add to cart and redirect to checkout
-        const productWithQty = { 
-          ...product, 
+        const productWithQty = {
+          ...product,
           qty,
           quantity: qty,
           idProduct: product.idProduct || product.id,
@@ -414,6 +463,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
   const mainImage = getMainImage();
   const productName = product?.productName || product?.name || '';
   const productPrice = product?.price || 0;
+  const finalProductPrice = Math.max(0, productPrice - (autoDiscount || 0));
   const productStatus = product?.status || product?.inventoryStatus || INVENTORY_STATUS.IN_STOCK;
   const isOutOfStock = productStatus === INVENTORY_STATUS.OUT_OF_STOCK;
   const stockQuantity = product?.stockQuantity || 0;
@@ -455,7 +505,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
           <p style={{ color: '#6c757d', marginBottom: '1rem' }}>
             Vui lòng đăng nhập và mua sản phẩm để đánh giá.
           </p>
-          <button 
+          <button
             onClick={() => setCurrentPage('login')}
             style={{ ...styles.buttonPrimary, padding: '0.5rem 1rem', fontSize: '0.875rem' }}
           >
@@ -471,7 +521,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
           <p style={{ color: '#6c757d', marginBottom: '1rem' }}>
             Bạn chỉ có thể đánh giá sản phẩm sau khi đã mua và nhận hàng thành công.
           </p>
-          <button 
+          <button
             onClick={() => setCurrentPage('shop')}
             style={{ ...styles.buttonPrimary, padding: '0.5rem 1rem', fontSize: '0.875rem' }}
           >
@@ -485,9 +535,9 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
     const averageRating = reviews.length > 0
       ? reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length
       : (product?.rating || 0);
-    
+
     const currentUserId = customer?.idCustomer || user?.idUser || user?.id || customer?.idUser || customer?.id;
-    
+
     return (
       <div style={{ padding: '1.5rem', border: '1px solid #dee2e6', borderRadius: '0.5rem', backgroundColor: '#fff' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -518,7 +568,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
             </button>
           )}
         </div>
-        
+
         {/* Average Rating */}
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', borderBottom: '1px solid #e9ecef', paddingBottom: '1rem' }}>
           <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#007bff' }}>
@@ -531,14 +581,14 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
             </p>
           </div>
         </div>
-        
+
         {/* Review Form */}
         {showReviewForm && (
           <div style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid #dee2e6', borderRadius: '0.5rem', backgroundColor: '#f8f9fa' }}>
             <h5 style={{ fontWeight: 'bold', fontSize: '1.125rem', marginBottom: '1rem' }}>
               {editingReviewId ? 'Chỉnh sửa đánh giá' : 'Viết đánh giá'}
             </h5>
-            
+
             {orderDetailsForReview.length > 1 && !editingReviewId && (
               <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#495057' }}>
@@ -565,7 +615,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                 </select>
               </div>
             )}
-            
+
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#495057' }}>
                 Đánh giá *
@@ -595,7 +645,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                 </span>
               </div>
             </div>
-            
+
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#495057' }}>
                 Nhận xét *
@@ -616,7 +666,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                 }}
               />
             </div>
-            
+
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button
                 onClick={() => {
@@ -659,7 +709,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
             </div>
           </div>
         )}
-        
+
         {/* Reviews List */}
         {reviewsLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
@@ -679,7 +729,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
               const isMyReview = review.idCustomer === currentUserId;
               const reviewDate = review.createdAt ? new Date(review.createdAt).toLocaleDateString('vi-VN') : '';
               const canEdit = isMyReview;
-              
+
               return (
                 <div
                   key={review.idReview || review.id}
@@ -721,7 +771,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                         </div>
                       </div>
                     </div>
-                    
+
                     {canEdit && (
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button
@@ -769,14 +819,14 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                       </div>
                     )}
                   </div>
-                  
+
                   <p style={{ color: '#495057', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
                     {review.comment}
                   </p>
                 </div>
               );
             })}
-            
+
             {/* Pagination */}
             {reviewsTotalPages > 1 && (
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
@@ -825,7 +875,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
     <div style={{ padding: '1.5rem', border: '1px solid #dee2e6', borderRadius: '0.5rem', backgroundColor: '#fff' }}>
       <h4 style={{ fontWeight: 'bold', fontSize: '1.25rem', marginBottom: '1rem' }}>Vận chuyển & Đổi trả</h4>
       <p style={{ lineHeight: 1.6, color: '#495057', marginBottom: '1.5rem' }}>
-        Chúng tôi cung cấp miễn phí vận chuyển cho tất cả đơn hàng trên 500.000₫ trên toàn quốc. 
+        Chúng tôi cung cấp miễn phí vận chuyển cho tất cả đơn hàng trên 500.000₫ trên toàn quốc.
         Thời gian giao hàng thường từ 3-7 ngày làm việc tùy theo khu vực.
       </p>
       <p style={{ lineHeight: 1.6, color: '#495057' }}>
@@ -833,7 +883,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
       </p>
     </div>
   );
-  
+
   if (loading) {
     return (
       <section style={{ padding: '4rem 0', backgroundColor: '#f8f8f8' }}>
@@ -877,13 +927,13 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 
         {/* Product Details Header */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', marginBottom: '4rem', padding: '2rem', backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-          
+
           {/* Image Gallery (Left) */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{ width: '100%', aspectRatio: '1/1', backgroundColor: '#e9ecef', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', marginBottom: '1rem', overflow: 'hidden' }}>
               {mainImage ? (
-                <img 
-                  src={mainImage} 
+                <img
+                  src={mainImage}
                   alt={productName}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
@@ -897,16 +947,16 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                 {images.slice(0, 5).map((image, index) => {
                   const imageUrl = getImageUrl(image.imageUrl || image.url);
                   return (
-                    <div 
+                    <div
                       key={image.idImage || index}
                       onClick={() => setSelectedImageIndex(index)}
-                      style={{ 
-                        width: '80px', 
-                        height: '80px', 
-                        backgroundColor: '#e9ecef', 
-                        borderRadius: '0.25rem', 
-                        opacity: selectedImageIndex === index ? 1 : 0.6, 
-                        cursor: 'pointer', 
+                      style={{
+                        width: '80px',
+                        height: '80px',
+                        backgroundColor: '#e9ecef',
+                        borderRadius: '0.25rem',
+                        opacity: selectedImageIndex === index ? 1 : 0.6,
+                        cursor: 'pointer',
                         border: selectedImageIndex === index ? '2px solid #007bff' : 'none',
                         overflow: 'hidden'
                       }}
@@ -928,15 +978,15 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
             <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '0.5rem', lineHeight: '1.2' }}>
               {productName}
             </h1>
-            
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
               <StarRating rating={product.rating || 0} />
               <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>
                 ({(product.reviewCount || product.reviews) || 0} đánh giá)
               </span>
-              <span style={{ 
-                color: INVENTORY_STATUS_COLORS[productStatus] || '#28a745', 
-                fontWeight: '600', 
+              <span style={{
+                color: INVENTORY_STATUS_COLORS[productStatus] || '#28a745',
+                fontWeight: '600',
                 marginLeft: '1rem',
                 padding: '0.25rem 0.5rem',
                 borderRadius: '0.25rem',
@@ -948,8 +998,31 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
             </div>
 
             <p style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#dc3545', marginBottom: '1rem' }}>
-              {formatPrice(productPrice)}
+              {autoDiscount > 0 ? (
+                <>
+                  <span style={{
+                    fontSize: '1.25rem',
+                    color: '#6c757d',
+                    textDecoration: 'line-through',
+                    marginRight: '0.75rem',
+                  }}>
+                    {formatPrice(productPrice)}
+                  </span>
+                  <span>{formatPrice(finalProductPrice)}</span>
+                </>
+              ) : (
+                formatPrice(productPrice)
+              )}
             </p>
+
+            {autoDiscount > 0 && autoDiscountInfo && (
+              <p style={{ color: '#28a745', fontWeight: '600', marginTop: '-0.75rem', marginBottom: '1rem', fontSize: '0.95rem' }}>
+                Đang áp dụng giảm giá tự động
+                {autoDiscountInfo.ruleName ? ` (${autoDiscountInfo.ruleName})` : ''}:
+                {' '}-
+                {formatPrice(autoDiscount)}
+              </p>
+            )}
 
             <p style={{ color: '#495057', lineHeight: 1.6, marginBottom: '1.5rem' }}>
               {product.description || product.desc || 'Chưa có mô tả'}
@@ -957,55 +1030,55 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 
             {/* Quantity Control */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem', padding: '1rem', border: '1px solid #dee2e6', borderRadius: '0.5rem' }}>
-                <div style={{ fontWeight: 'bold', color: '#495057' }}>Số lượng:</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #ccc', borderRadius: '0.25rem' }}>
-                    <button 
-                      onClick={() => handleQuantityChange(-1)} 
-                      disabled={qty <= 1}
-                      style={{ 
-                        background: 'none', 
-                        border: 'none', 
-                        padding: '0.5rem', 
-                        cursor: qty <= 1 ? 'not-allowed' : 'pointer',
-                        opacity: qty <= 1 ? 0.5 : 1
-                      }}
-                    >
-                        <Minus size={18} />
-                    </button>
-                    <span style={{ padding: '0 0.5rem', fontWeight: 'bold', minWidth: '2rem', textAlign: 'center' }}>{qty}</span>
-                    <button 
-                      onClick={() => handleQuantityChange(1)} 
-                      disabled={isOutOfStock || qty >= stockQuantity}
-                      style={{ 
-                        background: 'none', 
-                        border: 'none', 
-                        padding: '0.5rem', 
-                        cursor: (isOutOfStock || qty >= stockQuantity) ? 'not-allowed' : 'pointer',
-                        opacity: (isOutOfStock || qty >= stockQuantity) ? 0.5 : 1
-                      }}
-                    >
-                        <Plus size={18} />
-                    </button>
-                </div>
-                {itemInCart && (
-                  <span style={{ color: '#007bff', fontSize: '0.875rem' }}>
-                    ({(itemInCart.quantity || itemInCart.qty) || 0} trong giỏ hàng)
-                  </span>
-                )}
+              <div style={{ fontWeight: 'bold', color: '#495057' }}>Số lượng:</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #ccc', borderRadius: '0.25rem' }}>
+                <button
+                  onClick={() => handleQuantityChange(-1)}
+                  disabled={qty <= 1}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '0.5rem',
+                    cursor: qty <= 1 ? 'not-allowed' : 'pointer',
+                    opacity: qty <= 1 ? 0.5 : 1
+                  }}
+                >
+                  <Minus size={18} />
+                </button>
+                <span style={{ padding: '0 0.5rem', fontWeight: 'bold', minWidth: '2rem', textAlign: 'center' }}>{qty}</span>
+                <button
+                  onClick={() => handleQuantityChange(1)}
+                  disabled={isOutOfStock || qty >= stockQuantity}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '0.5rem',
+                    cursor: (isOutOfStock || qty >= stockQuantity) ? 'not-allowed' : 'pointer',
+                    opacity: (isOutOfStock || qty >= stockQuantity) ? 0.5 : 1
+                  }}
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
+              {itemInCart && (
+                <span style={{ color: '#007bff', fontSize: '0.875rem' }}>
+                  ({(itemInCart.quantity || itemInCart.qty) || 0} trong giỏ hàng)
+                </span>
+              )}
             </div>
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-              <button 
+              <button
                 ref={addToCartButtonRef}
                 onClick={handleAddToCartClick}
                 disabled={isOutOfStock}
-                style={{ 
-                  ...styles.buttonSecondary, 
-                  padding: '1rem 2rem', 
-                  fontSize: '1.125rem', 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                style={{
+                  ...styles.buttonSecondary,
+                  padding: '1rem 2rem',
+                  fontSize: '1.125rem',
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: '0.5rem',
                   opacity: isOutOfStock ? 0.5 : 1,
                   cursor: isOutOfStock ? 'not-allowed' : 'pointer'
@@ -1013,12 +1086,12 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
               >
                 <ShoppingBag size={20} /> THÊM VÀO GIỎ
               </button>
-              <button 
+              <button
                 onClick={handleBuyNow}
                 disabled={isOutOfStock || buyNowLoading}
-                style={{ 
-                  ...styles.buttonPrimary, 
-                  padding: '1rem 2rem', 
+                style={{
+                  ...styles.buttonPrimary,
+                  padding: '1rem 2rem',
                   fontSize: '1.125rem',
                   opacity: (isOutOfStock || buyNowLoading) ? 0.5 : 1,
                   cursor: (isOutOfStock || buyNowLoading) ? 'not-allowed' : 'pointer',
@@ -1038,45 +1111,45 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                 )}
               </button>
             </div>
-            
+
           </div>
         </div>
 
         {/* Tabs: Description, Information, Reviews (Bottom) */}
         <div style={{ marginBottom: '4rem' }}>
-            {/* Tab Navigations */}
-            <div style={{ display: 'flex', borderBottom: '2px solid #e9ecef', marginBottom: '1.5rem' }}>
-                {['description', 'information', 'reviews'].map(tab => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        style={{
-                            padding: '1rem 1.5rem',
-                            border: 'none',
-                            background: 'none',
-                            fontWeight: activeTab === tab ? 'bold' : 'normal',
-                            color: activeTab === tab ? '#007bff' : '#495057',
-                            borderBottom: activeTab === tab ? '2px solid #007bff' : '2px solid transparent',
-                            cursor: 'pointer',
-                            fontSize: '1.125rem',
-                            transition: 'color 0.3s, border-bottom 0.3s'
-                        }}
-                    >
-                        {tab === 'description' ? 'Mô tả' : tab === 'information' ? 'Thông tin' : tab === 'reviews' ? 'Đánh giá' : tab.charAt(0).toUpperCase() + tab.slice(1)}
-                    </button>
-                ))}
-            </div>
+          {/* Tab Navigations */}
+          <div style={{ display: 'flex', borderBottom: '2px solid #e9ecef', marginBottom: '1.5rem' }}>
+            {['description', 'information', 'reviews'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  padding: '1rem 1.5rem',
+                  border: 'none',
+                  background: 'none',
+                  fontWeight: activeTab === tab ? 'bold' : 'normal',
+                  color: activeTab === tab ? '#007bff' : '#495057',
+                  borderBottom: activeTab === tab ? '2px solid #007bff' : '2px solid transparent',
+                  cursor: 'pointer',
+                  fontSize: '1.125rem',
+                  transition: 'color 0.3s, border-bottom 0.3s'
+                }}
+              >
+                {tab === 'description' ? 'Mô tả' : tab === 'information' ? 'Thông tin' : tab === 'reviews' ? 'Đánh giá' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
 
-            {/* Tab Content */}
-            <div>
-                {activeTab === 'description' && <DescriptionBlock />}
-                {activeTab === 'information' && <InformationBlock />}
-                {activeTab === 'reviews' && (
-                  <div style={{ padding: '1rem 0' }}>
-                    <ReviewSection productId={productId} userOrders={userOrders} />
-                  </div>
-                )}
-            </div>
+          {/* Tab Content */}
+          <div>
+            {activeTab === 'description' && <DescriptionBlock />}
+            {activeTab === 'information' && <InformationBlock />}
+            {activeTab === 'reviews' && (
+              <div style={{ padding: '1rem 0' }}>
+                <ReviewSection productId={productId} userOrders={userOrders} />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Related Products */}
@@ -1085,10 +1158,10 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center' }}>Sản phẩm liên quan</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
               {relatedProducts.map(related => (
-                <ProductCard 
-                  key={related.idProduct || related.id} 
-                  product={related} 
-                  handleAddToCart={handleAddToCart} 
+                <ProductCard
+                  key={related.idProduct || related.id}
+                  product={related}
+                  handleAddToCart={handleAddToCart}
                   handleViewProductDetail={handleViewProductDetail}
                 />
               ))}

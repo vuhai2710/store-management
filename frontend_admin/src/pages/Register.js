@@ -22,15 +22,17 @@ const Register = () => {
     try {
       console.log("Đang đăng ký với:", values);
 
+      const payload = {
+        username: values.username?.trim(),
+        password: values.password, // Không trim mật khẩu để giữ nguyên ký tự người dùng nhập
+        email: values.email?.trim(),
+        customerName: values.fullName?.trim(), // Backend expects customerName
+        phoneNumber: values.phoneNumber?.trim(),
+        address: (values.address || "").trim(), // Optional field
+      };
+
       // Gọi API đăng ký - Backend cần customerName không phải fullName
-      const response = await authService.register({
-        username: values.username,
-        password: values.password,
-        email: values.email,
-        customerName: values.fullName, // Backend expects customerName
-        phoneNumber: values.phoneNumber,
-        address: values.address || "", // Optional field
-      });
+      const response = await authService.register(payload);
 
       console.log("Kết quả đăng ký:", response);
       message.success("Đăng ký thành công! Vui lòng đăng nhập.");

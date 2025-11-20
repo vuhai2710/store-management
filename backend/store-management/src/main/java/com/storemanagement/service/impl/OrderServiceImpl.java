@@ -102,7 +102,8 @@ public class OrderServiceImpl implements OrderService {
 
             // Kiểm tra tồn kho đủ không
             if (product.getStockQuantity() < item.getQuantity()) {
-                throw new RuntimeException("Sản phẩm " + product.getProductName() + " không đủ số lượng. Còn lại: " + product.getStockQuantity());
+                throw new RuntimeException("Sản phẩm " + product.getProductName() + " không đủ số lượng. Còn lại: "
+                        + product.getStockQuantity());
             }
         }
 
@@ -126,7 +127,8 @@ public class OrderServiceImpl implements OrderService {
                 shippingAddressSnapshot = buildAddressSnapshot(shippingAddress);
             } else if (customer.getAddress() != null && !customer.getAddress().isEmpty()) {
                 // Không có địa chỉ mặc định → Fallback về địa chỉ trong customer profile
-                shippingAddressSnapshot = customer.getCustomerName() + ", " + customer.getAddress() + ", " + customer.getPhoneNumber();
+                shippingAddressSnapshot = customer.getCustomerName() + ", " + customer.getAddress() + ", "
+                        + customer.getPhoneNumber();
             }
         }
 
@@ -187,7 +189,8 @@ public class OrderServiceImpl implements OrderService {
             BigDecimal productPrice = product.getPrice();
 
             // Tạo order detail với snapshot
-            // Snapshot này đảm bảo khi admin chỉnh sửa sản phẩm, đơn hàng vẫn giữ nguyên thông tin
+            // Snapshot này đảm bảo khi admin chỉnh sửa sản phẩm, đơn hàng vẫn giữ nguyên
+            // thông tin
             OrderDetail orderDetail = OrderDetail.builder()
                     .order(order)
                     .product(product) // Vẫn giữ reference để có thể trace
@@ -230,7 +233,8 @@ public class OrderServiceImpl implements OrderService {
         if (promotion != null && savedOrder.getIdOrder() != null) {
             try {
                 promotionService.recordPromotionUsage(promotion.getIdPromotion(), savedOrder.getIdOrder(), customerId);
-                log.info("Promotion usage recorded for order ID: {}, promotion ID: {}", savedOrder.getIdOrder(), promotion.getIdPromotion());
+                log.info("Promotion usage recorded for order ID: {}, promotion ID: {}", savedOrder.getIdOrder(),
+                        promotion.getIdPromotion());
             } catch (Exception e) {
                 log.error("Error recording promotion usage for order ID: {}", savedOrder.getIdOrder(), e);
                 // Don't fail the order creation if promotion usage recording fails
@@ -254,12 +258,12 @@ public class OrderServiceImpl implements OrderService {
                 inventoryTransactionRepository.save(transaction);
             }
         } else {
-            log.info("Payment method is PAYOS. Inventory transactions will be created when payment is confirmed via webhook.");
+            log.info(
+                    "Payment method is PAYOS. Inventory transactions will be created when payment is confirmed via webhook.");
         }
 
         // Tạo Shipment và tích hợp GHN (nếu có shipping address và GHN enabled)
         createShipmentAndIntegrateGHN(savedOrder, shippingAddress, totalAmount);
-
 
         // Xóa giỏ hàng sau khi tạo order thành công
         cartService.clearCart(customerId);
@@ -273,7 +277,6 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO createOrderDirectly(Integer customerId, OrderDTO request) {
         log.info("Creating order directly (Buy Now) for customer: {}, product: {}, quantity: {}",
                 customerId, request.getProductId(), request.getQuantity());
-
 
         // Bước 1.1: Kiểm tra customer tồn tại
         Customer customer = customerRepository.findById(customerId)
@@ -291,9 +294,9 @@ public class OrderServiceImpl implements OrderService {
 
         // Bước 1.4: Kiểm tra tồn kho đủ
         if (product.getStockQuantity() < request.getQuantity()) {
-            throw new RuntimeException("Sản phẩm " + product.getProductName() + " không đủ số lượng. Còn lại: " + product.getStockQuantity());
+            throw new RuntimeException("Sản phẩm " + product.getProductName() + " không đủ số lượng. Còn lại: "
+                    + product.getStockQuantity());
         }
-
 
         ShippingAddress shippingAddress = null;
         String shippingAddressSnapshot = null;
@@ -311,14 +314,13 @@ public class OrderServiceImpl implements OrderService {
             if (shippingAddress != null) {
                 shippingAddressSnapshot = buildAddressSnapshot(shippingAddress);
             } else if (customer.getAddress() != null && !customer.getAddress().isEmpty()) {
-                shippingAddressSnapshot = customer.getCustomerName() + ", " + customer.getAddress() + ", " + customer.getPhoneNumber();
+                shippingAddressSnapshot = customer.getCustomerName() + ", " + customer.getAddress() + ", "
+                        + customer.getPhoneNumber();
             }
         }
 
-
         BigDecimal totalAmount = product.getPrice()
                 .multiply(BigDecimal.valueOf(request.getQuantity()));
-
 
         // Calculate discount using PromotionService
         String promotionCode = request.getPromotionCode();
@@ -341,7 +343,6 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-
         Order order = Order.builder()
                 .customer(customer)
                 .employee(null)
@@ -357,7 +358,6 @@ public class OrderServiceImpl implements OrderService {
                 .promotionRule(promotionRule) // Promotion rule if automatic discount was applied
                 .orderDetails(new ArrayList<>())
                 .build();
-
 
         String productName = product.getProductName();
         String productCode = product.getProductCode();
@@ -395,12 +395,12 @@ public class OrderServiceImpl implements OrderService {
         // Refresh entity để load finalAmount (generated column từ database)
         entityManager.refresh(savedOrder);
 
-
         // Record promotion usage if promotion code was used
         if (promotion != null && savedOrder.getIdOrder() != null) {
             try {
                 promotionService.recordPromotionUsage(promotion.getIdPromotion(), savedOrder.getIdOrder(), customerId);
-                log.info("Promotion usage recorded for order ID: {}, promotion ID: {}", savedOrder.getIdOrder(), promotion.getIdPromotion());
+                log.info("Promotion usage recorded for order ID: {}, promotion ID: {}", savedOrder.getIdOrder(),
+                        promotion.getIdPromotion());
             } catch (Exception e) {
                 log.error("Error recording promotion usage for order ID: {}", savedOrder.getIdOrder(), e);
                 // Don't fail the order creation if promotion usage recording fails
@@ -421,7 +421,8 @@ public class OrderServiceImpl implements OrderService {
                     .build();
             inventoryTransactionRepository.save(transaction);
         } else {
-            log.info("Payment method is PAYOS. Inventory transactions will be created when payment is confirmed via webhook.");
+            log.info(
+                    "Payment method is PAYOS. Inventory transactions will be created when payment is confirmed via webhook.");
         }
 
         // Tạo Shipment và tích hợp GHN (nếu có shipping address và GHN enabled)
@@ -441,7 +442,8 @@ public class OrderServiceImpl implements OrderService {
 
         // Nếu có status filter → Gọi method filter theo status
         if (status != null) {
-            orderPage = orderRepository.findByCustomerIdCustomerAndStatusOrderByOrderDateDesc(customerId, status, pageable);
+            orderPage = orderRepository.findByCustomerIdCustomerAndStatusOrderByOrderDateDesc(customerId, status,
+                    pageable);
         } else {
             // Nếu không có status filter → Lấy tất cả đơn hàng
             orderPage = orderRepository.findByCustomerIdCustomerOrderByOrderDateDesc(customerId, pageable);
@@ -533,9 +535,11 @@ public class OrderServiceImpl implements OrderService {
             // Trường hợp 1: Có customerId → Sử dụng customer có sẵn trong hệ thống
             // Customer này có thể có hoặc không có User account
             customer = customerRepository.findById(request.getIdCustomer())
-                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng với ID: " + request.getIdCustomer()));
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Không tìm thấy khách hàng với ID: " + request.getIdCustomer()));
         } else {
-            // Trường hợp 2: Không có customerId → Tạo đơn cho walk-in customer (khách hàng không có tài khoản)
+            // Trường hợp 2: Không có customerId → Tạo đơn cho walk-in customer (khách hàng
+            // không có tài khoản)
 
             // Validate thông tin bắt buộc để tạo customer mới
             if (request.getCustomerName() == null || request.getCustomerName().trim().isEmpty()) {
@@ -546,20 +550,21 @@ public class OrderServiceImpl implements OrderService {
             }
 
             // Kiểm tra xem customer đã tồn tại với số điện thoại này chưa
-            // Logic: Nếu khách hàng quay lại với cùng số điện thoại, sử dụng customer hiện tại
+            // Logic: Nếu khách hàng quay lại với cùng số điện thoại, sử dụng customer hiện
+            // tại
             // Điều này giúp theo dõi lịch sử mua hàng của cùng một khách hàng
             customer = customerRepository.findByPhoneNumber(request.getCustomerPhone())
                     .orElse(null);
 
             if (customer == null) {
                 // Customer chưa tồn tại → Tạo customer mới không có User account
-                // Customer này sẽ có id_user = NULL, chỉ lưu thông tin cơ bản (tên, phone, address)
+                // Customer này sẽ có id_user = NULL, chỉ lưu thông tin cơ bản (tên, phone,
+                // address)
                 // Vẫn có thể theo dõi lịch sử mua hàng qua Customer record
                 CustomerDTO newCustomerDTO = customerService.createCustomerWithoutUser(
                         request.getCustomerName(),
                         request.getCustomerPhone(),
-                        request.getCustomerAddress()
-                );
+                        request.getCustomerAddress());
                 customer = customerRepository.findById(newCustomerDTO.getIdCustomer())
                         .orElseThrow(() -> new RuntimeException("Lỗi khi tạo khách hàng mới"));
                 log.info("Tạo customer mới (walk-in) với ID: {}", customer.getIdCustomer());
@@ -573,7 +578,7 @@ public class OrderServiceImpl implements OrderService {
 
         Employee employee = null;
         if (employeeId != null) { // Nếu employeeId = null -> employee = null -> ADMIN tạo đơn
-            //Nếu có employeeId -> Lấy employee từ DB
+            // Nếu có employeeId -> Lấy employee từ DB
             employee = employeeRepository.findById(employeeId)
                     .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy nhân viên với ID: " + employeeId));
         }
@@ -590,7 +595,8 @@ public class OrderServiceImpl implements OrderService {
             }
 
             if (product.getStockQuantity() < item.getQuantity()) {
-                throw new RuntimeException("Sản phẩm " + product.getProductName() + " không đủ số lượng. Còn lại: " + product.getStockQuantity());
+                throw new RuntimeException("Sản phẩm " + product.getProductName() + " không đủ số lượng. Còn lại: "
+                        + product.getStockQuantity());
             }
         }
 
@@ -616,20 +622,24 @@ public class OrderServiceImpl implements OrderService {
         if (discount.compareTo(totalAmount) > 0) {
             discount = totalAmount; // Discount không được lớn hơn totalAmount
         }
-        // finalAmount sẽ được tính tự động bởi database: finalAmount = totalAmount - discount
+        // finalAmount sẽ được tính tự động bởi database: finalAmount = totalAmount -
+        // discount
 
         // Tạo shipping address snapshot từ customer info
-        // Snapshot này đảm bảo địa chỉ không bị ảnh hưởng nếu customer thay đổi thông tin sau này
+        // Snapshot này đảm bảo địa chỉ không bị ảnh hưởng nếu customer thay đổi thông
+        // tin sau này
         // Format: "Tên khách hàng, Địa chỉ, Số điện thoại"
         String shippingAddressSnapshot = customer.getCustomerName() + ", " +
                 (customer.getAddress() != null ? customer.getAddress() : "") + ", " +
                 customer.getPhoneNumber();
 
         // Tạo order với đầy đủ thông tin
-        // - customer: Khách hàng (có thể là walk-in customer hoặc customer có tài khoản)
+        // - customer: Khách hàng (có thể là walk-in customer hoặc customer có tài
+        // khoản)
         // - employee: Nhân viên tạo đơn (lấy từ JWT token)
         // - status: PENDING (chờ xác nhận)
-        // - shippingAddress: null vì walk-in customers không có shipping address trong hệ thống
+        // - shippingAddress: null vì walk-in customers không có shipping address trong
+        // hệ thống
         // - shippingAddressSnapshot: Lưu snapshot để hiển thị sau này
         Order order = Order.builder()
                 .customer(customer)
@@ -700,7 +710,8 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // Tạo Shipment và tích hợp GHN (nếu có shipping address và GHN enabled)
-        // Note: createOrderForCustomer thường không có shippingAddress entity, nên skip GHN
+        // Note: createOrderForCustomer thường không có shippingAddress entity, nên skip
+        // GHN
         // Chỉ tạo Shipment cơ bản nếu cần
         if (savedOrder.getShippingAddress() != null) {
             createShipmentAndIntegrateGHN(savedOrder, savedOrder.getShippingAddress(), totalAmount);
@@ -855,7 +866,8 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDTO(savedOrder);
     }
 
-    private void createShipmentAndIntegrateGHN(Order order, ShippingAddress shippingAddress, BigDecimal orderTotalAmount) {
+    private void createShipmentAndIntegrateGHN(Order order, ShippingAddress shippingAddress,
+            BigDecimal orderTotalAmount) {
         log.info("Creating shipment and integrating GHN for order ID: {}", order.getIdOrder());
 
         // Kiểm tra đã có shipment chưa (tránh tạo duplicate)
@@ -886,15 +898,16 @@ public class OrderServiceImpl implements OrderService {
 
                     // Calculate shipping fee (if shop district is configured)
                     // GHNCalculateFeeRequestDTO feeRequest = GHNCalculateFeeRequestDTO.builder()
-                    //     .fromDistrictId(ghnConfig.getShopDistrictId()) // TODO: Add to GHNConfig
-                    //     .toDistrictId(shippingAddress.getDistrictId())
-                    //     .toWardCode(shippingAddress.getWardCode())
-                    //     .weight(calculateTotalWeight(order.getOrderDetails()))
-                    //     .insuranceValue(order.getFinalAmount().intValue())
-                    //     .codAmount(order.getFinalAmount().intValue())
-                    //     .build();
+                    // .fromDistrictId(ghnConfig.getShopDistrictId()) // TODO: Add to GHNConfig
+                    // .toDistrictId(shippingAddress.getDistrictId())
+                    // .toWardCode(shippingAddress.getWardCode())
+                    // .weight(calculateTotalWeight(order.getOrderDetails()))
+                    // .insuranceValue(order.getFinalAmount().intValue())
+                    // .codAmount(order.getFinalAmount().intValue())
+                    // .build();
                     //
-                    // GHNCalculateFeeResponseDTO feeResponse = ghnService.calculateShippingFee(feeRequest);
+                    // GHNCalculateFeeResponseDTO feeResponse =
+                    // ghnService.calculateShippingFee(feeRequest);
                     // shipment.setGhnShippingFee(feeResponse.getTotal());
 
                     log.info("GHN integration: ShippingAddress has districtId/wardCode. " +
