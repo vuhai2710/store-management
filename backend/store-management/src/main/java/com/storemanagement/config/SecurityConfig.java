@@ -29,6 +29,7 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@Order(0)
 public class SecurityConfig {
 
     @Value("${jwt.signerKey}")
