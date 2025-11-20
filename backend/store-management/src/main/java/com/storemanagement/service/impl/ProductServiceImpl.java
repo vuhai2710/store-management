@@ -1,5 +1,7 @@
 package com.storemanagement.service.impl;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.dto.product.ProductDTO;
 import com.storemanagement.mapper.ProductMapper;
@@ -9,7 +11,6 @@ import com.storemanagement.model.Supplier;
 import com.storemanagement.repository.CategoryRepository;
 import com.storemanagement.repository.ProductRepository;
 import com.storemanagement.repository.SupplierRepository;
-//import com.storemanagement.service.FileStorageService;
 import com.storemanagement.service.ProductService;
 import com.storemanagement.utils.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,25 +22,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service implementation cho Product (Sản phẩm)
- *
- * Chức năng chính:
- * 1. CRUD operations cho sản phẩm
- * 2. Upload và quản lý ảnh sản phẩm
- * 3. Xử lý product code và SKU (tự động sinh hoặc validate)
- * 4. Tìm kiếm và lọc sản phẩm (theo category, brand, price, etc.)
- * 5. Quản lý stock quantity và status
- *
- * Business Logic quan trọng:
- * - Product Code: Có thể là SKU (tự sinh) hoặc MANUAL (tự nhập)
- * - SKU: Tự động sinh theo format: {category_prefix}-{sequence}
- * - Image: Upload vào thư mục uploads/products/, lưu URL vào database
- * - Stock: Tự động cập nhật khi có đơn nhập hàng (ImportOrderService)
- *
- * @author Store Management Team
  */
 @Service
 @RequiredArgsConstructor
@@ -51,53 +39,33 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final SupplierRepository supplierRepository;
     private final ProductMapper productMapper;
-    private final FileStorageService fileStorageService;
+    
+    // Thay thế FileStorageService bằng Cloudinary
+    private final Cloudinary cloudinary;
 
-    /**
-     * Overload method - tạo sản phẩm không có ảnh
-     */
     @Override
     public ProductDTO createProduct(ProductDTO productDto) {
         return createProduct(productDto, null);
     }
 
-    /**
-     * Tạo sản phẩm mới
-     *
-     * Flow xử lý:
-     * 1. Upload ảnh nếu có (lưu vào uploads/products/)
-     * 2. Validate category tồn tại
-     * 3. Xử lý productCode và SKU:
-     *    - Nếu codeType = SKU: có thể tự sinh hoặc tự nhập
-     *    - Nếu codeType = MANUAL: bắt buộc phải có productCode
-     * 4. Validate productCode/SKU chưa tồn tại
-     * 5. Validate supplier (nếu có)
-     * 6. Tạo và lưu Product entity
-     *
-     * @param productDto DTO chứa thông tin sản phẩm
-     * @param image File ảnh (optional) - multipart/form-data
-     * @return ProductDTO đã được tạo với ID
-     */
     @Override
     public ProductDTO createProduct(ProductDTO productDto, MultipartFile image) {
         log.info("Creating product: {}", productDto.getProductName());
 
-        // Bước 1: Xử lý upload ảnh nếu có
-        // Ảnh được lưu vào thư mục: uploads/products/{filename}
-        // URL được lưu vào database: /uploads/products/{filename}
+        // Bước 1: Xử lý upload ảnh lên Cloudinary
         if (image != null && !image.isEmpty()) {
             try {
-                // FileStorageService sẽ:
-                // - Validate file type (chỉ cho phép image)
-                // - Validate file size (max 10MB)
-                // - Generate unique filename để tránh conflict
-                // - Lưu vào thư mục uploads/products/
-                // - Trả về URL để lưu vào database
-                String imageUrl = fileStorageService.saveImage(image, "products");
+                // Upload lên Cloudinary vào folder "products"
+                Map uploadResult = cloudinary.uploader().upload(image.getBytes(), 
+                        ObjectUtils.asMap("folder", "products"));
+                
+                // Lấy đường dẫn ảnh online
+                String imageUrl = (String) uploadResult.get("secure_url");
+                
                 productDto.setImageUrl(imageUrl);
-                log.info("Image uploaded successfully: {}", imageUrl);
-            } catch (Exception e) {
-                log.error("Error uploading image: {}", e.getMessage(), e);
+                log.info("Image uploaded to Cloudinary successfully: {}", imageUrl);
+            } catch (IOException e) {
+                log.error("Error uploading image to Cloudinary: {}", e.getMessage(), e);
                 throw new RuntimeException("Không thể upload ảnh: " + e.getMessage());
             }
         }
@@ -112,45 +80,38 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new EntityNotFoundException("Danh mục không tồn tại với ID: " + productDto.getIdCategory()));
 
         // Bước 4: Xử lý productCode và SKU theo codeType
-        // Có 2 loại: SKU (tự động sinh) và MANUAL (tự nhập)
         String productCode = productDto.getProductCode();
         String sku = productDto.getSku();
 
         if (productDto.getCodeType() == CodeType.SKU) {
-            // CodeType = SKU: có thể tự sinh hoặc tự nhập
             if (productCode == null || productCode.trim().isEmpty()) {
-                // Tự sinh SKU theo format: {category_prefix}-{sequence}
-                // Ví dụ: "DT-001", "DT-002" (nếu category prefix = "DT")
                 sku = generateUniqueSku(category);
-                productCode = sku; // productCode = SKU trong trường hợp này
+                productCode = sku;
                 log.info("Auto-generated SKU: {}", sku);
             } else {
-                // User tự nhập productCode, validate format
                 ProductCodeValidator.validate(productCode, CodeType.SKU);
-                sku = productCode; // SKU = productCode khi user tự nhập
+                sku = productCode;
             }
         } else {
-            // CodeType = MANUAL: bắt buộc phải có productCode
             if (productCode == null || productCode.trim().isEmpty()) {
                 throw new RuntimeException("Mã sản phẩm không được để trống");
             }
-            // Validate productCode theo format của codeType
             ProductCodeValidator.validate(productCode, productDto.getCodeType());
         }
 
-        // Bước 5: Kiểm tra productCode chưa tồn tại (unique constraint)
+        // Bước 5: Kiểm tra productCode chưa tồn tại
         if (productRepository.findByProductCode(productCode).isPresent()) {
             throw new RuntimeException("Mã sản phẩm đã tồn tại: " + productCode);
         }
 
-        // Bước 6: Kiểm tra SKU chưa tồn tại (nếu có)
+        // Bước 6: Kiểm tra SKU chưa tồn tại
         if (sku != null && !sku.isEmpty()) {
             if (productRepository.findBySku(sku).isPresent()) {
                 throw new RuntimeException("SKU đã tồn tại: " + sku);
             }
         }
 
-        // Kiểm tra supplier nếu có
+        // Kiểm tra supplier
         Supplier supplier = null;
         if (productDto.getIdSupplier() != null) {
             supplier = supplierRepository.findById(productDto.getIdSupplier())
@@ -166,26 +127,16 @@ public class ProductServiceImpl implements ProductService {
         product.setCodeType(productDto.getCodeType());
         product.setBrand(productDto.getBrand());
         product.setDescription(productDto.getDescription());
-        // imageUrl đã được set trong productDto ở bước upload ảnh (nếu có)
+        
         if (productDto.getImageUrl() != null) {
             product.setImageUrl(productDto.getImageUrl());
         }
 
-        // QUAN TRỌNG: Stock quantity KHÔNG được set từ DTO khi tạo/sửa sản phẩm
-        // Stock quantity chỉ được cập nhật thông qua inventory transactions (ImportOrder, Order)
-        // Khi tạo mới, luôn set stockQuantity = 0 và status = OUT_OF_STOCK
         product.setStockQuantity(0);
         product.setStatus(ProductStatus.OUT_OF_STOCK);
 
-        log.info("New product will be created with stockQuantity=0 and status=OUT_OF_STOCK. " +
-                "Use ImportOrder to add stock to inventory.");
-
-        // Lưu vào DB
         Product savedProduct = productRepository.save(product);
-        log.info("Product created successfully with ID: {}, Stock: {}, Status: {}",
-                savedProduct.getIdProduct(), savedProduct.getStockQuantity(), savedProduct.getStatus());
-
-        // Fetch lại với JOIN FETCH để có đầy đủ thông tin category và supplier
+        
         Product productWithDetails = productRepository.findByIdWithDetails(savedProduct.getIdProduct())
                 .orElse(savedProduct);
 
@@ -201,32 +152,24 @@ public class ProductServiceImpl implements ProductService {
     public ProductDTO updateProduct(Integer id, ProductDTO productDto, MultipartFile image) {
         log.info("Updating product ID: {}", id);
 
-        // Tìm product theo ID
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + id));
 
-        // Cập nhật codeType nếu có (nhưng phải validate lại productCode)
         if (productDto.getCodeType() != null && productDto.getCodeType() != product.getCodeType()) {
-            // Thay đổi codeType, cần validate lại productCode
             if (product.getProductCode() != null) {
                 ProductCodeValidator.validate(product.getProductCode(), productDto.getCodeType());
             }
             product.setCodeType(productDto.getCodeType());
         }
 
-        // Kiểm tra productCode nếu thay đổi
         if (productDto.getProductCode() != null && !productDto.getProductCode().equals(product.getProductCode())) {
-            // Validate productCode mới
             ProductCodeValidator.validate(productDto.getProductCode(), product.getCodeType());
-
-            // Kiểm tra trùng lặp
             if (productRepository.findByProductCode(productDto.getProductCode()).isPresent()) {
                 throw new RuntimeException("Mã sản phẩm đã tồn tại: " + productDto.getProductCode());
             }
             product.setProductCode(productDto.getProductCode());
         }
 
-        // Kiểm tra SKU nếu thay đổi
         if (productDto.getSku() != null && !productDto.getSku().equals(product.getSku())) {
             if (productRepository.findBySku(productDto.getSku()).isPresent()) {
                 throw new RuntimeException("SKU đã tồn tại: " + productDto.getSku());
@@ -234,7 +177,6 @@ public class ProductServiceImpl implements ProductService {
             product.setSku(productDto.getSku());
         }
 
-        // Cập nhật category nếu thay đổi
         if (productDto.getIdCategory() != null &&
             !productDto.getIdCategory().equals(product.getCategory().getIdCategory())) {
             Category category = categoryRepository.findById(productDto.getIdCategory())
@@ -242,7 +184,6 @@ public class ProductServiceImpl implements ProductService {
             product.setCategory(category);
         }
 
-        // Cập nhật supplier nếu thay đổi
         if (productDto.getIdSupplier() != null) {
             if (product.getSupplier() == null ||
                 !productDto.getIdSupplier().equals(product.getSupplier().getIdSupplier())) {
@@ -252,65 +193,35 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        // Cập nhật các trường khác
-        if (productDto.getProductName() != null) {
-            product.setProductName(productDto.getProductName());
-        }
-        if (productDto.getBrand() != null) {
-            product.setBrand(productDto.getBrand());
-        }
-        if (productDto.getDescription() != null) {
-            product.setDescription(productDto.getDescription());
-        }
-        if (productDto.getPrice() != null) {
-            product.setPrice(productDto.getPrice());
-        }
+        if (productDto.getProductName() != null) product.setProductName(productDto.getProductName());
+        if (productDto.getBrand() != null) product.setBrand(productDto.getBrand());
+        if (productDto.getDescription() != null) product.setDescription(productDto.getDescription());
+        if (productDto.getPrice() != null) product.setPrice(productDto.getPrice());
+        if (productDto.getStatus() != null) product.setStatus(productDto.getStatus());
 
-        // QUAN TRỌNG: Stock quantity KHÔNG được cập nhật từ DTO
-        // Stock quantity chỉ được cập nhật thông qua inventory transactions (ImportOrder, Order)
-        // Nếu cố gắng update stockQuantity từ DTO, bỏ qua và log warning
-        if (productDto.getStockQuantity() != null &&
-            !productDto.getStockQuantity().equals(product.getStockQuantity())) {
-            log.warn("Attempted to update stockQuantity from DTO (productId={}, oldStock={}, attemptedStock={}). " +
-                    "This operation is ignored. Use ImportOrder or InventoryTransaction to update stock.",
-                    id, product.getStockQuantity(), productDto.getStockQuantity());
-        }
-
-        // Status có thể được cập nhật thủ công (ví dụ: DISCONTINUED),
-        // nhưng không tự động đồng bộ với stock quantity khi update
-        // Status chỉ được tự động cập nhật khi có inventory transaction
-        if (productDto.getStatus() != null) {
-            product.setStatus(productDto.getStatus());
-        }
-
-        // Xử lý upload ảnh mới nếu có
+        // Xử lý upload ảnh mới lên Cloudinary
         if (image != null && !image.isEmpty()) {
             try {
-                // Xóa ảnh cũ nếu có
-                if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
-                    fileStorageService.deleteImage(product.getImageUrl());
-                    log.info("Deleted old image: {}", product.getImageUrl());
-                }
-
                 // Upload ảnh mới
-                String imageUrl = fileStorageService.saveImage(image, "products");
+                Map uploadResult = cloudinary.uploader().upload(image.getBytes(), 
+                        ObjectUtils.asMap("folder", "products"));
+                String imageUrl = (String) uploadResult.get("secure_url");
+                
                 product.setImageUrl(imageUrl);
-                log.info("New image uploaded successfully: {}", imageUrl);
-            } catch (Exception e) {
+                log.info("New image uploaded to Cloudinary: {}", imageUrl);
+                
+                // Lưu ý: Việc xóa ảnh cũ trên Cloudinary phức tạp hơn (cần public_id), 
+                // nên ở đây ta chỉ ghi đè URL mới vào database.
+            } catch (IOException e) {
                 log.error("Error uploading image: {}", e.getMessage(), e);
                 throw new RuntimeException("Không thể upload ảnh: " + e.getMessage());
             }
         } else if (productDto.getImageUrl() != null) {
-            // Nếu không có file mới nhưng có imageUrl trong DTO, giữ nguyên hoặc cập nhật URL
             product.setImageUrl(productDto.getImageUrl());
         }
 
-        // Lưu lại
         Product updatedProduct = productRepository.save(product);
-        log.info("Product updated successfully: ID={}, Stock={}, Status={}",
-                updatedProduct.getIdProduct(), updatedProduct.getStockQuantity(), updatedProduct.getStatus());
-
-        // Fetch lại với JOIN FETCH để có đầy đủ thông tin category và supplier
+        
         Product productWithDetails = productRepository.findByIdWithDetails(updatedProduct.getIdProduct())
                 .orElse(updatedProduct);
 
@@ -324,17 +235,8 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + id));
 
-        // Xóa ảnh sản phẩm nếu có
-        if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
-            try {
-                fileStorageService.deleteImage(product.getImageUrl());
-                log.info("Deleted product image: {}", product.getImageUrl());
-            } catch (Exception e) {
-                log.warn("Error deleting product image: {}", e.getMessage());
-                // Không throw exception để không ảnh hưởng đến việc xóa sản phẩm
-            }
-        }
-
+        // Tạm thời bỏ qua việc xóa ảnh trên Cloudinary để tránh lỗi public_id
+        // Chỉ xóa dữ liệu trong Database
         productRepository.delete(product);
         log.info("Product deleted successfully: {}", id);
     }
@@ -350,7 +252,6 @@ public class ProductServiceImpl implements ProductService {
     public ProductDTO getProductByCode(String productCode) {
         Product product = productRepository.findByProductCode(productCode)
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với mã: " + productCode));
-        // Fetch lại với JOIN FETCH để có đầy đủ thông tin
         Product productWithDetails = productRepository.findByIdWithDetails(product.getIdProduct())
                 .orElse(product);
         return productMapper.toDTO(productWithDetails);
@@ -372,11 +273,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public PageResponse<ProductDTO> getProductsByCategory(Integer idCategory, Pageable pageable) {
-        // Kiểm tra category tồn tại
         if (!categoryRepository.existsById(idCategory)) {
             throw new EntityNotFoundException("Danh mục không tồn tại với ID: " + idCategory);
         }
-
         Page<Product> productPage = productRepository.findByCategory_IdCategory(idCategory, pageable);
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         return PageUtils.toPageResponse(productPage, productDtos);
@@ -387,7 +286,6 @@ public class ProductServiceImpl implements ProductService {
         if (brand == null || brand.trim().isEmpty()) {
             throw new RuntimeException("Thương hiệu không được để trống");
         }
-
         Page<Product> productPage = productRepository.findByBrandIgnoreCase(brand.trim(), pageable);
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         return PageUtils.toPageResponse(productPage, productDtos);
@@ -395,11 +293,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public PageResponse<ProductDTO> getProductsBySupplier(Integer idSupplier, Pageable pageable) {
-        // Kiểm tra supplier tồn tại
         if (!supplierRepository.existsById(idSupplier)) {
             throw new EntityNotFoundException("Nhà cung cấp không tồn tại với ID: " + idSupplier);
         }
-
         Page<Product> productPage = productRepository.findBySupplier_IdSupplier(idSupplier, pageable);
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         return PageUtils.toPageResponse(productPage, productDtos);
@@ -411,33 +307,23 @@ public class ProductServiceImpl implements ProductService {
                                                    Double minPrice, Double maxPrice,
                                                    String inventoryStatus,
                                                    Pageable pageable) {
-        // Normalize parameters
         String normalizedCode = (productCode == null || productCode.trim().isEmpty()) ? null : productCode.trim();
         String normalizedName = (productName == null || productName.trim().isEmpty()) ? null : productName.trim();
         String normalizedBrand = (brand == null || brand.trim().isEmpty()) ? null : brand.trim();
         String normalizedInventoryStatus = (inventoryStatus == null || inventoryStatus.trim().isEmpty()) ? null : inventoryStatus.trim();
 
-        // Validate inventoryStatus
         if (normalizedInventoryStatus != null) {
             try {
                 com.storemanagement.utils.InventoryStatusFilter.valueOf(normalizedInventoryStatus);
             } catch (IllegalArgumentException e) {
-                throw new RuntimeException("Trạng thái tồn kho không hợp lệ. Chấp nhận: COMING_SOON, IN_STOCK, OUT_OF_STOCK");
+                throw new RuntimeException("Trạng thái tồn kho không hợp lệ");
             }
         }
 
-        // Validate price range
-        if (minPrice != null && minPrice < 0) {
-            throw new RuntimeException("Giá tối thiểu phải >= 0");
-        }
-        if (maxPrice != null && maxPrice < 0) {
-            throw new RuntimeException("Giá tối đa phải >= 0");
-        }
-        if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
-            throw new RuntimeException("Giá tối thiểu không thể lớn hơn giá tối đa");
-        }
+        if (minPrice != null && minPrice < 0) throw new RuntimeException("Giá tối thiểu phải >= 0");
+        if (maxPrice != null && maxPrice < 0) throw new RuntimeException("Giá tối đa phải >= 0");
+        if (minPrice != null && maxPrice != null && minPrice > maxPrice) throw new RuntimeException("Giá tối thiểu không thể lớn hơn giá tối đa");
 
-        // Sử dụng @Query với JOIN FETCH đã được tối ưu trong repository
         Page<Product> productPage = productRepository.searchProducts(
             normalizedCode, normalizedName, idCategory, normalizedBrand, minPrice, maxPrice, normalizedInventoryStatus, pageable
         );
@@ -448,16 +334,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public PageResponse<ProductDTO> getProductsByPriceRange(Double minPrice, Double maxPrice, Pageable pageable) {
-        // Validate price range
-        if (minPrice != null && minPrice < 0) {
-            throw new RuntimeException("Giá tối thiểu phải >= 0");
-        }
-        if (maxPrice != null && maxPrice < 0) {
-            throw new RuntimeException("Giá tối đa phải >= 0");
-        }
-        if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
-            throw new RuntimeException("Giá tối thiểu không thể lớn hơn giá tối đa");
-        }
+        if (minPrice != null && minPrice < 0) throw new RuntimeException("Giá tối thiểu phải >= 0");
+        if (maxPrice != null && maxPrice < 0) throw new RuntimeException("Giá tối đa phải >= 0");
+        if (minPrice != null && maxPrice != null && minPrice > maxPrice) throw new RuntimeException("Giá tối thiểu không thể lớn hơn giá tối đa");
 
         Page<Product> productPage = productRepository.searchProducts(
             null, null, null, null, minPrice, maxPrice, null, pageable
@@ -467,36 +346,21 @@ public class ProductServiceImpl implements ProductService {
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
-    /**
-     * Lấy top 5 sản phẩm bán chạy
-     *
-     * @param orderStatus Trạng thái đơn hàng (null = tất cả, "COMPLETED" = chỉ đơn đã hoàn thành)
-     * @return Danh sách top 5 sản phẩm bán chạy
-     */
     @Override
     @Transactional(readOnly = true)
     public List<ProductDTO> getTop5BestSellingProducts(String orderStatus) {
-        // Normalize: null hoặc empty string = null
         String normalizedStatus = (orderStatus == null || orderStatus.trim().isEmpty()) ? null : orderStatus.trim();
 
-        // Lấy top 5 product IDs
-        List<Object[]> bestSellingData = productRepository.findBestSellingProductIds(
-            normalizedStatus, 5, 0
-        );
+        List<Object[]> bestSellingData = productRepository.findBestSellingProductIds(normalizedStatus, 5, 0);
 
-        if (bestSellingData.isEmpty()) {
-            return List.of();
-        }
+        if (bestSellingData.isEmpty()) return List.of();
 
-        // Extract product IDs từ kết quả và giữ nguyên thứ tự
         List<Integer> productIds = bestSellingData.stream()
             .map(row -> ((Number) row[0]).intValue())
             .toList();
 
-        // Lấy full product info tất cả cùng lúc
         List<Product> allProducts = productRepository.findAllById(productIds);
 
-        // Map theo thứ tự của productIds để giữ nguyên sort
         java.util.Map<Integer, Product> productMap = allProducts.stream()
             .collect(java.util.stream.Collectors.toMap(Product::getIdProduct, p -> p));
 
@@ -505,37 +369,24 @@ public class ProductServiceImpl implements ProductService {
             .filter(java.util.Objects::nonNull)
             .toList();
 
-        // Eager load category và supplier
         products.forEach(p -> {
-            if (p.getCategory() != null) {
-                p.getCategory().getCategoryName(); // Trigger lazy load
-            }
-            if (p.getSupplier() != null) {
-                p.getSupplier().getSupplierName(); // Trigger lazy load
-            }
+            if (p.getCategory() != null) p.getCategory().getCategoryName();
+            if (p.getSupplier() != null) p.getSupplier().getSupplierName();
         });
 
-        // Map to DTO
         return productMapper.toDTOList(products);
     }
 
     @Override
     public PageResponse<ProductDTO> getBestSellingProducts(String orderStatus, Pageable pageable) {
-        // orderStatus: null = tất cả orders, "COMPLETED" = chỉ đơn đã hoàn thành
-        // Normalize: null hoặc empty string = null
         String normalizedStatus = (orderStatus == null || orderStatus.trim().isEmpty()) ? null : orderStatus.trim();
-
         int pageNo = pageable.getPageNumber();
         int pageSize = pageable.getPageSize();
         int offset = pageNo * pageSize;
 
-        // Lấy danh sách product IDs đã bán chạy
-        List<Object[]> bestSellingData = productRepository.findBestSellingProductIds(
-            normalizedStatus, pageSize, offset
-        );
+        List<Object[]> bestSellingData = productRepository.findBestSellingProductIds(normalizedStatus, pageSize, offset);
 
         if (bestSellingData.isEmpty()) {
-            // Không có sản phẩm nào đã bán
             return PageResponse.<ProductDTO>builder()
                 .content(List.of())
                 .pageNo(pageNo)
@@ -550,15 +401,12 @@ public class ProductServiceImpl implements ProductService {
                 .build();
         }
 
-        // Extract product IDs từ kết quả và giữ nguyên thứ tự
         List<Integer> productIds = bestSellingData.stream()
             .map(row -> ((Number) row[0]).intValue())
             .toList();
 
-        // Lấy full product info tất cả cùng lúc
         List<Product> allProducts = productRepository.findAllById(productIds);
 
-        // Map theo thứ tự của productIds để giữ nguyên sort
         java.util.Map<Integer, Product> productMap = allProducts.stream()
             .collect(java.util.stream.Collectors.toMap(Product::getIdProduct, p -> p));
 
@@ -567,24 +415,15 @@ public class ProductServiceImpl implements ProductService {
             .filter(java.util.Objects::nonNull)
             .toList();
 
-        // Eager load category và supplier
         products.forEach(p -> {
-            if (p.getCategory() != null) {
-                p.getCategory().getCategoryName(); // Trigger lazy load
-            }
-            if (p.getSupplier() != null) {
-                p.getSupplier().getSupplierName(); // Trigger lazy load
-            }
+            if (p.getCategory() != null) p.getCategory().getCategoryName();
+            if (p.getSupplier() != null) p.getSupplier().getSupplierName();
         });
 
-        // Map to DTO
         List<ProductDTO> productDtos = productMapper.toDTOList(products);
-
-        // Count total
         Long totalElements = productRepository.countBestSellingProducts(normalizedStatus);
         int totalPages = (int) Math.ceil((double) totalElements / pageSize);
 
-        // Build PageResponse manually
         return PageResponse.<ProductDTO>builder()
             .content(productDtos)
             .pageNo(pageNo)
@@ -599,19 +438,9 @@ public class ProductServiceImpl implements ProductService {
             .build();
     }
 
-    /**
-     * Lấy sản phẩm mới (sắp xếp theo createdAt DESC)
-     *
-     * Logic:
-     * - Lấy sản phẩm có status = IN_STOCK
-     * - Sắp xếp theo createdAt DESC (mới nhất trước)
-     * - Nếu có limit, giới hạn số lượng kết quả
-     * - Dùng cho trang chủ, banner "Sản phẩm mới"
-     */
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ProductDTO> getNewProducts(Pageable pageable, Integer limit) {
-        // Nếu có limit, tạo Pageable mới với limit làm pageSize
         Pageable queryPageable = pageable;
         if (limit != null && limit > 0) {
             queryPageable = org.springframework.data.domain.PageRequest.of(
@@ -621,12 +450,9 @@ public class ProductServiceImpl implements ProductService {
             );
         }
 
-        // Query products với status = IN_STOCK, sắp xếp theo createdAt DESC
         Page<Product> productPage = productRepository.findNewProductsByStatus(queryPageable);
-
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
 
-        // Nếu có limit và số lượng kết quả > limit, cắt danh sách
         if (limit != null && limit > 0 && productDtos.size() > limit) {
             List<ProductDTO> limitedDtos = productDtos.subList(0, limit);
             return PageResponse.<ProductDTO>builder()
@@ -646,34 +472,18 @@ public class ProductServiceImpl implements ProductService {
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
-    /**
-     * Lấy sản phẩm liên quan (cùng category, khác productId)
-     *
-     * Logic:
-     * - Lấy product hiện tại để lấy categoryId
-     * - Query products cùng categoryId, khác productId, status = IN_STOCK
-     * - Giới hạn số lượng theo limit (default: 8)
-     * - Dùng cho trang chi tiết sản phẩm - hiển thị "Sản phẩm liên quan"
-     */
     @Override
     @Transactional(readOnly = true)
     public List<ProductDTO> getRelatedProducts(Integer productId, Integer limit) {
-        // Lấy product hiện tại để lấy categoryId
         Product currentProduct = productRepository.findById(productId)
             .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + productId));
 
-        if (currentProduct.getCategory() == null) {
-            // Không có category → không có sản phẩm liên quan
-            return List.of();
-        }
+        if (currentProduct.getCategory() == null) return List.of();
 
         Integer categoryId = currentProduct.getCategory().getIdCategory();
-
-        // Tạo Pageable với limit
         int limitValue = (limit != null && limit > 0) ? limit : 8;
         Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limitValue);
 
-        // Query products cùng category, khác productId, status = IN_STOCK
         List<Product> relatedProducts = productRepository.findByCategoryIdAndStatusAndIdProductNot(
             categoryId, productId, pageable
         );
@@ -681,53 +491,32 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toDTOList(relatedProducts);
     }
 
-    /**
-     * Lấy danh sách tất cả thương hiệu (brands) - unique
-     *
-     * Logic:
-     * - Query distinct brands từ products có status = IN_STOCK
-     * - Loại bỏ null và trống
-     * - Sắp xếp theo tên thương hiệu
-     * - Dùng cho dropdown/bộ lọc thương hiệu trong trang sản phẩm
-     */
     @Override
     @Transactional(readOnly = true)
     public List<String> getAllBrands() {
         List<String> brands = productRepository.findDistinctBrandsByStatus();
-        // Filter và sort để đảm bảo không có null hoặc empty
         return brands.stream()
             .filter(brand -> brand != null && !brand.trim().isEmpty())
             .sorted()
             .toList();
     }
 
-    /**
-     * Sinh SKU unique theo category.code_prefix
-     * Retry tối đa 5 lần nếu bị trùng
-     */
     private String generateUniqueSku(Category category) {
         int maxRetries = 5;
         int attempt = 0;
-
         while (attempt < maxRetries) {
             String sku = SkuGenerator.generateSku(category);
-
-            // Kiểm tra SKU đã tồn tại chưa
             if (productRepository.findBySku(sku).isEmpty()) {
                 return sku;
             }
-
             attempt++;
             log.warn("SKU collision detected: {}, retrying... (attempt {}/{})", sku, attempt, maxRetries);
-
-            // Sleep một chút để tránh collision
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }
-
         throw new RuntimeException("Không thể sinh SKU sau " + maxRetries + " lần thử");
     }
 }
