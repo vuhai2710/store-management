@@ -15,15 +15,15 @@ public class ImageUploadService {
 
     public String uploadImage(MultipartFile file) {
         try {
-            Map uploadResult = cloudinary.uploader().upload(
+            Map result = cloudinary.uploader().upload(
                     file.getBytes(),
-                    Map.of("folder", "store_management")
+                    Map.of("folder", "store_management/products")
             );
 
-            return uploadResult.get("secure_url").toString();
+            return result.get("secure_url").toString();
 
         } catch (Exception e) {
-            throw new RuntimeException("Upload ảnh thất bại", e);
+            throw new RuntimeException("Upload ảnh thất bại: " + e.getMessage());
         }
     }
 }
