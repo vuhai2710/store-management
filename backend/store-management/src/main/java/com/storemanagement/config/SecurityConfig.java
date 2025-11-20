@@ -96,6 +96,7 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/test/**").permitAll() // Test endpoint
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         // WebSocket endpoints (authentication handled at WebSocket layer)
                         .requestMatchers("/ws/**").permitAll()

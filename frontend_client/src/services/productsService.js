@@ -237,6 +237,41 @@ export const productsService = {
     const resp = await api.get(API_ENDPOINTS.PRODUCTS.IMAGES(id));
     return unwrap(resp);
   },
+
+  /**
+   * Get recommended products for user
+   * GET /api/v1/products/recommend
+   * @returns {Promise<ProductDTO[]>}
+   */
+  getRecommendedProducts: async () => {
+    try {
+      const resp = await api.get(API_ENDPOINTS.PRODUCTS.RECOMMEND);
+      const unwrapped = unwrap(resp);
+      // ApiResponse format: { code, message, data: [...] }
+      return unwrapped?.data || unwrapped || [];
+    } catch (error) {
+      console.error('Error fetching recommended products:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get similar products
+   * GET /api/v1/products/{id}/similar
+   * @param {number} id - Product ID
+   * @returns {Promise<ProductDTO[]>}
+   */
+  getSimilarProducts: async (id) => {
+    try {
+      const resp = await api.get(API_ENDPOINTS.PRODUCTS.SIMILAR(id));
+      const unwrapped = unwrap(resp);
+      // ApiResponse format: { code, message, data: [...] }
+      return unwrapped?.data || unwrapped || [];
+    } catch (error) {
+      console.error('Error fetching similar products:', error);
+      return [];
+    }
+  },
 };
 
 

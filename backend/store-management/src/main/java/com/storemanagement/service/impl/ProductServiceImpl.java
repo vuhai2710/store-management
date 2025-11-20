@@ -554,6 +554,33 @@ public class ProductServiceImpl implements ProductService {
             .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductDTO> getProductsByIds(List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return List.of();
+        }
+        
+        // Convert Long to Integer for product IDs
+        List<Integer> intIds = productIds.stream()
+            .map(Long::intValue)
+            .toList();
+        
+        List<Product> products = productRepository.findAllById(intIds);
+        
+        // Trigger lazy loading for category and supplier
+        products.forEach(p -> {
+            if (p.getCategory() != null) {
+                p.getCategory().getCategoryName();
+            }
+            if (p.getSupplier() != null) {
+                p.getSupplier().getSupplierName();
+            }
+        });
+        
+        return productMapper.toDTOList(products);
+    }
+
     private String generateUniqueSku(Category category) {
         int maxRetries = 5;
         int attempt = 0;

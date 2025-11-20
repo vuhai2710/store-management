@@ -19,6 +19,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
   const [product, setProduct] = useState(null);
   const [images, setImages] = useState([]);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [similarProducts, setSimilarProducts] = useState([]);
   const [activeTab, setActiveTab] = useState('description');
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -80,6 +81,15 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
         } catch (relatedError) {
           console.error('Error fetching related products:', relatedError);
           setRelatedProducts([]);
+        }
+
+        // Fetch similar products (recommendations)
+        try {
+          const similarData = await productsService.getSimilarProducts(productId);
+          setSimilarProducts(similarData || []);
+        } catch (similarError) {
+          console.error('Error fetching similar products:', similarError);
+          setSimilarProducts([]);
         }
 
         // Check if user can review this product (only if authenticated and has purchased)
@@ -1078,6 +1088,23 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                 )}
             </div>
         </div>
+
+        {/* Similar Products (Recommendations) */}
+        {similarProducts.length > 0 && (
+          <div style={{ marginBottom: '4rem' }}>
+            <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center' }}>Sản phẩm tương tự</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
+              {similarProducts.map(similar => (
+                <ProductCard 
+                  key={similar.idProduct || similar.id} 
+                  product={similar} 
+                  handleAddToCart={handleAddToCart} 
+                  handleViewProductDetail={handleViewProductDetail}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
