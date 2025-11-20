@@ -9,7 +9,7 @@ import com.storemanagement.model.Supplier;
 import com.storemanagement.repository.CategoryRepository;
 import com.storemanagement.repository.ProductRepository;
 import com.storemanagement.repository.SupplierRepository;
-import com.storemanagement.service.FileStorageService;
+#import com.storemanagement.service.FileStorageService;
 import com.storemanagement.service.ProductService;
 import com.storemanagement.utils.*;
 import jakarta.persistence.EntityNotFoundException;
