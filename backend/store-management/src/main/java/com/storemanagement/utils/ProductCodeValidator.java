@@ -2,9 +2,6 @@ package com.storemanagement.utils;
 
 import java.util.regex.Pattern;
 
-/**
- * Validator cho product_code theo code_type
- */
 public class ProductCodeValidator {
     
     // IMEI: 15 chữ số
@@ -63,10 +60,7 @@ public class ProductCodeValidator {
                 throw new RuntimeException("Loại mã không hợp lệ");
         }
     }
-    
-    /**
-     * Kiểm tra xem productCode có hợp lệ không (không throw exception)
-     */
+
     public static boolean isValid(String productCode, CodeType codeType) {
         try {
             validate(productCode, codeType);
@@ -76,4 +70,3 @@ public class ProductCodeValidator {
         }
     }
 }
-

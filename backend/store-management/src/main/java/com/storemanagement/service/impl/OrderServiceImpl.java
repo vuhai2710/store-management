@@ -12,6 +12,7 @@ import com.storemanagement.service.CustomerService;
 import com.storemanagement.service.GHNService;
 import com.storemanagement.service.OrderService;
 import com.storemanagement.service.PdfService;
+import com.storemanagement.service.PromotionService;
 import com.storemanagement.utils.PageUtils;
 import com.storemanagement.utils.ProductStatus;
 import com.storemanagement.utils.ReferenceType;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +51,9 @@ public class OrderServiceImpl implements OrderService {
     private final ShipmentRepository shipmentRepository;
     private final EntityManager entityManager;
     private final GHNService ghnService;
+    private final PromotionService promotionService;
+    private final PromotionRepository promotionRepository;
+    private final PromotionRuleRepository promotionRuleRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -66,48 +71,6 @@ public class OrderServiceImpl implements OrderService {
         return pdfService.generateInvoicePdf(orderDto);
     }
 
-    /**
-     * Tạo đơn hàng từ giỏ hàng (Checkout)
-     * <p>
-     * Logic xử lý chi tiết:
-     * <p>
-     * 1. VALIDATION PHASE:
-     * - Kiểm tra customer tồn tại
-     * - Kiểm tra giỏ hàng không rỗng
-     * - Validate trạng thái và tồn kho của tất cả sản phẩm trong giỏ
-     * <p>
-     * 2. SHIPPING ADDRESS PHASE:
-     * - Nếu có shippingAddressId → Sử dụng địa chỉ đó
-     * - Nếu không có → Tìm địa chỉ mặc định
-     * - Nếu không có địa chỉ mặc định → Sử dụng địa chỉ trong customer profile
-     * - Tạo snapshot của địa chỉ để lưu vào order (bảo vệ khỏi việc địa chỉ bị xóa)
-     * <p>
-     * 3. CALCULATION PHASE:
-     * - Tính tổng tiền từ giá hiện tại của sản phẩm
-     * <p>
-     * 4. ORDER CREATION PHASE:
-     * - Tạo order với status = PENDING
-     * - Lưu shipping address và snapshot
-     * <p>
-     * 5. ORDER DETAILS CREATION PHASE (VỚI SNAPSHOT):
-     * - Với mỗi sản phẩm trong giỏ:
-     * - Lấy thông tin hiện tại (name, code, image, price)
-     * - Lưu snapshot vào OrderDetail để đảm bảo không bị ảnh hưởng khi admin chỉnh sửa
-     * - Trừ số lượng từ product.stockQuantity
-     * - Cập nhật product status nếu hết hàng
-     * <p>
-     * 6. INVENTORY TRANSACTION PHASE:
-     * - Tạo inventory transaction (OUT) để ghi lại lịch sử xuất kho
-     * - Reference đến order ID để trace
-     * <p>
-     * 7. CLEANUP PHASE:
-     * - Xóa giỏ hàng sau khi tạo order thành công
-     * <p>
-     * SNAPSHOT PROTECTION:
-     * - Snapshot tất cả thông tin sản phẩm tại thời điểm mua
-     * - Đảm bảo khi admin chỉnh sửa sản phẩm, đơn hàng đã đặt vẫn giữ nguyên thông tin
-     * - Snapshot địa chỉ để đảm bảo không bị ảnh hưởng nếu địa chỉ bị xóa
-     */
     @Override
     public OrderDTO createOrderFromCart(Integer customerId, OrderDTO request) {
         log.info("Creating order from cart for customer: {}", customerId);
@@ -143,8 +106,6 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        // ========== PHASE 2: SHIPPING ADDRESS ==========
-
         ShippingAddress shippingAddress = null;
         String shippingAddressSnapshot = null;
 
@@ -169,8 +130,6 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        // ========== PHASE 3: CALCULATION ==========
-
         // Tính tổng tiền từ giá hiện tại của sản phẩm
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (CartItem item : cart.getCartItems()) {
@@ -179,7 +138,26 @@ public class OrderServiceImpl implements OrderService {
             totalAmount = totalAmount.add(itemTotal);
         }
 
-        // ========== PHASE 4: ORDER CREATION ==========
+        // Calculate discount using PromotionService
+        String promotionCode = request.getPromotionCode();
+        String customerType = customer.getCustomerType() != null ? customer.getCustomerType().name() : "REGULAR";
+        BigDecimal discount = promotionService.calculateDiscountForOrder(totalAmount, promotionCode, customerType);
+
+        // Get promotion and promotion rule if applicable
+        Promotion promotion = null;
+        PromotionRule promotionRule = null;
+
+        if (promotionCode != null && !promotionCode.trim().isEmpty()) {
+            // If promotion code was used, get the promotion
+            promotion = promotionRepository.findByCodeAndIsActiveTrue(promotionCode.trim()).orElse(null);
+        } else {
+            // If no promotion code, check for automatic discount rule
+            LocalDateTime now = LocalDateTime.now();
+            List<PromotionRule> rules = promotionRuleRepository.findApplicableRules(now, totalAmount, customerType);
+            if (!rules.isEmpty()) {
+                promotionRule = rules.get(0); // Get first rule (highest priority)
+            }
+        }
 
         // Tạo order với status = PENDING (chờ xác nhận)
         Order order = Order.builder()
@@ -187,15 +165,16 @@ public class OrderServiceImpl implements OrderService {
                 .employee(null) // Customer order, không có employee
                 .status(Order.OrderStatus.PENDING)
                 .totalAmount(totalAmount)
-                .discount(BigDecimal.ZERO) // Chưa có discount
+                .discount(discount) // Discount from promotion or rule
                 .paymentMethod(request.getPaymentMethod())
                 .notes(request.getNotes())
                 .shippingAddress(shippingAddress) // Reference đến shipping address
                 .shippingAddressSnapshot(shippingAddressSnapshot) // Snapshot để bảo vệ
+                .promotion(promotion) // Promotion if coupon code was used
+                .promotionCode(promotionCode) // Promotion code
+                .promotionRule(promotionRule) // Promotion rule if automatic discount was applied
                 .orderDetails(new ArrayList<>())
                 .build();
-
-        // ========== PHASE 5: ORDER DETAILS CREATION (VỚI SNAPSHOT) ==========
 
         // Với mỗi sản phẩm trong giỏ, tạo order detail với snapshot
         for (CartItem cartItem : cart.getCartItems()) {
@@ -245,8 +224,18 @@ public class OrderServiceImpl implements OrderService {
         // Refresh entity để load finalAmount (generated column từ database)
         entityManager.refresh(savedOrder);
 
-        // ========== PHASE 6: INVENTORY TRANSACTION ==========
+        // ========== PHASE 5.5: RECORD PROMOTION USAGE ==========
 
+        // Record promotion usage if promotion code was used
+        if (promotion != null && savedOrder.getIdOrder() != null) {
+            try {
+                promotionService.recordPromotionUsage(promotion.getIdPromotion(), savedOrder.getIdOrder(), customerId);
+                log.info("Promotion usage recorded for order ID: {}, promotion ID: {}", savedOrder.getIdOrder(), promotion.getIdPromotion());
+            } catch (Exception e) {
+                log.error("Error recording promotion usage for order ID: {}", savedOrder.getIdOrder(), e);
+                // Don't fail the order creation if promotion usage recording fails
+            }
+        }
         // Tạo inventory transaction sau khi order được lưu (để có order ID)
         // Ghi lại lịch sử xuất kho để theo dõi
         // LƯU Ý: Nếu paymentMethod = PAYOS, KHÔNG tạo transaction ngay
@@ -268,12 +257,9 @@ public class OrderServiceImpl implements OrderService {
             log.info("Payment method is PAYOS. Inventory transactions will be created when payment is confirmed via webhook.");
         }
 
-        // ========== PHASE 7: GHN INTEGRATION ==========
-
         // Tạo Shipment và tích hợp GHN (nếu có shipping address và GHN enabled)
         createShipmentAndIntegrateGHN(savedOrder, shippingAddress, totalAmount);
 
-        // ========== PHASE 8: CLEANUP ==========
 
         // Xóa giỏ hàng sau khi tạo order thành công
         cartService.clearCart(customerId);
@@ -283,37 +269,11 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDTO(savedOrder);
     }
 
-    /**
-     * Tạo đơn hàng trực tiếp từ sản phẩm (Buy Now)
-     * <p>
-     * Logic tương tự createOrderFromCart nhưng chỉ xử lý 1 sản phẩm:
-     * <p>
-     * 1. VALIDATION PHASE:
-     * - Kiểm tra customer tồn tại
-     * - Kiểm tra sản phẩm tồn tại và còn khả dụng
-     * - Validate tồn kho đủ
-     * <p>
-     * 2. SHIPPING ADDRESS PHASE:
-     * - Tương tự createOrderFromCart
-     * <p>
-     * 3. CALCULATION PHASE:
-     * - Tính tổng tiền từ giá sản phẩm × quantity
-     * <p>
-     * 4. ORDER CREATION PHASE:
-     * - Tạo order với 1 order detail
-     * - Lưu snapshot sản phẩm
-     * <p>
-     * 5. INVENTORY TRANSACTION PHASE:
-     * - Trừ tồn kho và tạo inventory transaction
-     * <p>
-     * Lưu ý: Không xóa giỏ hàng vì không sử dụng giỏ hàng
-     */
     @Override
     public OrderDTO createOrderDirectly(Integer customerId, OrderDTO request) {
         log.info("Creating order directly (Buy Now) for customer: {}, product: {}, quantity: {}",
                 customerId, request.getProductId(), request.getQuantity());
 
-        // ========== PHASE 1: VALIDATION ==========
 
         // Bước 1.1: Kiểm tra customer tồn tại
         Customer customer = customerRepository.findById(customerId)
@@ -334,7 +294,6 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("Sản phẩm " + product.getProductName() + " không đủ số lượng. Còn lại: " + product.getStockQuantity());
         }
 
-        // ========== PHASE 2: SHIPPING ADDRESS ==========
 
         ShippingAddress shippingAddress = null;
         String shippingAddressSnapshot = null;
@@ -356,27 +315,49 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        // ========== PHASE 3: CALCULATION ==========
 
         BigDecimal totalAmount = product.getPrice()
                 .multiply(BigDecimal.valueOf(request.getQuantity()));
 
-        // ========== PHASE 4: ORDER CREATION ==========
+
+        // Calculate discount using PromotionService
+        String promotionCode = request.getPromotionCode();
+        String customerType = customer.getCustomerType() != null ? customer.getCustomerType().name() : "REGULAR";
+        BigDecimal discount = promotionService.calculateDiscountForOrder(totalAmount, promotionCode, customerType);
+
+        // Get promotion and promotion rule if applicable
+        Promotion promotion = null;
+        PromotionRule promotionRule = null;
+
+        if (promotionCode != null && !promotionCode.trim().isEmpty()) {
+            // If promotion code was used, get the promotion
+            promotion = promotionRepository.findByCodeAndIsActiveTrue(promotionCode.trim()).orElse(null);
+        } else {
+            // If no promotion code, check for automatic discount rule
+            LocalDateTime now = LocalDateTime.now();
+            List<PromotionRule> rules = promotionRuleRepository.findApplicableRules(now, totalAmount, customerType);
+            if (!rules.isEmpty()) {
+                promotionRule = rules.get(0); // Get first rule (highest priority)
+            }
+        }
+
 
         Order order = Order.builder()
                 .customer(customer)
                 .employee(null)
                 .status(Order.OrderStatus.PENDING)
                 .totalAmount(totalAmount)
-                .discount(BigDecimal.ZERO)
+                .discount(discount) // Discount from promotion or rule
                 .paymentMethod(request.getPaymentMethod())
                 .notes(request.getNotes())
                 .shippingAddress(shippingAddress)
                 .shippingAddressSnapshot(shippingAddressSnapshot)
+                .promotion(promotion) // Promotion if coupon code was used
+                .promotionCode(promotionCode) // Promotion code
+                .promotionRule(promotionRule) // Promotion rule if automatic discount was applied
                 .orderDetails(new ArrayList<>())
                 .build();
 
-        // ========== PHASE 5: ORDER DETAIL CREATION (VỚI SNAPSHOT) ==========
 
         String productName = product.getProductName();
         String productCode = product.getProductCode();
@@ -414,7 +395,17 @@ public class OrderServiceImpl implements OrderService {
         // Refresh entity để load finalAmount (generated column từ database)
         entityManager.refresh(savedOrder);
 
-        // ========== PHASE 6: INVENTORY TRANSACTION ==========
+
+        // Record promotion usage if promotion code was used
+        if (promotion != null && savedOrder.getIdOrder() != null) {
+            try {
+                promotionService.recordPromotionUsage(promotion.getIdPromotion(), savedOrder.getIdOrder(), customerId);
+                log.info("Promotion usage recorded for order ID: {}, promotion ID: {}", savedOrder.getIdOrder(), promotion.getIdPromotion());
+            } catch (Exception e) {
+                log.error("Error recording promotion usage for order ID: {}", savedOrder.getIdOrder(), e);
+                // Don't fail the order creation if promotion usage recording fails
+            }
+        }
 
         // LƯU Ý: Nếu paymentMethod = PAYOS, KHÔNG tạo transaction ngay
         // Transaction sẽ được tạo khi webhook xác nhận thanh toán thành công
@@ -433,8 +424,6 @@ public class OrderServiceImpl implements OrderService {
             log.info("Payment method is PAYOS. Inventory transactions will be created when payment is confirmed via webhook.");
         }
 
-        // ========== PHASE 7: GHN INTEGRATION ==========
-
         // Tạo Shipment và tích hợp GHN (nếu có shipping address và GHN enabled)
         createShipmentAndIntegrateGHN(savedOrder, shippingAddress, totalAmount);
 
@@ -443,15 +432,6 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDTO(savedOrder);
     }
 
-    /**
-     * Lấy danh sách đơn hàng của customer (có thể filter theo status)
-     * <p>
-     * Logic xử lý:
-     * - Nếu status != null → Filter đơn hàng theo status cụ thể
-     * - Nếu status == null → Lấy tất cả đơn hàng (không filter)
-     * - Sắp xếp mặc định theo orderDate DESC (mới nhất trước)
-     * - Có phân trang
-     */
     @Override
     @Transactional(readOnly = true)
     public PageResponse<OrderDTO> getMyOrders(Integer customerId, Order.OrderStatus status, Pageable pageable) {
@@ -483,30 +463,6 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDTO(order);
     }
 
-    /**
-     * Hủy đơn hàng (chỉ khi status = PENDING)
-     * <p>
-     * Logic xử lý chi tiết:
-     * <p>
-     * 1. VALIDATION PHASE:
-     * - Kiểm tra đơn hàng tồn tại
-     * - Kiểm tra quyền: Đơn hàng phải thuộc về customer hiện tại
-     * - Kiểm tra trạng thái: Chỉ cho phép hủy khi status = PENDING
-     * <p>
-     * 2. STOCK RESTORATION PHASE:
-     * - Với mỗi sản phẩm trong đơn hàng:
-     * - Cộng lại số lượng vào product.stockQuantity
-     * - Nếu product đang OUT_OF_STOCK và có hàng lại → Cập nhật status = IN_STOCK
-     * - Tạo InventoryTransaction (IN) để ghi lại lịch sử hoàn trả
-     * <p>
-     * 3. STATUS UPDATE PHASE:
-     * - Cập nhật order status = CANCELED
-     * <p>
-     * Lưu ý:
-     * - Chỉ hủy được khi PENDING để tránh rối loạn khi đơn đã được xác nhận/hoàn thành
-     * - Hàng được tự động hoàn trả vào kho
-     * - Ghi lại lịch sử inventory transaction để theo dõi
-     */
     @Override
     public OrderDTO cancelOrder(Integer customerId, Integer orderId) {
         log.info("Cancelling order {} for customer: {}", orderId, customerId);
@@ -527,8 +483,6 @@ public class OrderServiceImpl implements OrderService {
         if (order.getStatus() != Order.OrderStatus.PENDING) {
             throw new RuntimeException("Chỉ có thể hủy đơn hàng ở trạng thái PENDING");
         }
-
-        // ========== PHASE 2: STOCK RESTORATION ==========
 
         // Hoàn trả hàng vào kho cho tất cả sản phẩm trong đơn hàng
         for (OrderDetail detail : order.getOrderDetails()) {
@@ -559,8 +513,6 @@ public class OrderServiceImpl implements OrderService {
             inventoryTransactionRepository.save(transaction);
         }
 
-        // ========== PHASE 3: STATUS UPDATE ==========
-
         // Cập nhật trạng thái đơn hàng thành CANCELED
         order.setStatus(Order.OrderStatus.CANCELED);
         Order savedOrder = orderRepository.save(order);
@@ -570,40 +522,11 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDTO(savedOrder);
     }
 
-    /**
-     * Tạo đơn hàng cho khách hàng (Admin/Employee)
-     * <p>
-     * Logic xử lý:
-     * <p>
-     * 1. CUSTOMER PHASE:
-     * - Nếu có customerId → Sử dụng customer có sẵn
-     * - Nếu không có customerId → Tạo Customer mới không có User (walk-in customer)
-     * <p>
-     * 2. EMPLOYEE PHASE:
-     * - Lấy employee từ employeeId
-     * <p>
-     * 3. VALIDATION PHASE:
-     * - Validate tất cả sản phẩm trong danh sách
-     * - Kiểm tra tồn kho và trạng thái
-     * <p>
-     * 4. CALCULATION PHASE:
-     * - Tính tổng tiền từ giá sản phẩm
-     * - Áp dụng discount nếu có
-     * <p>
-     * 5. ORDER CREATION PHASE:
-     * - Tạo order với employee và customer
-     * - Tạo order details với snapshot
-     * <p>
-     * 6. INVENTORY TRANSACTION PHASE:
-     * - Trừ tồn kho và tạo inventory transactions
-     */
     @Override
     public OrderDTO createOrderForCustomer(Integer employeeId, OrderDTO request) {
         log.info("Creating order for customer by {}, customerId: {}",
                 employeeId != null ? "employee: " + employeeId : "admin",
                 request.getIdCustomer());
-
-        // ========== PHASE 1: CUSTOMER ==========
 
         Customer customer;
         if (request.getIdCustomer() != null) {
@@ -648,16 +571,12 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        // ========== PHASE 2: EMPLOYEE ==========
-
         Employee employee = null;
         if (employeeId != null) { // Nếu employeeId = null -> employee = null -> ADMIN tạo đơn
             //Nếu có employeeId -> Lấy employee từ DB
             employee = employeeRepository.findById(employeeId)
                     .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy nhân viên với ID: " + employeeId));
         }
-
-        // ========== PHASE 3: VALIDATION ==========
 
         // Validate tất cả sản phẩm trong danh sách
         for (OrderDetailDTO item : request.getOrderItems()) {
@@ -674,8 +593,6 @@ public class OrderServiceImpl implements OrderService {
                 throw new RuntimeException("Sản phẩm " + product.getProductName() + " không đủ số lượng. Còn lại: " + product.getStockQuantity());
             }
         }
-
-        // ========== PHASE 4: CALCULATION ==========
 
         // Tính tổng tiền từ tất cả sản phẩm trong đơn hàng
         // totalAmount = sum(quantity × price) cho mỗi sản phẩm
@@ -700,8 +617,6 @@ public class OrderServiceImpl implements OrderService {
             discount = totalAmount; // Discount không được lớn hơn totalAmount
         }
         // finalAmount sẽ được tính tự động bởi database: finalAmount = totalAmount - discount
-
-        // ========== PHASE 5: ORDER CREATION ==========
 
         // Tạo shipping address snapshot từ customer info
         // Snapshot này đảm bảo địa chỉ không bị ảnh hưởng nếu customer thay đổi thông tin sau này
@@ -728,8 +643,6 @@ public class OrderServiceImpl implements OrderService {
                 .shippingAddressSnapshot(shippingAddressSnapshot) // Snapshot để hiển thị
                 .orderDetails(new ArrayList<>())
                 .build();
-
-        // ========== PHASE 6: ORDER DETAILS CREATION (VỚI SNAPSHOT) ==========
 
         for (OrderDetailDTO item : request.getOrderItems()) {
             Integer productId = item.getProductId() != null ? item.getProductId() : item.getIdProduct();
@@ -786,8 +699,6 @@ public class OrderServiceImpl implements OrderService {
             inventoryTransactionRepository.save(transaction);
         }
 
-        // ========== PHASE 8: GHN INTEGRATION ==========
-
         // Tạo Shipment và tích hợp GHN (nếu có shipping address và GHN enabled)
         // Note: createOrderForCustomer thường không có shippingAddress entity, nên skip GHN
         // Chỉ tạo Shipment cơ bản nếu cần
@@ -800,41 +711,10 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDTO(savedOrder);
     }
 
-    /**
-     * Tạo snapshot của địa chỉ giao hàng
-     * <p>
-     * Format: "Tên người nhận, Địa chỉ, Số điện thoại"
-     * <p>
-     * Mục đích: Lưu snapshot để đảm bảo không bị ảnh hưởng nếu địa chỉ bị xóa sau này
-     */
     private String buildAddressSnapshot(ShippingAddress address) {
         return address.getRecipientName() + ", " + address.getAddress() + ", " + address.getPhoneNumber();
     }
 
-    /**
-     * Customer xác nhận đã nhận hàng
-     * <p>
-     * Logic xử lý chi tiết:
-     * <p>
-     * 1. VALIDATION PHASE:
-     * - Kiểm tra order tồn tại và thuộc về customer hiện tại
-     * - Kiểm tra order status phải là CONFIRMED (chỉ cho phép confirm khi CONFIRMED)
-     * - Tìm shipment theo orderId (nếu không có thì tạo mới với status PREPARING)
-     * <p>
-     * 2. UPDATE PHASE:
-     * - Cập nhật order.status = COMPLETED (từ CONFIRMED)
-     * - Set order.deliveredAt = LocalDateTime.now()
-     * - Cập nhật shipment.shippingStatus = DELIVERED
-     * - Lưu cả order và shipment
-     * <p>
-     * 3. RETURN PHASE:
-     * - Trả về OrderDTO đã được cập nhật
-     * <p>
-     * Lưu ý:
-     * - Chỉ cho phép confirm khi order.status = CONFIRMED
-     * - Tự động tạo shipment nếu chưa có (trường hợp đơn hàng cũ)
-     * - Cập nhật cả Order và Shipment để đồng bộ trạng thái
-     */
     @Override
     public OrderDTO confirmDelivery(Integer customerId, Integer orderId) {
         log.info("Confirming delivery for order {} by customer: {}", orderId, customerId);
@@ -888,25 +768,6 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDTO(savedOrder);
     }
 
-    /**
-     * Admin/Employee: Lấy tất cả đơn hàng
-     * <p>
-     * Logic xử lý:
-     * <p>
-     * 1. FILTER PHASE:
-     * - Nếu có cả customerId và status → Lọc theo cả 2
-     * - Nếu chỉ có customerId → Lọc theo customerId
-     * - Nếu chỉ có status → Lọc theo status
-     * - Nếu không có filter → Lấy tất cả
-     * <p>
-     * 2. SORT & PAGINATION:
-     * - Sắp xếp theo orderDate DESC (mới nhất trước)
-     * - Có phân trang
-     * <p>
-     * 3. MAPPING PHASE:
-     * - Convert Order entities sang OrderDTO
-     * - Trả về PageResponse
-     */
     @Override
     @Transactional(readOnly = true)
     public PageResponse<OrderDTO> getAllOrders(Order.OrderStatus status, Integer customerId, Pageable pageable) {
@@ -926,33 +787,9 @@ public class OrderServiceImpl implements OrderService {
         return PageUtils.toPageResponse(orderPage, orderMapper.toDTOList(orderPage.getContent()));
     }
 
-    /**
-     * Admin/Employee: Cập nhật trạng thái đơn hàng
-     * <p>
-     * Logic xử lý:
-     * <p>
-     * 1. VALIDATION PHASE:
-     * - Kiểm tra order tồn tại
-     * - Validate trạng thái hợp lệ
-     * - Kiểm tra business rules:
-     * - Không thể update order đã CANCELED
-     * - Không thể quay lại PENDING từ CONFIRMED/COMPLETED
-     * - CANCELED chỉ được set từ PENDING
-     * <p>
-     * 2. UPDATE PHASE:
-     * - Cập nhật order.status
-     * - Nếu status = CANCELED và order đang ở PENDING:
-     * - Hoàn trả hàng vào kho (giống logic cancelOrder)
-     * - Tạo inventory transactions
-     * <p>
-     * 3. RETURN PHASE:
-     * - Trả về OrderDTO đã cập nhật
-     */
     @Override
     public OrderDTO updateOrderStatus(Integer orderId, Order.OrderStatus newStatus) {
         log.info("Updating order status: orderId={}, newStatus={}", orderId, newStatus);
-
-        // ========== PHASE 1: VALIDATION ==========
 
         Order order = orderRepository.findByIdWithDetails(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng với ID: " + orderId));
@@ -978,8 +815,6 @@ public class OrderServiceImpl implements OrderService {
         if (newStatus == Order.OrderStatus.CANCELED && currentStatus != Order.OrderStatus.PENDING) {
             throw new RuntimeException("Chỉ có thể hủy đơn hàng ở trạng thái PENDING");
         }
-
-        // ========== PHASE 2: UPDATE ==========
 
         // Nếu chuyển sang CANCELED → Hoàn trả hàng vào kho
         if (newStatus == Order.OrderStatus.CANCELED) {
@@ -1020,25 +855,6 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDTO(savedOrder);
     }
 
-    /**
-     * Tạo Shipment và tích hợp GHN
-     * <p>
-     * Logic:
-     * 1. Kiểm tra GHN enabled và có shipping address không
-     * 2. Tạo Shipment entity với shippingMethod = GHN
-     * 3. Nếu có đủ thông tin (districtId, wardCode), tính phí vận chuyển và tạo đơn GHN
-     * 4. Lưu thông tin GHN vào Shipment (ghnOrderCode, ghnShippingFee, ghnExpectedDeliveryTime)
-     * 5. Lưu Shipment
-     * <p>
-     * Lưu ý:
-     * - Nếu không có đủ thông tin hoặc GHN disabled, chỉ tạo Shipment cơ bản
-     * - ShippingAddress hiện tại không có districtId và wardCode, nên sẽ skip tính phí và tạo đơn GHN
-     * - Có thể mở rộng sau để parse address hoặc thêm fields vào ShippingAddress
-     *
-     * @param order            Order đã được lưu
-     * @param shippingAddress  Shipping address (có thể null)
-     * @param orderTotalAmount Tổng tiền đơn hàng (để tính phí vận chuyển)
-     */
     private void createShipmentAndIntegrateGHN(Order order, ShippingAddress shippingAddress, BigDecimal orderTotalAmount) {
         log.info("Creating shipment and integrating GHN for order ID: {}", order.getIdOrder());
 
@@ -1058,15 +874,35 @@ public class OrderServiceImpl implements OrderService {
         // Nếu GHN enabled và có shipping address, thử tích hợp GHN
         if (ghnService.isEnabled() && shippingAddress != null) {
             try {
-                // Note: ShippingAddress entity hiện tại không có districtId và wardCode
-                // Để tích hợp GHN đầy đủ, cần:
-                // 1. Thêm districtId và wardCode vào ShippingAddress entity
-                // 2. Hoặc parse từ address text (không recommended)
-                // Hiện tại skip GHN integration và chỉ tạo Shipment cơ bản
+                // Kiểm tra có đủ thông tin để tích hợp GHN (districtId, wardCode)
+                if (shippingAddress.getDistrictId() != null && shippingAddress.getWardCode() != null) {
+                    log.info("GHN integration: Using districtId={}, wardCode={} from ShippingAddress",
+                            shippingAddress.getDistrictId(), shippingAddress.getWardCode());
 
-                log.info("GHN integration skipped: ShippingAddress does not have districtId/wardCode. " +
-                        "Creating basic shipment only.");
+                    // TODO: Get shop district_id from config or shop information
+                    // For now, we'll skip full GHN integration until shop district is configured
+                    // This is a placeholder for future implementation
+                    // You can add shopDistrictId to GHNConfig if needed
 
+                    // Calculate shipping fee (if shop district is configured)
+                    // GHNCalculateFeeRequestDTO feeRequest = GHNCalculateFeeRequestDTO.builder()
+                    //     .fromDistrictId(ghnConfig.getShopDistrictId()) // TODO: Add to GHNConfig
+                    //     .toDistrictId(shippingAddress.getDistrictId())
+                    //     .toWardCode(shippingAddress.getWardCode())
+                    //     .weight(calculateTotalWeight(order.getOrderDetails()))
+                    //     .insuranceValue(order.getFinalAmount().intValue())
+                    //     .codAmount(order.getFinalAmount().intValue())
+                    //     .build();
+                    //
+                    // GHNCalculateFeeResponseDTO feeResponse = ghnService.calculateShippingFee(feeRequest);
+                    // shipment.setGhnShippingFee(feeResponse.getTotal());
+
+                    log.info("GHN integration: ShippingAddress has districtId/wardCode. " +
+                            "Full GHN integration can be implemented when shop district is configured.");
+                } else {
+                    log.info("GHN integration skipped: ShippingAddress does not have districtId/wardCode. " +
+                            "Creating basic shipment only.");
+                }
             } catch (Exception e) {
                 log.error("Error integrating GHN for order ID: {}. Creating basic shipment only.",
                         order.getIdOrder(), e);
@@ -1085,4 +921,3 @@ public class OrderServiceImpl implements OrderService {
         log.info("Shipment created successfully for order ID: {}", order.getIdOrder());
     }
 }
-

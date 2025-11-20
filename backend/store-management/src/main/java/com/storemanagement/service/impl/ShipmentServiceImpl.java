@@ -17,14 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-/**
- * Service implementation cho Shipment
- * 
- * Mục đích:
- * - Implement các method để quản lý shipment
- * - Đồng bộ với GHN API
- * - Tracking đơn hàng
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -35,15 +27,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     private final OrderRepository orderRepository;
     private final ShipmentMapper shipmentMapper;
     private final GHNService ghnService;
-    
-    /**
-     * Lấy thông tin shipment theo ID
-     * 
-     * Logic:
-     * 1. Tìm shipment từ database
-     * 2. Map sang ShipmentDTO
-     * 3. Trả về
-     */
+
     @Override
     @Transactional(readOnly = true)
     public ShipmentDTO getShipmentById(Integer shipmentId) {
@@ -54,15 +38,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         
         return shipmentMapper.toDTO(shipment);
     }
-    
-    /**
-     * Lấy thông tin shipment theo order ID
-     * 
-     * Logic:
-     * 1. Tìm shipment theo orderId
-     * 2. Map sang ShipmentDTO
-     * 3. Trả về
-     */
+
     @Override
     @Transactional(readOnly = true)
     public ShipmentDTO getShipmentByOrderId(Integer orderId) {
@@ -73,22 +49,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         
         return shipmentMapper.toDTO(shipment);
     }
-    
-    /**
-     * Đồng bộ trạng thái với GHN API
-     * 
-     * Logic:
-     * 1. Lấy shipment từ database
-     * 2. Kiểm tra có ghnOrderCode không
-     * 3. Gọi GHN API để lấy thông tin mới nhất
-     * 4. Cập nhật shipment với thông tin từ GHN:
-     *    - ghnStatus
-     *    - ghnUpdatedAt
-     *    - ghnNote (nếu có)
-     * 5. Sync shippingStatus và Order.status
-     * 6. Lưu shipment
-     * 7. Trả về ShipmentDTO đã được cập nhật
-     */
+
     @Override
     public ShipmentDTO syncWithGHN(Integer shipmentId) {
         log.info("Syncing shipment with GHN: shipmentId={}", shipmentId);
@@ -106,24 +67,19 @@ public class ShipmentServiceImpl implements ShipmentService {
         }
         
         try {
-            // Gọi GHN API để lấy thông tin mới nhất
             var orderInfo = ghnService.getOrderInfo(shipment.getGhnOrderCode());
-            
-            // Cập nhật shipment với thông tin từ GHN
+
             shipment.setGhnStatus(orderInfo.getStatus());
             shipment.setGhnUpdatedAt(LocalDateTime.now());
             
             if (orderInfo.getNote() != null && !orderInfo.getNote().isEmpty()) {
                 shipment.setGhnNote(orderInfo.getNote());
             }
-            
-            // Sync shippingStatus
+
             syncShippingStatus(shipment, orderInfo.getStatus());
-            
-            // Lưu shipment
+
             shipmentRepository.save(shipment);
-            
-            // Sync Order.status nếu cần
+
             if (shipment.getOrder() != null) {
                 syncOrderStatus(shipment.getOrder(), orderInfo.getStatus());
             }
@@ -138,16 +94,7 @@ public class ShipmentServiceImpl implements ShipmentService {
             throw new RuntimeException("Failed to sync shipment with GHN: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * Lấy thông tin tracking từ GHN
-     * 
-     * Logic:
-     * 1. Lấy shipment từ database
-     * 2. Kiểm tra có ghnOrderCode không
-     * 3. Gọi GHN API để lấy tracking info
-     * 4. Trả về GHNTrackingDTO với lịch sử cập nhật trạng thái
-     */
+
     @Override
     @Transactional(readOnly = true)
     public GHNTrackingDTO getShipmentTracking(Integer shipmentId) {
@@ -166,7 +113,6 @@ public class ShipmentServiceImpl implements ShipmentService {
         }
         
         try {
-            // Gọi GHN API để lấy tracking info
             GHNTrackingDTO tracking = ghnService.trackOrder(shipment.getGhnOrderCode());
             
             log.info("Successfully got tracking info for shipment: shipmentId={}", shipmentId);
@@ -178,12 +124,7 @@ public class ShipmentServiceImpl implements ShipmentService {
             throw new RuntimeException("Failed to get shipment tracking: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * Sync Shipment.shippingStatus với ghnStatus
-     * 
-     * Logic mapping tương tự GHNWebhookController
-     */
+
     private void syncShippingStatus(Shipment shipment, String ghnStatus) {
         if (ghnStatus == null || ghnStatus.isEmpty()) {
             return;
@@ -221,12 +162,7 @@ public class ShipmentServiceImpl implements ShipmentService {
             shipment.setShippingStatus(newStatus);
         }
     }
-    
-    /**
-     * Sync Order.status với ghnStatus
-     * 
-     * Logic tương tự GHNWebhookController
-     */
+
     private void syncOrderStatus(Order order, String ghnStatus) {
         if (order == null || ghnStatus == null || ghnStatus.isEmpty()) {
             return;

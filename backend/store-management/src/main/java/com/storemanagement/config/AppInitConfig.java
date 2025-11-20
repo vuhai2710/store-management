@@ -10,50 +10,24 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-/**
- * Configuration class để khởi tạo dữ liệu ban đầu khi ứng dụng khởi động
- * 
- * Chức năng:
- * - Tự động tạo tài khoản ADMIN mặc định nếu chưa tồn tại
- * - Chạy một lần khi ứng dụng start lần đầu
- * 
- * Lưu ý:
- * - Chỉ tạo ADMIN nếu chưa có username "admin" trong database
- * - Password được hash bằng BCrypt trước khi lưu
- * - Log thông tin đăng nhập để developer biết cách đăng nhập
- * 
- * CẢNH BÁO: 
- * - Trong production, nên đổi password ngay sau lần đăng nhập đầu tiên
- * - Hoặc disable class này và tạo admin thủ công
- * 
- * @author Store Management Team
- */
 @Component
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 @Slf4j
 public class AppInitConfig implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    /**
-     * Thông tin tài khoản ADMIN mặc định
-     * CẢNH BÁO: Đổi password trong production!
-     */
+    public AppInitConfig(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
     private static final String ADMIN_USERNAME = "admin";
     private static final String ADMIN_PASSWORD = "admin";
     private static final String ADMIN_EMAIL = "admin@gmail.com";
 
-    /**
-     * Chạy khi ứng dụng khởi động
-     * 
-     * Logic:
-     * 1. Kiểm tra xem đã có user với username "admin" chưa
-     * 2. Nếu chưa có -> tạo mới với role ADMIN
-     * 3. Nếu đã có -> bỏ qua (không tạo lại)
-     * 
-     * @param args Application arguments (không sử dụng)
-     */
+
     @Override
     public void run(ApplicationArguments args) {
         // Kiểm tra xem đã có admin chưa

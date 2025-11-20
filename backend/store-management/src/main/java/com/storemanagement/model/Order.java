@@ -69,14 +69,19 @@ public class Order {
     @Column(name = "delivered_at")
     private LocalDateTime deliveredAt; // Thời điểm customer xác nhận đã nhận hàng
 
-    /**
-     * PayOS payment link ID
-     * Được set khi tạo payment link thành công từ PayOS API
-     * Sử dụng để tìm order khi nhận webhook callback từ PayOS
-     * PayOS webhook sẽ gửi payment_link_id trong request body
-     */
     @Column(name = "payment_link_id", length = 255)
     private String paymentLinkId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_promotion")
+    private Promotion promotion;
+
+    @Column(name = "promotion_code", length = 50)
+    private String promotionCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_promotion_rule")
+    private PromotionRule promotionRule;
 
     @PrePersist
     protected void onCreate() {
@@ -89,15 +94,7 @@ public class Order {
         PENDING, CONFIRMED, COMPLETED, CANCELED
     }
 
-    /**
-     * Phương thức thanh toán
-     * - CASH: Thanh toán tiền mặt
-     * - TRANSFER: Chuyển khoản ngân hàng
-     * - ZALOPAY: Thanh toán qua ZaloPay
-     * - PAYOS: Thanh toán online qua PayOS payment gateway
-     */
     public enum PaymentMethod {
-        CASH, TRANSFER, ZALOPAY, PAYOS
+        CASH, PAYOS
     }
 }
-

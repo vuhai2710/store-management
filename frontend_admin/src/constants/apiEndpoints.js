@@ -19,6 +19,7 @@ export const API_ENDPOINTS = {
     DEACTIVATE: (id) => `/users/${id}/deactivate`,
     CHANGE_ROLE: (id) => `/users/${id}/role`,
     PROFILE: "/users/profile",
+    AVATAR: "/users/avatar",
   },
 
   // Customers
@@ -30,6 +31,7 @@ export const API_ENDPOINTS = {
     UPGRADE_VIP: (id) => `/customers/${id}/upgrade-vip`,
     DOWNGRADE_REGULAR: (id) => `/customers/${id}/downgrade-regular`,
     ME: "/customers/me",
+    ME_CHANGE_PASSWORD: "/customers/me/change-password",
   },
 
   // Products
@@ -43,6 +45,7 @@ export const API_ENDPOINTS = {
     BY_SUPPLIER: (supplierId) => `/products/supplier/${supplierId}`,
     BY_PRICE: "/products/price",
     BEST_SELLERS: "/products/best-sellers",
+    TOP_5_BEST_SELLERS: "/products/best-sellers/top-5",
     // PUBLIC: "/products/public" // nếu có dùng listing public
   },
 
@@ -60,6 +63,16 @@ export const API_ENDPOINTS = {
   INVENTORY: {
     BASE: "/inventory",
     MOVEMENTS: "/inventory/movements",
+  },
+
+  // Inventory Transactions
+  INVENTORY_TRANSACTIONS: {
+    BASE: "/inventory-transactions",
+    BY_PRODUCT: (productId) => `/inventory-transactions/product/${productId}`,
+    BY_REFERENCE: "/inventory-transactions/reference",
+    BY_TYPE: "/inventory-transactions/by-type",
+    HISTORY: "/inventory-transactions/history",
+    FILTER: "/inventory-transactions/filter",
   },
 
   // Suppliers
@@ -83,6 +96,7 @@ export const API_ENDPOINTS = {
   EMPLOYEES: {
     BASE: "/employees",
     BY_ID: (id) => `/employees/${id}`,
+    ME: "/employees/me",
     DEPARTMENTS: "/employees/departments",
     POSITIONS: "/employees/positions",
     ROLE: (id) => `/employees/${id}/role`,
@@ -108,8 +122,61 @@ export const API_ENDPOINTS = {
     BASE: "/categories",
     GET_ALL: "/categories/all",
     BY_ID: (id) => `/categories/${id}`,
-    // SEARCH: "/categories/search", // nếu backend có
+    SEARCH: "/categories/search",
+  },
+
+  // Import Orders (Purchase Orders)
+  IMPORT_ORDERS: {
+    BASE: "/import-orders",
+    BY_ID: (id) => `/import-orders/${id}`,
+    BY_SUPPLIER: (supplierId) => `/import-orders/supplier/${supplierId}`,
+    HISTORY: "/import-orders/history",
+    PDF: (id) => `/import-orders/${id}/pdf`,
+  },
+
+  // Shipments
+  SHIPMENTS: {
+    BASE: "/shipments",
+    BY_ID: (id) => `/shipments/${id}`,
+    BY_ORDER_ID: (orderId) => `/shipments/order/${orderId}`,
+    TRACK: (id) => `/shipments/${id}/track`,
+    SYNC_GHN: (id) => `/shipments/${id}/sync-ghn`,
+  },
+
+  // Notifications
+  NOTIFICATIONS: {
+    BASE: "/notifications",
+    BY_ID: (id) => `/notifications/${id}`,
+    UNREAD: "/notifications/unread",
+    UNREAD_COUNT: "/notifications/unread-count",
+    MARK_READ: (id) => `/notifications/${id}/mark-read`,
+    MARK_ALL_READ: "/notifications/mark-all-read",
+  },
+
+  // Chat
+  CHAT: {
+    BASE: "/chat",
+    CONVERSATIONS: "/chat/conversations",
+    MY_CONVERSATION: "/chat/conversations/my",
+    CONVERSATION_BY_ID: (id) => `/chat/conversations/${id}`,
+    CONVERSATION_MESSAGES: (id) => `/chat/conversations/${id}/messages`,
+    CLOSE_CONVERSATION: (id) => `/chat/conversations/${id}/close`,
+    MARK_VIEWED: (id) => `/chat/conversations/${id}/mark-viewed`,
+  },
+
+  // Reviews
+  REVIEWS: {
+    PRODUCT_REVIEWS: (productId) => `/products/${productId}/reviews`,
+    ALL_REVIEWS: "/admin/reviews",
+    REVIEW_BY_ID: (reviewId) => `/admin/reviews/${reviewId}`,
+    DELETE_REVIEW: (reviewId) => `/admin/reviews/${reviewId}`,
+  },
+
+  // Promotions
+  PROMOTIONS: {
+    BASE: "/admin/promotions",
+    BY_ID: (id) => `/admin/promotions/${id}`,
+    RULES: "/admin/promotion-rules",
+    RULE_BY_ID: (id) => `/admin/promotion-rules/${id}`,
   },
 };
-
-

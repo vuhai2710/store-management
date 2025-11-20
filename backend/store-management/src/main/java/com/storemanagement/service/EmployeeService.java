@@ -18,6 +18,3 @@ public interface EmployeeService {
     EmployeeDTO getMyProfile(String username);
     EmployeeDTO updateMyProfile(String username, EmployeeDTO request);
 }
-
-
-

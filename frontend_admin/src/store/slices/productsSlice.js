@@ -18,9 +18,23 @@ export const fetchProducts = createAsyncThunk(
 // List theo nhà cung cấp
 export const fetchProductsBySupplier = createAsyncThunk(
   "products/fetchProductsBySupplier",
-  async ({ supplierId, pageNo = 1, pageSize = 10, sortBy = "idProduct", sortDirection = "ASC" }, { rejectWithValue }) => {
+  async (
+    {
+      supplierId,
+      pageNo = 1,
+      pageSize = 10,
+      sortBy = "idProduct",
+      sortDirection = "ASC",
+    },
+    { rejectWithValue }
+  ) => {
     try {
-      const res = await productsService.getProductsBySupplier(supplierId, { pageNo, pageSize, sortBy, sortDirection });
+      const res = await productsService.getProductsBySupplier(supplierId, {
+        pageNo,
+        pageSize,
+        sortBy,
+        sortDirection,
+      });
       return res;
     } catch (err) {
       return rejectWithValue(handleApiError(err));
@@ -80,10 +94,24 @@ export const deleteProduct = createAsyncThunk(
   }
 );
 
+// GET Top 5 Best Selling Products
+export const fetchTop5BestSellingProducts = createAsyncThunk(
+  "products/fetchTop5BestSellingProducts",
+  async ({ status } = {}, { rejectWithValue }) => {
+    try {
+      const res = await productsService.getTop5BestSellingProducts({ status });
+      return res;
+    } catch (err) {
+      return rejectWithValue(handleApiError(err));
+    }
+  }
+);
+
 const initialState = {
   list: [],
   pagination: { pageNo: 1, pageSize: 10, totalElements: 0, totalPages: 0 },
   current: null,
+  top5BestSellers: [],
   loading: false,
   error: null,
 };
@@ -92,8 +120,12 @@ const productsSlice = createSlice({
   name: "products",
   initialState,
   reducers: {
-    clearProductError: (state) => { state.error = null; },
-    clearCurrentProduct: (state) => { state.current = null; },
+    clearProductError: (state) => {
+      state.error = null;
+    },
+    clearCurrentProduct: (state) => {
+      state.current = null;
+    },
   },
   extraReducers: (builder) => {
     const fulfillPage = (state, action) => {
@@ -101,7 +133,7 @@ const productsSlice = createSlice({
       const page = action.payload || {};
       state.list = page.content || [];
       state.pagination = {
-        pageNo: ((page.pageNo ?? 0) + 1),
+        pageNo: (page.pageNo ?? 0) + 1,
         pageSize: page.pageSize ?? 10,
         totalElements: page.totalElements ?? 0,
         totalPages: page.totalPages ?? 0,
@@ -114,47 +146,96 @@ const productsSlice = createSlice({
 
     builder
       // list
-      .addCase(fetchProducts.pending, (s) => { s.loading = true; s.error = null; })
+      .addCase(fetchProducts.pending, (s) => {
+        s.loading = true;
+        s.error = null;
+      })
       .addCase(fetchProducts.fulfilled, fulfillPage)
       .addCase(fetchProducts.rejected, rejectPage)
 
-      .addCase(fetchProductsBySupplier.pending, (s) => { s.loading = true; s.error = null; })
+      .addCase(fetchProductsBySupplier.pending, (s) => {
+        s.loading = true;
+        s.error = null;
+      })
       .addCase(fetchProductsBySupplier.fulfilled, fulfillPage)
       .addCase(fetchProductsBySupplier.rejected, rejectPage)
 
       // get by id
-      .addCase(fetchProductById.pending, (s) => { s.loading = true; s.error = null; s.current = null; })
-      .addCase(fetchProductById.fulfilled, (s, a) => { s.loading = false; s.current = a.payload; })
-      .addCase(fetchProductById.rejected, (s, a) => { s.loading = false; s.error = a.payload || a.error; })
+      .addCase(fetchProductById.pending, (s) => {
+        s.loading = true;
+        s.error = null;
+        s.current = null;
+      })
+      .addCase(fetchProductById.fulfilled, (s, a) => {
+        s.loading = false;
+        s.current = a.payload;
+      })
+      .addCase(fetchProductById.rejected, (s, a) => {
+        s.loading = false;
+        s.error = a.payload || a.error;
+      })
 
       // create
-      .addCase(createProduct.pending, (s) => { s.loading = true; s.error = null; })
+      .addCase(createProduct.pending, (s) => {
+        s.loading = true;
+        s.error = null;
+      })
       .addCase(createProduct.fulfilled, (s, a) => {
         s.loading = false;
         if (a.payload) s.list.unshift(a.payload);
       })
-      .addCase(createProduct.rejected, (s, a) => { s.loading = false; s.error = a.payload || a.error; })
+      .addCase(createProduct.rejected, (s, a) => {
+        s.loading = false;
+        s.error = a.payload || a.error;
+      })
 
       // update
-      .addCase(updateProduct.pending, (s) => { s.loading = true; s.error = null; })
+      .addCase(updateProduct.pending, (s) => {
+        s.loading = true;
+        s.error = null;
+      })
       .addCase(updateProduct.fulfilled, (s, a) => {
         s.loading = false;
         const updated = a.payload;
         const idx = s.list.findIndex((p) => p.idProduct === updated?.idProduct);
         if (idx !== -1) s.list[idx] = updated;
-        if (s.current && s.current.idProduct === updated?.idProduct) s.current = updated;
+        if (s.current && s.current.idProduct === updated?.idProduct)
+          s.current = updated;
       })
-      .addCase(updateProduct.rejected, (s, a) => { s.loading = false; s.error = a.payload || a.error; })
+      .addCase(updateProduct.rejected, (s, a) => {
+        s.loading = false;
+        s.error = a.payload || a.error;
+      })
 
       // delete
-      .addCase(deleteProduct.pending, (s) => { s.loading = true; s.error = null; })
+      .addCase(deleteProduct.pending, (s) => {
+        s.loading = true;
+        s.error = null;
+      })
       .addCase(deleteProduct.fulfilled, (s, a) => {
         s.loading = false;
         const id = a.payload;
         s.list = s.list.filter((p) => p.idProduct !== id);
         if (s.current?.idProduct === id) s.current = null;
       })
-      .addCase(deleteProduct.rejected, (s, a) => { s.loading = false; s.error = a.payload || a.error; });
+      .addCase(deleteProduct.rejected, (s, a) => {
+        s.loading = false;
+        s.error = a.payload || a.error;
+      })
+
+      // top 5 best sellers
+      .addCase(fetchTop5BestSellingProducts.pending, (s) => {
+        s.loading = true;
+        s.error = null;
+      })
+      .addCase(fetchTop5BestSellingProducts.fulfilled, (s, a) => {
+        s.loading = false;
+        s.top5BestSellers = Array.isArray(a.payload) ? a.payload : [];
+      })
+      .addCase(fetchTop5BestSellingProducts.rejected, (s, a) => {
+        s.loading = false;
+        s.error = a.payload || a.error;
+      });
   },
 });
 

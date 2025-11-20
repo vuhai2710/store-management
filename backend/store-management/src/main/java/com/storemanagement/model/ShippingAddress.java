@@ -32,39 +32,13 @@ public class ShippingAddress extends BaseEntity {
     @Column(name = "is_default", nullable = false)
     @Builder.Default
     private Boolean isDefault = false;
+
+    @Column(name = "province_id")
+    private Integer provinceId; // ID tỉnh/thành phố từ GHN API
+
+    @Column(name = "district_id")
+    private Integer districtId; // ID quận/huyện từ GHN API
+
+    @Column(name = "ward_code", length = 50)
+    private String wardCode; // Code phường/xã từ GHN API
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

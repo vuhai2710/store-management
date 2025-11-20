@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Row, Col, Card, Statistic, Typography, Spin } from "antd";
 import {
   ShoppingCartOutlined,
@@ -12,7 +12,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchOrders } from "../store/slices/ordersSlice";
 import { fetchProducts } from "../store/slices/productsSlice";
 import { fetchCustomers } from "../store/slices/customersSlice";
-import { fetchFinancialData } from "../store/slices/financeSlice";
+import { ordersService } from "../services/ordersService";
+import { productsService } from "../services/productsService";
+import { customersService } from "../services/customersService";
 import RevenueChart from "../components/dashboard/RevenueChart";
 import OrderStatusChart from "../components/dashboard/OrderStatusChart";
 import TopProductsChart from "../components/dashboard/TopProductsChart";
@@ -22,35 +24,113 @@ const { Title } = Typography;
 
 const Dashboard = () => {
   const dispatch = useDispatch();
-  const { orders, loading: ordersLoading } = useSelector((state) => state.orders);
-  // Lấy đúng pagination từ slice products
-  const { pagination, loading: productsLoading } = useSelector(
+  const { orders, pagination: ordersPagination, loading: ordersLoading } = useSelector(
+    (state) => state.orders || {}
+  );
+  const { list: products, pagination: productsPagination, loading: productsLoading } = useSelector(
     (state) => state.products || {}
   );
-  const { customers, loading: customersLoading } = useSelector(
-    (state) => state.customers
+  const { list: customers, pagination: customersPagination, loading: customersLoading } = useSelector(
+    (state) => state.customers || {}
   );
-  const { financialData, loading: financeLoading } = useSelector(
-    (state) => state.finance
-  );
+  
+  const [dashboardStats, setDashboardStats] = useState({
+    totalOrders: 0,
+    totalProducts: 0,
+    totalCustomers: 0,
+    totalRevenue: 0,
+    recentOrders: [],
+    allOrdersForRevenue: [],
+    ordersByStatus: {},
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch dashboard data
-    dispatch(fetchOrders({ limit: 5 }));
-    // Gọi products với pageSize nhỏ để lấy tổng số sản phẩm từ totalElements
-    dispatch(fetchProducts({ pageNo: 1, pageSize: 1, sortBy: "idProduct", sortDirection: "ASC" }));
-    dispatch(fetchCustomers({ limit: 10 }));
-    dispatch(fetchFinancialData());
-  }, [dispatch]);
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
 
-  const isLoading =
-    ordersLoading || productsLoading || customersLoading || financeLoading;
+        // Fetch orders - get total count and recent orders for dashboard
+        const ordersResponse = await ordersService.getOrders({
+          pageNo: 1,
+          pageSize: 100, // Get more orders for revenue calculation
+          sortBy: "orderDate",
+          sortDirection: "DESC",
+        });
+        const ordersData = ordersResponse?.content || [];
+        const totalOrdersCount = ordersResponse?.totalElements || 0;
 
-  // Thống kê
-  const totalOrders = orders?.length || 0;
-  const totalProducts = pagination?.totalElements || 0; // lấy từ totalElements
-  const totalCustomers = customers?.length || 0;
-  const totalRevenue = (financialData?.revenue || 0);
+        // Calculate revenue from all completed orders (for dashboard stats)
+        // Note: This is just from the first 100 orders. For accurate revenue, 
+        // we'd need to fetch all completed orders or use a backend aggregation endpoint
+        const completedOrders = ordersData.filter(
+          (order) => order.status === "COMPLETED"
+        );
+        const revenue = completedOrders.reduce(
+          (sum, order) => {
+            const amount = Number(order.totalAmount) || 0;
+            const discount = Number(order.discount) || 0;
+            const finalAmount = Number(order.finalAmount) || (amount - discount);
+            return sum + finalAmount;
+          },
+          0
+        );
+
+        // Count orders by status (from fetched orders)
+        const ordersByStatus = ordersData.reduce((acc, order) => {
+          const status = order.status || "UNKNOWN";
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Fetch products - get total count
+        const productsResponse = await productsService.getProductsPaginated({
+          pageNo: 1,
+          pageSize: 1,
+          sortBy: "idProduct",
+          sortDirection: "ASC",
+        });
+        const totalProductsCount = productsResponse?.totalElements || 0;
+
+        // Fetch customers - get total count (use getAllCustomers -> has 'total')
+        const customersResponse = await customersService.getAllCustomers({
+          pageNo: 1,
+          pageSize: 1,
+          sortBy: "idCustomer",
+          sortDirection: "ASC",
+        });
+
+        const totalCustomersCount =
+          customersResponse?.total ??
+          customersResponse?.totalElements ??
+          customersResponse?.page?.totalElements ??
+          (Array.isArray(customersResponse?.data)
+            ? customersResponse.data.length
+            : 0);
+
+        setDashboardStats({
+          totalOrders: totalOrdersCount,
+          totalProducts: totalProductsCount,
+          totalCustomers: totalCustomersCount,
+          totalRevenue: revenue,
+          recentOrders: ordersData.slice(0, 5),
+          allOrdersForRevenue: completedOrders,
+          ordersByStatus,
+        });
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, []);
+
+  const isLoading = loading || ordersLoading || productsLoading || customersLoading;
+
+  // Statistics
+  const { totalOrders, totalProducts, totalCustomers, totalRevenue, recentOrders, allOrdersForRevenue, ordersByStatus } = dashboardStats;
 
   const statsCards = [
     {
@@ -128,12 +208,12 @@ const Dashboard = () => {
       <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
         <Col xs={24} lg={16}>
           <Card title="Biểu đồ doanh thu" className="chart-container">
-            <RevenueChart />
+            <RevenueChart orders={allOrdersForRevenue || []} />
           </Card>
         </Col>
         <Col xs={24} lg={8}>
           <Card title="Trạng thái đơn hàng" className="chart-container">
-            <OrderStatusChart />
+            <OrderStatusChart ordersByStatus={ordersByStatus} />
           </Card>
         </Col>
       </Row>
@@ -147,7 +227,7 @@ const Dashboard = () => {
         </Col>
         <Col xs={24} lg={12}>
           <Card title="Đơn hàng gần đây" className="chart-container">
-            <RecentOrders />
+            <RecentOrders orders={recentOrders} />
           </Card>
         </Col>
       </Row>

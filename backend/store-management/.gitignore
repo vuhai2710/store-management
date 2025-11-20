@@ -92,12 +92,6 @@ logs/
 *.backup
 
 # Security - Configuration files with sensitive data
-application.yaml
-!application.yaml.example
-application.yml
-!application.yml.example
-application.properties
-!application.properties.example
 application-prod.properties
 application-prod.yaml
 application-prod.yml
@@ -115,3 +109,6 @@ secrets.json
 
 # Sandbox setup guide (contains setup instructions, may contain sensitive info)
 SANDBOX_SETUP_GUIDE.md
+PAYOS_SDK_REFACTOR_NOTES.md
+CART_BUG_FIX.md
+GHN_SHIPPING_UPDATE.md

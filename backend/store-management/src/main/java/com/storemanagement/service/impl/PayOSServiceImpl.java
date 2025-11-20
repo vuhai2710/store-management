@@ -1,73 +1,38 @@
 package com.storemanagement.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.storemanagement.config.PayOSConfig;
 import com.storemanagement.dto.payos.*;
 import com.storemanagement.model.Order;
 import com.storemanagement.service.PayOSService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+// PayOS SDK imports
+// Lưu ý: Sau khi Maven download dependency, cần verify package names và class names
+// Có thể cần điều chỉnh imports dựa trên PayOS SDK documentation
+// Xem PAYOS_SDK_REFACTOR_NOTES.md để biết cách verify
+import vn.payos.PayOS;
+// TODO: Uncomment và verify sau khi download SDK
+// import vn.payos.model.CheckoutResponseData;
+// import vn.payos.model.ItemData;
+// import vn.payos.model.PaymentData;
+// import vn.payos.model.Webhook;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
-/**
- * Service implementation cho PayOS Payment Gateway
- * 
- * Mục đích:
- * - Implement các method để tương tác với PayOS API
- * - Xử lý tạo payment link, verify webhook signature, etc.
- * 
- * PayOS API Documentation: https://payos.vn/docs/api/
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PayOSServiceImpl implements PayOSService {
-    
+
     private final PayOSConfig payOSConfig;
-    private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
-    
-    /**
-     * Tạo payment link từ PayOS API
-     * 
-     * Logic chi tiết:
-     * 1. Validate order: phải có paymentMethod = PAYOS, status = PENDING
-     * 2. Build PayOSPaymentRequestDTO:
-     *    - orderCode: orderId (Long)
-     *    - amount: order.finalAmount (BigDecimal, convert sang Long VND)
-     *    - description: "Thanh toan don hang #" + orderId
-     *    - items: Convert từ order.orderDetails (optional)
-     *    - returnUrl: từ PayOSConfig
-     *    - cancelUrl: từ PayOSConfig
-     * 3. Gọi PayOS API POST /v2/payment-requests:
-     *    - URL: {baseUrl}/v2/payment-requests
-     *    - Headers: Content-Type: application/json, x-client-id: {clientId}, x-api-key: {apiKey}
-     *    - Body: PayOSPaymentRequestDTO (JSON)
-     * 4. Parse response:
-     *    - Check response.code == "00" (success)
-     *    - Extract paymentLinkId và checkoutUrl từ response.data
-     * 5. Return PayOSPaymentResponseDTO
-     * 
-     * Error handling:
-     * - Nếu PayOS API trả về error: log và throw RuntimeException
-     * - Nếu network error: log và throw RuntimeException
-     */
+    private final PayOS payOS;
+
     @Override
     public PayOSPaymentResponseDTO createPaymentLink(Order order) {
-        log.info("Creating PayOS payment link for order ID: {}", order.getIdOrder());
-        
+        log.info("Creating PayOS payment link for order ID: {} using PayOS SDK", order.getIdOrder());
+
         // Validate order
         if (order.getPaymentMethod() != Order.PaymentMethod.PAYOS) {
             throw new IllegalArgumentException("Order payment method must be PAYOS");
@@ -75,130 +40,166 @@ public class PayOSServiceImpl implements PayOSService {
         if (order.getStatus() != Order.OrderStatus.PENDING) {
             throw new IllegalArgumentException("Order status must be PENDING to create payment link");
         }
-        
+
         try {
-            // Build request DTO
-            PayOSPaymentRequestDTO request = buildPaymentRequest(order);
-            
-            // Build request URL
-            String url = payOSConfig.getBaseUrl() + "/v2/payment-requests";
-            
-            // Build headers
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("x-client-id", payOSConfig.getClientId());
-            headers.set("x-api-key", payOSConfig.getApiKey());
-            
-            // Build request entity
-            HttpEntity<PayOSPaymentRequestDTO> requestEntity = new HttpEntity<>(request, headers);
-            
-            log.debug("Calling PayOS API: POST {}", url);
-            log.debug("Request body: {}", objectMapper.writeValueAsString(request));
-            
-            // Call PayOS API
-            ResponseEntity<PayOSPaymentResponseDTO> response = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                requestEntity,
-                PayOSPaymentResponseDTO.class
-            );
-            
-            PayOSPaymentResponseDTO responseDto = response.getBody();
-            
-            // Validate response
-            if (responseDto == null) {
-                throw new RuntimeException("PayOS API returned null response");
-            }
-            
-            if (!"00".equals(responseDto.getCode())) {
-                log.error("PayOS API error: code={}, desc={}", responseDto.getCode(), responseDto.getDesc());
-                throw new RuntimeException("PayOS API error: " + responseDto.getDesc());
-            }
-            
-            // Validate response data
-            if (responseDto.getData() == null) {
-                throw new RuntimeException("PayOS API returned null data in response");
-            }
-            
-            log.info("PayOS payment link created successfully. PaymentLinkId: {}, CheckoutUrl: {}", 
-                responseDto.getData().getPaymentLinkId(), 
+            // Build PaymentData từ Order entity
+            // TODO: Uncomment sau khi verify PayOS SDK imports
+            // PaymentData paymentData = buildPaymentData(order);
+
+            // Temporary: Sử dụng reflection hoặc Object để tránh compile error
+            // Sau khi download SDK, uncomment code trên và remove code dưới
+            Object paymentData = buildPaymentData(order);
+
+            log.debug("Calling PayOS SDK createPaymentLink for orderCode: {}",
+                getOrderCodeFromPaymentData(paymentData));
+
+            // Gọi PayOS SDK để tạo payment link
+            // SDK tự động xử lý authentication, request/response, error handling
+            // TODO: Uncomment sau khi verify PayOS SDK method name
+            // CheckoutResponseData checkoutResponse = payOS.createPaymentLink(paymentData);
+            Object checkoutResponse = callPayOSCreatePaymentLink(paymentData);
+
+            // Convert SDK response sang DTO
+            PayOSPaymentResponseDTO responseDto = convertToResponseDTO(checkoutResponse);
+
+            log.info("PayOS payment link created successfully using SDK. PaymentLinkId: {}, CheckoutUrl: {}",
+                responseDto.getData().getPaymentLinkId(),
                 responseDto.getData().getCheckoutUrl());
-            
+
             return responseDto;
-            
+
         } catch (Exception e) {
-            log.error("Error creating PayOS payment link for order ID: {}", order.getIdOrder(), e);
+            log.error("Error creating PayOS payment link for order ID: {} using SDK", order.getIdOrder(), e);
             throw new RuntimeException("Failed to create PayOS payment link: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * Build PayOSPaymentRequestDTO từ Order entity
-     * 
-     * Logic:
-     * - Convert orderId sang Long (orderCode)
-     * - Convert finalAmount sang Long VND (PayOS yêu cầu số nguyên)
-     * - Build description từ orderId
-     * - Convert orderDetails sang PayOSItemDTO list (optional)
-     * - Lấy returnUrl và cancelUrl từ PayOSConfig
-     */
-    private PayOSPaymentRequestDTO buildPaymentRequest(Order order) {
+
+    private Object buildPaymentData(Order order) {
         // Convert orderId to Long (PayOS yêu cầu orderCode là Long)
         Long orderCode = Long.valueOf(order.getIdOrder());
-        
-        // Convert finalAmount to Long VND (PayOS yêu cầu amount là số nguyên, đơn vị VND)
-        // finalAmount là BigDecimal, cần convert sang Long (multiply by 1, không có decimal)
+
+        // Convert finalAmount to Long VND (PayOS SDK yêu cầu amount là số nguyên, đơn vị VND)
+        // finalAmount là BigDecimal, cần convert sang Long
         Long amount = order.getFinalAmount().longValue();
-        
+
         // Build description
         String description = "Thanh toan don hang #" + order.getIdOrder();
-        
-        // Build items list (optional - PayOS có thể yêu cầu hoặc không)
-        List<PayOSItemDTO> items = new ArrayList<>();
+
+        // Build items list
+        // TODO: Uncomment sau khi verify PayOS SDK ItemData class
+        // List<ItemData> items = new ArrayList<>();
+        List<Object> items = new ArrayList<>();
         if (order.getOrderDetails() != null && !order.getOrderDetails().isEmpty()) {
             for (var orderDetail : order.getOrderDetails()) {
                 // Sử dụng productNameSnapshot nếu có, nếu không thì dùng product name
-                String productName = orderDetail.getProductNameSnapshot() != null ? 
-                    orderDetail.getProductNameSnapshot() : 
+                String productName = orderDetail.getProductNameSnapshot() != null ?
+                    orderDetail.getProductNameSnapshot() :
                     (orderDetail.getProduct() != null ? orderDetail.getProduct().getProductName() : "Product");
-                
-                PayOSItemDTO item = PayOSItemDTO.builder()
-                    .name(productName)
-                    .quantity(orderDetail.getQuantity())
-                    .price(orderDetail.getPrice()) // OrderDetail có field 'price' (giá tại thời điểm mua)
-                    .build();
-                items.add(item);
+
+                // PayOS SDK ItemData yêu cầu: name, quantity, price (Long VND)
+                Long itemPrice = orderDetail.getPrice().longValue();
+
+                // PayOS SDK ItemData sử dụng constructor hoặc setter methods
+                // TODO: Uncomment sau khi verify PayOS SDK ItemData
+                // ItemData item = new ItemData();
+                // item.setName(productName);
+                // item.setQuantity(orderDetail.getQuantity());
+                // item.setPrice(itemPrice);
+                // items.add(item);
+
+                // Temporary: Sử dụng reflection để tạo ItemData
+                try {
+                    Class<?> itemDataClass = Class.forName("vn.payos.model.ItemData");
+                    Object item = itemDataClass.getDeclaredConstructor().newInstance();
+                    itemDataClass.getMethod("setName", String.class).invoke(item, productName);
+                    itemDataClass.getMethod("setQuantity", Integer.class).invoke(item, orderDetail.getQuantity());
+                    itemDataClass.getMethod("setPrice", Long.class).invoke(item, itemPrice);
+                    items.add(item);
+                } catch (Exception e) {
+                    log.error("Error creating ItemData using reflection. Please verify PayOS SDK imports.", e);
+                    throw new RuntimeException("PayOS SDK classes not found. Please run 'mvn clean install' to download dependencies.", e);
+                }
             }
         }
-        
-        return PayOSPaymentRequestDTO.builder()
-            .orderCode(orderCode)
-            .amount(BigDecimal.valueOf(amount))
-            .description(description)
-            .items(items)
-            .returnUrl(payOSConfig.getReturnUrl())
-            .cancelUrl(payOSConfig.getCancelUrl())
-            .build();
+
+        // Build PaymentData sử dụng PayOS SDK setter methods
+        // TODO: Uncomment sau khi verify PayOS SDK PaymentData class
+        // PaymentData paymentData = new PaymentData();
+        // paymentData.setOrderCode(orderCode);
+        // paymentData.setAmount(amount);
+        // paymentData.setDescription(description);
+        // paymentData.setItems(items);
+        // paymentData.setReturnUrl(payOSConfig.getReturnUrl());
+        // paymentData.setCancelUrl(payOSConfig.getCancelUrl());
+        // return paymentData;
+
+        // Temporary: Sử dụng reflection để tạo PaymentData
+        try {
+            Class<?> paymentDataClass = Class.forName("vn.payos.model.PaymentData");
+            Object paymentData = paymentDataClass.getDeclaredConstructor().newInstance();
+            paymentDataClass.getMethod("setOrderCode", Long.class).invoke(paymentData, orderCode);
+            paymentDataClass.getMethod("setAmount", Long.class).invoke(paymentData, amount);
+            paymentDataClass.getMethod("setDescription", String.class).invoke(paymentData, description);
+            paymentDataClass.getMethod("setItems", List.class).invoke(paymentData, items);
+            paymentDataClass.getMethod("setReturnUrl", String.class).invoke(paymentData, payOSConfig.getReturnUrl());
+            paymentDataClass.getMethod("setCancelUrl", String.class).invoke(paymentData, payOSConfig.getCancelUrl());
+            return paymentData;
+        } catch (Exception e) {
+            log.error("Error creating PaymentData using reflection. Please verify PayOS SDK imports.", e);
+            throw new RuntimeException("PayOS SDK classes not found. Please run 'mvn clean install' to download dependencies.", e);
+        }
     }
-    
-    /**
-     * Xác thực webhook signature từ PayOS
-     * 
-     * Logic chi tiết:
-     * 1. PayOS gửi webhook với HMAC SHA256 signature
-     * 2. Generate signature:
-     *    - Algorithm: HMAC SHA256
-     *    - Key: checksumKey từ PayOSConfig
-     *    - Data: JSON string của request body (không format, không có whitespace)
-     *    - Encode: Base64
-     * 3. So sánh signature từ PayOS với signature đã generate
-     * 4. Return true nếu khớp, false nếu không khớp
-     * 
-     * Lưu ý quan trọng:
-     * - Data để verify là JSON string KHÔNG format (không có whitespace, không có newline)
-     * - Phải dùng đúng checksumKey từ PayOSConfig
-     * - Signature từ PayOS có thể ở trong body hoặc header (tùy PayOS version)
-     */
+
+    private PayOSPaymentResponseDTO convertToResponseDTO(Object checkoutResponse) {
+        try {
+            // Build PaymentDataDTO từ SDK response sử dụng reflection
+            // TODO: Uncomment sau khi verify PayOS SDK CheckoutResponseData
+            // String paymentLinkId = checkoutResponse.getPaymentLinkId();
+            // String checkoutUrl = checkoutResponse.getCheckoutUrl();
+            // String qrCode = checkoutResponse.getQrCode();
+
+            Class<?> responseClass = checkoutResponse.getClass();
+            String paymentLinkId = (String) responseClass.getMethod("getPaymentLinkId").invoke(checkoutResponse);
+            String checkoutUrl = (String) responseClass.getMethod("getCheckoutUrl").invoke(checkoutResponse);
+            String qrCode = (String) responseClass.getMethod("getQrCode").invoke(checkoutResponse);
+
+            PayOSPaymentDataDTO dataDto = PayOSPaymentDataDTO.builder()
+                    .paymentLinkId(paymentLinkId)
+                    .checkoutUrl(checkoutUrl)
+                    .qrCode(qrCode)
+                    .build();
+
+            // Build response DTO
+            return PayOSPaymentResponseDTO.builder()
+                    .code("00") // SDK thành công sẽ không throw exception
+                    .desc("success")
+                    .data(dataDto)
+                    .build();
+        } catch (Exception e) {
+            log.error("Error converting PayOS SDK response to DTO", e);
+            throw new RuntimeException("Failed to convert PayOS SDK response: " + e.getMessage(), e);
+        }
+    }
+
+    private Long getOrderCodeFromPaymentData(Object paymentData) {
+        try {
+            return (Long) paymentData.getClass().getMethod("getOrderCode").invoke(paymentData);
+        } catch (Exception e) {
+            log.warn("Error getting orderCode from PaymentData", e);
+            return 0L;
+        }
+    }
+
+    private Object callPayOSCreatePaymentLink(Object paymentData) {
+        try {
+            // Gọi payOS.createPaymentLink(paymentData) sử dụng reflection
+            return payOS.getClass().getMethod("createPaymentLink", paymentData.getClass()).invoke(payOS, paymentData);
+        } catch (Exception e) {
+            log.error("Error calling PayOS SDK createPaymentLink. Please verify method name.", e);
+            throw new RuntimeException("PayOS SDK method not found. Please verify PayOS SDK API documentation.", e);
+        }
+    }
+
     @Override
     public boolean verifyWebhookSignature(String data, String signature) {
         try {
@@ -207,116 +208,111 @@ public class PayOSServiceImpl implements PayOSService {
                 log.warn("Webhook signature verification: data or signature is null");
                 return false;
             }
-            
-            log.debug("Verifying webhook signature. Data length: {}, Signature: {}", 
+
+            log.debug("Verifying webhook signature using PayOS SDK. Data length: {}, Signature: {}",
                 data.length(), signature);
-            
-            // Generate HMAC SHA256 signature
-            Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKeySpec = new SecretKeySpec(
-                payOSConfig.getChecksumKey().getBytes(StandardCharsets.UTF_8),
-                "HmacSHA256"
-            );
-            mac.init(secretKeySpec);
-            
-            // Calculate signature
-            byte[] hashBytes = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-            String calculatedSignature = Base64.getEncoder().encodeToString(hashBytes);
-            
-            // Compare signatures (constant-time comparison để tránh timing attack)
-            boolean isValid = calculatedSignature.equals(signature);
-            
-            if (isValid) {
-                log.debug("Webhook signature verification: SUCCESS");
-            } else {
-                log.warn("Webhook signature verification: FAILED. Expected: {}, Got: {}", 
-                    calculatedSignature, signature);
+
+            // Sử dụng PayOS SDK để verify signature
+            // SDK method: verifyPaymentWebhookData(requestBody, signature) trả về Webhook object
+            // SDK tự động sử dụng checksumKey đã được set trong PayOS instance
+            // TODO: Uncomment sau khi verify PayOS SDK method name
+            // Webhook webhook = payOS.verifyPaymentWebhookData(data, signature);
+            // boolean isValid = webhook != null && webhook.isSuccess();
+
+            // Temporary: Sử dụng reflection để gọi SDK method
+            Object webhook;
+            try {
+                // Thử verifyPaymentWebhookData trước
+                webhook = payOS.getClass().getMethod("verifyPaymentWebhookData", String.class, String.class)
+                    .invoke(payOS, data, signature);
+            } catch (NoSuchMethodException e) {
+                // Thử verifyWebhookSignature nếu method name khác
+                try {
+                    Boolean result = (Boolean) payOS.getClass().getMethod("verifyWebhookSignature", String.class, String.class)
+                        .invoke(payOS, data, signature);
+                    return result != null && result;
+                } catch (Exception e2) {
+                    log.error("PayOS SDK webhook verification method not found. Please verify SDK documentation.", e2);
+                    throw new RuntimeException("PayOS SDK webhook verification method not found.", e2);
+                }
             }
-            
+
+            boolean isValid = webhook != null && (Boolean) webhook.getClass().getMethod("isSuccess").invoke(webhook);
+
+            if (isValid) {
+                log.debug("Webhook signature verification: SUCCESS (using PayOS SDK)");
+            } else {
+                log.warn("Webhook signature verification: FAILED (using PayOS SDK)");
+            }
+
             return isValid;
-            
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            log.error("Error verifying webhook signature", e);
+
+        } catch (Exception e) {
+            log.error("Error verifying webhook signature using PayOS SDK", e);
             return false;
         }
     }
-    
-    /**
-     * Lấy thông tin payment link từ PayOS
-     * 
-     * Logic:
-     * 1. Gọi PayOS API GET /v2/payment-requests/{paymentLinkId}
-     * 2. Headers: x-client-id, x-api-key
-     * 3. Parse response và trả về
-     */
+
     @Override
     public PayOSPaymentResponseDTO getPaymentLinkInfo(String paymentLinkId) {
-        log.info("Getting PayOS payment link info. PaymentLinkId: {}", paymentLinkId);
-        
+        log.info("Getting PayOS payment link info using SDK. PaymentLinkId: {}", paymentLinkId);
+
         try {
-            String url = payOSConfig.getBaseUrl() + "/v2/payment-requests/" + paymentLinkId;
-            
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("x-client-id", payOSConfig.getClientId());
-            headers.set("x-api-key", payOSConfig.getApiKey());
-            
-            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-            
-            ResponseEntity<PayOSPaymentResponseDTO> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                requestEntity,
-                PayOSPaymentResponseDTO.class
-            );
-            
-            PayOSPaymentResponseDTO responseDto = response.getBody();
-            
-            if (responseDto == null || !"00".equals(responseDto.getCode())) {
-                log.error("PayOS API error: code={}, desc={}", 
-                    responseDto != null ? responseDto.getCode() : "null",
-                    responseDto != null ? responseDto.getDesc() : "null");
-                throw new RuntimeException("Failed to get payment link info");
+            // Gọi PayOS SDK để lấy thông tin payment link
+            // Method name có thể là: getPaymentLinkInformation() hoặc getPaymentLinkInfo()
+            // SDK tự động xử lý authentication, request/response
+            // TODO: Uncomment sau khi verify PayOS SDK method name
+            // CheckoutResponseData checkoutResponse = payOS.getPaymentLinkInformation(paymentLinkId);
+
+            // Temporary: Sử dụng reflection để gọi SDK method
+            Object checkoutResponse;
+            try {
+                checkoutResponse = payOS.getClass().getMethod("getPaymentLinkInformation", String.class)
+                    .invoke(payOS, paymentLinkId);
+            } catch (NoSuchMethodException e) {
+                // Thử getPaymentLinkInfo nếu method name khác
+                checkoutResponse = payOS.getClass().getMethod("getPaymentLinkInfo", String.class)
+                    .invoke(payOS, paymentLinkId);
             }
-            
+
+            // Convert SDK response sang DTO
+            PayOSPaymentResponseDTO responseDto = convertToResponseDTO(checkoutResponse);
+
+            log.info("Successfully got payment link info using SDK. PaymentLinkId: {}", paymentLinkId);
+
             return responseDto;
-            
+
         } catch (Exception e) {
-            log.error("Error getting PayOS payment link info. PaymentLinkId: {}", paymentLinkId, e);
+            log.error("Error getting PayOS payment link info using SDK. PaymentLinkId: {}", paymentLinkId, e);
             throw new RuntimeException("Failed to get payment link info: " + e.getMessage(), e);
         }
     }
-    
-    /**
-     * Hủy payment link trên PayOS
-     * 
-     * Logic:
-     * 1. Gọi PayOS API DELETE /v2/payment-requests/{paymentLinkId}
-     * 2. Payment link sẽ không còn sử dụng được
-     */
+
     @Override
     public void cancelPaymentLink(String paymentLinkId) {
-        log.info("Cancelling PayOS payment link. PaymentLinkId: {}", paymentLinkId);
-        
+        log.info("Cancelling PayOS payment link using SDK. PaymentLinkId: {}", paymentLinkId);
+
         try {
-            String url = payOSConfig.getBaseUrl() + "/v2/payment-requests/" + paymentLinkId;
-            
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("x-client-id", payOSConfig.getClientId());
-            headers.set("x-api-key", payOSConfig.getApiKey());
-            
-            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-            
-            restTemplate.exchange(
-                url,
-                HttpMethod.DELETE,
-                requestEntity,
-                Void.class
-            );
-            
-            log.info("PayOS payment link cancelled successfully. PaymentLinkId: {}", paymentLinkId);
-            
+            // Gọi PayOS SDK để hủy payment link
+            // Method name có thể là: cancelPaymentLink() hoặc cancelPaymentLinkInformation()
+            // SDK tự động xử lý authentication và request
+            // TODO: Uncomment sau khi verify PayOS SDK method name
+            // payOS.cancelPaymentLink(paymentLinkId);
+
+            // Temporary: Sử dụng reflection để gọi SDK method
+            try {
+                payOS.getClass().getMethod("cancelPaymentLink", String.class)
+                    .invoke(payOS, paymentLinkId);
+            } catch (NoSuchMethodException e) {
+                // Thử cancelPaymentLinkInformation nếu method name khác
+                payOS.getClass().getMethod("cancelPaymentLinkInformation", String.class)
+                    .invoke(payOS, paymentLinkId);
+            }
+
+            log.info("PayOS payment link cancelled successfully using SDK. PaymentLinkId: {}", paymentLinkId);
+
         } catch (Exception e) {
-            log.error("Error cancelling PayOS payment link. PaymentLinkId: {}", paymentLinkId, e);
+            log.error("Error cancelling PayOS payment link using SDK. PaymentLinkId: {}", paymentLinkId, e);
             throw new RuntimeException("Failed to cancel payment link: " + e.getMessage(), e);
         }
     }

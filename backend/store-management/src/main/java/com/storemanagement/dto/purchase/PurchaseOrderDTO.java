@@ -12,9 +12,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * PurchaseOrderDTO không kế thừa BaseDTO vì ImportOrder entity không extend BaseEntity (mặc dù database có created_at/updated_at)
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

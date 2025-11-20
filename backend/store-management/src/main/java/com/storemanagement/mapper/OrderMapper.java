@@ -24,7 +24,9 @@ public interface OrderMapper {
     @Mapping(target = "shippingAddressSnapshot", source = "shippingAddressSnapshot")
     @Mapping(target = "paymentLinkUrl", ignore = true)
     @Mapping(target = "orderDetails", expression = "java(mapOrderDetails(entity.getOrderDetails()))")
-    // Request-specific fields (ignored when mapping from Entity)
+    @Mapping(target = "promotionCode", source = "promotionCode")
+    @Mapping(target = "idPromotion", expression = "java(entity.getPromotion() != null ? entity.getPromotion().getIdPromotion() : null)")
+    @Mapping(target = "idPromotionRule", expression = "java(entity.getPromotionRule() != null ? entity.getPromotionRule().getIdRule() : null)")
     @Mapping(target = "orderItems", ignore = true)
     @Mapping(target = "productId", ignore = true)
     @Mapping(target = "quantity", ignore = true)
@@ -35,7 +37,7 @@ public interface OrderMapper {
     @Mapping(target = "shippingAddressId", ignore = true)
     OrderDTO toDTO(Order entity);
 
-    // OrderDTO → Order (for create/update - service will handle complex logic)
+    // OrderDTO → Order
     @Mapping(target = "idOrder", ignore = true)
     @Mapping(target = "customer", ignore = true)
     @Mapping(target = "employee", ignore = true)
@@ -44,17 +46,10 @@ public interface OrderMapper {
     @Mapping(target = "shipment", ignore = true)
     @Mapping(target = "orderDate", ignore = true)
     @Mapping(target = "finalAmount", ignore = true)
-    // createdAt and updatedAt are inherited from BaseEntity and managed by JPA/Hibernate
+    @Mapping(target = "promotion", ignore = true)
+    @Mapping(target = "promotionRule", ignore = true)
     Order toEntity(OrderDTO dto);
 
-    /**
-     * OrderDetail → OrderDetailDTO
-     * 
-     * SNAPSHOT PROTECTION LOGIC:
-     * - Ưu tiên sử dụng snapshot fields (productNameSnapshot, productCodeSnapshot, productImageSnapshot)
-     * - Nếu không có snapshot (đơn hàng cũ) → Fallback về product hiện tại
-     * - Đảm bảo khi admin chỉnh sửa sản phẩm, đơn hàng đã đặt vẫn hiển thị đúng thông tin tại thời điểm mua
-     */
     @Mapping(target = "idOrderDetail", source = "idOrderDetail")
     @Mapping(target = "idProduct", source = "product.idProduct")
     @Mapping(target = "productName", expression = "java(detail.getProductNameSnapshot() != null ? detail.getProductNameSnapshot() : detail.getProduct().getProductName())")
@@ -66,11 +61,10 @@ public interface OrderMapper {
     @Mapping(target = "quantity", source = "quantity")
     @Mapping(target = "price", source = "price")
     @Mapping(target = "subtotal", expression = "java(detail.getPrice().multiply(java.math.BigDecimal.valueOf(detail.getQuantity())))")
-    // Request-specific fields (ignored when mapping from Entity)
     @Mapping(target = "productId", ignore = true)
     @Mapping(target = "quantityForCreate", ignore = true)
     OrderDetailDTO detailToDTO(OrderDetail detail);
-    
+
     default List<OrderDetailDTO> mapOrderDetails(List<OrderDetail> orderDetails) {
         if (orderDetails == null) {
             return List.of();
@@ -81,10 +75,6 @@ public interface OrderMapper {
     }
 
     List<OrderDetailDTO> detailListToDTO(List<OrderDetail> details);
-    
+
     List<OrderDTO> toDTOList(List<Order> orders);
 }
-
-
-
-

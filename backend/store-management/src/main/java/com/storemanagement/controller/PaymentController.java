@@ -28,18 +28,6 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Controller xử lý các API liên quan đến thanh toán PayOS
- * Base URL: /api/v1/payments/payos
- * 
- * Mục đích:
- * - Tạo payment link cho đơn hàng
- * - Nhận webhook callback từ PayOS
- * - Xử lý return/cancel redirect từ PayOS
- * - Check payment status
- * 
- * @author Store Management Team
- */
 @RestController
 @RequestMapping("/api/v1/payments/payos")
 @RequiredArgsConstructor
@@ -51,38 +39,7 @@ public class PaymentController {
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final ProductRepository productRepository;
     private final ObjectMapper objectMapper;
-    
-    /**
-     * Tạo payment link cho đơn hàng
-     * 
-     * Endpoint: POST /api/v1/payments/payos/create/{orderId}
-     * Authentication: Required (CUSTOMER role - chỉ customer sở hữu order mới được tạo)
-     * 
-     * Logic xử lý:
-     * 1. Lấy order từ database theo orderId
-     * 2. Validate:
-     *    - Order phải tồn tại
-     *    - Order phải có paymentMethod = PAYOS
-     *    - Order phải có status = PENDING
-     *    - Customer phải sở hữu order (nếu là CUSTOMER role)
-     * 3. Gọi PayOSService.createPaymentLink() để tạo payment link
-     * 4. Lưu paymentLinkId vào order
-     * 5. Trả về paymentLinkUrl cho frontend
-     * 
-     * Response:
-     * {
-     *   "code": 200,
-     *   "message": "Tạo payment link thành công",
-     *   "data": {
-     *     "paymentLinkUrl": "https://pay.payos.vn/web/...",
-     *     "paymentLinkId": "abc123",
-     *     "orderId": 123
-     *   }
-     * }
-     * 
-     * @param orderId ID của order cần tạo payment link
-     * @return ApiResponse chứa paymentLinkUrl và paymentLinkId
-     */
+
     @PostMapping("/create/{orderId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     @Transactional
@@ -130,37 +87,7 @@ public class PaymentController {
         
         return ResponseEntity.ok(ApiResponse.success("Tạo payment link thành công", data));
     }
-    
-    /**
-     * Webhook endpoint để nhận callback từ PayOS
-     * 
-     * Endpoint: POST /api/v1/payments/payos/webhook
-     * Authentication: Không cần (PUBLIC - PayOS sẽ gọi từ bên ngoài)
-     * 
-     * Logic xử lý:
-     * 1. Nhận webhook request body từ PayOS
-     * 2. Parse request body thành PayOSWebhookDto
-     * 3. Verify HMAC signature để đảm bảo webhook đến từ PayOS thật
-     * 4. Tìm order theo paymentLinkId từ webhook data
-     * 5. Kiểm tra order status hiện tại (tránh xử lý duplicate webhook)
-     * 6. Cập nhật order status dựa trên kết quả thanh toán:
-     *    - Nếu code = "00" (thành công):
-     *      + Update order.status = CONFIRMED
-     *      + Trừ stock từ các sản phẩm trong order
-     *      + Tạo inventory transactions (OUT) để ghi lại lịch sử
-     *    - Nếu code != "00" (thất bại):
-     *      + Update order.status = CANCELED
-     *      + Không trừ stock (vì thanh toán thất bại)
-     * 7. Return 200 OK cho PayOS
-     * 
-     * Lưu ý quan trọng:
-     * - Phải verify signature trước khi xử lý
-     * - Phải xử lý idempotent (không update order 2 lần nếu nhận duplicate webhook)
-     * - Phải return 200 OK ngay cả khi có lỗi (để PayOS không retry)
-     * 
-     * @param requestBody Raw request body (String) để verify signature
-     * @return 200 OK (luôn luôn, để PayOS không retry)
-     */
+
     @PostMapping("/webhook")
     @Transactional
     public ResponseEntity<Map<String, String>> webhook(@RequestBody String requestBody) {
@@ -276,20 +203,7 @@ public class PaymentController {
             return ResponseEntity.ok(Map.of("status", "error", "message", "Internal error: " + e.getMessage()));
         }
     }
-    
-    /**
-     * Redirect URL sau khi thanh toán thành công
-     * 
-     * Endpoint: GET /api/v1/payments/payos/return
-     * Authentication: Không cần (PUBLIC - PayOS redirect về đây)
-     * 
-     * Logic:
-     * - PayOS redirect user về URL này sau khi thanh toán thành công
-     * - Redirect về frontend với orderId và status
-     * 
-     * @param orderCode Order code từ PayOS (optional)
-     * @return Redirect đến frontend success page
-     */
+
     @GetMapping("/return")
     public ResponseEntity<String> returnUrl(@RequestParam(required = false) Long orderCode) {
         log.info("PayOS return URL called. OrderCode: {}", orderCode);
@@ -305,20 +219,7 @@ public class PaymentController {
             .header("Location", redirectUrl)
             .body("Redirecting to payment success page...");
     }
-    
-    /**
-     * Redirect URL khi hủy thanh toán
-     * 
-     * Endpoint: GET /api/v1/payments/payos/cancel
-     * Authentication: Không cần (PUBLIC - PayOS redirect về đây)
-     * 
-     * Logic:
-     * - PayOS redirect user về URL này khi user hủy thanh toán
-     * - Redirect về frontend cancel page
-     * 
-     * @param orderCode Order code từ PayOS (optional)
-     * @return Redirect đến frontend cancel page
-     */
+
     @GetMapping("/cancel")
     public ResponseEntity<String> cancelUrl(@RequestParam(required = false) Long orderCode) {
         log.info("PayOS cancel URL called. OrderCode: {}", orderCode);
@@ -333,20 +234,7 @@ public class PaymentController {
             .header("Location", redirectUrl)
             .body("Redirecting to payment cancel page...");
     }
-    
-    /**
-     * Check payment status cho đơn hàng
-     * 
-     * Endpoint: GET /api/v1/payments/payos/status/{orderId}
-     * Authentication: Required (CUSTOMER role)
-     * 
-     * Logic:
-     * - Frontend có thể polling endpoint này để check order status
-     * - Trả về order status và payment info
-     * 
-     * @param orderId ID của order
-     * @return ApiResponse chứa order status và payment info
-     */
+
     @GetMapping("/status/{orderId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getPaymentStatus(@PathVariable Integer orderId) {

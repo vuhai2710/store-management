@@ -15,38 +15,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-/**
- * Controller xử lý webhook từ GHN (Giao Hàng Nhanh)
- * 
- * Base URL: /api/v1/ghn
- * 
- * Mục đích:
- * - Nhận webhook callback từ GHN khi có cập nhật trạng thái đơn hàng
- * - Cập nhật Shipment.ghnStatus, ghnUpdatedAt, ghnNote
- * - Sync với Shipment.shippingStatus và Order.status
- * 
- * Logic xử lý webhook:
- * 1. Nhận webhook request body từ GHN
- * 2. Parse request body thành GHNWebhookDto
- * 3. Tìm Shipment theo ghnOrderCode từ webhook data
- * 4. Cập nhật Shipment với thông tin từ webhook:
- *    - ghnStatus: Trạng thái mới từ GHN
- *    - ghnUpdatedAt: Thời gian cập nhật
- *    - ghnNote: Ghi chú/Lý do (nếu có)
- * 5. Sync Shipment.shippingStatus với ghnStatus:
- *    - ready_to_pick, picking → PREPARING
- *    - picked, storing, transporting, sorting, delivering → SHIPPED
- *    - delivered → DELIVERED
- *    - delivery_fail, return_fail, exception, damage, lost → Cần xử lý đặc biệt
- * 6. Sync Order.status nếu cần:
- *    - Khi delivered → Order.status = COMPLETED (nếu chưa)
- * 7. Return 200 OK cho GHN
- * 
- * Lưu ý quan trọng:
- * - Phải xử lý idempotent (không update 2 lần nếu nhận duplicate webhook)
- * - Phải return 200 OK ngay cả khi có lỗi (để GHN không retry)
- * - Log đầy đủ để debug
- */
 @RestController
 @RequestMapping("/api/v1/ghn")
 @RequiredArgsConstructor
@@ -55,24 +23,7 @@ public class GHNWebhookController {
     
     private final ShipmentRepository shipmentRepository;
     private final OrderRepository orderRepository;
-    
-    /**
-     * Webhook endpoint để nhận callback từ GHN
-     * 
-     * Endpoint: POST /api/v1/ghn/webhook
-     * Authentication: Không cần (PUBLIC - GHN sẽ gọi từ bên ngoài)
-     * 
-     * Logic xử lý:
-     * 1. Nhận webhook request body từ GHN
-     * 2. Parse request body thành GHNWebhookDto
-     * 3. Tìm Shipment theo ghnOrderCode
-     * 4. Cập nhật Shipment với thông tin từ webhook
-     * 5. Sync Shipment.shippingStatus và Order.status
-     * 6. Return 200 OK
-     * 
-     * @param webhookDto GHNWebhookDTO từ request body
-     * @return 200 OK (luôn luôn, để GHN không retry)
-     */
+
     @PostMapping("/webhook")
     @Transactional
     public ResponseEntity<Map<String, String>> webhook(@RequestBody GHNWebhookDTO webhookDto) {
@@ -145,19 +96,7 @@ public class GHNWebhookController {
                 "message", "Internal error: " + e.getMessage()));
         }
     }
-    
-    /**
-     * Sync Shipment.shippingStatus với ghnStatus
-     * 
-     * Logic mapping:
-     * - ready_to_pick, picking → PREPARING
-     * - picked, storing, transporting, sorting, delivering, money_collect_delivering → SHIPPED
-     * - delivered → DELIVERED
-     * - delivery_fail, return_fail, exception, damage, lost → Giữ nguyên hoặc xử lý đặc biệt
-     * 
-     * @param shipment Shipment entity cần sync
-     * @param ghnStatus Trạng thái từ GHN
-     */
+
     private void syncShippingStatus(Shipment shipment, String ghnStatus) {
         if (ghnStatus == null || ghnStatus.isEmpty()) {
             return;
@@ -207,17 +146,7 @@ public class GHNWebhookController {
             shipment.setShippingStatus(newStatus);
         }
     }
-    
-    /**
-     * Sync Order.status với ghnStatus
-     * 
-     * Logic:
-     * - Khi delivered → Order.status = COMPLETED (nếu chưa)
-     * - Khi cancel → Order.status = CANCELED (nếu đang PENDING hoặc CONFIRMED)
-     * 
-     * @param order Order entity cần sync
-     * @param ghnStatus Trạng thái từ GHN
-     */
+
     private void syncOrderStatus(Order order, String ghnStatus) {
         if (order == null || ghnStatus == null || ghnStatus.isEmpty()) {
             return;

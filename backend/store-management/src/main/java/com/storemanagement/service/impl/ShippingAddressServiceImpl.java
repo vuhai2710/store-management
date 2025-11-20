@@ -41,47 +41,32 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
         return shippingAddressMapper.toDTO(defaultAddress);
     }
 
-    /**
-     * Tạo địa chỉ giao hàng mới
-     * 
-     * Logic xử lý:
-     * 1. Kiểm tra customer tồn tại
-     * 2. Map DTO sang entity
-     * 3. Xử lý isDefault:
-     *    - Nếu set làm default → Unset tất cả địa chỉ default khác
-     *    - Đảm bảo chỉ có một địa chỉ mặc định tại một thời điểm
-     * 4. Lưu địa chỉ mới
-     */
     @Override
     public ShippingAddressDTO createAddress(Integer customerId, CreateShippingAddressRequestDto request) {
-        // Kiểm tra customer tồn tại
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng"));
 
-        // Map Request DTO to Entity
         ShippingAddress address = ShippingAddress.builder()
                 .recipientName(request.getRecipientName())
                 .phoneNumber(request.getPhoneNumber())
                 .address(request.getAddress())
                 .isDefault(request.getIsDefault() != null ? request.getIsDefault() : false)
+                .provinceId(request.getProvinceId())
+                .districtId(request.getDistrictId())
+                .wardCode(request.getWardCode())
                 .customer(customer)
                 .build();
 
-        // Xử lý isDefault: Nếu set làm default, cần unset các địa chỉ default khác
-        // Đảm bảo chỉ có một địa chỉ mặc định tại một thời điểm
         if (Boolean.TRUE.equals(address.getIsDefault())) {
-            // Tìm tất cả địa chỉ mặc định hiện tại
             List<ShippingAddress> defaultAddresses = shippingAddressRepository
                     .findByCustomerIdCustomerAndIsDefaultTrue(customerId)
                     .stream()
                     .toList();
-            
-            // Unset tất cả địa chỉ mặc định khác
+
             defaultAddresses.forEach(addr -> addr.setIsDefault(false));
             shippingAddressRepository.saveAll(defaultAddresses);
         }
 
-        // Lưu địa chỉ mới
         ShippingAddress savedAddress = shippingAddressRepository.save(address);
         return shippingAddressMapper.toDTO(savedAddress);
     }
@@ -92,34 +77,30 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
                 .findByIdShippingAddressAndCustomerIdCustomer(addressId, customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy địa chỉ"));
 
-        // Update fields from Request DTO
         address.setRecipientName(request.getRecipientName());
         address.setPhoneNumber(request.getPhoneNumber());
         address.setAddress(request.getAddress());
-        
+
+        if (request.getProvinceId() != null) {
+            address.setProvinceId(request.getProvinceId());
+        }
+        if (request.getDistrictId() != null) {
+            address.setDistrictId(request.getDistrictId());
+        }
+        if (request.getWardCode() != null) {
+            address.setWardCode(request.getWardCode());
+        }
+
         ShippingAddress updatedAddress = shippingAddressRepository.save(address);
         return shippingAddressMapper.toDTO(updatedAddress);
     }
 
-    /**
-     * Đặt địa chỉ làm mặc định
-     * 
-     * Logic xử lý:
-     * 1. Kiểm tra địa chỉ tồn tại và thuộc về customer
-     * 2. Unset tất cả địa chỉ mặc định khác
-     * 3. Set địa chỉ này làm mặc định
-     * 
-     * Đảm bảo: Chỉ có một địa chỉ mặc định tại một thời điểm
-     */
     @Override
     public ShippingAddressDTO setDefaultAddress(Integer customerId, Integer addressId) {
-        // Kiểm tra địa chỉ tồn tại và thuộc về customer
         ShippingAddress address = shippingAddressRepository
                 .findByIdShippingAddressAndCustomerIdCustomer(addressId, customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy địa chỉ"));
 
-        // Unset tất cả địa chỉ mặc định khác (trừ địa chỉ hiện tại)
-        // Đảm bảo chỉ có một địa chỉ mặc định
         List<ShippingAddress> defaultAddresses = shippingAddressRepository
                 .findByCustomerIdCustomerAndIsDefaultTrue(customerId)
                 .stream()
@@ -128,47 +109,29 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
         defaultAddresses.forEach(addr -> addr.setIsDefault(false));
         shippingAddressRepository.saveAll(defaultAddresses);
 
-        // Set địa chỉ này làm mặc định
         address.setIsDefault(true);
         ShippingAddress savedAddress = shippingAddressRepository.save(address);
         return shippingAddressMapper.toDTO(savedAddress);
     }
 
-    /**
-     * Xóa địa chỉ giao hàng
-     * 
-     * Logic xử lý:
-     * 1. Kiểm tra địa chỉ tồn tại và thuộc về customer
-     * 2. Kiểm tra địa chỉ mặc định:
-     *    - Nếu là địa chỉ mặc định duy nhất → Không cho phép xóa
-     *    - Nếu có nhiều địa chỉ mặc định → Cho phép xóa
-     * 3. Xóa địa chỉ
-     * 
-     * Bảo vệ: Không cho xóa địa chỉ mặc định duy nhất để đảm bảo luôn có địa chỉ mặc định
-     */
     @Override
     public void deleteAddress(Integer customerId, Integer addressId) {
-        // Kiểm tra địa chỉ tồn tại và thuộc về customer
         ShippingAddress address = shippingAddressRepository
                 .findByIdShippingAddressAndCustomerIdCustomer(addressId, customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy địa chỉ"));
 
-        // Kiểm tra địa chỉ mặc định: Không cho xóa địa chỉ mặc định duy nhất
         if (Boolean.TRUE.equals(address.getIsDefault())) {
-            // Đếm số lượng địa chỉ mặc định
             long defaultCount = shippingAddressRepository
                     .findByCustomerIdCustomer(customerId)
                     .stream()
                     .filter(ShippingAddress::getIsDefault)
                     .count();
-            
-            // Nếu chỉ có 1 địa chỉ mặc định → Không cho phép xóa
+
             if (defaultCount == 1) {
                 throw new RuntimeException("Không thể xóa địa chỉ mặc định duy nhất");
             }
         }
 
-        // Xóa địa chỉ
         shippingAddressRepository.delete(address);
     }
 }

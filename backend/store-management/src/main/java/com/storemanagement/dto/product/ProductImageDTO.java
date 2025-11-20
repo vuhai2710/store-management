@@ -8,9 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * ProductImageDTO không kế thừa BaseDTO vì ProductImage entity chỉ có created_at (không có updated_at)
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

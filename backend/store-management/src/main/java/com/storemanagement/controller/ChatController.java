@@ -18,16 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * REST Controller cho Chat System
- * 
- * Cung cấp các endpoint để:
- * - Tạo và quản lý conversations
- * - Lấy lịch sử tin nhắn
- * - Đóng conversations
- * 
- * Lưu ý: Gửi tin nhắn realtime được xử lý qua WebSocket (ChatWebSocketController)
- */
 @RestController
 @RequestMapping("/api/v1/chat")
 @RequiredArgsConstructor
@@ -36,13 +26,7 @@ public class ChatController {
     
     private final ChatService chatService;
     private final CustomerRepository customerRepository;
-    
-    /**
-     * Tạo conversation mới cho customer
-     * POST /api/v1/chat/conversations
-     * 
-     * Customer tự tạo conversation khi muốn chat với admin/employee
-     */
+
     @PostMapping("/conversations")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<ChatConversationDTO>> createConversation() {
@@ -57,13 +41,7 @@ public class ChatController {
         ChatConversationDTO conversation = chatService.createConversation(customer.getIdCustomer());
         return ResponseEntity.ok(ApiResponse.success("Tạo cuộc hội thoại thành công", conversation));
     }
-    
-    /**
-     * Lấy conversation của customer hiện tại
-     * GET /api/v1/chat/conversations/my
-     * 
-     * Trả về conversation OPEN của customer, hoặc tạo mới nếu chưa có
-     */
+
     @GetMapping("/conversations/my")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<ChatConversationDTO>> getMyConversation() {
@@ -78,13 +56,7 @@ public class ChatController {
         ChatConversationDTO conversation = chatService.getOrCreateCustomerConversation(customer.getIdCustomer());
         return ResponseEntity.ok(ApiResponse.success("Lấy cuộc hội thoại thành công", conversation));
     }
-    
-    /**
-     * Lấy tất cả conversations (cho Admin/Employee)
-     * GET /api/v1/chat/conversations
-     * 
-     * Phân trang, sắp xếp theo updatedAt DESC (mới nhất trước)
-     */
+
     @GetMapping("/conversations")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PageResponse<ChatConversationDTO>>> getAllConversations(
@@ -111,11 +83,7 @@ public class ChatController {
         
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách cuộc hội thoại thành công", response));
     }
-    
-    /**
-     * Lấy chi tiết conversation theo ID
-     * GET /api/v1/chat/conversations/{id}
-     */
+
     @GetMapping("/conversations/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<ChatConversationDTO>> getConversationById(@PathVariable Integer id) {
@@ -124,13 +92,7 @@ public class ChatController {
         ChatConversationDTO conversation = chatService.getConversationById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin cuộc hội thoại thành công", conversation));
     }
-    
-    /**
-     * Lấy lịch sử tin nhắn của conversation
-     * GET /api/v1/chat/conversations/{id}/messages
-     * 
-     * Phân trang, sắp xếp theo createdAt ASC (cũ nhất trước)
-     */
+
     @GetMapping("/conversations/{id}/messages")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<PageResponse<ChatMessageDTO>>> getConversationMessages(
@@ -158,13 +120,7 @@ public class ChatController {
         
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử tin nhắn thành công", response));
     }
-    
-    /**
-     * Đóng conversation
-     * PUT /api/v1/chat/conversations/{id}/close
-     * 
-     * Chỉ Admin và Employee mới có quyền đóng conversation
-     */
+
     @PutMapping("/conversations/{id}/close")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<Void>> closeConversation(@PathVariable Integer id) {
@@ -173,6 +129,13 @@ public class ChatController {
         chatService.closeConversation(id);
         return ResponseEntity.ok(ApiResponse.success("Đóng cuộc hội thoại thành công", null));
     }
+
+    @PutMapping("/conversations/{id}/mark-viewed")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
+    public ResponseEntity<ApiResponse<Void>> markConversationAsViewed(@PathVariable Integer id) {
+        log.info("Marking conversation ID: {} as viewed", id);
+        
+        chatService.markConversationAsViewed(id);
+        return ResponseEntity.ok(ApiResponse.success("Đã đánh dấu cuộc hội thoại đã xem", null));
+    }
 }
-
-

@@ -1,14 +1,34 @@
 import React, { useState } from "react";
-import { Form, Input, Button, Card, Typography, message, Space } from "antd";
-import { UserOutlined, LockOutlined, ShopOutlined } from "@ant-design/icons";
+import {
+  Form,
+  Input,
+  Button,
+  Card,
+  Typography,
+  message,
+  Space,
+  Modal,
+} from "antd";
+import {
+  UserOutlined,
+  LockOutlined,
+  ShopOutlined,
+  MailOutlined,
+} from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { login, clearError } from "../store/slices/authSlice";
+import { authService } from "../services/authService";
+import { USER_ROLES } from "../constants/roles";
+import { APP_CONFIG } from "../constants";
 
 const { Title, Text, Link } = Typography;
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
+  const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [forgotPasswordForm] = Form.useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { error } = useSelector((state) => state.auth);
@@ -19,6 +39,22 @@ const Login = () => {
       console.log("Đang đăng nhập với:", values);
       const result = await dispatch(login(values)).unwrap();
       console.log("Kết quả login:", result);
+
+      // Kiểm tra role của user
+      const user = result?.user || authService.getUserFromStorage();
+
+      if (user?.role === USER_ROLES.CUSTOMER) {
+        // Nếu là CUSTOMER, redirect sang frontend_client
+        message.success("Đăng nhập thành công! Đang chuyển hướng...");
+        // Chuyển hướng sang frontend_client với token
+        const token = localStorage.getItem("token");
+        const clientUrl = APP_CONFIG.CLIENT_URL;
+        // Chuyển hướng với token trong URL hoặc localStorage (frontend_client sẽ đọc từ localStorage)
+        window.location.href = `${clientUrl}?token=${token}`;
+        return;
+      }
+
+      // Nếu là ADMIN hoặc EMPLOYEE, điều hướng bình thường
       message.success("Đăng nhập thành công!");
       navigate("/dashboard");
     } catch (error) {
@@ -31,6 +67,26 @@ const Login = () => {
 
   const handleClearError = () => {
     dispatch(clearError());
+  };
+
+  const handleForgotPassword = async (values) => {
+    try {
+      setForgotPasswordLoading(true);
+      const response = await authService.forgotPassword(values.email);
+      message.success(
+        response?.message || "Mật khẩu mới đã được gửi đến email của bạn!"
+      );
+      setForgotPasswordVisible(false);
+      forgotPasswordForm.resetFields();
+    } catch (error) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Không thể gửi mật khẩu mới. Vui lòng thử lại!";
+      message.error(errorMessage);
+    } finally {
+      setForgotPasswordLoading(false);
+    }
   };
 
   return (
@@ -54,7 +110,7 @@ const Login = () => {
           <Space direction="vertical" size="small">
             <ShopOutlined style={{ fontSize: "48px", color: "#1890ff" }} />
             <Title level={2} style={{ margin: 0, color: "#262626" }}>
-              ERP Electronics Store
+              Electronic Store
             </Title>
             <Text type="secondary">Hệ thống quản lý cửa hàng điện tử</Text>
           </Space>
@@ -120,6 +176,15 @@ const Login = () => {
               Đăng nhập
             </Button>
           </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+            <Button
+              type="link"
+              onClick={() => setForgotPasswordVisible(true)}
+              style={{ padding: 0 }}>
+              Quên mật khẩu?
+            </Button>
+          </Form.Item>
         </Form>
 
         <div style={{ textAlign: "center", marginTop: "16px" }}>
@@ -139,6 +204,54 @@ const Login = () => {
           </Text>
         </div>
       </Card>
+
+      {/* Forgot Password Modal */}
+      <Modal
+        title="Quên mật khẩu"
+        open={forgotPasswordVisible}
+        onCancel={() => {
+          setForgotPasswordVisible(false);
+          forgotPasswordForm.resetFields();
+        }}
+        footer={null}>
+        <Form
+          form={forgotPasswordForm}
+          layout="vertical"
+          onFinish={handleForgotPassword}
+          autoComplete="off">
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[
+              { required: true, message: "Vui lòng nhập email!" },
+              { type: "email", message: "Email không hợp lệ!" },
+            ]}>
+            <Input
+              prefix={<MailOutlined />}
+              placeholder="Nhập email của bạn"
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Space style={{ width: "100%", justifyContent: "flex-end" }}>
+              <Button
+                onClick={() => {
+                  setForgotPasswordVisible(false);
+                  forgotPasswordForm.resetFields();
+                }}>
+                Hủy
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={forgotPasswordLoading}>
+                Gửi mật khẩu mới
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

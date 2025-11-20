@@ -17,9 +17,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class CreateOrderForCustomerRequestDto {
-    private Integer customerId; // Optional - nếu null thì tạo customer mới
-    
-    // Thông tin khách hàng (required nếu customerId null)
+    private Integer customerId;
+
     private String customerName;
     private String customerPhone;
     private String customerAddress;
@@ -31,14 +30,7 @@ public class CreateOrderForCustomerRequestDto {
     @NotNull(message = "Phương thức thanh toán không được để trống")
     private Order.PaymentMethod paymentMethod;
     
-    private BigDecimal discount; // Optional, default 0
+    private BigDecimal discount;
     
-    private String notes; // Optional
+    private String notes;
 }
-
-
-
-
-
-
-

@@ -10,10 +10,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-/**
- * Implementation của EmailService
- * Sử dụng JavaMailSender để gửi email qua SMTP
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -225,21 +221,3 @@ public class EmailServiceImpl implements EmailService {
             """, title, message.replace("\n", "<br>"));
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

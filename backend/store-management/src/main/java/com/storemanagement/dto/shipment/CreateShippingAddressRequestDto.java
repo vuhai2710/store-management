@@ -14,21 +14,20 @@ import lombok.NoArgsConstructor;
 public class CreateShippingAddressRequestDto {
     @NotBlank(message = "Tên người nhận không được để trống")
     private String recipientName;
-    
+
     @NotBlank(message = "Số điện thoại không được để trống")
     @ValidPhone(message = "Số điện thoại không hợp lệ")
     private String phoneNumber;
-    
+
     @NotBlank(message = "Địa chỉ không được để trống")
     private String address;
-    
+
     @Builder.Default
     private Boolean isDefault = false;
+
+    private Integer provinceId; // ID tỉnh/thành phố từ GHN API
+
+    private Integer districtId; // ID quận/huyện từ GHN API
+
+    private String wardCode; // Code phường/xã từ GHN API
 }
-
-
-
-
-
-
-

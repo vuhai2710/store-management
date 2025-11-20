@@ -37,11 +37,9 @@ public class SupplierServiceImpl implements SupplierService {
             }
         }
 
-        // Map DTO sang Entity
         Supplier supplier = supplierMapper.toEntity(supplierDTO);
         supplier.setCreatedAt(LocalDateTime.now());
 
-        // Lưu vào DB
         Supplier savedSupplier = supplierRepository.save(supplier);
         log.info("Supplier created successfully with ID: {}", savedSupplier.getIdSupplier());
 
@@ -62,7 +60,6 @@ public class SupplierServiceImpl implements SupplierService {
             supplier.setEmail(supplierDTO.getEmail());
         }
 
-        // Cập nhật các trường khác
         if (supplierDTO.getSupplierName() != null) {
             supplier.setSupplierName(supplierDTO.getSupplierName());
         }
@@ -73,7 +70,6 @@ public class SupplierServiceImpl implements SupplierService {
             supplier.setPhoneNumber(supplierDTO.getPhoneNumber());
         }
 
-        // Lưu lại
         Supplier updatedSupplier = supplierRepository.save(supplier);
         log.info("Supplier updated successfully: {}", updatedSupplier.getIdSupplier());
 
@@ -118,39 +114,3 @@ public class SupplierServiceImpl implements SupplierService {
         return PageUtils.toPageResponse(supplierPage, supplierDTOs);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

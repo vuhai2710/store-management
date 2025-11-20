@@ -8,9 +8,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * DTO cho PayOS Payment Link Creation Request
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

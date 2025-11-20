@@ -8,9 +8,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * DTO cho PayOS Webhook Data (phần data trong webhook)
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -5,18 +5,10 @@ import com.storemanagement.model.Category;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Generator cho SKU tự động theo format: PREFIX-YYYYMMDD-XXXX
- * Ví dụ: LAPTOP-20241031-0001
- */
 public class SkuGenerator {
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
-    /**
-     * Sinh SKU tự động theo category.code_prefix
-     * Format: PREFIX-YYYYMMDD-XXXX
-     */
     public static String generateSku(Category category, int sequenceNumber) {
         if (category == null) {
             throw new RuntimeException("Danh mục không tồn tại");
@@ -32,21 +24,14 @@ public class SkuGenerator {
         
         return prefix.trim().toUpperCase() + "-" + dateStr + "-" + sequence;
     }
-    
-    /**
-     * Sinh SKU tự động với sequence number mặc định
-     */
+
     public static String generateSku(Category category) {
         // Sử dụng timestamp milliseconds cuối 4 chữ số làm sequence
         long timestamp = System.currentTimeMillis();
         int sequence = (int) (timestamp % 10000);
         return generateSku(category, sequence);
     }
-    
-    /**
-     * Parse sequence number từ SKU (nếu đúng format)
-     * Trả về -1 nếu không parse được
-     */
+
     public static int parseSequenceNumber(String sku) {
         if (sku == null || sku.trim().isEmpty()) {
             return -1;
@@ -61,10 +46,7 @@ public class SkuGenerator {
         
         return -1;
     }
-    
-    /**
-     * Kiểm tra xem SKU có đúng format PREFIX-YYYYMMDD-XXXX không
-     */
+
     public static boolean isValidFormat(String sku) {
         if (sku == null || sku.trim().isEmpty()) {
             return false;

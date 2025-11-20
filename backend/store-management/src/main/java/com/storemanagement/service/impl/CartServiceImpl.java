@@ -31,15 +31,6 @@ public class CartServiceImpl implements CartService {
     private final ProductRepository productRepository;
     private final CartMapper cartMapper;
 
-    /**
-     * Lấy giỏ hàng của customer
-     * 
-     * Logic:
-     * - Kiểm tra customer đã có giỏ hàng chưa
-     * - Nếu chưa có → Tự động tạo giỏ hàng mới
-     * - Nếu đã có → Trả về giỏ hàng hiện tại
-     * - Tính tổng tiền và số lượng items tự động
-     */
     @Override
     @Transactional(readOnly = true)
     public CartDTO getCart(Integer customerId) {
@@ -47,20 +38,6 @@ public class CartServiceImpl implements CartService {
         return cartMapper.toDTO(cart);
     }
 
-    /**
-     * Thêm sản phẩm vào giỏ hàng
-     * 
-     * Logic xử lý:
-     * 1. Lấy hoặc tạo giỏ hàng cho customer
-     * 2. Kiểm tra sản phẩm tồn tại
-     * 3. Validate trạng thái sản phẩm (không cho OUT_OF_STOCK, DISCONTINUED)
-     * 4. Validate tồn kho (stockQuantity >= quantity)
-     * 5. Kiểm tra sản phẩm đã có trong giỏ chưa:
-     *    - Nếu đã có → Cộng thêm quantity vào số lượng hiện tại
-     *    - Nếu chưa có → Tạo cart item mới
-     * 6. Validate lại tồn kho sau khi cộng (nếu item đã tồn tại)
-     * 7. Trả về giỏ hàng đã được cập nhật
-     */
     @Override
     public CartDTO addToCart(Integer customerId, AddToCartRequestDto request) {
         // Bước 1: Lấy hoặc tạo giỏ hàng
@@ -117,16 +94,6 @@ public class CartServiceImpl implements CartService {
         return getCart(customerId);
     }
 
-    /**
-     * Cập nhật số lượng sản phẩm trong giỏ hàng
-     * 
-     * Logic xử lý:
-     * 1. Lấy cart và cart item
-     * 2. Kiểm tra quyền: Cart item phải thuộc về giỏ hàng của customer hiện tại
-     * 3. Validate tồn kho: Số lượng mới không được vượt quá stockQuantity
-     * 4. Cập nhật quantity
-     * 5. Trả về giỏ hàng đã được cập nhật
-     */
     @Override
     public CartDTO updateCartItem(Integer customerId, Integer itemId, UpdateCartItemRequestDto request) {
         // Lấy giỏ hàng của customer
@@ -158,15 +125,6 @@ public class CartServiceImpl implements CartService {
         return getCart(customerId);
     }
 
-    /**
-     * Xóa sản phẩm khỏi giỏ hàng
-     * 
-     * Logic xử lý:
-     * 1. Lấy cart và cart item
-     * 2. Kiểm tra quyền: Cart item phải thuộc về giỏ hàng của customer hiện tại
-     * 3. Xóa cart item khỏi database
-     * 4. Trả về giỏ hàng đã được cập nhật
-     */
     @Override
     public CartDTO removeCartItem(Integer customerId, Integer itemId) {
         // Lấy giỏ hàng của customer
@@ -188,11 +146,6 @@ public class CartServiceImpl implements CartService {
         return getCart(customerId);
     }
 
-    /**
-     * Xóa toàn bộ giỏ hàng
-     * 
-     * Logic: Xóa tất cả cart items, giỏ hàng vẫn tồn tại
-     */
     @Override
     public void clearCart(Integer customerId) {
         Cart cart = getOrCreateCart(customerId);
@@ -200,14 +153,6 @@ public class CartServiceImpl implements CartService {
         cartItemRepository.deleteByCartIdCart(cart.getIdCart());
     }
 
-    /**
-     * Lấy hoặc tạo giỏ hàng cho customer
-     * 
-     * Logic:
-     * - Kiểm tra customer đã có giỏ hàng chưa
-     * - Nếu chưa có → Tự động tạo giỏ hàng mới
-     * - Đảm bảo mỗi customer chỉ có 1 giỏ hàng
-     */
     private Cart getOrCreateCart(Integer customerId) {
         return cartRepository.findByCustomerIdCustomer(customerId)
                 .orElseGet(() -> {

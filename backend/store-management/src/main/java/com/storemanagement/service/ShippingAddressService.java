@@ -19,7 +19,3 @@ public interface ShippingAddressService {
     
     void deleteAddress(Integer customerId, Integer addressId);
 }
-
-
-
-

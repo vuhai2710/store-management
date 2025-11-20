@@ -41,7 +41,3 @@ public class OrderDetail {
     @Column(name = "product_image_snapshot", length = 500)
     private String productImageSnapshot; // URL ảnh tại thời điểm mua
 }
-
-
-
-
