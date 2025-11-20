@@ -12,7 +12,7 @@ import {
   Tag,
   Badge,
 } from "antd";
-import { SendOutlined, UserOutlined } from "@ant-design/icons";
+import { SendOutlined, UserOutlined, DownOutlined } from "@ant-design/icons";
 import { chatService } from "../../services/chatService";
 import { message } from "antd";
 import SockJS from "sockjs-client";
@@ -25,14 +25,19 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [conversationsLoading, setConversationsLoading] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [sending, setSending] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
   const messagesEndRef = useRef(null);
   const stompClientRef = useRef(null);
   const subscriptionRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const conversationsContainerRef = useRef(null);
+  const lastConversationIdRef = useRef(null);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
   const WS_URL = API_BASE_URL + "/ws";
@@ -97,7 +102,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
 
   const loadConversations = async () => {
     try {
-      setLoading(true);
+      setConversationsLoading(true);
       const response = await chatService.getAllConversations({
         pageNo: 1,
         pageSize: 50,
@@ -107,13 +112,13 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
       console.error("Error loading conversations:", error);
       message.error("Không thể tải danh sách cuộc hội thoại");
     } finally {
-      setLoading(false);
+      setConversationsLoading(false);
     }
   };
 
   const loadMessages = async (conversationId) => {
     try {
-      setLoading(true);
+      setMessagesLoading(true);
       const response = await chatService.getConversationMessages(
         conversationId,
         {
@@ -126,7 +131,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
       console.error("Error loading messages:", error);
       message.error("Không thể tải tin nhắn");
     } finally {
-      setLoading(false);
+      setMessagesLoading(false);
     }
   };
 
@@ -153,17 +158,23 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
       // Use instant scroll without smooth animation to avoid interruption
       messagesEndRef.current.scrollIntoView({ behavior: "auto" });
     }
+    setIsAtBottom(true);
+    setHasNewMessages(false);
   };
 
-  // Scroll after DOM updates
+  // Auto scroll similar to client chat: scroll to bottom whenever messages change
   useEffect(() => {
-    if (messages.length > 0) {
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
-        scrollToBottom();
-      }, 100);
+    if (!selectedConversation || messages.length === 0) {
+      return;
     }
-  }, [messages]);
+
+    // Small delay to ensure DOM is updated before scrolling
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [messages, selectedConversation]);
 
   const handleSendMessage = async () => {
     if (!messageText.trim() || !selectedConversation) return;
@@ -212,6 +223,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
       });
 
       setMessageText("");
+      scrollToBottom();
 
       // Reload conversations after sending to update unread counts from backend
       setTimeout(() => {
@@ -317,6 +329,20 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
   // Content component (reusable for both Drawer and Widget)
   const chatContent = (
     <div
+      onWheelCapture={(e) => {
+        // Prevent page scroll when using the wheel on header/footer areas
+        const target = e.target;
+        if (
+          (messagesContainerRef.current &&
+            messagesContainerRef.current.contains(target)) ||
+          (conversationsContainerRef.current &&
+            conversationsContainerRef.current.contains(target))
+        ) {
+          return;
+        }
+        e.stopPropagation();
+        e.preventDefault();
+      }}
       style={{
         display: "flex",
         flexDirection: window.innerWidth < 768 ? "column" : "row",
@@ -324,6 +350,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
       }}>
       {/* Conversations List */}
       <div
+        ref={conversationsContainerRef}
         style={{
           width: window.innerWidth < 768 ? "100%" : "200px",
           minWidth: window.innerWidth < 768 ? "unset" : "150px",
@@ -343,7 +370,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
           }}>
           {window.innerWidth < 768 ? "Chat" : "Cuộc hội thoại"}
         </div>
-        {loading && conversations.length === 0 ? (
+        {conversationsLoading && conversations.length === 0 ? (
           <Spin />
         ) : conversations.length === 0 ? (
           <Empty description="Chưa có cuộc hội thoại nào" />
@@ -356,7 +383,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
                   cursor: "pointer",
                   backgroundColor:
                     selectedConversation?.idConversation ===
-                    conversation.idConversation
+                      conversation.idConversation
                       ? "#e6f7ff"
                       : "transparent",
                   padding: "12px",
@@ -449,6 +476,14 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
                 // Prevent scroll propagation to parent page
                 const container = e.currentTarget;
                 const { scrollTop, scrollHeight, clientHeight } = container;
+                const canScroll = scrollHeight > clientHeight;
+
+                if (!canScroll) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  return;
+                }
+
                 const isAtTop = scrollTop === 0;
                 const isAtBottom =
                   Math.abs(scrollHeight - clientHeight - scrollTop) < 1;
@@ -465,15 +500,29 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
                 // Stop propagation when scrolling within content
                 e.stopPropagation();
               }}
+              onScroll={(e) => {
+                const container = e.currentTarget;
+                const distanceFromBottom =
+                  container.scrollHeight -
+                  container.clientHeight -
+                  container.scrollTop;
+                const atBottom = distanceFromBottom <= 50;
+                setIsAtBottom(atBottom);
+                if (atBottom) {
+                  setHasNewMessages(false);
+                }
+              }}
               style={{
                 flex: 1,
                 overflowY: "auto",
+                overscrollBehavior: "contain",
                 padding: "16px",
                 backgroundColor: "#f5f5f5",
                 borderRadius: "4px",
                 marginBottom: "16px",
+                position: "relative",
               }}>
-              {loading ? (
+              {messagesLoading ? (
                 <Spin />
               ) : messages.length === 0 ? (
                 <Empty description="Chưa có tin nhắn nào" />
@@ -609,6 +658,22 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
                 })
               )}
               <div ref={messagesEndRef} />
+              {hasNewMessages && !isAtBottom && (
+                <Button
+                  size="small"
+                  shape="circle"
+                  type="primary"
+                  icon={<DownOutlined />}
+                  onClick={scrollToBottom}
+                  style={{
+                    position: "absolute",
+                    left: "50%",
+                    bottom: 16,
+                    transform: "translateX(-50%)",
+                    zIndex: 10,
+                  }}
+                />
+              )}
             </div>
 
             <Space.Compact style={{ width: "100%" }}>

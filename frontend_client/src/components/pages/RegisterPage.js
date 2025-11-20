@@ -20,9 +20,78 @@ const RegisterPage = ({ setCurrentPage }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
-  const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState("");
+
+  const validateField = (name, value) => {
+    const trimmedValue = value.trim();
+    const newErrors = {};
+
+    switch (name) {
+      case "username": {
+        if (!trimmedValue) {
+          newErrors.username = "Vui lòng nhập tên đăng nhập";
+        } else if (trimmedValue.length < 4) {
+          newErrors.username = "Tên đăng nhập phải có ít nhất 4 ký tự";
+        }
+        break;
+      }
+      case "customerName": {
+        if (!trimmedValue) {
+          newErrors.customerName = "Vui lòng nhập họ và tên";
+        } else if (trimmedValue.length < 3) {
+          newErrors.customerName = "Họ và tên phải có ít nhất 3 ký tự";
+        }
+        break;
+      }
+      case "email": {
+        if (!trimmedValue) {
+          newErrors.email = "Vui lòng nhập email";
+        } else if (!isValidEmail(trimmedValue)) {
+          newErrors.email = "Email không hợp lệ";
+        }
+        break;
+      }
+      case "phoneNumber": {
+        if (!trimmedValue) {
+          newErrors.phoneNumber = "Vui lòng nhập số điện thoại";
+        } else if (!isValidPhone(trimmedValue)) {
+          newErrors.phoneNumber = "Số điện thoại không hợp lệ";
+        }
+        break;
+      }
+      case "password": {
+        if (!value) {
+          newErrors.password = "Vui lòng nhập mật khẩu";
+        } else if (value.length < 4) {
+          newErrors.password = "Mật khẩu phải có ít nhất 4 ký tự";
+        }
+        break;
+      }
+      case "confirmPassword": {
+        if (!value) {
+          newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu";
+        } else if (value !== formData.password) {
+          newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors((prev) => ({
+        ...prev,
+        ...newErrors,
+      }));
+    } else if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,11 +99,15 @@ const RegisterPage = ({ setCurrentPage }) => {
       ...prev,
       [name]: value,
     }));
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
+
+    if (name === "password" || name === "confirmPassword") {
+      const nextPassword = name === "password" ? value : formData.password;
+      const nextConfirmPassword =
+        name === "confirmPassword" ? value : formData.confirmPassword;
+      validateField("password", nextPassword);
+      validateField("confirmPassword", nextConfirmPassword);
+    } else {
+      validateField(name, value);
     }
   };
 
@@ -75,10 +148,6 @@ const RegisterPage = ({ setCurrentPage }) => {
       newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu";
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
-    }
-
-    if (!acceptTerms) {
-      newErrors.terms = "Vui lòng đồng ý với điều khoản sử dụng";
     }
 
     setErrors(newErrors);
@@ -207,7 +276,7 @@ const RegisterPage = ({ setCurrentPage }) => {
                   color: "#495057",
                   fontSize: "0.875rem",
                 }}>
-                Tên đăng nhập
+                Tên đăng nhập *
               </label>
               <div style={{ position: "relative" }}>
                 <User size={20} style={iconStyle} />
@@ -223,9 +292,9 @@ const RegisterPage = ({ setCurrentPage }) => {
                   }}
                   onFocus={(e) => (e.target.style.borderColor = "#667eea")}
                   onBlur={(e) =>
-                    (e.target.style.borderColor = errors.username
-                      ? "#dc3545"
-                      : "#dee2e6")
+                  (e.target.style.borderColor = errors.username
+                    ? "#dc3545"
+                    : "#dee2e6")
                   }
                 />
               </div>
@@ -242,7 +311,7 @@ const RegisterPage = ({ setCurrentPage }) => {
                   color: "#495057",
                   fontSize: "0.875rem",
                 }}>
-                Họ và tên
+                Họ và tên *
               </label>
               <div style={{ position: "relative" }}>
                 <User size={20} style={iconStyle} />
@@ -258,9 +327,9 @@ const RegisterPage = ({ setCurrentPage }) => {
                   }}
                   onFocus={(e) => (e.target.style.borderColor = "#667eea")}
                   onBlur={(e) =>
-                    (e.target.style.borderColor = errors.customerName
-                      ? "#dc3545"
-                      : "#dee2e6")
+                  (e.target.style.borderColor = errors.customerName
+                    ? "#dc3545"
+                    : "#dee2e6")
                   }
                 />
               </div>
@@ -279,7 +348,7 @@ const RegisterPage = ({ setCurrentPage }) => {
                   color: "#495057",
                   fontSize: "0.875rem",
                 }}>
-                Email
+                Email *
               </label>
               <div style={{ position: "relative" }}>
                 <Mail size={20} style={iconStyle} />
@@ -295,9 +364,9 @@ const RegisterPage = ({ setCurrentPage }) => {
                   }}
                   onFocus={(e) => (e.target.style.borderColor = "#667eea")}
                   onBlur={(e) =>
-                    (e.target.style.borderColor = errors.email
-                      ? "#dc3545"
-                      : "#dee2e6")
+                  (e.target.style.borderColor = errors.email
+                    ? "#dc3545"
+                    : "#dee2e6")
                   }
                 />
               </div>
@@ -314,7 +383,7 @@ const RegisterPage = ({ setCurrentPage }) => {
                   color: "#495057",
                   fontSize: "0.875rem",
                 }}>
-                Số điện thoại
+                Số điện thoại *
               </label>
               <div style={{ position: "relative" }}>
                 <Phone size={20} style={iconStyle} />
@@ -330,9 +399,9 @@ const RegisterPage = ({ setCurrentPage }) => {
                   }}
                   onFocus={(e) => (e.target.style.borderColor = "#667eea")}
                   onBlur={(e) =>
-                    (e.target.style.borderColor = errors.phoneNumber
-                      ? "#dc3545"
-                      : "#dee2e6")
+                  (e.target.style.borderColor = errors.phoneNumber
+                    ? "#dc3545"
+                    : "#dee2e6")
                   }
                 />
               </div>
@@ -367,9 +436,9 @@ const RegisterPage = ({ setCurrentPage }) => {
                   }}
                   onFocus={(e) => (e.target.style.borderColor = "#667eea")}
                   onBlur={(e) =>
-                    (e.target.style.borderColor = errors.address
-                      ? "#dc3545"
-                      : "#dee2e6")
+                  (e.target.style.borderColor = errors.address
+                    ? "#dc3545"
+                    : "#dee2e6")
                   }
                 />
               </div>
@@ -386,7 +455,7 @@ const RegisterPage = ({ setCurrentPage }) => {
                   color: "#495057",
                   fontSize: "0.875rem",
                 }}>
-                Mật khẩu
+                Mật khẩu *
               </label>
               <div style={{ position: "relative" }}>
                 <Lock size={20} style={iconStyle} />
@@ -403,9 +472,9 @@ const RegisterPage = ({ setCurrentPage }) => {
                   }}
                   onFocus={(e) => (e.target.style.borderColor = "#667eea")}
                   onBlur={(e) =>
-                    (e.target.style.borderColor = errors.password
-                      ? "#dc3545"
-                      : "#dee2e6")
+                  (e.target.style.borderColor = errors.password
+                    ? "#dc3545"
+                    : "#dee2e6")
                   }
                 />
                 <button
@@ -438,7 +507,7 @@ const RegisterPage = ({ setCurrentPage }) => {
                   color: "#495057",
                   fontSize: "0.875rem",
                 }}>
-                Xác nhận mật khẩu
+                Xác nhận mật khẩu *
               </label>
               <div style={{ position: "relative" }}>
                 <Lock size={20} style={iconStyle} />
@@ -455,9 +524,9 @@ const RegisterPage = ({ setCurrentPage }) => {
                   }}
                   onFocus={(e) => (e.target.style.borderColor = "#667eea")}
                   onBlur={(e) =>
-                    (e.target.style.borderColor = errors.confirmPassword
-                      ? "#dc3545"
-                      : "#dee2e6")
+                  (e.target.style.borderColor = errors.confirmPassword
+                    ? "#dc3545"
+                    : "#dee2e6")
                   }
                 />
                 <button
@@ -486,37 +555,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               )}
             </div>
 
-            {/* Terms and Conditions */}
-            <div style={{ marginBottom: "1.5rem" }}>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "0.75rem",
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
-                }}>
-                <input
-                  type="checkbox"
-                  checked={acceptTerms}
-                  onChange={(e) => {
-                    setAcceptTerms(e.target.checked);
-                    if (errors.terms && e.target.checked) {
-                      setErrors((prev) => ({ ...prev, terms: "" }));
-                    }
-                  }}
-                  style={{
-                    cursor: "pointer",
-                    marginTop: "0.25rem",
-                    accentColor: "#f5576c",
-                  }}
-                />
-                <span style={{ color: "#495057" }}>
-                  Tôi đồng ý với Điều khoản sử dụng và Chính sách bảo mật
-                </span>
-              </label>
-              {errors.terms && <p style={errorStyle}>{errors.terms}</p>}
-            </div>
+            {/* Terms and Conditions section removed: registration doesn't depend on checkbox */}
 
             {/* API Error Message */}
             {apiError && (

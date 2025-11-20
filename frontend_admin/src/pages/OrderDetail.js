@@ -178,14 +178,24 @@ const OrderDetail = () => {
   const statusInfo = getStatusInfo(currentOrder.status);
   const orderId = currentOrder.idOrder || currentOrder.id;
 
-  // Get available status options based on current status
+  // Get available status options based on current status & payment method
   const getAvailableStatuses = () => {
     const current = currentOrder.status?.toUpperCase();
+    const paymentMethod = currentOrder.paymentMethod?.toUpperCase();
+
     if (current === 'PENDING') {
+      // With CASH payments, allow going directly to COMPLETED (skip CONFIRMED)
+      if (paymentMethod === 'CASH') {
+        return ['COMPLETED', 'CANCELED'];
+      }
+      // Other methods keep the original flow: PENDING -> CONFIRMED / CANCELED
       return ['CONFIRMED', 'CANCELED'];
-    } else if (current === 'CONFIRMED') {
+    }
+
+    if (current === 'CONFIRMED') {
       return ['COMPLETED'];
     }
+
     return []; // COMPLETED and CANCELED cannot be changed
   };
 
@@ -266,12 +276,12 @@ const OrderDetail = () => {
               ? currentOrder.paymentMethod === 'CASH'
                 ? 'Tiền mặt'
                 : currentOrder.paymentMethod === 'PAYOS'
-                ? 'PayOS'
-                : currentOrder.paymentMethod === 'TRANSFER'
-                ? 'Chuyển khoản'
-                : currentOrder.paymentMethod === 'ZALOPAY'
-                ? 'ZaloPay'
-                : currentOrder.paymentMethod
+                  ? 'PayOS'
+                  : currentOrder.paymentMethod === 'TRANSFER'
+                    ? 'Chuyển khoản'
+                    : currentOrder.paymentMethod === 'ZALOPAY'
+                      ? 'ZaloPay'
+                      : currentOrder.paymentMethod
               : 'N/A'}
           </Descriptions.Item>
           <Descriptions.Item label="Ghi chú">
@@ -296,8 +306,8 @@ const OrderDetail = () => {
                   {currentOrder.finalAmount
                     ? `${Number(currentOrder.finalAmount).toLocaleString('vi-VN')} VNĐ`
                     : currentOrder.totalAmount
-                    ? `${Number(currentOrder.totalAmount).toLocaleString('vi-VN')} VNĐ`
-                    : '0 VNĐ'}
+                      ? `${Number(currentOrder.totalAmount).toLocaleString('vi-VN')} VNĐ`
+                      : '0 VNĐ'}
                 </Text>
               </Descriptions.Item>
             </>

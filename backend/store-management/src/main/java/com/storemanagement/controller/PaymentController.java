@@ -33,7 +33,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentController {
-    
+
     private final PayOSService payOSService;
     private final OrderRepository orderRepository;
     private final InventoryTransactionRepository inventoryTransactionRepository;
@@ -45,35 +45,28 @@ public class PaymentController {
     @Transactional
     public ResponseEntity<ApiResponse<Map<String, Object>>> createPaymentLink(@PathVariable Integer orderId) {
         log.info("Creating PayOS payment link for order ID: {}", orderId);
-        
-        // Lấy order từ database
+
         Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new EntityNotFoundException("Order không tồn tại với ID: " + orderId));
-        
-        // Validate order
+                .orElseThrow(() -> new EntityNotFoundException("Order không tồn tại với ID: " + orderId));
+
         if (order.getPaymentMethod() != Order.PaymentMethod.PAYOS) {
             throw new IllegalArgumentException("Order payment method phải là PAYOS");
         }
         if (order.getStatus() != Order.OrderStatus.PENDING) {
             throw new IllegalArgumentException("Order status phải là PENDING để tạo payment link");
         }
-        
+
         // Validate customer ownership (nếu là CUSTOMER role)
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication.getAuthorities().stream()
-            .anyMatch(a -> a.getAuthority().equals("ROLE_CUSTOMER"))) {
-            // TODO: Check customer ownership if needed
-            // For now, allow any authenticated customer
+                .anyMatch(a -> a.getAuthority().equals("ROLE_CUSTOMER"))) {
         }
-        
-        // Gọi PayOSService để tạo payment link
+
         PayOSPaymentResponseDTO response = payOSService.createPaymentLink(order);
-        
-        // Lưu paymentLinkId vào order
+
         order.setPaymentLinkId(response.getData().getPaymentLinkId());
         orderRepository.save(order);
-        
-        // Build response
+
         Map<String, Object> data = new HashMap<>();
         data.put("paymentLinkUrl", response.getData().getCheckoutUrl());
         data.put("paymentLinkId", response.getData().getPaymentLinkId());
@@ -81,10 +74,10 @@ public class PaymentController {
         if (response.getData().getQrCode() != null) {
             data.put("qrCode", response.getData().getQrCode());
         }
-        
-        log.info("PayOS payment link created successfully for order ID: {}. PaymentLinkId: {}", 
-            orderId, response.getData().getPaymentLinkId());
-        
+
+        log.info("PayOS payment link created successfully for order ID: {}. PaymentLinkId: {}",
+                orderId, response.getData().getPaymentLinkId());
+
         return ResponseEntity.ok(ApiResponse.success("Tạo payment link thành công", data));
     }
 
@@ -92,110 +85,93 @@ public class PaymentController {
     @Transactional
     public ResponseEntity<Map<String, String>> webhook(@RequestBody String requestBody) {
         log.info("Received PayOS webhook. Request body length: {}", requestBody != null ? requestBody.length() : 0);
-        
+
         try {
-            // Parse request body thành PayOSWebhookDto
             PayOSWebhookDTO webhookDto = objectMapper.readValue(requestBody, PayOSWebhookDTO.class);
-            
-            log.info("Webhook data: code={}, desc={}, paymentLinkId={}", 
-                webhookDto.getCode(), 
-                webhookDto.getDesc(),
-                webhookDto.getData() != null ? webhookDto.getData().getPaymentLinkId() : "null");
-            
-            // Verify HMAC signature
-            // Data để verify là JSON string không format (requestBody)
-            // Signature từ PayOS nằm trong webhookDto.signature
+
+            log.info("Webhook data: code={}, desc={}, paymentLinkId={}",
+                    webhookDto.getCode(),
+                    webhookDto.getDesc(),
+                    webhookDto.getData() != null ? webhookDto.getData().getPaymentLinkId() : "null");
+
             boolean isValidSignature = payOSService.verifyWebhookSignature(
-                requestBody, 
-                webhookDto.getSignature()
-            );
-            
+                    requestBody,
+                    webhookDto.getSignature());
+
             if (!isValidSignature) {
                 log.error("Webhook signature verification FAILED. Rejecting webhook.");
-                // Return 200 OK để PayOS không retry, nhưng không xử lý
                 return ResponseEntity.ok(Map.of("status", "error", "message", "Invalid signature"));
             }
-            
-            // Tìm order theo paymentLinkId
+
             String paymentLinkId = webhookDto.getData().getPaymentLinkId();
             Order order = orderRepository.findByPaymentLinkId(paymentLinkId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                    "Order không tồn tại với paymentLinkId: " + paymentLinkId));
-            
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Order không tồn tại với paymentLinkId: " + paymentLinkId));
+
             log.info("Found order ID: {} for paymentLinkId: {}", order.getIdOrder(), paymentLinkId);
-            
-            // Kiểm tra order status hiện tại (tránh xử lý duplicate webhook)
-            // Nếu order đã được xử lý rồi (status != PENDING), bỏ qua
+
             if (order.getStatus() != Order.OrderStatus.PENDING) {
-                log.warn("Order ID: {} đã được xử lý rồi (status: {}). Ignoring duplicate webhook.", 
-                    order.getIdOrder(), order.getStatus());
+                log.warn("Order ID: {} đã được xử lý rồi (status: {}). Ignoring duplicate webhook.",
+                        order.getIdOrder(), order.getStatus());
                 return ResponseEntity.ok(Map.of("status", "success", "message", "Order already processed"));
             }
-            
-            // Xử lý webhook dựa trên code
+
             String webhookCode = webhookDto.getCode();
             if ("00".equals(webhookCode)) {
-                // Thanh toán thành công
-                log.info("Payment SUCCESS for order ID: {}. Updating order status to CONFIRMED.", order.getIdOrder());
-                
-                // Update order status
-                order.setStatus(Order.OrderStatus.CONFIRMED);
+                log.info("Payment SUCCESS for order ID: {}. Updating order status to COMPLETED.", order.getIdOrder());
+
+                order.setStatus(Order.OrderStatus.COMPLETED);
                 orderRepository.save(order);
-                
-                // Trừ stock từ các sản phẩm trong order
-                // Logic: Với mỗi orderDetail, trừ quantity từ product.stockQuantity
+
                 if (order.getOrderDetails() != null) {
                     order.getOrderDetails().forEach(orderDetail -> {
                         Product product = orderDetail.getProduct();
-                        
-                        // Trừ stock
+
                         Integer newStockQuantity = product.getStockQuantity() - orderDetail.getQuantity();
                         product.setStockQuantity(newStockQuantity);
-                        
-                        // Cập nhật status nếu hết hàng
+
                         if (newStockQuantity == 0) {
                             product.setStatus(ProductStatus.OUT_OF_STOCK);
                         }
-                        
-                        // Lưu product với stock mới
+
                         productRepository.save(product);
-                        
-                        // Tạo inventory transaction (OUT) để ghi lại lịch sử
+
                         InventoryTransaction transaction = InventoryTransaction.builder()
-                            .product(product)
-                            .transactionType(TransactionType.OUT)
-                            .quantity(orderDetail.getQuantity())
-                            .referenceType(ReferenceType.SALE_ORDER) // Sử dụng SALE_ORDER thay vì ORDER
-                            .referenceId(order.getIdOrder())
-                            .notes("Thanh toán PayOS thành công - Order #" + order.getIdOrder())
-                            .build();
-                        
+                                .product(product)
+                                .transactionType(TransactionType.OUT)
+                                .quantity(orderDetail.getQuantity())
+                                .referenceType(ReferenceType.SALE_ORDER) // Sử dụng SALE_ORDER thay vì ORDER
+                                .referenceId(order.getIdOrder())
+                                .notes("Thanh toán PayOS thành công - Order #" + order.getIdOrder())
+                                .build();
+
                         inventoryTransactionRepository.save(transaction);
-                        
-                        log.debug("Stock deducted for product ID: {}. New stock: {}", 
-                            product.getIdProduct(), newStockQuantity);
+
+                        log.debug("Stock deducted for product ID: {}. New stock: {}",
+                                product.getIdProduct(), newStockQuantity);
                     });
                 }
-                
-                log.info("Order ID: {} updated to CONFIRMED. Stock deducted and inventory transactions created.", 
-                    order.getIdOrder());
-                
+
+                log.info("Order ID: {} updated to CONFIRMED. Stock deducted and inventory transactions created.",
+                        order.getIdOrder());
+
             } else {
                 // Thanh toán thất bại hoặc hủy
-                log.info("Payment FAILED/CANCELLED for order ID: {}. Code: {}, Desc: {}. Updating order status to CANCELED.", 
-                    order.getIdOrder(), webhookCode, webhookDto.getDesc());
-                
+                log.info(
+                        "Payment FAILED/CANCELLED for order ID: {}. Code: {}, Desc: {}. Updating order status to CANCELED.",
+                        order.getIdOrder(), webhookCode, webhookDto.getDesc());
+
                 // Update order status
                 order.setStatus(Order.OrderStatus.CANCELED);
                 orderRepository.save(order);
-                
+
                 // Không trừ stock vì thanh toán thất bại
                 log.info("Order ID: {} updated to CANCELED. Stock NOT deducted.", order.getIdOrder());
             }
-            
+
             // Return 200 OK cho PayOS
             return ResponseEntity.ok(Map.of("status", "success", "message", "Webhook processed"));
-            
+
         } catch (Exception e) {
             log.error("Error processing PayOS webhook", e);
             // Return 200 OK để PayOS không retry
@@ -207,50 +183,49 @@ public class PaymentController {
     @GetMapping("/return")
     public ResponseEntity<String> returnUrl(@RequestParam(required = false) Long orderCode) {
         log.info("PayOS return URL called. OrderCode: {}", orderCode);
-        
+
         // Redirect về frontend success page
         // Frontend sẽ handle việc hiển thị kết quả và check order status
         String redirectUrl = "http://localhost:3000/payment/success";
         if (orderCode != null) {
             redirectUrl += "?orderId=" + orderCode;
         }
-        
+
         return ResponseEntity.status(302)
-            .header("Location", redirectUrl)
-            .body("Redirecting to payment success page...");
+                .header("Location", redirectUrl)
+                .body("Redirecting to payment success page...");
     }
 
     @GetMapping("/cancel")
     public ResponseEntity<String> cancelUrl(@RequestParam(required = false) Long orderCode) {
         log.info("PayOS cancel URL called. OrderCode: {}", orderCode);
-        
+
         // Redirect về frontend cancel page
         String redirectUrl = "http://localhost:3000/payment/cancel";
         if (orderCode != null) {
             redirectUrl += "?orderId=" + orderCode;
         }
-        
+
         return ResponseEntity.status(302)
-            .header("Location", redirectUrl)
-            .body("Redirecting to payment cancel page...");
+                .header("Location", redirectUrl)
+                .body("Redirecting to payment cancel page...");
     }
 
     @GetMapping("/status/{orderId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getPaymentStatus(@PathVariable Integer orderId) {
         log.info("Getting payment status for order ID: {}", orderId);
-        
+
         Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new EntityNotFoundException("Order không tồn tại với ID: " + orderId));
-        
+                .orElseThrow(() -> new EntityNotFoundException("Order không tồn tại với ID: " + orderId));
+
         Map<String, Object> data = new HashMap<>();
         data.put("orderId", orderId);
         data.put("status", order.getStatus().name());
         data.put("paymentMethod", order.getPaymentMethod() != null ? order.getPaymentMethod().name() : null);
         data.put("paymentLinkId", order.getPaymentLinkId());
         data.put("finalAmount", order.getFinalAmount());
-        
+
         return ResponseEntity.ok(ApiResponse.success("Lấy trạng thái thanh toán thành công", data));
     }
 }
-

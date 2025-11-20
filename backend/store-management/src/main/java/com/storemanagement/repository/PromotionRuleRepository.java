@@ -13,18 +13,17 @@ import java.util.Optional;
 
 @Repository
 public interface PromotionRuleRepository extends JpaRepository<PromotionRule, Integer> {
-    List<PromotionRule> findByIsActiveTrue();
+       List<PromotionRule> findByIsActiveTrue();
 
-    @Query("SELECT pr FROM PromotionRule pr WHERE pr.isActive = true " +
-           "AND pr.startDate <= :now AND pr.endDate >= :now " +
-           "AND pr.minOrderAmount <= :totalAmount " +
-           "AND (pr.customerType = :customerType OR pr.customerType = 'ALL') " +
-           "ORDER BY pr.priority DESC")
-    List<PromotionRule> findApplicableRules(
-            @Param("now") LocalDateTime now,
-            @Param("totalAmount") BigDecimal totalAmount,
-            @Param("customerType") String customerType);
+       @Query("SELECT pr FROM PromotionRule pr WHERE pr.isActive = true " +
+                     "AND pr.startDate <= :now AND pr.endDate >= :now " +
+                     "AND pr.minOrderAmount <= :totalAmount " +
+                     "AND (pr.customerType = :customerType OR pr.customerType = 'ALL') " +
+                     "ORDER BY pr.priority DESC")
+       List<PromotionRule> findApplicableRules(
+                     @Param("now") LocalDateTime now,
+                     @Param("totalAmount") BigDecimal totalAmount,
+                     @Param("customerType") String customerType);
 
-    Optional<PromotionRule> findByIdRule(Integer idRule);
+       Optional<PromotionRule> findByIdRule(Integer idRule);
 }
-

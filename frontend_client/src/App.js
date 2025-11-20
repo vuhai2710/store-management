@@ -259,12 +259,12 @@ function AppContent() {
   const cartTotal = cartData?.totalAmount
     ? Number(cartData.totalAmount)
     : cart.reduce((sum, item) => {
-        const price =
-          item.productPrice || item.price || item.product?.price || 0;
-        const quantity = item.quantity || item.qty || 0;
-        const subtotal = item.subtotal || price * quantity;
-        return sum + Number(subtotal);
-      }, 0);
+      const price =
+        item.productPrice || item.price || item.product?.price || 0;
+      const quantity = item.quantity || item.qty || 0;
+      const subtotal = item.subtotal || price * quantity;
+      return sum + Number(subtotal);
+    }, 0);
 
   const cartItemCount = cartData?.totalItems
     ? Number(cartData.totalItems)

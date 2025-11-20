@@ -32,15 +32,27 @@ const CustomerForm = ({ customer, onSuccess }) => {
 
   const handleSubmit = async (values) => {
     try {
+      const trimmedValues = {
+        ...values,
+        username: values.username?.trim(),
+        password: values.password, // giữ nguyên mật khẩu
+        name: values.name?.trim(),
+        fullName: values.fullName?.trim(),
+        email: values.email?.trim(),
+        phone: values.phone?.trim(),
+        phoneNumber: values.phoneNumber?.trim(),
+        address: values.address?.trim(),
+      };
+
       if (customer) {
         // Update existing customer
         await dispatch(
-          updateCustomer({ id: customer.id, customerData: values })
+          updateCustomer({ id: customer.id, customerData: trimmedValues })
         ).unwrap();
         message.success("Cập nhật khách hàng thành công!");
       } else {
         // Register new customer (requires username and password)
-        await dispatch(createCustomer(values)).unwrap();
+        await dispatch(createCustomer(trimmedValues)).unwrap();
         message.success("Đăng ký khách hàng mới thành công!");
       }
 

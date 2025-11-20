@@ -86,16 +86,17 @@ public class PromotionServiceImpl implements PromotionService {
 
     @Override
     @Transactional(readOnly = true)
-    public CalculateDiscountResponseDTO calculateAutomaticDiscount(CalculateDiscountRequestDTO request, String customerType) {
-        log.info("Calculating automatic discount for total amount: {}, customer type: {}", request.getTotalAmount(), customerType);
+    public CalculateDiscountResponseDTO calculateAutomaticDiscount(CalculateDiscountRequestDTO request,
+            String customerType) {
+        log.info("Calculating automatic discount for total amount: {}, customer type: {}", request.getTotalAmount(),
+                customerType);
 
         LocalDateTime now = LocalDateTime.now();
 
         List<PromotionRule> rules = promotionRuleRepository.findApplicableRules(
                 now,
                 request.getTotalAmount(),
-                customerType != null ? customerType : "REGULAR"
-        );
+                customerType != null ? customerType : "REGULAR");
 
         if (rules.isEmpty()) {
             return CalculateDiscountResponseDTO.builder()
@@ -145,7 +146,8 @@ public class PromotionServiceImpl implements PromotionService {
         CalculateDiscountResponseDTO calculateResponse = calculateAutomaticDiscount(calculateRequest, customerType);
 
         if (calculateResponse.getApplicable()) {
-            log.info("Applying automatic discount: {}, discount: {}", calculateResponse.getRuleName(), calculateResponse.getDiscount());
+            log.info("Applying automatic discount: {}, discount: {}", calculateResponse.getRuleName(),
+                    calculateResponse.getDiscount());
             return calculateResponse.getDiscount();
         }
 
@@ -338,4 +340,3 @@ public class PromotionServiceImpl implements PromotionService {
         log.info("Promotion usage recorded successfully");
     }
 }
-

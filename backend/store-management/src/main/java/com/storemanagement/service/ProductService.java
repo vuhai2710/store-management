@@ -50,5 +50,7 @@ public interface ProductService {
     List<ProductDTO> getRelatedProducts(Integer productId, Integer limit);
 
     List<String> getAllBrands();
+
+    List<ProductDTO> getProductsByIds(List<Long> productIds);
 }
 
