@@ -233,6 +233,27 @@ public class ProductImageServiceImpl implements ProductImageService {
         List<ProductImage> images = productImageRepository.findByProduct_IdProductOrderByDisplayOrderAsc(productId);
         return productImageMapper.toDTOList(images);
     }
+
+    // Khai báo dependency
+@Autowired
+private Cloudinary cloudinary;
+
+// Trong hàm upload
+public String uploadImage(MultipartFile file) {
+    try {
+        // Code cũ: Lưu vào ổ cứng -> XÓA ĐI
+        
+        // Code mới: Upload lên Cloudinary
+        Map data = cloudinary.uploader().upload(file.getBytes(), Map.of());
+        
+        // Lấy đường dẫn ảnh online về
+        String urlAnhOnline = (String) data.get("secure_url");
+        
+        return urlAnhOnline; // Lưu cái link này vào Database
+    } catch (IOException e) {
+        throw new RuntimeException("Lỗi upload ảnh");
+    }
+}
 }
 
 
