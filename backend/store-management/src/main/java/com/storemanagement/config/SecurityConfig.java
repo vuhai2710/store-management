@@ -23,7 +23,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -35,17 +34,19 @@ public class SecurityConfig {
     @Value("${jwt.signerKey}")
     private String SIGNER_KEY;
 
-    // Role URL groups
+    // ADMIN ONLY
     private static final String[] ADMIN_URLS = {
             "/api/v1/admin/**"
     };
 
+    // ADMIN + EMPLOYEE
     private static final String[] EMPLOYEE_URLS = {
             "/api/v1/orders/**",
             "/api/v1/inventory/**",
             "/api/v1/suppliers/**"
     };
 
+    // CUSTOMER ONLY
     private static final String[] CUSTOMER_URLS = {
             "/api/v1/cart/**",
             "/api/v1/orders/checkout",
@@ -63,22 +64,30 @@ public class SecurityConfig {
             "/api/v1/employees/**"
     };
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
-    }
 
+    // =====================================================================
+    // CORS CONFIG — đã fix đầy đủ cho Render + Vercel
+    // =====================================================================
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001", "http://localhost:3003"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+        CorsConfiguration config = new CorsConfiguration();
+
+        config.setAllowedOriginPatterns(List.of(
+                "https://store-admin-xi.vercel.app",
+                "https://store-client-xi.vercel.app",
+                "https://*.vercel.app",
+                "http://localhost:*",
+                "*"
+        ));
+
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 
@@ -104,6 +113,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/payos/**").permitAll()
                         .requestMatchers("/api/v1/payments/payos/webhook").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/payos/**").permitAll()
+                        .requestMatchers("/api/v1/payments/payos/webhook").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/test/**").permitAll() // Test endpoint
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
@@ -136,14 +147,19 @@ public class SecurityConfig {
         return http.build();
     }
 
+
+    // =====================================================================
+    // JWT Config
+    // =====================================================================
+
     @Bean
     public JwtAuthenticationConverter jwtConverter() {
-        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        authoritiesConverter.setAuthorityPrefix("ROLE_");
-        authoritiesConverter.setAuthoritiesClaimName("role");
+        JwtGrantedAuthoritiesConverter conv = new JwtGrantedAuthoritiesConverter();
+        conv.setAuthorityPrefix("ROLE_");
+        conv.setAuthoritiesClaimName("role");
 
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
+        converter.setJwtGrantedAuthoritiesConverter(conv);
         return converter;
     }
 
@@ -153,6 +169,11 @@ public class SecurityConfig {
         return NimbusJwtDecoder.withSecretKey(secretKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
     }
 
     @Bean
