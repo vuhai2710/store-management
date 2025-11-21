@@ -23,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -592,7 +594,17 @@ public class ProductServiceImpl implements ProductService {
             }
         });
         
-        return productMapper.toDTOList(products);
+        // Tạo map để giữ thứ tự theo productIds
+        Map<Integer, Product> productMap = products.stream()
+            .collect(java.util.stream.Collectors.toMap(Product::getIdProduct, p -> p));
+        
+        // Sắp xếp lại theo thứ tự trong productIds
+        List<Product> orderedProducts = intIds.stream()
+            .map(productMap::get)
+            .filter(Objects::nonNull)
+            .toList();
+        
+        return productMapper.toDTOList(orderedProducts);
     }
 
     private String generateUniqueSku(Category category) {
