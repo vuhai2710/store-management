@@ -52,6 +52,11 @@ export const shipmentService = {
     const response = await api.post(API_ENDPOINTS.SHIPMENTS.SYNC_GHN(id));
     return unwrap(response);
   },
+
+  createGHNShipmentForOrder: async (orderId) => {
+    const response = await api.post(API_ENDPOINTS.SHIPMENTS.CREATE_GHN_FOR_ORDER(orderId));
+    return unwrap(response);
+  },
 };
 
 

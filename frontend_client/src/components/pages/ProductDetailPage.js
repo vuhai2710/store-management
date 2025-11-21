@@ -476,6 +476,8 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
   const productStatus = product?.status || product?.inventoryStatus || INVENTORY_STATUS.IN_STOCK;
   const isOutOfStock = productStatus === INVENTORY_STATUS.OUT_OF_STOCK;
   const stockQuantity = product?.stockQuantity || 0;
+  const headerAverageRating = product?.averageRating || 0;
+  const headerReviewCount = product?.reviewCount || 0;
 
   // --- Helpers cho khu vực Tabs ---
   const DescriptionBlock = () => (
@@ -989,9 +991,9 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
             </h1>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-              <StarRating rating={product.rating || 0} />
+              <StarRating rating={headerAverageRating} />
               <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>
-                ({(product.reviewCount || product.reviews) || 0} đánh giá)
+                ({headerReviewCount} đánh giá)
               </span>
               <span style={{
                 color: INVENTORY_STATUS_COLORS[productStatus] || '#28a745',

@@ -100,7 +100,6 @@ public class PaymentController {
                     .ok(ApiResponse.success("Đơn hàng 0đ, không cần thanh toán PayOS", zeroAmountData));
         }
 
-        // Validate customer ownership (nếu là CUSTOMER role)
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_CUSTOMER"))) {
@@ -225,14 +224,20 @@ public class PaymentController {
     }
 
     @GetMapping("/return")
-    public ResponseEntity<String> returnUrl(@RequestParam(required = false) Long orderCode) {
-        log.info("PayOS return URL called. OrderCode: {}", orderCode);
+    public ResponseEntity<String> returnUrl(
+            @RequestParam(required = false) Long orderCode,
+            @RequestParam(required = false, name = "orderId") Integer orderId) {
+        log.info("PayOS return URL called. orderCode: {}, orderId: {}", orderCode, orderId);
 
-        // Redirect về frontend success page
-        // Frontend sẽ handle việc hiển thị kết quả và check order status
+        Integer targetOrderId = orderId;
+        if (targetOrderId == null && orderCode != null) {
+            // Backward compatibility: khi trước đây orderCode trùng với idOrder
+            targetOrderId = orderCode.intValue();
+        }
+
         String redirectUrl = "http://localhost:3003/payment/success";
-        if (orderCode != null) {
-            redirectUrl += "?orderId=" + orderCode;
+        if (targetOrderId != null) {
+            redirectUrl += "?orderId=" + targetOrderId;
         }
 
         return ResponseEntity.status(302)
@@ -241,13 +246,20 @@ public class PaymentController {
     }
 
     @GetMapping("/cancel")
-    public ResponseEntity<String> cancelUrl(@RequestParam(required = false) Long orderCode) {
-        log.info("PayOS cancel URL called. OrderCode: {}", orderCode);
+    public ResponseEntity<String> cancelUrl(
+            @RequestParam(required = false) Long orderCode,
+            @RequestParam(required = false, name = "orderId") Integer orderId) {
+        log.info("PayOS cancel URL called. orderCode: {}, orderId: {}", orderCode, orderId);
 
-        // Redirect về frontend cancel page
+        Integer targetOrderId = orderId;
+        if (targetOrderId == null && orderCode != null) {
+            // Backward compatibility: khi trước đây orderCode trùng với idOrder
+            targetOrderId = orderCode.intValue();
+        }
+
         String redirectUrl = "http://localhost:3003/payment/cancel";
-        if (orderCode != null) {
-            redirectUrl += "?orderId=" + orderCode;
+        if (targetOrderId != null) {
+            redirectUrl += "?orderId=" + targetOrderId;
         }
 
         return ResponseEntity.status(302)

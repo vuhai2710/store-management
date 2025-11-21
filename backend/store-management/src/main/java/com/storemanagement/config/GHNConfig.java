@@ -17,6 +17,7 @@ public class GHNConfig {
     }
     private String token;
     private Integer shopId;
+    private Integer fromDistrictId;
     private String baseUrl;
     private String webhookUrl;
     private Boolean enabled = true;

@@ -44,6 +44,16 @@ const reviewsService = {
     const response = await api.delete(API_ENDPOINTS.REVIEWS.DELETE_REVIEW(reviewId));
     return response.data;
   },
+
+  /**
+   * Trả lời review (Admin/Employee)
+   * @param {number} reviewId - ID review
+   * @param {string} adminReply - Nội dung trả lời
+   */
+  replyToReview: async (reviewId, adminReply) => {
+    const response = await api.post(API_ENDPOINTS.REVIEWS.REPLY_REVIEW(reviewId), { adminReply });
+    return response.data?.data || response.data;
+  },
 };
 
 export { reviewsService };

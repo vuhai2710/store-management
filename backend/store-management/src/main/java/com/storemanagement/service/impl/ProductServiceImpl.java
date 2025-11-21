@@ -9,6 +9,7 @@ import com.storemanagement.model.Supplier;
 import com.storemanagement.repository.CategoryRepository;
 import com.storemanagement.repository.ProductRepository;
 import com.storemanagement.repository.SupplierRepository;
+import com.storemanagement.repository.ProductReviewRepository;
 import com.storemanagement.service.FileStorageService;
 import com.storemanagement.service.ProductService;
 import com.storemanagement.utils.*;
@@ -34,6 +35,7 @@ public class ProductServiceImpl implements ProductService {
     private final SupplierRepository supplierRepository;
     private final ProductMapper productMapper;
     private final FileStorageService fileStorageService;
+    private final ProductReviewRepository productReviewRepository;
 
     @Override
     public ProductDTO createProduct(ProductDTO productDto) {
@@ -259,7 +261,9 @@ public class ProductServiceImpl implements ProductService {
     public ProductDTO getProductById(Integer id) {
         Product product = productRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + id));
-        return productMapper.toDTO(product);
+        ProductDTO dto = productMapper.toDTO(product);
+        enrichProductDtoWithRating(dto);
+        return dto;
     }
 
     @Override
@@ -268,13 +272,16 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với mã: " + productCode));
         Product productWithDetails = productRepository.findByIdWithDetails(product.getIdProduct())
                 .orElse(product);
-        return productMapper.toDTO(productWithDetails);
+        ProductDTO dto = productMapper.toDTO(productWithDetails);
+        enrichProductDtoWithRating(dto);
+        return dto;
     }
 
     @Override
     public PageResponse<ProductDTO> getAllProductsPaginated(Pageable pageable) {
         Page<Product> productPage = productRepository.findAll(pageable);
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
+        enrichProductDtoListWithRating(productDtos);
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
@@ -282,6 +289,7 @@ public class ProductServiceImpl implements ProductService {
     public PageResponse<ProductDTO> searchProductsByName(String name, Pageable pageable) {
         Page<Product> productPage = productRepository.findByProductNameContainingIgnoreCase(name, pageable);
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
+        enrichProductDtoListWithRating(productDtos);
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
@@ -293,6 +301,7 @@ public class ProductServiceImpl implements ProductService {
 
         Page<Product> productPage = productRepository.findByCategory_IdCategory(idCategory, pageable);
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
+        enrichProductDtoListWithRating(productDtos);
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
@@ -304,6 +313,7 @@ public class ProductServiceImpl implements ProductService {
 
         Page<Product> productPage = productRepository.findByBrandIgnoreCase(brand.trim(), pageable);
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
+        enrichProductDtoListWithRating(productDtos);
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
@@ -352,6 +362,7 @@ public class ProductServiceImpl implements ProductService {
         );
 
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
+        enrichProductDtoListWithRating(productDtos);
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
@@ -372,6 +383,7 @@ public class ProductServiceImpl implements ProductService {
         );
 
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
+        enrichProductDtoListWithRating(productDtos);
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
@@ -410,8 +422,9 @@ public class ProductServiceImpl implements ProductService {
                 p.getSupplier().getSupplierName(); // Trigger lazy load
             }
         });
-
-        return productMapper.toDTOList(products);
+        List<ProductDTO> productDtos = productMapper.toDTOList(products);
+        enrichProductDtoListWithRating(productDtos);
+        return productDtos;
     }
 
     @Override
@@ -465,8 +478,8 @@ public class ProductServiceImpl implements ProductService {
                 p.getSupplier().getSupplierName();
             }
         });
-
         List<ProductDTO> productDtos = productMapper.toDTOList(products);
+        enrichProductDtoListWithRating(productDtos);
 
         Long totalElements = productRepository.countBestSellingProducts(normalizedStatus);
         int totalPages = (int) Math.ceil((double) totalElements / pageSize);
@@ -539,8 +552,9 @@ public class ProductServiceImpl implements ProductService {
         List<Product> relatedProducts = productRepository.findByCategoryIdAndStatusAndIdProductNot(
             categoryId, productId, pageable
         );
-
-        return productMapper.toDTOList(relatedProducts);
+        List<ProductDTO> productDtos = productMapper.toDTOList(relatedProducts);
+        enrichProductDtoListWithRating(productDtos);
+        return productDtos;
     }
 
     @Override
@@ -603,5 +617,28 @@ public class ProductServiceImpl implements ProductService {
         }
 
         throw new RuntimeException("Không thể sinh SKU sau " + maxRetries + " lần thử");
+    }
+
+    private void enrichProductDtoWithRating(ProductDTO dto) {
+        if (dto == null || dto.getIdProduct() == null) {
+            return;
+        }
+
+        Double avg = productReviewRepository.getAverageRatingByProductId(dto.getIdProduct());
+        if (avg == null) {
+            avg = 0.0;
+        }
+        long count = productReviewRepository.countByProductIdProduct(dto.getIdProduct());
+
+        dto.setAverageRating(avg);
+        dto.setReviewCount((int) count);
+    }
+
+    private void enrichProductDtoListWithRating(List<ProductDTO> dtos) {
+        if (dtos == null || dtos.isEmpty()) {
+            return;
+        }
+
+        dtos.forEach(this::enrichProductDtoWithRating);
     }
 }

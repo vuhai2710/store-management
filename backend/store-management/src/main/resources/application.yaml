@@ -77,10 +77,11 @@ payos:
 ghn:
   token: "${GHN_TOKEN:}" # Điền Token API từ GHN dashboard
   shop-id: ${GHN_SHOP_ID:0} # Điền Shop ID từ GHN dashboard
-  base-url: "https://dev-online-gateway.ghn.vn"
+  from-district-id: 1541
+  base-url: "https://online-gateway.ghn.vn"
   webhook-url: "${GHN_WEBHOOK_URL:https://your-ngrok-url.ngrok.io/api/v1/ghn/webhook}" # Điền webhook URL (cần HTTPS)
-  enabled: false # Đặt true khi đã có token và muốn sử dụng GHN
-  environment: "sandbox" # Options: sandbox, production
+  enabled: true
+  environment: "production"
 
 recommender:
   base-url: http://localhost:5000

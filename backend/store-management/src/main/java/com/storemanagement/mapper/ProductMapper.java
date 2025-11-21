@@ -19,6 +19,8 @@ public interface ProductMapper {
     @Mapping(target = "idSupplier", expression = "java(entity.getSupplier() != null ? entity.getSupplier().getIdSupplier() : null)")
     @Mapping(target = "supplierName", expression = "java(entity.getSupplier() != null ? entity.getSupplier().getSupplierName() : null)")
     @Mapping(target = "images", source = "images")
+    @Mapping(target = "averageRating", ignore = true)
+    @Mapping(target = "reviewCount", ignore = true)
     ProductDTO toDTO(Product entity);
 
     // ProductDTO → Product (for create/update)

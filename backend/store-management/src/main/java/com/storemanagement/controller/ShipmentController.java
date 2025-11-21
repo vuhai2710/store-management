@@ -49,4 +49,12 @@ public class ShipmentController {
         ShipmentDTO shipment = shipmentService.syncWithGHN(id);
         return ResponseEntity.ok(ApiResponse.success("Đồng bộ với GHN thành công", shipment));
     }
+
+    @PostMapping("/order/{orderId}/create-ghn")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<ShipmentDTO>> createGHNShipmentForOrder(@PathVariable Integer orderId) {
+        log.info("Creating GHN shipment for order ID: {}", orderId);
+        ShipmentDTO shipment = shipmentService.createGHNShipmentForOrder(orderId);
+        return ResponseEntity.ok(ApiResponse.success("Tạo vận đơn GHN thành công", shipment));
+    }
 }

@@ -49,7 +49,7 @@ const PaymentSuccessPage = ({ setCurrentPage }) => {
   }, []);
 
   useEffect(() => {
-    if (paymentStatus && paymentStatus.status === 'COMPLETED') {
+    if (paymentStatus && (paymentStatus.status === 'COMPLETED' || paymentStatus.status === 'CONFIRMED')) {
       const timer = setTimeout(() => {
         setCurrentPage('orders');
       }, 3000);
@@ -145,7 +145,7 @@ const PaymentSuccessPage = ({ setCurrentPage }) => {
       );
     }
 
-    if (paymentStatus && paymentStatus.status === 'COMPLETED') {
+    if (paymentStatus && (paymentStatus.status === 'COMPLETED' || paymentStatus.status === 'CONFIRMED')) {
       const finalAmount = paymentStatus.finalAmount || paymentStatus.amount || 0;
 
       return (
