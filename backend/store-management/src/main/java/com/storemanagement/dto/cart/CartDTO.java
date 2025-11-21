@@ -20,4 +20,10 @@ public class CartDTO extends BaseDTO {
     private List<CartItemDTO> cartItems;
     private BigDecimal totalAmount;
     private Integer totalItems;
+
+    // Tổng giảm giá tự động áp dụng cho giỏ hàng (không bao gồm mã giảm giá nhập tay)
+    private BigDecimal automaticDiscount;
+
+    // Tổng tiền sau khi trừ automaticDiscount
+    private BigDecimal finalAmount;
 }

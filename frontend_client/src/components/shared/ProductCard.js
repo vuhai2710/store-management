@@ -35,6 +35,8 @@ const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
   const status = product.status || product.inventoryStatus || INVENTORY_STATUS.IN_STOCK;
   const isOutOfStock = status === INVENTORY_STATUS.OUT_OF_STOCK;
   const finalPrice = Math.max(0, productPrice - (autoDiscount || 0));
+  const averageRating = product.averageRating || 0;
+  const reviewCount = product.reviewCount || 0;
 
   useEffect(() => {
     const calculateAutoDiscount = async () => {
@@ -126,10 +128,10 @@ const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
         <div style={styles.cardContent}>
           <h3 style={styles.cardTitle}>{productName}</h3>
           <div style={{ marginBottom: '0.5rem' }}>
-            <StarRating rating={product.rating || 0} />
-            {(product.reviews || product.reviewCount) && (
+            <StarRating rating={averageRating} />
+            {reviewCount > 0 && (
               <p style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.25rem' }}>
-                ({product.reviews || product.reviewCount || 0})
+                ({reviewCount})
               </p>
             )}
           </div>
@@ -149,17 +151,6 @@ const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
                   </span>
                   <span style={styles.cardPrice}>{formatPrice(finalPrice)}</span>
                 </div>
-                {autoDiscountInfo?.ruleName && (
-                  <span
-                    style={{
-                      fontSize: '0.75rem',
-                      color: '#28a745',
-                      marginTop: '0.25rem',
-                    }}
-                  >
-                    {autoDiscountInfo.ruleName}
-                  </span>
-                )}
               </div>
             ) : (
               <p style={styles.cardPrice}>{formatPrice(productPrice)}</p>

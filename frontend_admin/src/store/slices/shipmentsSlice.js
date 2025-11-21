@@ -53,6 +53,18 @@ export const syncShipmentWithGHN = createAsyncThunk(
   }
 );
 
+export const createGHNShipmentForOrder = createAsyncThunk(
+  "shipments/createGHNShipmentForOrder",
+  async (orderId, { rejectWithValue }) => {
+    try {
+      const res = await shipmentService.createGHNShipmentForOrder(orderId);
+      return res;
+    } catch (err) {
+      return rejectWithValue(err?.message || "Lỗi khi tạo vận đơn GHN");
+    }
+  }
+);
+
 const initialState = {
   currentShipment: null,
   tracking: null,
@@ -124,6 +136,19 @@ const shipmentsSlice = createSlice({
         state.error = null;
       })
       .addCase(syncShipmentWithGHN.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(createGHNShipmentForOrder.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createGHNShipmentForOrder.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentShipment = action.payload;
+        state.error = null;
+      })
+      .addCase(createGHNShipmentForOrder.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

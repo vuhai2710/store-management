@@ -141,6 +141,7 @@ export const API_ENDPOINTS = {
     BY_ORDER_ID: (orderId) => `/shipments/order/${orderId}`,
     TRACK: (id) => `/shipments/${id}/track`,
     SYNC_GHN: (id) => `/shipments/${id}/sync-ghn`,
+    CREATE_GHN_FOR_ORDER: (orderId) => `/shipments/order/${orderId}/create-ghn`,
   },
 
   // Notifications
@@ -170,6 +171,7 @@ export const API_ENDPOINTS = {
     ALL_REVIEWS: "/admin/reviews",
     REVIEW_BY_ID: (reviewId) => `/admin/reviews/${reviewId}`,
     DELETE_REVIEW: (reviewId) => `/admin/reviews/${reviewId}`,
+    REPLY_REVIEW: (reviewId) => `/admin/reviews/${reviewId}/reply`,
   },
 
   // Promotions

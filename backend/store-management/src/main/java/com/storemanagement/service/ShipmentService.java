@@ -12,4 +12,6 @@ public interface ShipmentService {
     ShipmentDTO syncWithGHN(Integer shipmentId);
 
     GHNTrackingDTO getShipmentTracking(Integer shipmentId);
+
+    ShipmentDTO createGHNShipmentForOrder(Integer orderId);
 }

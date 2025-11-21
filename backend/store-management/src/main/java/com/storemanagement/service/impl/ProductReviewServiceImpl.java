@@ -64,11 +64,6 @@ public class ProductReviewServiceImpl implements ProductReviewService {
             throw new RuntimeException("Chỉ có thể đánh giá sản phẩm từ đơn hàng đã hoàn thành");
         }
 
-        // Validate order has delivered_at (đã giao hàng thành công)
-        if (order.getDeliveredAt() == null) {
-            throw new RuntimeException("Chỉ có thể đánh giá sản phẩm đã được giao hàng thành công");
-        }
-
         // Validate order detail hasn't been reviewed yet
         if (productReviewRepository.findByOrderDetailIdOrderDetail(request.getOrderDetailId()).isPresent()) {
             throw new RuntimeException("Đơn hàng này đã được đánh giá");

@@ -28,8 +28,13 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
   const eligibleOrders = userOrders.filter(
     (order) =>
       order.status === 'COMPLETED' &&
-      order.deliveredAt &&
-      order.orderDetails?.some((detail) => detail.idProduct === productId)
+      order.orderDetails?.some((detail) => {
+        const detailProductId =
+          detail.idProduct ||
+          detail.productId ||
+          (detail.product && (detail.product.idProduct || detail.product.id));
+        return detailProductId && Number(detailProductId) === Number(productId);
+      })
   );
 
   useEffect(() => {
@@ -264,7 +269,13 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
                   <option value="">-- Chọn đơn hàng --</option>
                   {eligibleOrders.map((order) =>
                     order.orderDetails
-                      .filter((detail) => detail.idProduct === productId)
+                      .filter((detail) => {
+                        const detailProductId =
+                          detail.idProduct ||
+                          detail.productId ||
+                          (detail.product && (detail.product.idProduct || detail.product.id));
+                        return detailProductId && Number(detailProductId) === Number(productId);
+                      })
                       .map((detail) => (
                         <option key={detail.idOrderDetail} value={detail.idOrderDetail}>
                           Đơn hàng #{order.idOrder} - {detail.productName}

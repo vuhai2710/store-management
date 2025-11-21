@@ -3,7 +3,6 @@ package com.storemanagement.dto.order;
 import com.storemanagement.model.Order;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -62,7 +61,6 @@ public class OrderDTO {
     private String customerPhoneForCreate;
     private String customerAddressForCreate;
 
-    @NotEmpty(message = "Danh sách sản phẩm không được để trống")
     @Valid
     private List<OrderDetailDTO> orderItems;
 

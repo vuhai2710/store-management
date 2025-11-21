@@ -14,6 +14,18 @@ export const fetchProductReviews = createAsyncThunk(
   }
 );
 
+export const replyToReview = createAsyncThunk(
+  "reviews/replyToReview",
+  async ({ reviewId, adminReply }, { rejectWithValue }) => {
+    try {
+      const response = await reviewsService.replyToReview(reviewId, adminReply);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message || "Trả lời đánh giá thất bại");
+    }
+  }
+);
+
 export const fetchAllReviews = createAsyncThunk(
   "reviews/fetchAllReviews",
   async ({ pageNo = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "DESC" }, { rejectWithValue }) => {
@@ -123,6 +135,23 @@ const reviewsSlice = createSlice({
         // Update total
         state.productReviews.pagination.totalElements = Math.max(0, state.productReviews.pagination.totalElements - 1);
         state.allReviews.pagination.totalElements = Math.max(0, state.allReviews.pagination.totalElements - 1);
+      })
+      // Reply to review
+      .addCase(replyToReview.fulfilled, (state, action) => {
+        const updated = action.payload;
+        if (!updated || !updated.idReview) return;
+
+        // Update in productReviews
+        const prIndex = state.productReviews.list.findIndex((r) => r.idReview === updated.idReview);
+        if (prIndex !== -1) {
+          state.productReviews.list[prIndex].adminReply = updated.adminReply;
+        }
+
+        // Update in allReviews
+        const arIndex = state.allReviews.list.findIndex((r) => r.idReview === updated.idReview);
+        if (arIndex !== -1) {
+          state.allReviews.list[arIndex].adminReply = updated.adminReply;
+        }
       });
   },
 });

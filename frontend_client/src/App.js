@@ -58,12 +58,35 @@ function AppContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortOption, setSortOption] = useState("default");
+  const [initializedFromUrl, setInitializedFromUrl] = useState(false);
 
   // Cart animation state
   const [showFlyingCart, setShowFlyingCart] = useState(false);
   const [animationSource, setAnimationSource] = useState(null);
   const [animationTarget, setAnimationTarget] = useState(null);
   const cartIconRef = useRef(null);
+
+  // Map URL path (từ PayOS redirect) sang currentPage khi load lại
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.startsWith('/payment/success')) {
+      setCurrentPage('payment-success');
+    } else if (path.startsWith('/payment/cancel')) {
+      setCurrentPage('payment-cancel');
+    }
+    setInitializedFromUrl(true);
+  }, []);
+
+  useEffect(() => {
+    if (!initializedFromUrl) return;
+
+    if (currentPage !== 'payment-success' && currentPage !== 'payment-cancel') {
+      const path = window.location.pathname;
+      if (path.startsWith('/payment/success') || path.startsWith('/payment/cancel')) {
+        window.history.replaceState({}, '', '/');
+      }
+    }
+  }, [currentPage, initializedFromUrl]);
 
   // Save currentPage to localStorage whenever it changes
   useEffect(() => {
@@ -255,16 +278,24 @@ function AppContent() {
     window.scrollTo(0, 0);
   };
 
-  // Calculate cart total - use cartData.totalAmount if available, otherwise calculate from items
-  const cartTotal = cartData?.totalAmount
+  // Calculate cart subtotal (trước giảm giá) từ cartData hoặc từ items
+  const cartSubtotal = cartData?.totalAmount
     ? Number(cartData.totalAmount)
     : cart.reduce((sum, item) => {
-      const price =
-        item.productPrice || item.price || item.product?.price || 0;
-      const quantity = item.quantity || item.qty || 0;
-      const subtotal = item.subtotal || price * quantity;
-      return sum + Number(subtotal);
-    }, 0);
+        const price =
+          item.productPrice || item.price || item.product?.price || 0;
+        const quantity = item.quantity || item.qty || 0;
+        const subtotal = item.subtotal || price * quantity;
+        return sum + Number(subtotal);
+      }, 0);
+
+  // Giảm giá tự động cho giỏ hàng (từ backend)
+  const cartAutomaticDiscount = cartData?.automaticDiscount
+    ? Number(cartData.automaticDiscount)
+    : 0;
+
+  // Tổng sau khi trừ giảm giá tự động
+  const cartTotal = Math.max(0, cartSubtotal - cartAutomaticDiscount);
 
   const cartItemCount = cartData?.totalItems
     ? Number(cartData.totalItems)
@@ -309,6 +340,8 @@ function AppContent() {
               {...pageProps}
               cart={cart}
               cartTotal={cartTotal}
+              cartSubtotal={cartSubtotal}
+              cartAutomaticDiscount={cartAutomaticDiscount}
               handleUpdateQty={handleUpdateQty}
               handleRemoveFromCart={handleRemoveFromCart}
               cartLoading={cartLoading}

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Card, Descriptions, Typography, Spin, message, Image, Row, Col, Tag, Rate, Empty, Pagination, Popconfirm, Button, Space } from "antd";
+import { Card, Descriptions, Typography, Spin, message, Image, Row, Col, Tag, Rate, Empty, Pagination, Popconfirm, Button, Space, Modal, Input } from "antd";
 import { StarOutlined, DeleteOutlined } from "@ant-design/icons";
 import { fetchProductById, clearCurrentProduct } from "../store/slices/productsSlice";
-import { fetchProductReviews, deleteReview, clearProductReviews } from "../store/slices/reviewsSlice";
+import { fetchProductReviews, deleteReview, clearProductReviews, replyToReview } from "../store/slices/reviewsSlice";
 import { productsService } from "../services/productsService";
 import ImageLightbox from "../components/common/ImageLightbox";
 import StatusBadge from "../components/common/StatusBadge";
@@ -26,6 +26,9 @@ const ProductDetail = () => {
   const [productImages, setProductImages] = useState([]);
   const [lightboxVisible, setLightboxVisible] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [replyModalVisible, setReplyModalVisible] = useState(false);
+  const [replyContent, setReplyContent] = useState("");
+  const [selectedReviewForReply, setSelectedReviewForReply] = useState(null);
 
   // Pagination cho reviews
   const {
@@ -97,6 +100,31 @@ const ProductDetail = () => {
       }
     } catch (error) {
       message.error(error || "Xóa đánh giá thất bại!");
+    }
+  };
+
+  const openReplyModal = (review) => {
+    setSelectedReviewForReply(review);
+    setReplyContent(review.adminReply || "");
+    setReplyModalVisible(true);
+  };
+
+  const handleSubmitReply = async () => {
+    if (!selectedReviewForReply || !replyContent.trim()) {
+      message.warning("Vui lòng nhập nội dung trả lời");
+      return;
+    }
+
+    try {
+      await dispatch(
+        replyToReview({ reviewId: selectedReviewForReply.idReview, adminReply: replyContent.trim() })
+      ).unwrap();
+      message.success("Trả lời đánh giá thành công!");
+      setReplyModalVisible(false);
+      setSelectedReviewForReply(null);
+      setReplyContent("");
+    } catch (error) {
+      message.error(error || "Trả lời đánh giá thất bại!");
     }
   };
 
@@ -211,6 +239,13 @@ const ProductDetail = () => {
                       size="small"
                       style={{ marginBottom: 12 }}
                       actions={[
+                        <Button
+                          type="link"
+                          size="small"
+                          onClick={() => openReplyModal(review)}
+                        >
+                          {review.adminReply ? "Sửa trả lời" : "Trả lời"}
+                        </Button>,
                         <Popconfirm
                           title="Bạn có chắc muốn xóa đánh giá này?"
                           onConfirm={() => handleDeleteReview(review.idReview)}
@@ -236,6 +271,16 @@ const ProductDetail = () => {
                             {review.comment}
                           </Typography.Paragraph>
                         )}
+                        {review.adminReply && (
+                          <Card
+                            size="small"
+                            type="inner"
+                            title="Phản hồi từ cửa hàng"
+                            style={{ marginTop: 8, backgroundColor: "#f6ffed", borderColor: "#b7eb8f" }}
+                          >
+                            <Typography.Paragraph style={{ margin: 0 }}>{review.adminReply}</Typography.Paragraph>
+                          </Card>
+                        )}
                       </Space>
                     </Card>
                   ))}
@@ -257,6 +302,26 @@ const ProductDetail = () => {
           </Card>
         </Col>
       </Row>
+
+      <Modal
+        title={selectedReviewForReply?.customerName ? `Trả lời đánh giá của ${selectedReviewForReply.customerName}` : "Trả lời đánh giá"}
+        open={replyModalVisible}
+        onOk={handleSubmitReply}
+        onCancel={() => {
+          setReplyModalVisible(false);
+          setSelectedReviewForReply(null);
+          setReplyContent("");
+        }}
+        okText="Gửi trả lời"
+        cancelText="Hủy"
+      >
+        <Input.TextArea
+          rows={4}
+          value={replyContent}
+          onChange={(e) => setReplyContent(e.target.value)}
+          placeholder="Nhập nội dung phản hồi tới khách hàng..."
+        />
+      </Modal>
     </div>
   );
 };

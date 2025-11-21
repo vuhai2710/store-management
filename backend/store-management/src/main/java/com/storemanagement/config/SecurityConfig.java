@@ -111,7 +111,11 @@ public class SecurityConfig {
 
                         // --- PUBLIC ENDPOINTS (NO AUTH) ---
                         .requestMatchers("/api/v1/payos/**").permitAll()
-                        .requestMatchers("/api/v1/payments/payos/webhook").permitAll()
+                        .requestMatchers(
+                                "/api/v1/payments/payos/webhook",
+                                "/api/v1/payments/payos/return",
+                                "/api/v1/payments/payos/cancel"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/payos/**").permitAll()
                         .requestMatchers("/api/v1/payments/payos/webhook").permitAll()

@@ -426,17 +426,16 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
       }
 
       // Create order directly using buy-now API
-      const order = await ordersService.buyNow({
-        productId: product.idProduct || product.id,
+      const productWithQty = {
+        ...product,
+        qty,
         quantity: qty,
-        shippingAddressId: defaultAddressId,
-        paymentMethod: 'CASH', // Default to CASH for buy now
-        notes: null,
-      });
-
-      // If order created successfully, redirect to orders page
-      alert('Đặt hàng thành công!');
-      setCurrentPage('orders');
+        idProduct: product.idProduct || product.id,
+        productId: product.idProduct || product.id,
+      };
+      await handleAddToCart(productWithQty);
+      setCurrentPage('checkout');
+      return;
     } catch (error) {
       console.error('Error in buy now:', error);
       let errorMessage = 'Không thể đặt hàng. Vui lòng thử lại.';
@@ -477,6 +476,8 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
   const productStatus = product?.status || product?.inventoryStatus || INVENTORY_STATUS.IN_STOCK;
   const isOutOfStock = productStatus === INVENTORY_STATUS.OUT_OF_STOCK;
   const stockQuantity = product?.stockQuantity || 0;
+  const headerAverageRating = product?.averageRating || 0;
+  const headerReviewCount = product?.reviewCount || 0;
 
   // --- Helpers cho khu vực Tabs ---
   const DescriptionBlock = () => (
@@ -990,9 +991,9 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
             </h1>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-              <StarRating rating={product.rating || 0} />
+              <StarRating rating={headerAverageRating} />
               <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>
-                ({(product.reviewCount || product.reviews) || 0} đánh giá)
+                ({headerReviewCount} đánh giá)
               </span>
               <span style={{
                 color: INVENTORY_STATUS_COLORS[productStatus] || '#28a745',
@@ -1027,10 +1028,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 
             {autoDiscount > 0 && autoDiscountInfo && (
               <p style={{ color: '#28a745', fontWeight: '600', marginTop: '-0.75rem', marginBottom: '1rem', fontSize: '0.95rem' }}>
-                Đang áp dụng giảm giá tự động
-                {autoDiscountInfo.ruleName ? ` (${autoDiscountInfo.ruleName})` : ''}:
-                {' '}-
-                {formatPrice(autoDiscount)}
+                Đang áp dụng giảm giá tự động: -{formatPrice(autoDiscount)}
               </p>
             )}
 

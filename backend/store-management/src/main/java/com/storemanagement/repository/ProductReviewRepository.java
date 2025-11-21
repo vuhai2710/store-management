@@ -33,4 +33,9 @@ public interface ProductReviewRepository extends JpaRepository<ProductReview, In
            "WHERE r.product.idProduct = :productId " +
            "ORDER BY r.createdAt DESC")
     List<ProductReview> findByProductIdProductWithDetails(@Param("productId") Integer productId);
+
+    @Query("SELECT COALESCE(AVG(r.rating), 0) FROM ProductReview r WHERE r.product.idProduct = :productId")
+    Double getAverageRatingByProductId(@Param("productId") Integer productId);
+
+    long countByProductIdProduct(Integer productId);
 }

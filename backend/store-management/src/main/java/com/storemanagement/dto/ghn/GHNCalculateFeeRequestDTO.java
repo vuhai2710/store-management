@@ -37,6 +37,9 @@ public class GHNCalculateFeeRequestDTO {
     @Builder.Default
     private Integer height = 20;
     
+    @JsonProperty("service_type_id")
+    private Integer serviceTypeId;
+
     @JsonProperty("service_id")
     private Integer serviceId;
     

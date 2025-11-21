@@ -171,8 +171,8 @@ public class GHNServiceImpl implements GHNService {
 
     @Override
     public GHNCalculateFeeResponseDTO calculateShippingFee(GHNCalculateFeeRequestDTO request) {
-        log.info("Calculating shipping fee from GHN API: fromDistrictId={}, toDistrictId={}", 
-            request.getFromDistrictId(), request.getToDistrictId());
+        log.info("Calculating shipping fee from GHN API: fromDistrictId={}, toDistrictId={}, toWardCode={}",
+            request.getFromDistrictId(), request.getToDistrictId(), request.getToWardCode());
         
         if (!isEnabled()) {
             log.warn("GHN integration is disabled, returning default fee");
@@ -190,12 +190,49 @@ public class GHNServiceImpl implements GHNService {
         }
         
         try {
+            // If serviceId is not provided, try to fetch available services and pick the first one
+            if (request.getServiceId() == null) {
+                try {
+                    Integer fromDistrictId = request.getFromDistrictId();
+                    Integer toDistrictId = request.getToDistrictId();
+
+                    if (fromDistrictId != null && toDistrictId != null) {
+                        log.info("No serviceId provided. Fetching available GHN services for fromDistrictId={}, toDistrictId={}",
+                            fromDistrictId, toDistrictId);
+                        java.util.List<GHNServiceDTO> services = getShippingServices(fromDistrictId, toDistrictId);
+                        if (services != null && !services.isEmpty()) {
+                            GHNServiceDTO firstService = services.get(0);
+                            if (firstService.getServiceId() != null) {
+                                request.setServiceId(firstService.getServiceId());
+                                log.info("Selected GHN serviceId={} (service_type_id={}) for fee calculation", 
+                                    firstService.getServiceId(), firstService.getServiceTypeId());
+                            }
+                            if (request.getServiceTypeId() == null && firstService.getServiceTypeId() != null) {
+                                request.setServiceTypeId(firstService.getServiceTypeId());
+                            }
+                        } else {
+                            log.warn("No available GHN services found for fromDistrictId={}, toDistrictId={}",
+                                fromDistrictId, toDistrictId);
+                        }
+                    } else {
+                        log.warn("Cannot auto-select GHN service because fromDistrictId or toDistrictId is null");
+                    }
+                } catch (Exception e) {
+                    log.error("Error fetching GHN shipping services for fee calculation", e);
+                }
+            }
+
+            // If neither serviceId nor serviceTypeId is provided after lookup, default to service_type_id = 2 (Hàng nhẹ)
+            if (request.getServiceId() == null && request.getServiceTypeId() == null) {
+                request.setServiceTypeId(2);
+            }
+
             String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/fee";
             HttpHeaders headers = buildHeaders();
             HttpEntity<GHNCalculateFeeRequestDTO> requestEntity = new HttpEntity<>(request, headers);
             
-            log.debug("Calling GHN API: POST {}", url);
-            log.debug("Request body: {}", objectMapper.writeValueAsString(request));
+            log.info("Calling GHN API: POST {}", url);
+            log.info("GHN fee request body: {}", objectMapper.writeValueAsString(request));
             
             ResponseEntity<GHNBaseResponseDTO<GHNCalculateFeeResponseDTO>> response = ghnRestTemplate.exchange(
                 url,
@@ -219,6 +256,25 @@ public class GHNServiceImpl implements GHNService {
             return responseBody.getData();
             
         } catch (Exception e) {
+            // Nếu GHN trả lỗi "route not found service" thì coi như GHN không hỗ trợ tuyến này
+            // và fallback về phí mặc định thay vì làm hỏng toàn bộ luồng checkout.
+            if (e instanceof org.springframework.web.client.HttpClientErrorException) {
+                String body = ((org.springframework.web.client.HttpClientErrorException) e).getResponseBodyAsString();
+                if (body != null && body.contains("route not found service")) {
+                    log.warn("GHN returned 'route not found service'. Falling back to default shipping fee.");
+                    return GHNCalculateFeeResponseDTO.builder()
+                        .total(java.math.BigDecimal.valueOf(30000))
+                        .serviceFee(java.math.BigDecimal.valueOf(25000))
+                        .insuranceFee(java.math.BigDecimal.ZERO)
+                        .pickStationFee(java.math.BigDecimal.ZERO)
+                        .courierStationFee(java.math.BigDecimal.ZERO)
+                        .codFee(java.math.BigDecimal.ZERO)
+                        .returnFee(java.math.BigDecimal.ZERO)
+                        .r2sFee(java.math.BigDecimal.ZERO)
+                        .build();
+                }
+            }
+
             log.error("Error calling GHN API to calculate shipping fee", e);
             throw new RuntimeException("Failed to calculate shipping fee from GHN: " + e.getMessage(), e);
         }
@@ -367,16 +423,22 @@ public class GHNServiceImpl implements GHNService {
         }
         
         try {
-            String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/available-services" +
-                "?from_district=" + fromDistrictId + "&to_district=" + toDistrictId;
+            String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/available-services";
             HttpHeaders headers = buildHeaders();
-            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+            java.util.Map<String, Object> requestBody = new java.util.HashMap<>();
+            requestBody.put("shop_id", ghnConfig.getShopId());
+            requestBody.put("from_district", fromDistrictId);
+            requestBody.put("to_district", toDistrictId);
             
-            log.debug("Calling GHN API: GET {}", url);
+            HttpEntity<java.util.Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+            
+            log.info("Calling GHN API: POST {}", url);
+            log.info("GHN available-services request body: {}", objectMapper.writeValueAsString(requestBody));
             
             ResponseEntity<GHNBaseResponseDTO<List<GHNServiceDTO>>> response = ghnRestTemplate.exchange(
                 url,
-                HttpMethod.GET,
+                HttpMethod.POST,
                 requestEntity,
                 new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<List<GHNServiceDTO>>>() {}
             );

@@ -26,9 +26,18 @@ const CheckoutPage = ({ setCurrentPage }) => {
     phoneNumber: '',
     address: '',
     isDefault: false,
+    provinceId: null,
+    districtId: null,
+    wardCode: null,
   });
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [notes, setNotes] = useState('');
+  const [provinces, setProvinces] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [wards, setWards] = useState([]);
+  const [loadingProvinces, setLoadingProvinces] = useState(false);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
+  const [loadingWards, setLoadingWards] = useState(false);
   
   // GHN shipping fee
   const [shippingFee, setShippingFee] = useState(0);
@@ -43,10 +52,12 @@ const CheckoutPage = ({ setCurrentPage }) => {
   const [loadingPromotion, setLoadingPromotion] = useState(false);
   const [automaticDiscount, setAutomaticDiscount] = useState(0);
   const [automaticDiscountInfo, setAutomaticDiscountInfo] = useState(null);
+  const cartItems = cart?.cartItems || cart?.items || [];
+  const cartTotal = cart?.totalAmount || cart?.total || 0;
   
-  // Default shop district ID (should be configured in backend, using placeholder for now)
-  // TODO: Get this from backend config or API endpoint
-  const SHOP_DISTRICT_ID = 1442; // Example: Ho Chi Minh City, District 1 (need to configure in backend)
+  // Default shop district ID (GHN kho lấy hàng)
+  // Được cấu hình theo thông tin kho GHN: province_id=201 (Hà Nội), district_id=1541 (Nam Từ Liêm)
+  const SHOP_DISTRICT_ID = 1541;
 
   // Fetch cart and shipping addresses
   useEffect(() => {
@@ -64,9 +75,26 @@ const CheckoutPage = ({ setCurrentPage }) => {
         const cartData = await cartService.getCart();
         setCart(cartData);
 
+        // Set automatic discount from backend (CartDTO)
+        const autoDiscountFromBackend = cartData?.automaticDiscount
+          ? Number(cartData.automaticDiscount)
+          : 0;
+        setAutomaticDiscount(autoDiscountFromBackend);
+        setAutomaticDiscountInfo(autoDiscountFromBackend > 0 ? { discount: autoDiscountFromBackend } : null);
+
         // Fetch shipping addresses
         const addressesData = await shippingAddressService.getAllAddresses();
         setShippingAddresses(addressesData || []);
+
+        try {
+          setLoadingProvinces(true);
+          const provincesData = await ghnService.getProvinces();
+          setProvinces(provincesData || []);
+        } catch (ghnError) {
+          console.error('Error fetching provinces:', ghnError);
+        } finally {
+          setLoadingProvinces(false);
+        }
 
         // Set default address if available
         if (addressesData && addressesData.length > 0) {
@@ -88,6 +116,52 @@ const CheckoutPage = ({ setCurrentPage }) => {
 
     fetchData();
   }, [isAuthenticated, setCurrentPage]);
+  
+  useEffect(() => {
+    const fetchDistricts = async () => {
+      if (!addressForm.provinceId) {
+        setDistricts([]);
+        setWards([]);
+        return;
+      }
+
+      try {
+        setLoadingDistricts(true);
+        const districtsData = await ghnService.getDistricts(addressForm.provinceId);
+        setDistricts(districtsData || []);
+        setWards([]);
+      } catch (error) {
+        console.error('Error fetching districts:', error);
+        setDistricts([]);
+      } finally {
+        setLoadingDistricts(false);
+      }
+    };
+
+    fetchDistricts();
+  }, [addressForm.provinceId]);
+
+  useEffect(() => {
+    const fetchWards = async () => {
+      if (!addressForm.districtId) {
+        setWards([]);
+        return;
+      }
+
+      try {
+        setLoadingWards(true);
+        const wardsData = await ghnService.getWards(addressForm.districtId);
+        setWards(wardsData || []);
+      } catch (error) {
+        console.error('Error fetching wards:', error);
+        setWards([]);
+      } finally {
+        setLoadingWards(false);
+      }
+    };
+
+    fetchWards();
+  }, [addressForm.districtId]);
   
   // Calculate shipping fee when address is selected
   useEffect(() => {
@@ -124,25 +198,29 @@ const CheckoutPage = ({ setCurrentPage }) => {
         setLoadingShippingFee(true);
         setShippingFeeError(null);
         
-        // Calculate total weight (estimate 1kg per item or use actual weight if available)
+        // Calculate total weight (estimate 500g per item or use actual weight if available)
         const estimatedWeight = cartItems.reduce((total, item) => {
-          const itemWeight = item.weight || item.product?.weight || 1000; // Default 1kg per item
+          const itemWeight = item.weight || item.product?.weight || 500; // Default 500g per item
           const quantity = item.quantity || item.qty || 1;
           return total + (itemWeight * quantity);
         }, 0);
         
         const cartTotal = cart.totalAmount || cart.total || 0;
+
+        // GHN giới hạn insurance_value tối đa 5.000.000 VND
+        const rawInsuranceValue = Math.round(cartTotal);
+        const safeInsuranceValue = Math.min(rawInsuranceValue, 5000000);
         
         // Calculate shipping fee using GHN API
         const feeResponse = await ghnService.calculateShippingFee({
           fromDistrictId: SHOP_DISTRICT_ID,
           toDistrictId: selectedAddress.districtId,
           toWardCode: selectedAddress.wardCode,
-          weight: Math.max(estimatedWeight, 1000), // Minimum 1kg
+          weight: estimatedWeight > 0 ? estimatedWeight : 500,
           length: 20,
           width: 20,
           height: 20,
-          insuranceValue: Math.round(cartTotal), // Order total as insurance value
+          insuranceValue: safeInsuranceValue,
         });
         
         if (feeResponse && feeResponse.total) {
@@ -163,44 +241,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
     calculateShippingFee();
   }, [selectedAddressId, shippingAddresses, cart]);
   
-  // Calculate automatic discount when cart total changes
-  useEffect(() => {
-    const calculateAutomaticDiscount = async () => {
-      if (!cart || !cartItems || cartItems.length === 0) {
-        setAutomaticDiscount(0);
-        setAutomaticDiscountInfo(null);
-        return;
-      }
-      
-      const cartTotal = cart.totalAmount || cart.total || 0;
-      if (cartTotal <= 0) {
-        setAutomaticDiscount(0);
-        setAutomaticDiscountInfo(null);
-        return;
-      }
-      
-      try {
-        const discountResponse = await promotionService.calculateDiscount({
-          totalAmount: cartTotal,
-          items: cartItems,
-        });
-        
-        if (discountResponse && discountResponse.applicable && discountResponse.discount > 0) {
-          setAutomaticDiscount(Number(discountResponse.discount));
-          setAutomaticDiscountInfo(discountResponse);
-        } else {
-          setAutomaticDiscount(0);
-          setAutomaticDiscountInfo(null);
-        }
-      } catch (error) {
-        console.error('Error calculating automatic discount:', error);
-        setAutomaticDiscount(0);
-        setAutomaticDiscountInfo(null);
-      }
-    };
-    
-    calculateAutomaticDiscount();
-  }, [cart, cartItems]);
+  // automaticDiscount đã được tính sẵn ở backend và set trong fetchData
   
   const handleAddressFormChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -223,7 +264,12 @@ const CheckoutPage = ({ setCurrentPage }) => {
         phoneNumber: '',
         address: '',
         isDefault: false,
+        provinceId: null,
+        districtId: null,
+        wardCode: null,
       });
+      setDistricts([]);
+      setWards([]);
     } catch (error) {
       console.error('Error creating address:', error);
       alert(error?.message || 'Không thể tạo địa chỉ. Vui lòng thử lại.');
@@ -293,10 +339,8 @@ const CheckoutPage = ({ setCurrentPage }) => {
             paymentErrorMessage = paymentError.response.data.error;
           }
           
-          // Check for specific PayOS configuration errors
-          if (paymentErrorMessage.includes('credentials') || 
-              paymentErrorMessage.includes('configured') ||
-              paymentErrorMessage.includes('PayOS')) {
+          // Check for specific PayOS configuration errors (thiếu clientId/apiKey/checksumKey)
+          if (paymentErrorMessage.includes('PayOS credentials are not configured')) {
             paymentErrorMessage = 'PayOS chưa được cấu hình đúng. Vui lòng liên hệ admin hoặc thử phương thức thanh toán khác.';
           }
           
@@ -376,8 +420,6 @@ const CheckoutPage = ({ setCurrentPage }) => {
     );
   }
 
-  const cartItems = cart?.cartItems || cart?.items || [];
-  const cartTotal = cart?.totalAmount || cart?.total || 0;
   const totalDiscount = promotionDiscount + automaticDiscount;
   const finalTotal = Math.max(0, cartTotal + shippingFee - totalDiscount);
 
@@ -516,9 +558,158 @@ const CheckoutPage = ({ setCurrentPage }) => {
                     />
                   </div>
 
+                  <div
+                    style={{
+                      marginBottom: '1rem',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr 1fr',
+                      gap: '0.75rem',
+                    }}
+                  >
+                    <div>
+                      <label
+                        style={{
+                          display: 'block',
+                          marginBottom: '0.5rem',
+                          fontWeight: '600',
+                          color: '#495057',
+                        }}
+                      >
+                        Tỉnh/Thành phố *
+                      </label>
+                      <select
+                        name="provinceId"
+                        value={addressForm.provinceId || ''}
+                        onChange={(e) => {
+                          const provinceId = e.target.value ? Number(e.target.value) : null;
+                          setAddressForm((prev) => ({
+                            ...prev,
+                            provinceId,
+                            districtId: null,
+                            wardCode: null,
+                          }));
+                        }}
+                        required
+                        disabled={loadingProvinces}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #dee2e6',
+                          borderRadius: '0.25rem',
+                          fontSize: '1rem',
+                        }}
+                      >
+                        <option value="">-- Chọn tỉnh/thành phố --</option>
+                        {provinces.map((province) => (
+                          <option
+                            key={province.provinceId || province.id}
+                            value={province.provinceId || province.id}
+                          >
+                            {province.provinceName || province.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label
+                        style={{
+                          display: 'block',
+                          marginBottom: '0.5rem',
+                          fontWeight: '600',
+                          color: '#495057',
+                        }}
+                      >
+                        Quận/Huyện *
+                      </label>
+                      <select
+                        name="districtId"
+                        value={addressForm.districtId || ''}
+                        onChange={(e) => {
+                          const districtId = e.target.value ? Number(e.target.value) : null;
+                          setAddressForm((prev) => ({
+                            ...prev,
+                            districtId,
+                            wardCode: null,
+                          }));
+                        }}
+                        required
+                        disabled={!addressForm.provinceId || loadingDistricts}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #dee2e6',
+                          borderRadius: '0.25rem',
+                          fontSize: '1rem',
+                          opacity: !addressForm.provinceId ? 0.6 : 1,
+                        }}
+                      >
+                        <option value="">-- Chọn quận/huyện --</option>
+                        {districts.map((district) => (
+                          <option
+                            key={district.districtId || district.id}
+                            value={district.districtId || district.id}
+                          >
+                            {district.districtName || district.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label
+                        style={{
+                          display: 'block',
+                          marginBottom: '0.5rem',
+                          fontWeight: '600',
+                          color: '#495057',
+                        }}
+                      >
+                        Phường/Xã *
+                      </label>
+                      <select
+                        name="wardCode"
+                        value={addressForm.wardCode || ''}
+                        onChange={(e) => {
+                          setAddressForm((prev) => ({
+                            ...prev,
+                            wardCode: e.target.value || null,
+                          }));
+                        }}
+                        required
+                        disabled={!addressForm.districtId || loadingWards}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #dee2e6',
+                          borderRadius: '0.25rem',
+                          fontSize: '1rem',
+                          opacity: !addressForm.districtId ? 0.6 : 1,
+                        }}
+                      >
+                        <option value="">-- Chọn phường/xã --</option>
+                        {wards.map((ward) => (
+                          <option
+                            key={ward.wardCode || ward.code}
+                            value={ward.wardCode || ward.code}
+                          >
+                            {ward.wardName || ward.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
                   <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#495057' }}>
-                      Địa chỉ *
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: '0.5rem',
+                        fontWeight: '600',
+                        color: '#495057',
+                      }}
+                    >
+                      Địa chỉ chi tiết (số nhà, tên đường) *
                     </label>
                     <textarea
                       name="address"
@@ -526,13 +717,14 @@ const CheckoutPage = ({ setCurrentPage }) => {
                       onChange={handleAddressFormChange}
                       required
                       rows={3}
+                      placeholder="Ví dụ: 123 Đường ABC"
                       style={{
                         width: '100%',
                         padding: '0.75rem',
                         border: '1px solid #dee2e6',
                         borderRadius: '0.25rem',
                         fontSize: '1rem',
-                        resize: 'vertical'
+                        resize: 'vertical',
                       }}
                     />
                   </div>
@@ -573,7 +765,12 @@ const CheckoutPage = ({ setCurrentPage }) => {
                           phoneNumber: '',
                           address: '',
                           isDefault: false,
+                          provinceId: null,
+                          districtId: null,
+                          wardCode: null,
                         });
+                        setDistricts([]);
+                        setWards([]);
                       }}
                       style={{
                         ...styles.buttonSecondary,
@@ -596,9 +793,13 @@ const CheckoutPage = ({ setCurrentPage }) => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {cartItems.map(item => {
                   const productName = item.productName || item.product?.productName || item.name || 'Sản phẩm không xác định';
-                  const productPrice = item.productPrice || item.price || item.product?.price || 0;
+                  const originalUnitPrice = item.productPrice || item.price || item.product?.price || 0;
                   const quantity = item.quantity || item.qty || 0;
-                  const itemTotal = item.subtotal || (productPrice * quantity);
+                  const originalSubtotal = item.subtotal || (originalUnitPrice * quantity);
+                  const discountedSubtotal = item.discountedSubtotal != null ? item.discountedSubtotal : originalSubtotal;
+                  const discountedUnitPrice = item.discountedUnitPrice != null && quantity
+                    ? item.discountedUnitPrice
+                    : (discountedSubtotal / (quantity || 1));
                   const productImage = item.productImageUrl || item.productImage || item.product?.imageUrl || item.imageUrl;
 
                   return (
@@ -630,10 +831,29 @@ const CheckoutPage = ({ setCurrentPage }) => {
                       <div style={{ flex: 1 }}>
                         <h4 style={{ fontWeight: '600', marginBottom: '0.5rem', color: '#212529' }}>{productName}</h4>
                         <p style={{ color: '#6c757d', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                          {formatPrice(productPrice)} × {quantity}
+                          {discountedUnitPrice != null && discountedUnitPrice < originalUnitPrice ? (
+                            <>
+                              <span style={{ textDecoration: 'line-through', marginRight: '0.5rem' }}>
+                                {formatPrice(originalUnitPrice)}
+                              </span>
+                              <span>{formatPrice(discountedUnitPrice)}</span>
+                            </>
+                          ) : (
+                            <span>{formatPrice(originalUnitPrice)}</span>
+                          )} 
+                          × {quantity}
                         </p>
                         <p style={{ fontWeight: '600', color: '#007bff' }}>
-                          {formatPrice(itemTotal)}
+                          {discountedSubtotal < originalSubtotal ? (
+                            <>
+                              <span style={{ textDecoration: 'line-through', marginRight: '0.5rem', color: '#6c757d', fontSize: '0.875rem' }}>
+                                {formatPrice(originalSubtotal)}
+                              </span>
+                              <span>{formatPrice(discountedSubtotal)}</span>
+                            </>
+                          ) : (
+                            <span>{formatPrice(originalSubtotal)}</span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -821,7 +1041,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                 )}
                 {automaticDiscount > 0 && automaticDiscountInfo && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: '#28a745' }}>
-                    <span>Giảm giá tự động {automaticDiscountInfo.ruleName ? `(${automaticDiscountInfo.ruleName})` : ''}</span>
+                    <span>Giảm giá tự động</span>
                     <span>-{formatPrice(automaticDiscount)}</span>
                   </div>
                 )}

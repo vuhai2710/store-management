@@ -57,4 +57,8 @@ public class ProductDTO extends BaseDTO {
     private CodeType codeType;
 
     private String sku;
+
+    private Double averageRating;
+
+    private Integer reviewCount;
 }

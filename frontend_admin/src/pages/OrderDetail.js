@@ -16,6 +16,7 @@ import {
 import { PrinterOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchOrderById, updateOrderStatus } from '../store/slices/ordersSlice';
+import { createGHNShipmentForOrder } from '../store/slices/shipmentsSlice';
 import { ordersService } from '../services/ordersService';
 import { formatDate } from '../utils/formatUtils';
 
@@ -37,6 +38,7 @@ const OrderDetail = () => {
   const { currentOrder, loading } = useSelector((state) => state.orders);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(null);
+  const [creatingShipment, setCreatingShipment] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -56,6 +58,23 @@ const OrderDetail = () => {
     if (!status) return { text: status, color: 'default' };
     const statusUpper = status.toUpperCase();
     return ORDER_STATUS[statusUpper] || { text: status, color: 'default' };
+  };
+
+  const handleCreateGHNShipment = async () => {
+    if (!orderId) return;
+    try {
+      setCreatingShipment(true);
+      const shipment = await dispatch(createGHNShipmentForOrder(orderId)).unwrap();
+      message.success('Tạo vận đơn GHN thành công!');
+      const shipmentId = shipment?.idShipment;
+      if (shipmentId) {
+        navigate(`/shipments/${shipmentId}`);
+      }
+    } catch (error) {
+      message.error(error || 'Tạo vận đơn GHN thất bại!');
+    } finally {
+      setCreatingShipment(false);
+    }
   };
 
   const handleStatusChange = async (newStatus) => {
@@ -235,6 +254,15 @@ const OrderDetail = () => {
           )}
           {/* Note: Shipment is optional and may not exist for all orders */}
           {/* If shipment exists, it will be shown in order details */}
+          {currentOrder.status === 'COMPLETED' && (
+            <Button
+              onClick={handleCreateGHNShipment}
+              loading={creatingShipment}
+              style={{ marginLeft: '8px' }}
+            >
+              Tạo vận đơn GHN
+            </Button>
+          )}
           <Button
             type="primary"
             icon={<PrinterOutlined />}

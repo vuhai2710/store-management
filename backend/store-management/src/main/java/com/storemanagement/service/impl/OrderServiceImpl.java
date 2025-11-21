@@ -583,6 +583,11 @@ public class OrderServiceImpl implements OrderService {
                     .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy nhân viên với ID: " + employeeId));
         }
 
+        // Validate danh sách sản phẩm phải có ít nhất 1 item
+        if (request.getOrderItems() == null || request.getOrderItems().isEmpty()) {
+            throw new RuntimeException("Danh sách sản phẩm không được để trống");
+        }
+
         // Validate tất cả sản phẩm trong danh sách
         for (OrderDetailDTO item : request.getOrderItems()) {
             Integer productId = item.getProductId() != null ? item.getProductId() : item.getIdProduct();
