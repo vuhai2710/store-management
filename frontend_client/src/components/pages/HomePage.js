@@ -340,26 +340,52 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
       {isAuthenticated && (
         <section style={{ padding: '4rem 0', backgroundColor: '#f0f4f8' }}>
           <div style={styles.container}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-              <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold' }}>Gợi ý dành cho bạn ⭐</h2>
-              <button 
-                onClick={() => setCurrentPage('shop')}
-                style={{ color: '#007bff', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                Xem tất cả →
-              </button>
-            </div>
             {recommendedProducts.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
-                {recommendedProducts.slice(0, 8).map(product => (
-                  <ProductCard 
-                    key={product.idProduct || product.id} 
-                    product={product} 
-                    handleAddToCart={handleAddToCart} 
-                    handleViewProductDetail={handleViewProductDetail}
-                  />
-                ))}
-              </div>
+              <>
+                {/* 4 sản phẩm đầu - Đã xem gần đây */}
+                {recommendedProducts.slice(0, 4).length > 0 && (
+                  <div style={{ marginBottom: '3rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                      <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold' }}>Đã xem gần đây 👀</h2>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                      {recommendedProducts.slice(0, 4).map(product => (
+                        <ProductCard 
+                          key={product.idProduct || product.id} 
+                          product={product} 
+                          handleAddToCart={handleAddToCart} 
+                          handleViewProductDetail={handleViewProductDetail}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* 8 sản phẩm sau - Gợi ý */}
+                {recommendedProducts.slice(4, 12).length > 0 && (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                      <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold' }}>Gợi ý dành cho bạn ⭐</h2>
+                      <button 
+                        onClick={() => setCurrentPage('shop')}
+                        style={{ color: '#007bff', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
+                      >
+                        Xem tất cả →
+                      </button>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                      {recommendedProducts.slice(4, 12).map(product => (
+                        <ProductCard 
+                          key={product.idProduct || product.id} 
+                          product={product} 
+                          handleAddToCart={handleAddToCart} 
+                          handleViewProductDetail={handleViewProductDetail}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div style={{ textAlign: 'center', padding: '3rem', color: '#6c757d' }}>
                 <p style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>
