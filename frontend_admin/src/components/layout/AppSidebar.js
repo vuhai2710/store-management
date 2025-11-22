@@ -137,21 +137,38 @@ const AppSidebar = () => {
       collapsed={collapsed}
       onCollapse={setCollapsed}
       style={{
-        background: "#001529",
+        background: "#020617",
         minHeight: "100vh",
+        borderRight: "1px solid #0B1120",
       }}>
       <div
         style={{
           height: "64px",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          color: "#fff",
-          fontSize: collapsed ? "16px" : "18px",
-          fontWeight: "bold",
-          borderBottom: "1px solid #002140",
+          justifyContent: collapsed ? "center" : "space-between",
+          padding: collapsed ? "0 12px" : "0 18px",
+          color: "#E5E7EB",
+          fontSize: collapsed ? 16 : 17,
+          fontWeight: 700,
+          borderBottom: "1px solid #111827",
+          background:
+            "linear-gradient(90deg, #020617 0%, #020617 40%, #111827 100%)",
         }}>
-        {collapsed ? "ERP" : "ERP Store"}
+        <span>
+          {collapsed ? "TS" : "TechStore"}
+        </span>
+        {!collapsed && (
+          <span
+            style={{
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: 1.2,
+              color: "#9CA3AF",
+            }}>
+            Admin
+          </span>
+        )}
       </div>
 
       <Menu
@@ -162,7 +179,7 @@ const AppSidebar = () => {
         items={menuItems}
         onClick={handleMenuClick}
         style={{
-          background: "#001529",
+          background: "#020617",
           border: "none",
         }}
       />

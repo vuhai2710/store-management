@@ -118,17 +118,40 @@ const Users = () => {
   };
 
   return (
-    <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+    <div style={{ padding: "8px 0" }}>
+      <Row
+        justify="space-between"
+        align="middle"
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
         <Col>
-          <Title level={3} style={{ margin: 0 }}>
+          <Title
+            level={2}
+            style={{
+              margin: 0,
+              fontWeight: 700,
+              color: "#0F172A",
+            }}
+          >
             Quản lý người dùng
           </Title>
         </Col>
       </Row>
 
-      {/* Bọc bảng trong container cho phép kéo ngang */}
-      <Card bodyStyle={{ padding: 12 }}>
+      <Card
+        bodyStyle={{ padding: 16 }}
+        style={{
+          borderRadius: 12,
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+          background: "#FFFFFF",
+        }}
+      >
         <Row gutter={[12, 12]} style={{ marginBottom: 12 }}>
           <Col xs={24} md={8}>
             <Input.Search
@@ -182,8 +205,8 @@ const Users = () => {
             }}
             onChange={handleTableChange}
             onEdit={handleEdit}
-            onActivate={handleActivate}        // gắn handler
-            onDeactivate={handleDeactivate}    // gắn handler
+            onActivate={handleActivate}
+            onDeactivate={handleDeactivate}
             onDelete={handleDelete}
             onRefresh={() =>
               dispatch(

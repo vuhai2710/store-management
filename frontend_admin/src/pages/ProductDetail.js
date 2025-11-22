@@ -8,7 +8,7 @@ import { fetchProductReviews, deleteReview, clearProductReviews, replyToReview }
 import { productsService } from "../services/productsService";
 import ImageLightbox from "../components/common/ImageLightbox";
 import StatusBadge from "../components/common/StatusBadge";
-import { formatCurrency, formatDate } from "../utils/formatUtils";
+import { formatCurrency, formatDate, getImageUrl } from "../utils/formatUtils";
 import { usePagination } from "../hooks/usePagination";
 
 const { Title } = Typography;
@@ -136,8 +136,13 @@ const ProductDetail = () => {
   if (loading && !current) return <Spin />;
 
   const allImages = [
-    ...(current?.imageUrl ? [{ url: current.imageUrl, alt: current.productName }] : []),
-    ...productImages.map((img) => ({ url: img.imageUrl, alt: current?.productName || "Product" })),
+    ...(current?.imageUrl
+      ? [{ url: getImageUrl(current.imageUrl), alt: current.productName }]
+      : []),
+    ...productImages.map((img) => ({
+      url: getImageUrl(img.imageUrl),
+      alt: current?.productName || "Product",
+    })),
   ];
 
   return (

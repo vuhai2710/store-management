@@ -45,29 +45,29 @@ const UserDropdown = ({ userName, setCurrentPage, handleLogout }) => {
           alignItems: "center",
           gap: "0.5rem",
           padding: "0.5rem 1rem",
-          backgroundColor: isOpen ? "#f8f9fa" : "transparent",
-          border: "1px solid #dee2e6",
-          borderRadius: "0.5rem",
+          backgroundColor: isOpen ? "#F8FAFC" : "transparent",
+          border: "1px solid #E2E8F0",
+          borderRadius: "0.75rem",
           cursor: "pointer",
-          color: "#495057",
+          color: "#0F172A",
           fontWeight: "600",
           transition: "all 0.3s",
         }}
         onMouseEnter={(e) => {
           if (!isOpen) {
-            e.currentTarget.style.backgroundColor = "#f8f9fa";
-            e.currentTarget.style.borderColor = "#007bff";
+            e.currentTarget.style.backgroundColor = "#F8FAFC";
+            e.currentTarget.style.borderColor = "#2563EB";
           }
         }}
         onMouseLeave={(e) => {
           if (!isOpen) {
             e.currentTarget.style.backgroundColor = "transparent";
-            e.currentTarget.style.borderColor = "#dee2e6";
+            e.currentTarget.style.borderColor = "#E2E8F0";
           }
         }}>
         <User size={18} />
         <span>
-          👋 Xin chào, <span style={{ color: "#007bff" }}>{userName}</span>
+          👋 Xin chào, <span style={{ color: "#2563EB" }}>{userName}</span>
         </span>
       </button>
 
@@ -81,7 +81,7 @@ const UserDropdown = ({ userName, setCurrentPage, handleLogout }) => {
             backgroundColor: "white",
             borderRadius: "0.5rem",
             boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-            border: "1px solid #dee2e6",
+            border: "1px solid #E2E8F0",
             minWidth: "220px",
             zIndex: 1000,
             overflow: "hidden",
@@ -90,7 +90,7 @@ const UserDropdown = ({ userName, setCurrentPage, handleLogout }) => {
             style={{
               padding: "0.75rem 1rem",
               borderBottom: "1px solid #e9ecef",
-              backgroundColor: "#f8f9fa",
+              backgroundColor: "#F8FAFC",
               fontWeight: "600",
               color: "#495057",
               fontSize: "0.875rem",
@@ -118,7 +118,7 @@ const UserDropdown = ({ userName, setCurrentPage, handleLogout }) => {
               transition: "background-color 0.2s",
             }}
             onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "#f8f9fa")
+              (e.currentTarget.style.backgroundColor = "#F8FAFC")
             }
             onMouseLeave={(e) =>
               (e.currentTarget.style.backgroundColor = "transparent")
@@ -177,7 +177,7 @@ const UserDropdown = ({ userName, setCurrentPage, handleLogout }) => {
                 transition: "background-color 0.2s",
               }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "#fff5f5")
+                (e.currentTarget.style.backgroundColor = "#F8FAFC")
               }
               onMouseLeave={(e) =>
                 (e.currentTarget.style.backgroundColor = "transparent")
@@ -218,23 +218,10 @@ const Header = ({
           <div
             style={{
               display: "flex",
-              justifyContent: "space-between",
+              justifyContent: "flex-end",
               alignItems: "center",
               fontSize: "0.875rem",
             }}>
-            {/* Left: Contact Info */}
-            <div style={{ display: "flex", gap: "1.5rem", color: "#6c757d" }}>
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                }}>
-                <Mail size={16} /> hello@electronicstore.com
-              </span>
-              <span>📞 +84 123456789</span>
-            </div>
-
             {/* Right: Auth Actions */}
             <div
               style={{
@@ -259,15 +246,15 @@ const Header = ({
                     onClick={() => setCurrentPage("login")}
                     style={{
                       ...styles.navLink,
-                      color: "#007bff",
+                      color: "#2563EB",
                       fontWeight: "600",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.25rem",
                       transition: "color 0.3s",
                     }}
-                    onMouseEnter={(e) => (e.target.style.color = "#0056b3")}
-                    onMouseLeave={(e) => (e.target.style.color = "#007bff")}>
+                    onMouseEnter={(e) => (e.target.style.color = "#1D4ED8")}
+                    onMouseLeave={(e) => (e.target.style.color = "#2563EB")}>
                     <LogIn size={16} /> Đăng nhập
                   </button>
                   {/* Nút Register */}
@@ -275,15 +262,15 @@ const Header = ({
                     onClick={() => setCurrentPage("register")}
                     style={{
                       ...styles.navLink,
-                      color: "#28a745",
+                      color: "#1E293B",
                       fontWeight: "600",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.25rem",
                       transition: "color 0.3s",
                     }}
-                    onMouseEnter={(e) => (e.target.style.color = "#218838")}
-                    onMouseLeave={(e) => (e.target.style.color = "#28a745")}>
+                    onMouseEnter={(e) => (e.target.style.color = "#020617")}
+                    onMouseLeave={(e) => (e.target.style.color = "#1E293B")}>
                     <User size={16} /> Đăng ký
                   </button>
                 </>
@@ -305,6 +292,7 @@ const Header = ({
           {/* Logo */}
           <button
             onClick={() => setCurrentPage("home")}
+            aria-label="Về trang chủ"
             style={{
               ...styles.logo,
               border: "none",
@@ -344,22 +332,6 @@ const Header = ({
                 Đơn hàng
               </button>
             )}
-            <button
-              onClick={() => setCurrentPage("blog")}
-              style={
-                currentPage === "blog" ? styles.navLinkActive : styles.navLink
-              }>
-              Tin tức
-            </button>
-            <button
-              onClick={() => setCurrentPage("contact")}
-              style={
-                currentPage === "contact"
-                  ? styles.navLinkActive
-                  : styles.navLink
-              }>
-              Liên hệ
-            </button>
           </nav>
 
           {/* Search Bar */}
@@ -374,6 +346,7 @@ const Header = ({
             <input
               type="text"
               placeholder="Tìm kiếm sản phẩm..."
+              aria-label="Tìm kiếm sản phẩm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={(e) => {
@@ -391,6 +364,7 @@ const Header = ({
             />
             <button
               onClick={() => setCurrentPage("shop")}
+              aria-label="Tìm kiếm"
               style={{
                 ...styles.buttonPrimary,
                 padding: "0.625rem 1rem",
@@ -430,6 +404,7 @@ const Header = ({
                 transition: "transform 0.2s",
               }}
               title="Giỏ hàng"
+              aria-label="Giỏ hàng"
               onMouseEnter={(e) =>
                 (e.currentTarget.style.transform = "scale(1.1)")
               }
@@ -441,8 +416,8 @@ const Header = ({
                 {(cartItemCount > 0 || (cart && cart.length > 0)) && (
                   <span
                     style={{
-                      backgroundColor: "#007bff",
-                      color: "white",
+                      backgroundColor: "#2563EB",
+                      color: "#FFFFFF",
                       borderRadius: "50%",
                       width: "18px",
                       height: "18px",
@@ -454,7 +429,7 @@ const Header = ({
                       position: "absolute",
                       top: "-8px",
                       right: "-8px",
-                      border: "2px solid white",
+                      border: "2px solid #F8FAFC",
                     }}>
                     {cartItemCount || cart.length}
                   </span>
@@ -468,6 +443,9 @@ const Header = ({
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "Đóng menu" : "Mở menu"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-nav"
               style={{
                 display: "none",
                 color: "#495057",
@@ -483,13 +461,14 @@ const Header = ({
         {/* Mobile Menu (if needed) */}
         {mobileMenuOpen && (
           <nav
+            id="mobile-nav"
             style={{
               display: "none",
               flexDirection: "column",
               gap: "1rem",
               marginTop: "1rem",
               padding: "1rem",
-              backgroundColor: "#f8f9fa",
+              backgroundColor: "#F8FAFC",
               borderRadius: "0.5rem",
             }}>
             <button
@@ -518,22 +497,6 @@ const Header = ({
                 Đơn hàng
               </button>
             )}
-            <button
-              onClick={() => {
-                setCurrentPage("blog");
-                setMobileMenuOpen(false);
-              }}
-              style={styles.navLink}>
-              Tin tức
-            </button>
-            <button
-              onClick={() => {
-                setCurrentPage("contact");
-                setMobileMenuOpen(false);
-              }}
-              style={styles.navLink}>
-              Liên hệ
-            </button>
           </nav>
         )}
       </div>

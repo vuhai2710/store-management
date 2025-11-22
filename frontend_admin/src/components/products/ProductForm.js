@@ -21,6 +21,7 @@ import { categoriesService } from "../../services/categoriesService";
 import { suppliersService } from "../../services/suppliersService";
 import { productsService } from "../../services/productsService";
 import ImageLightbox from "../common/ImageLightbox";
+import { getImageUrl } from "../../utils/formatUtils";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -299,7 +300,7 @@ const ProductForm = ({ product, onSuccess }) => {
                     style={{ width: 150 }}
                     cover={
                       <Image
-                        src={img.imageUrl}
+                        src={getImageUrl(img.imageUrl)}
                         alt="Product"
                         style={{ width: "100%", height: 150, objectFit: "cover" }}
                         preview={true}
@@ -425,7 +426,10 @@ const ProductForm = ({ product, onSuccess }) => {
 
       {/* Image Lightbox */}
       <ImageLightbox
-        images={productImages.map((img) => ({ url: img.imageUrl, alt: form.getFieldValue("productName") || "Product" }))}
+        images={productImages.map((img) => ({
+          url: getImageUrl(img.imageUrl),
+          alt: form.getFieldValue("productName") || "Product",
+        }))}
         currentIndex={lightboxIndex}
         visible={lightboxVisible}
         onClose={() => setLightboxVisible(false)}

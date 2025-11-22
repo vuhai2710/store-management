@@ -424,7 +424,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
   const finalTotal = Math.max(0, cartTotal + shippingFee - totalDiscount);
 
   return (
-    <section style={{ padding: '4rem 0', backgroundColor: '#f8f8f8' }}>
+    <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
       <div style={styles.container}>
         <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '2rem' }}>Thanh toán</h2>
 
@@ -460,8 +460,8 @@ const CheckoutPage = ({ setCurrentPage }) => {
                         padding: '1rem',
                         marginBottom: '0.5rem',
                         border: selectedAddressId === (address.idShippingAddress || address.id) 
-                          ? '2px solid #007bff' 
-                          : '1px solid #dee2e6',
+                          ? '2px solid #2563EB' 
+                          : '1px solid #E2E8F0',
                         borderRadius: '0.5rem',
                         cursor: 'pointer',
                         backgroundColor: selectedAddressId === (address.idShippingAddress || address.id) 
@@ -515,7 +515,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
 
               {/* Address Form */}
               {showAddressForm && (
-                <form onSubmit={handleCreateAddress} style={{ marginTop: '1.5rem', padding: '1.5rem', border: '1px solid #dee2e6', borderRadius: '0.5rem', backgroundColor: '#f8f9fa' }}>
+                <form onSubmit={handleCreateAddress} style={{ marginTop: '1.5rem', padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem', backgroundColor: '#F8FAFC' }}>
                   <h4 style={{ fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '1rem' }}>Địa chỉ giao hàng mới</h4>
                   
                   <div style={{ marginBottom: '1rem' }}>
@@ -531,7 +531,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                       style={{
                         width: '100%',
                         padding: '0.75rem',
-                        border: '1px solid #dee2e6',
+                        border: '1px solid #E2E8F0',
                         borderRadius: '0.25rem',
                         fontSize: '1rem'
                       }}
@@ -551,7 +551,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                       style={{
                         width: '100%',
                         padding: '0.75rem',
-                        border: '1px solid #dee2e6',
+                        border: '1px solid #E2E8F0',
                         borderRadius: '0.25rem',
                         fontSize: '1rem'
                       }}
@@ -594,7 +594,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                         style={{
                           width: '100%',
                           padding: '0.75rem',
-                          border: '1px solid #dee2e6',
+                          border: '1px solid #E2E8F0',
                           borderRadius: '0.25rem',
                           fontSize: '1rem',
                         }}
@@ -638,7 +638,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                         style={{
                           width: '100%',
                           padding: '0.75rem',
-                          border: '1px solid #dee2e6',
+                          border: '1px solid #E2E8F0',
                           borderRadius: '0.25rem',
                           fontSize: '1rem',
                           opacity: !addressForm.provinceId ? 0.6 : 1,
@@ -681,7 +681,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                         style={{
                           width: '100%',
                           padding: '0.75rem',
-                          border: '1px solid #dee2e6',
+                          border: '1px solid #E2E8F0',
                           borderRadius: '0.25rem',
                           fontSize: '1rem',
                           opacity: !addressForm.districtId ? 0.6 : 1,
@@ -721,7 +721,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                       style={{
                         width: '100%',
                         padding: '0.75rem',
-                        border: '1px solid #dee2e6',
+                        border: '1px solid #E2E8F0',
                         borderRadius: '0.25rem',
                         fontSize: '1rem',
                         resize: 'vertical',
@@ -809,7 +809,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                         display: 'flex',
                         gap: '1rem',
                         padding: '1rem',
-                        border: '1px solid #dee2e6',
+                        border: '1px solid #E2E8F0',
                         borderRadius: '0.5rem'
                       }}
                     >
@@ -843,7 +843,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                           )} 
                           × {quantity}
                         </p>
-                        <p style={{ fontWeight: '600', color: '#007bff' }}>
+                        <p style={{ fontWeight: '600', color: '#2563EB' }}>
                           {discountedSubtotal < originalSubtotal ? (
                             <>
                               <span style={{ textDecoration: 'line-through', marginRight: '0.5rem', color: '#6c757d', fontSize: '0.875rem' }}>
@@ -879,7 +879,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    border: '1px solid #dee2e6',
+                    border: '1px solid #E2E8F0',
                     borderRadius: '0.25rem',
                     fontSize: '1rem',
                     cursor: 'pointer'
@@ -902,7 +902,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    border: '1px solid #dee2e6',
+                    border: '1px solid #E2E8F0',
                     borderRadius: '0.25rem',
                     fontSize: '1rem',
                     resize: 'vertical'
@@ -911,7 +911,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
               </div>
               
               {/* Promotion Code Section */}
-              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #dee2e6' }}>
+              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #E2E8F0' }}>
                 <h4 style={{ fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   Mã giảm giá
                 </h4>
@@ -925,7 +925,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                     style={{
                       flex: 1,
                       padding: '0.75rem',
-                      border: '1px solid #dee2e6',
+                      border: '1px solid #E2E8F0',
                       borderRadius: '0.25rem',
                       fontSize: '1rem',
                       opacity: (loadingPromotion || promotionValid) ? 0.6 : 1,
@@ -1017,7 +1017,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                 Tóm tắt đơn hàng
               </h3>
 
-              <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #dee2e6', paddingBottom: '1rem' }}>
+              <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: '#495057' }}>
                   <span>Tạm tính</span>
                   <span>{formatPrice(cartTotal)}</span>
@@ -1052,14 +1052,14 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   </div>
                 )}
                 {totalDiscount > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #dee2e6', color: '#28a745', fontWeight: '600' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #E2E8F0', color: '#28a745', fontWeight: '600' }}>
                     <span>Tổng giảm giá</span>
                     <span>-{formatPrice(totalDiscount)}</span>
                   </div>
                 )}
               </div>
 
-              <div style={{ marginBottom: '1.5rem', paddingTop: '1rem', borderTop: '2px solid #dee2e6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ marginBottom: '1.5rem', paddingTop: '1rem', borderTop: '2px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontWeight: 'bold', fontSize: '1.25rem' }}>Tổng cộng</span>
                 <span style={{ fontWeight: 'bold', fontSize: '1.5rem', color: '#28a745' }}>
                   {formatPrice(finalTotal)}
@@ -1131,4 +1131,5 @@ const CheckoutPage = ({ setCurrentPage }) => {
 };
 
 export default CheckoutPage;
+
 

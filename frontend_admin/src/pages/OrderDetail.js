@@ -171,7 +171,14 @@ const OrderDetail = () => {
 
   if (loading && !currentOrder) {
     return (
-      <div style={{ textAlign: 'center', padding: '50px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 260,
+        }}
+      >
         <Spin size="large" />
       </div>
     );
@@ -179,16 +186,22 @@ const OrderDetail = () => {
 
   if (!currentOrder) {
     return (
-      <div>
+      <div style={{ padding: '8px 0' }}>
         <Button
           icon={<ArrowLeftOutlined />}
           onClick={() => navigate('/orders')}
-          style={{ marginBottom: '16px' }}
+          style={{ marginBottom: 16 }}
         >
           Quay lại
         </Button>
-        <Card>
-          <Typography.Text>Không tìm thấy đơn hàng</Typography.Text>
+        <Card
+          style={{
+            borderRadius: 12,
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)',
+          }}
+        >
+          <Text>Không tìm thấy đơn hàng</Text>
         </Card>
       </div>
     );
@@ -221,26 +234,54 @@ const OrderDetail = () => {
   const availableStatuses = getAvailableStatuses();
 
   return (
-    <div>
-      <div className="page-header" style={{ marginBottom: '16px' }}>
-        <Space>
+    <div style={{ padding: '8px 0' }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        <Space align="center" style={{ gap: 12 }}>
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate('/orders')}
           >
             Quay lại
           </Button>
-          <Title level={1} style={{ margin: 0 }}>
-            Chi tiết đơn hàng #{orderId}
-          </Title>
+          <div>
+            <Title
+              level={2}
+              style={{
+                marginBottom: 4,
+                fontWeight: 700,
+                color: '#0F172A',
+              }}
+            >
+              Chi tiết đơn hàng #{orderId}
+            </Title>
+            <Text type="secondary" style={{ fontSize: 14 }}>
+              Theo dõi trạng thái và chi tiết sản phẩm cho đơn hàng TechStore
+            </Text>
+          </div>
         </Space>
-        <Space style={{ marginTop: '16px' }}>
+        <Space
+          wrap
+          style={{
+            display: 'flex',
+            gap: 8,
+          }}
+        >
           {availableStatuses.length > 0 && (
             <Select
               value={selectedStatus}
               onChange={handleStatusChange}
               loading={statusUpdating}
-              style={{ width: 180 }}
+              style={{ width: 200 }}
             >
               {availableStatuses.map((status) => {
                 const info = getStatusInfo(status);
@@ -252,13 +293,10 @@ const OrderDetail = () => {
               })}
             </Select>
           )}
-          {/* Note: Shipment is optional and may not exist for all orders */}
-          {/* If shipment exists, it will be shown in order details */}
           {currentOrder.status === 'COMPLETED' && (
             <Button
               onClick={handleCreateGHNShipment}
               loading={creatingShipment}
-              style={{ marginLeft: '8px' }}
             >
               Tạo vận đơn GHN
             </Button>
@@ -273,7 +311,16 @@ const OrderDetail = () => {
         </Space>
       </div>
 
-      <Card title="Thông tin đơn hàng" style={{ marginBottom: '16px' }}>
+      <Card
+        title="Thông tin đơn hàng"
+        style={{
+          marginBottom: 16,
+          borderRadius: 12,
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
         <Descriptions column={2} bordered>
           <Descriptions.Item label="Mã đơn hàng">
             <Text strong>#{orderId}</Text>
@@ -343,12 +390,22 @@ const OrderDetail = () => {
         </Descriptions>
       </Card>
 
-      <Card title="Sản phẩm trong đơn hàng">
+      <Card
+        title="Sản phẩm trong đơn hàng"
+        style={{
+          borderRadius: 12,
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+          marginTop: 16,
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
         <Table
           columns={orderDetailsColumns}
           dataSource={currentOrder.orderDetails || currentOrder.items || []}
           rowKey={(record) => record.idOrderDetail || record.id}
           pagination={false}
+          size="middle"
         />
         <div style={{ marginTop: '16px', textAlign: 'right' }}>
           <Space>

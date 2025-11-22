@@ -123,30 +123,93 @@ const Suppliers = () => {
   };
 
   return (
-    <div>
-      <div className="page-header">
-        <Title level={1}>Quản lý Nhà cung cấp</Title>
-        <p>Quản lý thông tin nhà cung cấp</p>
+    <div style={{ padding: '8px 0' }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div>
+          <Title
+            level={2}
+            style={{
+              marginBottom: 4,
+              fontWeight: 700,
+              color: '#0F172A',
+            }}
+          >
+            Quản lý nhà cung cấp
+          </Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>
+            Quản lý thông tin và danh sách nhà cung cấp của TechStore
+          </Text>
+        </div>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleCreateSupplier}
+          style={{
+            borderRadius: 9999,
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          Thêm nhà cung cấp
+        </Button>
       </div>
 
-      <Card className="table-container">
-        <div style={{ marginBottom: '16px' }}>
-          <Space wrap>
+      <Card
+        className="table-container"
+        style={{
+          borderRadius: 12,
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)',
+          background: '#FFFFFF',
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
+        <div
+          style={{
+            marginBottom: 16,
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <Space
+            wrap
+            style={{
+              display: 'flex',
+              gap: 8,
+            }}
+          >
             <Input.Search
               placeholder="Tìm kiếm theo tên, email, SĐT..."
-              style={{ width: 320 }}
+              style={{ width: 320, maxWidth: '100%' }}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               enterButton={<SearchOutlined />}
             />
+          </Space>
+          <Space
+            wrap
+            style={{
+              display: 'flex',
+              gap: 8,
+            }}
+          >
             <Button icon={<DownloadOutlined />} onClick={handleExportExcel}>
               Xuất Excel
             </Button>
             <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
               Xuất CSV
-            </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateSupplier}>
-              Thêm nhà cung cấp
             </Button>
           </Space>
         </div>
@@ -170,6 +233,7 @@ const Suppliers = () => {
                 />
               ),
             }}
+            size="middle"
           />
         )}
       </Card>

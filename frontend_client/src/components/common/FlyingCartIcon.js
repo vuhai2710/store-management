@@ -61,7 +61,7 @@ const FlyingCartIcon = ({ sourcePosition, targetPosition, onComplete }) => {
       <ShoppingBag 
         size={32} 
         style={{
-          color: '#007bff',
+          color: '#2563EB',
           filter: 'drop-shadow(0 4px 8px rgba(0, 123, 255, 0.4))',
         }}
       />
@@ -71,5 +71,6 @@ const FlyingCartIcon = ({ sourcePosition, targetPosition, onComplete }) => {
 };
 
 export default FlyingCartIcon;
+
 
 

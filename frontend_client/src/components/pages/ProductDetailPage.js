@@ -8,7 +8,7 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import ReviewSection from '../common/ReviewSection';
 import { productsService } from '../../services/productsService';
 import { promotionService } from '../../services/promotionService';
-import { getImageUrl, formatPrice } from '../../utils/formatUtils';
+import { getImageUrl, formatPrice, formatDate } from '../../utils/formatUtils';
 import { INVENTORY_STATUS, INVENTORY_STATUS_LABELS, INVENTORY_STATUS_COLORS } from '../../constants/inventoryStatus';
 import { useAuth } from '../../hooks/useAuth';
 import { ordersService } from '../../services/ordersService';
@@ -481,15 +481,15 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 
   // --- Helpers cho khu vực Tabs ---
   const DescriptionBlock = () => (
-    <div style={{ padding: '1.5rem', border: '1px solid #dee2e6', borderRadius: '0.5rem', backgroundColor: '#fff' }}>
-      <h4 style={{ fontWeight: 'bold', fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '2px solid #007bff', display: 'inline-block', paddingBottom: '0.25rem' }}>
+    <div style={{ padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem', backgroundColor: '#fff' }}>
+      <h4 style={{ fontWeight: 'bold', fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '2px solid #2563EB', display: 'inline-block', paddingBottom: '0.25rem' }}>
         Mô tả sản phẩm
       </h4>
       <p style={{ lineHeight: 1.6, color: '#495057', marginBottom: '1.5rem', whiteSpace: 'pre-wrap' }}>
         {product?.description || product?.desc || 'Chưa có mô tả'}
       </p>
       {product?.productCode && (
-        <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '0.25rem' }}>
+        <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '0.25rem' }}>
           <p style={{ fontSize: '0.875rem', color: '#6c757d', marginBottom: '0.5rem' }}>
             <strong>Mã sản phẩm:</strong> {product.productCode}
           </p>
@@ -512,7 +512,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
     // Only show review section if user can review (has purchased and received)
     if (!isAuthenticated) {
       return (
-        <div style={{ padding: '1.5rem', border: '1px solid #dee2e6', borderRadius: '0.5rem', backgroundColor: '#fff', textAlign: 'center' }}>
+        <div style={{ padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem', backgroundColor: '#fff', textAlign: 'center' }}>
           <p style={{ color: '#6c757d', marginBottom: '1rem' }}>
             Vui lòng đăng nhập và mua sản phẩm để đánh giá.
           </p>
@@ -528,7 +528,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 
     if (!canReview) {
       return (
-        <div style={{ padding: '1.5rem', border: '1px solid #dee2e6', borderRadius: '0.5rem', backgroundColor: '#fff', textAlign: 'center' }}>
+        <div style={{ padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem', backgroundColor: '#fff', textAlign: 'center' }}>
           <p style={{ color: '#6c757d', marginBottom: '1rem' }}>
             Bạn chỉ có thể đánh giá sản phẩm sau khi đã mua và nhận hàng thành công.
           </p>
@@ -550,7 +550,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
     const currentUserId = customer?.idCustomer || user?.idUser || user?.id || customer?.idUser || customer?.id;
 
     return (
-      <div style={{ padding: '1.5rem', border: '1px solid #dee2e6', borderRadius: '0.5rem', backgroundColor: '#fff' }}>
+      <div style={{ padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem', backgroundColor: '#fff' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h4 style={{ fontWeight: 'bold', fontSize: '1.25rem' }}>
             Đánh giá khách hàng ({reviewsTotalElements})
@@ -582,7 +582,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 
         {/* Average Rating */}
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', borderBottom: '1px solid #e9ecef', paddingBottom: '1rem' }}>
-          <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#007bff' }}>
+          <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#2563EB' }}>
             {averageRating.toFixed(1)}
           </div>
           <div>
@@ -595,7 +595,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 
         {/* Review Form */}
         {showReviewForm && (
-          <div style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid #dee2e6', borderRadius: '0.5rem', backgroundColor: '#f8f9fa' }}>
+          <div style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem', backgroundColor: '#F8FAFC' }}>
             <h5 style={{ fontWeight: 'bold', fontSize: '1.125rem', marginBottom: '1rem' }}>
               {editingReviewId ? 'Chỉnh sửa đánh giá' : 'Viết đánh giá'}
             </h5>
@@ -612,7 +612,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    border: '1px solid #dee2e6',
+                    border: '1px solid #E2E8F0',
                     borderRadius: '0.25rem',
                     fontSize: '1rem',
                   }}
@@ -647,7 +647,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                     <Star
                       size={32}
                       fill={star <= reviewForm.rating ? '#ffc107' : 'none'}
-                      color={star <= reviewForm.rating ? '#ffc107' : '#dee2e6'}
+                      color={star <= reviewForm.rating ? '#ffc107' : '#E2E8F0'}
                     />
                   </button>
                 ))}
@@ -670,7 +670,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                 style={{
                   width: '100%',
                   padding: '0.75rem',
-                  border: '1px solid #dee2e6',
+                  border: '1px solid #E2E8F0',
                   borderRadius: '0.25rem',
                   fontSize: '1rem',
                   resize: 'vertical',
@@ -738,7 +738,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {reviews.map((review) => {
               const isMyReview = review.idCustomer === currentUserId;
-              const reviewDate = review.createdAt ? new Date(review.createdAt).toLocaleDateString('vi-VN') : '';
+              const reviewDate = formatDate(review.createdAt, 'dd/MM/yyyy');
               const canEdit = isMyReview;
 
               return (
@@ -746,9 +746,9 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                   key={review.idReview || review.id}
                   style={{
                     padding: '1.5rem',
-                    border: '1px solid #dee2e6',
+                    border: '1px solid #E2E8F0',
                     borderRadius: '0.5rem',
-                    backgroundColor: isMyReview ? '#f8f9fa' : '#fff',
+                    backgroundColor: isMyReview ? '#F8FAFC' : '#fff',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
@@ -757,7 +757,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                         width: '48px',
                         height: '48px',
                         borderRadius: '50%',
-                        backgroundColor: '#007bff',
+                        backgroundColor: '#2563EB',
                         color: 'white',
                         display: 'flex',
                         alignItems: 'center',
@@ -846,9 +846,9 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                   disabled={reviewsPage === 1}
                   style={{
                     padding: '0.5rem 1rem',
-                    border: '1px solid #dee2e6',
+                    border: '1px solid #E2E8F0',
                     borderRadius: '0.25rem',
-                    backgroundColor: reviewsPage === 1 ? '#f8f9fa' : '#fff',
+                    backgroundColor: reviewsPage === 1 ? '#F8FAFC' : '#fff',
                     color: reviewsPage === 1 ? '#6c757d' : '#495057',
                     cursor: reviewsPage === 1 ? 'not-allowed' : 'pointer',
                     opacity: reviewsPage === 1 ? 0.6 : 1,
@@ -864,9 +864,9 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                   disabled={reviewsPage === reviewsTotalPages}
                   style={{
                     padding: '0.5rem 1rem',
-                    border: '1px solid #dee2e6',
+                    border: '1px solid #E2E8F0',
                     borderRadius: '0.25rem',
-                    backgroundColor: reviewsPage === reviewsTotalPages ? '#f8f9fa' : '#fff',
+                    backgroundColor: reviewsPage === reviewsTotalPages ? '#F8FAFC' : '#fff',
                     color: reviewsPage === reviewsTotalPages ? '#6c757d' : '#495057',
                     cursor: reviewsPage === reviewsTotalPages ? 'not-allowed' : 'pointer',
                     opacity: reviewsPage === reviewsTotalPages ? 0.6 : 1,
@@ -883,7 +883,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
   };
 
   const InformationBlock = () => (
-    <div style={{ padding: '1.5rem', border: '1px solid #dee2e6', borderRadius: '0.5rem', backgroundColor: '#fff' }}>
+    <div style={{ padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem', backgroundColor: '#fff' }}>
       <h4 style={{ fontWeight: 'bold', fontSize: '1.25rem', marginBottom: '1rem' }}>Vận chuyển & Đổi trả</h4>
       <p style={{ lineHeight: 1.6, color: '#495057', marginBottom: '1.5rem' }}>
         Chúng tôi cung cấp miễn phí vận chuyển cho tất cả đơn hàng trên 500.000₫ trên toàn quốc.
@@ -897,7 +897,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 
   if (loading) {
     return (
-      <section style={{ padding: '4rem 0', backgroundColor: '#f8f8f8' }}>
+      <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
         <div style={styles.container}>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
             <LoadingSpinner />
@@ -909,7 +909,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 
   if (error || !product) {
     return (
-      <section style={{ padding: '4rem 0', backgroundColor: '#f8f8f8' }}>
+      <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
         <div style={styles.container}>
           <div style={{ textAlign: 'center', padding: '3rem' }}>
             <p style={{ color: '#dc3545', fontSize: '1.125rem', marginBottom: '1rem' }}>
@@ -926,13 +926,13 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 
   // --- Main Render ---
   return (
-    <section style={{ padding: '4rem 0', backgroundColor: '#f8f8f8' }}>
+    <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
       <div style={styles.container}>
 
         {/* Breadcrumb */}
         <div style={{ color: '#6c757d', marginBottom: '2rem' }}>
-          <button onClick={() => setCurrentPage('home')} style={{ ...styles.navLink, color: '#007bff', padding: 0 }}>Trang chủ</button> /
-          <button onClick={() => setCurrentPage('shop')} style={{ ...styles.navLink, color: '#007bff', padding: 0 }}> Cửa hàng</button> /
+          <button onClick={() => setCurrentPage('home')} style={{ ...styles.navLink, color: '#2563EB', padding: 0 }}>Trang chủ</button> /
+          <button onClick={() => setCurrentPage('shop')} style={{ ...styles.navLink, color: '#2563EB', padding: 0 }}> Cửa hàng</button> /
           <span> {productName}</span>
         </div>
 
@@ -968,7 +968,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                         borderRadius: '0.25rem',
                         opacity: selectedImageIndex === index ? 1 : 0.6,
                         cursor: 'pointer',
-                        border: selectedImageIndex === index ? '2px solid #007bff' : 'none',
+                        border: selectedImageIndex === index ? '2px solid #2563EB' : 'none',
                         overflow: 'hidden'
                       }}
                     >
@@ -1037,9 +1037,9 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
             </p>
 
             {/* Quantity Control */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem', padding: '1rem', border: '1px solid #dee2e6', borderRadius: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem', padding: '1rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem' }}>
               <div style={{ fontWeight: 'bold', color: '#495057' }}>Số lượng:</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #ccc', borderRadius: '0.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #E2E8F0', borderRadius: '0.25rem' }}>
                 <button
                   onClick={() => handleQuantityChange(-1)}
                   disabled={qty <= 1}
@@ -1069,7 +1069,7 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                 </button>
               </div>
               {itemInCart && (
-                <span style={{ color: '#007bff', fontSize: '0.875rem' }}>
+                <span style={{ color: '#2563EB', fontSize: '0.875rem' }}>
                   ({(itemInCart.quantity || itemInCart.qty) || 0} trong giỏ hàng)
                 </span>
               )}
@@ -1136,8 +1136,8 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
                   border: 'none',
                   background: 'none',
                   fontWeight: activeTab === tab ? 'bold' : 'normal',
-                  color: activeTab === tab ? '#007bff' : '#495057',
-                  borderBottom: activeTab === tab ? '2px solid #007bff' : '2px solid transparent',
+                  color: activeTab === tab ? '#2563EB' : '#495057',
+                  borderBottom: activeTab === tab ? '2px solid #2563EB' : '2px solid transparent',
                   cursor: 'pointer',
                   fontSize: '1.125rem',
                   transition: 'color 0.3s, border-bottom 0.3s'
@@ -1199,3 +1199,4 @@ const ProductDetailPage = ({ productId, cart, setCurrentPage, handleAddToCart, h
 };
 
 export default ProductDetailPage;
+

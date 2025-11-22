@@ -348,15 +348,44 @@ const Inventory = () => {
   ];
 
   return (
-    <div>
-      <div className="page-header">
-        <Title level={1}>Quản lý Kho hàng</Title>
-        <p>Theo dõi tồn kho và quản lý kho hàng</p>
+    <div style={{ padding: '8px 0' }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div>
+          <Title
+            level={2}
+            style={{
+              marginBottom: 4,
+              fontWeight: 700,
+              color: '#0F172A',
+            }}
+          >
+            Quản lý kho hàng
+          </Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>
+            Theo dõi tồn kho và lịch sử nhập/xuất kho cho TechStore
+          </Text>
+        </div>
       </div>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
         <Col xs={24} sm={6}>
-          <Card>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+            }}
+          >
             <Statistic
               title="Tổng sản phẩm"
               value={totalProducts}
@@ -365,51 +394,84 @@ const Inventory = () => {
           </Card>
         </Col>
         <Col xs={24} sm={6}>
-          <Card>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+            }}
+          >
             <Statistic
               title="Sắp hết hàng"
               value={lowStockProducts.length}
               prefix={<WarningOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              valueStyle={{ color: '#f97316' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
-          <Card>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+            }}
+          >
             <Statistic
               title="Hết hàng"
               value={outOfStockProducts.length}
               prefix={<WarningOutlined />}
-              valueStyle={{ color: '#ff4d4f' }}
+              valueStyle={{ color: '#dc2626' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
-          <Card>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+            }}
+          >
             <Statistic
               title="Còn hàng"
               value={inStockProducts.length}
               prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              valueStyle={{ color: '#16a34a' }}
             />
           </Card>
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
         <Col span={24}>
-          <Card>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+            }}
+          >
             <Statistic
               title="Tổng giá trị tồn kho"
               value={inventoryValue.toLocaleString('vi-VN')}
               suffix="VNĐ"
-              valueStyle={{ color: '#1890ff', fontSize: '24px' }}
+              valueStyle={{ color: '#2563EB', fontSize: '24px' }}
             />
           </Card>
         </Col>
       </Row>
 
-      <Card className="table-container">
+      <Card
+        className="table-container"
+        style={{
+          borderRadius: 12,
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)',
+          background: '#FFFFFF',
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
         <Table
           columns={columns}
           dataSource={products || []}
@@ -425,6 +487,7 @@ const Inventory = () => {
               `${range[0]}-${range[1]} của ${total} sản phẩm`,
           }}
           scroll={{ x: 1200 }}
+          size="middle"
         />
       </Card>
 
@@ -445,11 +508,20 @@ const Inventory = () => {
         footer={null}
         width={1200}
       >
-        <div style={{ marginBottom: '16px' }}>
-          <Space wrap>
+        <div
+          style={{
+            marginBottom: '16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <Space wrap style={{ display: 'flex', gap: 8 }}>
             <Select
               placeholder="Lọc theo loại"
-              style={{ width: 150 }}
+              style={{ width: 160 }}
               allowClear
               value={transactionTypeFilter}
               onChange={handleTransactionTypeFilter}
@@ -463,20 +535,20 @@ const Inventory = () => {
               onChange={handleDateRangeChange}
               format="DD/MM/YYYY"
             />
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={() => {
-                setTransactionTypeFilter(null);
-                setDateRange(null);
-                if (selectedProduct) {
-                  resetPagination();
-                  fetchTransactions(selectedProduct.idProduct, 1, pageSize);
-                }
-              }}
-            >
-              Xóa lọc
-            </Button>
           </Space>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              setTransactionTypeFilter(null);
+              setDateRange(null);
+              if (selectedProduct) {
+                resetPagination();
+                fetchTransactions(selectedProduct.idProduct, 1, pageSize);
+              }
+            }}
+          >
+            Xóa lọc
+          </Button>
         </div>
         <Table
           columns={transactionColumns}
@@ -494,6 +566,7 @@ const Inventory = () => {
           }}
           onChange={handleTransactionTableChange}
           scroll={{ x: 1000 }}
+          size="middle"
         />
       </Modal>
     </div>

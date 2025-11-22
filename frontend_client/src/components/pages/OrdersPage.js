@@ -149,7 +149,7 @@ const OrdersPage = ({ setCurrentPage }) => {
   }
 
   return (
-    <section style={{ padding: '4rem 0', backgroundColor: '#f8f8f8' }}>
+    <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
       <div style={styles.container}>
         <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '2rem' }}>Đơn hàng của tôi</h2>
 
@@ -166,7 +166,7 @@ const OrdersPage = ({ setCurrentPage }) => {
                 style={{
                   width: '100%',
                   padding: '0.75rem 0.75rem 0.75rem 2.5rem',
-                  border: '1px solid #dee2e6',
+                  border: '1px solid #E2E8F0',
                   borderRadius: '0.5rem',
                   fontSize: '1rem'
                 }}
@@ -184,7 +184,7 @@ const OrdersPage = ({ setCurrentPage }) => {
               }}
               style={{
                 padding: '0.75rem',
-                border: '1px solid #dee2e6',
+                border: '1px solid #E2E8F0',
                 borderRadius: '0.5rem',
                 fontSize: '1rem',
                 cursor: 'pointer'
@@ -238,7 +238,7 @@ const OrdersPage = ({ setCurrentPage }) => {
                       padding: '1.5rem',
                       borderRadius: '0.5rem',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                      border: '1px solid #dee2e6'
+                      border: '1px solid #E2E8F0'
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
@@ -268,7 +268,7 @@ const OrdersPage = ({ setCurrentPage }) => {
                         )}
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <p style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#007bff', marginBottom: '0.5rem' }}>
+                        <p style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#2563EB', marginBottom: '0.5rem' }}>
                           {formatPrice(order.finalAmount || order.totalAmount || 0)}
                         </p>
                         <button
@@ -289,7 +289,7 @@ const OrdersPage = ({ setCurrentPage }) => {
 
                     {/* Order Items Preview */}
                     {order.orderDetails && order.orderDetails.length > 0 && (
-                      <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e9ecef' }}>
+                      <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #E2E8F0' }}>
                         <p style={{ fontSize: '0.875rem', color: '#6c757d', marginBottom: '0.5rem' }}>
                           Sản phẩm: {order.orderDetails.length} sản phẩm
                         </p>
@@ -299,7 +299,7 @@ const OrdersPage = ({ setCurrentPage }) => {
                               key={index}
                               style={{
                                 padding: '0.25rem 0.5rem',
-                                backgroundColor: '#f8f9fa',
+                                backgroundColor: '#F8FAFC',
                                 borderRadius: '0.25rem',
                                 fontSize: '0.875rem',
                                 color: '#495057'
@@ -318,7 +318,7 @@ const OrdersPage = ({ setCurrentPage }) => {
                     )}
 
                     {/* Actions */}
-                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e9ecef' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #E2E8F0' }}>
                       {status === ORDER_STATUS.PENDING && (
                         <button
                           onClick={() => handleCancelOrder(order.idOrder || order.id)}
@@ -373,9 +373,9 @@ const OrdersPage = ({ setCurrentPage }) => {
                   disabled={pageNo === 1}
                   style={{
                     padding: '0.5rem 1rem',
-                    border: '1px solid #ccc',
+                    border: '1px solid #E2E8F0',
                     borderRadius: '0.25rem',
-                    backgroundColor: pageNo === 1 ? '#e9ecef' : '#fff',
+                    backgroundColor: pageNo === 1 ? '#E2E8F0' : '#fff',
                     cursor: pageNo === 1 ? 'not-allowed' : 'pointer',
                     opacity: pageNo === 1 ? 0.5 : 1
                   }}
@@ -400,9 +400,9 @@ const OrdersPage = ({ setCurrentPage }) => {
                       onClick={() => setPageNo(pageNumber)}
                       style={{
                         padding: '0.5rem 1rem',
-                        border: pageNo === pageNumber ? '1px solid #007bff' : '1px solid #ccc',
+                        border: pageNo === pageNumber ? '1px solid #2563EB' : '1px solid #E2E8F0',
                         borderRadius: '0.25rem',
-                        backgroundColor: pageNo === pageNumber ? '#007bff' : '#fff',
+                        backgroundColor: pageNo === pageNumber ? '#2563EB' : '#fff',
                         color: pageNo === pageNumber ? 'white' : '#495057',
                         cursor: 'pointer'
                       }}
@@ -416,9 +416,9 @@ const OrdersPage = ({ setCurrentPage }) => {
                   disabled={pageNo === totalPages}
                   style={{
                     padding: '0.5rem 1rem',
-                    border: '1px solid #ccc',
+                    border: '1px solid #E2E8F0',
                     borderRadius: '0.25rem',
-                    backgroundColor: pageNo === totalPages ? '#e9ecef' : '#fff',
+                    backgroundColor: pageNo === totalPages ? '#E2E8F0' : '#fff',
                     cursor: pageNo === totalPages ? 'not-allowed' : 'pointer',
                     opacity: pageNo === totalPages ? 0.5 : 1
                   }}
@@ -494,11 +494,38 @@ const OrdersPage = ({ setCurrentPage }) => {
                 <p style={{ marginBottom: '0.5rem' }}>
                   <strong>Ngày đặt:</strong> {formatDate(selectedOrder.orderDate, 'dd/MM/yyyy HH:mm')}
                 </p>
-                <p style={{ marginBottom: '0.5rem' }}>
-                  <strong>Tổng tiền:</strong> {formatPrice(selectedOrder.finalAmount || selectedOrder.totalAmount || 0)}
+
+                {/* Tóm tắt tiền */}
+                {selectedOrder.totalAmount != null && (
+                  <p style={{ marginBottom: '0.25rem' }}>
+                    <strong>Tạm tính:</strong> {formatPrice(selectedOrder.totalAmount)}
+                  </p>
+                )}
+
+                {selectedOrder.discount != null && Number(selectedOrder.discount) > 0 && (
+                  <p style={{ marginBottom: '0.25rem', color: '#28a745' }}>
+                    <strong>Giảm giá:</strong> -{formatPrice(selectedOrder.discount)}
+                  </p>
+                )}
+
+                <p style={{ marginTop: '0.5rem', marginBottom: '0.5rem', fontWeight: '600' }}>
+                  <strong>Tổng thanh toán:</strong> {formatPrice(selectedOrder.finalAmount || (selectedOrder.totalAmount != null && selectedOrder.discount != null ? selectedOrder.totalAmount - selectedOrder.discount : selectedOrder.totalAmount || 0))}
                 </p>
+
+                {selectedOrder.promotionCode && (
+                  <p style={{ marginBottom: '0.25rem', fontSize: '0.875rem', color: '#6c757d' }}>
+                    <strong>Mã giảm giá:</strong> {selectedOrder.promotionCode}
+                  </p>
+                )}
+
+                {selectedOrder.notes && (
+                  <p style={{ marginTop: '0.25rem', fontSize: '0.875rem', color: '#495057' }}>
+                    <strong>Ghi chú:</strong> {selectedOrder.notes}
+                  </p>
+                )}
+
                 {selectedOrder.shippingAddressSnapshot && (
-                  <p style={{ marginBottom: '0.5rem' }}>
+                  <p style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
                     <strong>Địa chỉ giao hàng:</strong> {selectedOrder.shippingAddressSnapshot}
                   </p>
                 )}
@@ -509,7 +536,7 @@ const OrdersPage = ({ setCurrentPage }) => {
                   style={{
                     marginTop: '1rem',
                     paddingTop: '1rem',
-                    borderTop: '1px solid #e9ecef',
+                    borderTop: '1px solid #E2E8F0',
                     display: 'flex',
                     justifyContent: 'flex-end',
                   }}
@@ -518,7 +545,7 @@ const OrdersPage = ({ setCurrentPage }) => {
                     onClick={() => handlePayWithPayOS(selectedOrder)}
                     style={{
                       padding: '0.5rem 1rem',
-                      backgroundColor: '#007bff',
+                      backgroundColor: '#2563EB',
                       color: 'white',
                       border: 'none',
                       borderRadius: '0.25rem',
@@ -547,7 +574,7 @@ const OrdersPage = ({ setCurrentPage }) => {
                         key={index}
                         style={{
                           padding: '1rem',
-                          border: '1px solid #dee2e6',
+                          border: '1px solid #E2E8F0',
                           borderRadius: '0.25rem',
                           display: 'flex',
                           justifyContent: 'space-between',
@@ -563,7 +590,7 @@ const OrdersPage = ({ setCurrentPage }) => {
                           </p>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <p style={{ fontWeight: '600', color: '#007bff' }}>
+                          <p style={{ fontWeight: '600', color: '#2563EB' }}>
                             {formatPrice(detail.price || detail.productPrice || 0)}
                           </p>
                           <p style={{ fontSize: '0.875rem', color: '#6c757d' }}>
@@ -622,5 +649,6 @@ const OrdersPage = ({ setCurrentPage }) => {
 };
 
 export default OrdersPage;
+
 
 

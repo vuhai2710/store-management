@@ -166,19 +166,63 @@ const Employees = () => {
   ];
 
   return (
-    <div>
-      <div className="page-header">
-        <Title level={1}>Quản lý Nhân viên</Title>
-        <p>Quản lý thông tin nhân viên</p>
+    <div style={{ padding: '8px 0' }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div>
+          <Title
+            level={2}
+            style={{
+              marginBottom: 4,
+              fontWeight: 700,
+              color: '#0F172A',
+            }}
+          >
+            Quản lý nhân viên
+          </Title>
+          <p
+            style={{
+              margin: 0,
+              color: '#64748B',
+              fontSize: 14,
+            }}
+          >
+            Quản lý hồ sơ và trạng thái nhân viên TechStore
+          </p>
+        </div>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={openCreate}
+          style={{
+            borderRadius: 9999,
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          Thêm nhân viên
+        </Button>
       </div>
 
-      <Card className="table-container">
-        <div style={{ marginBottom: 16 }}>
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            Thêm nhân viên
-          </Button>
-        </div>
-
+      <Card
+        className="table-container"
+        style={{
+          borderRadius: 12,
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)',
+          background: '#FFFFFF',
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
         <Table
           columns={columns}
           dataSource={employees}
@@ -192,6 +236,7 @@ const Employees = () => {
           }}
           onChange={handleTableChange}
           scroll={{ x: 'max-content' }}
+          size="middle"
         />
       </Card>
 

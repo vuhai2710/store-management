@@ -165,40 +165,126 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: "center", padding: "50px" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "240px",
+        }}
+      >
         <Spin size="large" />
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="page-header">
-        <Title level={1}>Dashboard</Title>
-        <p>Tổng quan hệ thống quản lý cửa hàng điện tử</p>
+    <div style={{ padding: "8px 0" }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 24,
+        }}
+      >
+        <Title
+          level={2}
+          style={{
+            marginBottom: 4,
+            fontWeight: 700,
+            color: "#0F172A",
+          }}
+        >
+          Bảng điều khiển
+        </Title>
+        <p
+          style={{
+            margin: 0,
+            color: "#64748B",
+            fontSize: 14,
+          }}
+        >
+          Tổng quan nhanh về hiệu suất cửa hàng điện tử TechStore
+        </p>
       </div>
 
       {/* Statistics Cards */}
-      <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         {statsCards.map((stat, index) => (
           <Col xs={24} sm={12} lg={6} key={index}>
-            <Card className="stats-card" style={{ background: stat.color }}>
-              <Statistic
-                title={stat.title}
-                value={stat.value}
-                prefix={stat.icon}
-                valueStyle={{ color: "white" }}
-                suffix={
-                  <span style={{ fontSize: "14px", opacity: 0.9 }}>
-                    {stat.trendUp ? (
-                      <ArrowUpOutlined style={{ color: "#52c41a" }} />
-                    ) : (
-                      <ArrowDownOutlined style={{ color: "#ff4d4f" }} />
-                    )}
-                    {stat.trend}
-                  </span>
-                }
-              />
+            <Card
+              className="stats-card"
+              style={{
+                background: "#FFFFFF",
+                borderRadius: 12,
+                boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+                border: "1px solid #E2E8F0",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.6,
+                      color: "#94A3B8",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {stat.title}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 24,
+                      fontWeight: 700,
+                      color: "#0F172A",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {stat.value}
+                  </div>
+                  {typeof stat.trend !== "undefined" && (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: stat.trendUp ? "#16A34A" : "#DC2626",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      {stat.trendUp ? (
+                        <ArrowUpOutlined />
+                      ) : (
+                        <ArrowDownOutlined />
+                      )}
+                      {stat.trend}
+                    </div>
+                  )}
+                </div>
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 9999,
+                    background: stat.color,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    boxShadow: "0 8px 20px rgba(15, 23, 42, 0.25)",
+                  }}
+                >
+                  {stat.icon}
+                </div>
+              </div>
             </Card>
           </Col>
         ))}

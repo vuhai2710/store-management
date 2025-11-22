@@ -81,7 +81,12 @@ const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
   }, [isAuthenticated, product]);
 
   return (
-    <div style={styles.card}>
+    <div
+      style={{
+        ...styles.card,
+        cursor: 'pointer',
+      }}
+    >
       {/* Vùng ảnh và thông tin có thể click để xem chi tiết */}
       <div
         onClick={() => handleViewProductDetail(product.idProduct || product.id)}
@@ -93,18 +98,21 @@ const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
               src={productImage}
               alt={productName}
               onError={() => setImageError(true)}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '0.5rem' }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           ) : (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '4rem',
-              backgroundColor: '#e9ecef'
-            }}>
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '3rem',
+                backgroundColor: '#E5E7EB',
+                color: '#94A3B8',
+              }}
+            >
               {product.image || '📦'}
             </div>
           )}
@@ -119,7 +127,7 @@ const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
               padding: '0.5rem 1rem',
               borderRadius: '0.25rem',
               fontWeight: 'bold',
-              fontSize: '0.875rem'
+              fontSize: '0.875rem',
             }}>
               Hết hàng
             </div>
@@ -135,7 +143,14 @@ const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
               </p>
             )}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.5rem',
+            }}
+          >
             {autoDiscount > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                 <div>
@@ -162,7 +177,7 @@ const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
                 borderRadius: '0.25rem',
                 backgroundColor: INVENTORY_STATUS_COLORS[status] + '20',
                 color: INVENTORY_STATUS_COLORS[status],
-                fontWeight: '600'
+                fontWeight: '600',
               }}>
                 {INVENTORY_STATUS_LABELS[status] || status}
               </span>
@@ -185,7 +200,11 @@ const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
             padding: '0.5rem',
             fontSize: '0.875rem',
             opacity: isOutOfStock ? 0.5 : 1,
-            cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+            cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
           }}
         >
           {isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ'}

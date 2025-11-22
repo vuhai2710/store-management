@@ -34,7 +34,7 @@ const PaymentCancelPage = ({ setCurrentPage }) => {
   };
 
   return (
-    <section style={{ padding: '4rem 0', backgroundColor: '#f8f9fa', minHeight: '80vh' }}>
+    <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC', minHeight: '80vh' }}>
       <div style={styles.container}>
         <div style={{
           maxWidth: '600px',
@@ -135,4 +135,5 @@ const PaymentCancelPage = ({ setCurrentPage }) => {
 };
 
 export default PaymentCancelPage;
+
 

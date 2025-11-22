@@ -476,13 +476,44 @@ const Promotions = () => {
   ];
 
   return (
-    <div>
-      <div className="page-header" style={{ marginBottom: 12 }}>
-        <Title level={2}>Quản lý Khuyến mãi & Giảm giá</Title>
-        <Text>Quản lý mã giảm giá và quy tắc giảm giá tự động</Text>
+    <div style={{ padding: "8px 0" }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <Title
+            level={2}
+            style={{
+              marginBottom: 4,
+              fontWeight: 700,
+              color: "#0F172A",
+            }}
+          >
+            Quản lý khuyến mãi & giảm giá
+          </Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>
+            Cấu hình mã giảm giá và quy tắc giảm giá tự động cho TechStore
+          </Text>
+        </div>
       </div>
 
-      <Card>
+      <Card
+        style={{
+          borderRadius: 12,
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+          background: "#FFFFFF",
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
           <TabPane tab="Mã giảm giá" key="promotions">
             <Space style={{ marginBottom: 16 }}>
@@ -516,6 +547,7 @@ const Promotions = () => {
                   pageSizeOptions: ["10", "20", "50"],
                   onChange: (page, size) => handlePromoPageChange(page, size),
                 }}
+                size="middle"
               />
             )}
           </TabPane>
@@ -552,6 +584,7 @@ const Promotions = () => {
                   pageSizeOptions: ["10", "20", "50"],
                   onChange: (page, size) => handleRulePageChange(page, size),
                 }}
+                size="middle"
               />
             )}
           </TabPane>

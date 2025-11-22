@@ -32,7 +32,7 @@ const ContactPage = ({ setCurrentPage }) => {
   };
 
   return (
-    <section style={{ padding: "4rem 0" }}>
+    <section style={{ padding: "4rem 0", backgroundColor: "#F8FAFC" }}>
       <div style={styles.container}>
         <h2
           style={{
@@ -62,11 +62,12 @@ const ContactPage = ({ setCurrentPage }) => {
               style={{
                 textAlign: "center",
                 padding: "1.5rem",
-                background: "linear-gradient(135deg, #f0fff4, #d1fae5)",
-                borderRadius: "0.5rem",
+                background: "linear-gradient(135deg, #EFF6FF, #DBEAFE)",
+                borderRadius: "0.75rem",
+                boxShadow: "0 10px 25px rgba(15,23,42,0.08)",
               }}>
               <item.icon
-                style={{ margin: "0 auto 1rem", color: "#28a745" }}
+                style={{ margin: "0 auto 1rem", color: "#2563EB" }}
                 size={40}
               />
               <h3
@@ -88,10 +89,11 @@ const ContactPage = ({ setCurrentPage }) => {
           style={{
             maxWidth: "640px",
             margin: "0 auto",
-            backgroundColor: "#f8f8f8",
+            backgroundColor: "#FFFFFF",
             padding: "2rem",
-            borderRadius: "0.5rem",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+            borderRadius: "0.75rem",
+            boxShadow: "0 12px 30px rgba(15,23,42,0.06)",
+            border: "1px solid #E2E8F0",
           }}>
           <h3
             style={{
@@ -112,8 +114,6 @@ const ContactPage = ({ setCurrentPage }) => {
               onChange={handleFormChange}
               style={{
                 ...styles.inputField,
-                border: "1px solid #ccc",
-                borderRadius: "0.25rem",
               }}
             />
             <input
@@ -124,7 +124,7 @@ const ContactPage = ({ setCurrentPage }) => {
               onChange={handleFormChange}
               style={{
                 ...styles.inputField,
-                border: "1px solid #ccc",
+                border: "1px solid #E2E8F0",
                 borderRadius: "0.25rem",
               }}
             />
@@ -136,8 +136,6 @@ const ContactPage = ({ setCurrentPage }) => {
               onChange={handleFormChange}
               style={{
                 ...styles.inputField,
-                border: "1px solid #ccc",
-                borderRadius: "0.25rem",
                 resize: "none",
               }}
             />

@@ -5,7 +5,7 @@ import ProductCard from '../shared/ProductCard';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { productsService } from '../../services/productsService';
 import { categoriesService } from '../../services/categoriesService';
-import { formatPrice } from '../../utils/formatUtils';
+import { formatPrice, getImageUrl } from '../../utils/formatUtils';
 import { Grid3X3, List } from 'lucide-react'; 
 import { useAuth } from '../../hooks/useAuth';
 
@@ -35,13 +35,24 @@ const ShopPage = ({
   const [brands, setBrands] = useState([]);
   const [latestProducts, setLatestProducts] = useState([]);
   
+  const getLatestProductImage = (product) => {
+    if (!product) return null;
+    if (product.images && product.images.length > 0) {
+      return getImageUrl(product.images[0].imageUrl || product.images[0].url);
+    }
+    if (product.imageUrl) {
+      return getImageUrl(product.imageUrl);
+    }
+    return null;
+  };
+  
   // Style cho nút Category Filter
   const filterButtonStyle = (isActive) => ({
     padding: '0.5rem 1rem',
     borderRadius: '0.375rem',
-    border: isActive ? '1px solid #007bff' : '1px solid #dee2e6',
-    backgroundColor: isActive ? '#e0f7ff' : 'white',
-    color: isActive ? '#007bff' : '#495057',
+    border: isActive ? '1px solid #2563EB' : '1px solid #E2E8F0',
+    backgroundColor: isActive ? '#DBEAFE' : '#FFFFFF',
+    color: isActive ? '#2563EB' : '#475569',
     fontWeight: isActive ? '600' : 'normal',
     cursor: 'pointer',
     textAlign: 'left',
@@ -274,7 +285,7 @@ const ShopPage = ({
   // Show login prompt if not authenticated
   if (!isAuthenticated) {
     return (
-      <section style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
+      <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
         <div style={styles.container}>
           <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
@@ -305,7 +316,7 @@ const ShopPage = ({
 
   if (loading && products.length === 0) {
     return (
-      <section style={{ padding: '4rem 0', backgroundColor: '#f8f8f8' }}>
+      <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
         <div style={styles.container}>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
             <LoadingSpinner />
@@ -316,14 +327,14 @@ const ShopPage = ({
   }
 
   return (
-    <section style={{ padding: '4rem 0', backgroundColor: '#f8f8f8' }}>
+    <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
       <div style={styles.container}>
         
         {/* Breadcrumb và Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold' }}>Cửa hàng sản phẩm công nghệ</h2>
             <div style={{ color: '#6c757d' }}>
-                <button onClick={() => setCurrentPage('home')} style={{ ...styles.navLink, color: '#007bff', padding: 0 }}>Trang chủ</button> /
+                <button onClick={() => setCurrentPage('home')} style={{ ...styles.navLink, color: '#2563EB', padding: 0 }}>Trang chủ</button> /
                 <span> Cửa hàng</span>
             </div>
         </div>
@@ -403,7 +414,7 @@ const ShopPage = ({
                     style={{
                       width: '100%',
                       padding: '0.5rem',
-                      border: '1px solid #dee2e6',
+                      border: '1px solid #E2E8F0',
                       borderRadius: '0.375rem',
                       fontSize: '0.875rem'
                     }}
@@ -422,7 +433,7 @@ const ShopPage = ({
                     style={{
                       width: '100%',
                       padding: '0.5rem',
-                      border: '1px solid #dee2e6',
+                      border: '1px solid #E2E8F0',
                       borderRadius: '0.375rem',
                       fontSize: '0.875rem'
                     }}
@@ -433,8 +444,8 @@ const ShopPage = ({
                     onClick={handleClearPriceFilter}
                     style={{
                       padding: '0.5rem',
-                      backgroundColor: '#f8f9fa',
-                      border: '1px solid #dee2e6',
+                      backgroundColor: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
                       borderRadius: '0.375rem',
                       fontSize: '0.875rem',
                       cursor: 'pointer',
@@ -452,25 +463,28 @@ const ShopPage = ({
               <div style={{...styles.sidebarSection, borderBottom: 'none'}}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Latest Additions</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {latestProducts.map(product => (
-                    <div 
-                      key={product.idProduct || product.id} 
-                      style={{...styles.latestProductItem, cursor: 'pointer'}}
-                      onClick={() => handleViewProductDetail(product.idProduct || product.id)}
-                    >
-                      <div style={{ width: '60px', height: '60px', backgroundColor: '#e9ecef', borderRadius: '0.25rem', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', overflow: 'hidden' }}>
-                        {product.imageUrl ? (
-                          <img src={product.imageUrl} alt={product.productName || product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          '📦'
-                        )}
+                  {latestProducts.map(product => {
+                    const imageUrl = getLatestProductImage(product);
+                    return (
+                      <div 
+                        key={product.idProduct || product.id} 
+                        style={{...styles.latestProductItem, cursor: 'pointer'}}
+                        onClick={() => handleViewProductDetail(product.idProduct || product.id)}
+                      >
+                        <div style={{ width: '60px', height: '60px', backgroundColor: '#e9ecef', borderRadius: '0.25rem', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', overflow: 'hidden' }}>
+                          {imageUrl ? (
+                            <img src={imageUrl} alt={product.productName || product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            '📦'
+                          )}
+                        </div>
+                        <div>
+                          <h4 style={{ fontSize: '0.875rem', fontWeight: '600', color: '#212529' }}>{product.productName || product.name}</h4>
+                          <p style={{ color: '#28a745', fontWeight: 'bold', fontSize: '0.875rem' }}>{formatPrice(product.price)}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 style={{ fontSize: '0.875rem', fontWeight: '600', color: '#212529' }}>{product.productName || product.name}</h4>
-                        <p style={{ color: '#28a745', fontWeight: 'bold', fontSize: '0.875rem' }}>{formatPrice(product.price)}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -494,7 +508,7 @@ const ShopPage = ({
                           setSortOption(e.target.value);
                           setPageNo(1);
                         }}
-                        style={{ padding: '0.5rem 1rem', border: '1px solid #ccc', borderRadius: '0.375rem', outline: 'none', cursor: 'pointer' }}
+                        style={{ padding: '0.5rem 1rem', border: '1px solid #E2E8F0', borderRadius: '0.375rem', outline: 'none', cursor: 'pointer' }}
                     >
                       <option value="default">Mới nhất</option>
                       <option value="price-asc">Giá: Thấp đến cao</option>
@@ -506,7 +520,7 @@ const ShopPage = ({
 
                 {/* View Toggles */}
                 <div style={{ display: 'flex', gap: '0.5rem', color: '#6c757d' }}>
-                    <Grid3X3 size={20} style={{ cursor: 'pointer', color: '#007bff' }} />
+                    <Grid3X3 size={20} style={{ cursor: 'pointer', color: '#2563EB' }} />
                     <List size={20} style={{ cursor: 'pointer' }} />
                 </div>
             </div>
@@ -535,7 +549,7 @@ const ShopPage = ({
                     />
                   ))
                 ) : (
-                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', backgroundColor: '#fff', borderRadius: '0.5rem', border: '1px solid #dee2e6' }}>
+                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', backgroundColor: '#fff', borderRadius: '0.5rem', border: '1px solid #E2E8F0' }}>
                     <p style={{ color: '#6c757d', fontSize: '1.125rem' }}>Không tìm thấy sản phẩm nào phù hợp với bộ lọc hiện tại.</p>
                   </div>
                 )}
@@ -550,7 +564,7 @@ const ShopPage = ({
                   disabled={pageNo === 1}
                   style={{ 
                     padding: '0.5rem 1rem', 
-                    border: '1px solid #ccc', 
+                    border: '1px solid #E2E8F0', 
                     borderRadius: '0.25rem', 
                     backgroundColor: pageNo === 1 ? '#e9ecef' : '#fff', 
                     cursor: pageNo === 1 ? 'not-allowed' : 'pointer',
@@ -578,9 +592,9 @@ const ShopPage = ({
                       onClick={() => handlePageChange(pageNumber)}
                       style={{ 
                         padding: '0.5rem 1rem', 
-                        border: pageNo === pageNumber ? '1px solid #007bff' : '1px solid #ccc', 
+                        border: pageNo === pageNumber ? '1px solid #2563EB' : '1px solid #E2E8F0', 
                         borderRadius: '0.25rem', 
-                        backgroundColor: pageNo === pageNumber ? '#007bff' : '#fff', 
+                        backgroundColor: pageNo === pageNumber ? '#2563EB' : '#fff', 
                         color: pageNo === pageNumber ? 'white' : '#495057',
                         cursor: 'pointer' 
                       }}
@@ -595,7 +609,7 @@ const ShopPage = ({
                   disabled={pageNo === totalPages}
                   style={{ 
                     padding: '0.5rem 1rem', 
-                    border: '1px solid #ccc', 
+                    border: '1px solid #E2E8F0', 
                     borderRadius: '0.25rem', 
                     backgroundColor: pageNo === totalPages ? '#e9ecef' : '#fff', 
                     cursor: pageNo === totalPages ? 'not-allowed' : 'pointer',
@@ -615,3 +629,4 @@ const ShopPage = ({
 };
 
 export default ShopPage;
+

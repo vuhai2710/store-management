@@ -97,79 +97,144 @@ const Finance = () => {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '50px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 260,
+        }}
+      >
         <Spin size="large" />
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="page-header">
-        <Title level={1}>Quản lý Tài chính</Title>
-        <p>Theo dõi doanh thu, chi phí và lợi nhuận</p>
+    <div style={{ padding: '8px 0' }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div>
+          <Title
+            level={2}
+            style={{
+              marginBottom: 4,
+              fontWeight: 700,
+              color: '#0F172A',
+            }}
+          >
+            Quản lý tài chính
+          </Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>
+            Theo dõi doanh thu, chi phí và lợi nhuận ước tính của TechStore
+          </Text>
+        </div>
       </div>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={8}>
-          <Card>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+            }}
+          >
             <Statistic
               title="Doanh thu"
               value={financialData.revenue.toLocaleString('vi-VN')}
               prefix={<DollarOutlined />}
-              valueStyle={{ color: '#3f8600' }}
+              valueStyle={{ color: '#16a34a' }}
               suffix="VNĐ"
             />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+            }}
+          >
             <Statistic
               title="Chi phí (ước tính)"
               value={financialData.expenses.toLocaleString('vi-VN')}
               prefix={<DollarOutlined />}
-              valueStyle={{ color: '#cf1322' }}
+              valueStyle={{ color: '#dc2626' }}
               suffix="VNĐ"
             />
-            <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '8px' }}>
+            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
               * Ước tính từ doanh thu (70% chi phí, 30% lợi nhuận)
             </Text>
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+            }}
+          >
             <Statistic
               title="Lợi nhuận (ước tính)"
               value={financialData.profit.toLocaleString('vi-VN')}
               prefix={<DollarOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              valueStyle={{ color: '#2563EB' }}
               suffix="VNĐ"
             />
-            <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '8px' }}>
+            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
               * Ước tính từ doanh thu
             </Text>
           </Card>
         </Col>
       </Row>
 
-      <Card title="Bảng lương nhân viên" style={{ marginBottom: '24px' }}>
+      <Card
+        title="Bảng lương nhân viên"
+        style={{
+          marginBottom: 16,
+          borderRadius: 12,
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
         {financialData.payroll && financialData.payroll.length > 0 ? (
           <Table
             columns={payrollColumns}
             dataSource={financialData.payroll}
             rowKey="id"
             pagination={false}
+            size="middle"
           />
         ) : (
           <Empty description="Chưa có dữ liệu bảng lương" />
         )}
       </Card>
 
-      <Card title="Lưu ý">
+      <Card
+        title="Lưu ý"
+        style={{
+          borderRadius: 12,
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
         <Text type="secondary">
-          Dữ liệu tài chính được tính toán từ các đơn hàng đã hoàn thành. 
-          Chi phí và lợi nhuận là ước tính dựa trên tỷ lệ 70/30. 
-          Để có dữ liệu chính xác hơn, vui lòng tích hợp với hệ thống kế toán.
+          Dữ liệu tài chính được tính toán từ các đơn hàng đã hoàn thành. Chi phí và lợi nhuận là ước tính dựa
+          trên tỷ lệ 70/30. Để có dữ liệu chính xác hơn, vui lòng tích hợp với hệ thống kế toán.
         </Text>
       </Card>
     </div>

@@ -273,25 +273,79 @@ const Orders = () => {
   }, [loading]);
 
   return (
-    <div className="page-orders">
-      <div className="page-header">
-        <Title level={3}>Quản lý đơn hàng</Title>
+    <div className="page-orders" style={{ padding: '8px 0' }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div>
+          <Title
+            level={2}
+            style={{
+              marginBottom: 4,
+              fontWeight: 700,
+              color: '#0F172A',
+            }}
+          >
+            Quản lý đơn hàng
+          </Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>
+            Theo dõi và xử lý đơn hàng khách hàng TechStore
+          </Text>
+        </div>
         <Button
           type="primary"
           icon={<PlusOutlined />}
           onClick={handleCreateOrder}
+          style={{
+            borderRadius: 9999,
+            display: 'flex',
+            alignItems: 'center',
+          }}
         >
           Tạo đơn hàng
         </Button>
       </div>
-      <Card>
-        <div className="table-toolbar">
-          <div className="filters">
+      <Card
+        style={{
+          borderRadius: 12,
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)',
+          background: '#FFFFFF',
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
+        <div
+          className="table-toolbar"
+          style={{
+            marginBottom: 16,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div
+            className="filters"
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 8,
+            }}
+          >
             <Select
               placeholder="Trạng thái"
               value={statusFilter}
               onChange={handleStatusFilter}
-              style={{ width: 150, marginRight: 8 }}
+              style={{ width: 160 }}
             >
               <Option value="">Tất cả</Option>
               {Object.keys(ORDER_STATUS).map((key) => (
@@ -304,25 +358,31 @@ const Orders = () => {
             <Input.Search
               placeholder="Tìm theo khách hàng"
               onSearch={handleCustomerIdFilter}
-              style={{ width: 250 }}
+              style={{ width: 260, maxWidth: '100%' }}
               allowClear
             />
             <Button onClick={handleResetFilters} icon={<ReloadOutlined />}>
               Đặt lại bộ lọc
             </Button>
           </div>
-          <div className="export-buttons">
+          <div
+            className="export-buttons"
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 8,
+            }}
+          >
             <Button
               icon={<DownloadOutlined />}
               onClick={handleExportExcel}
-              style={{ marginRight: 8 }}
             >
               Xuất Excel
             </Button>
             <Button
               icon={<DownloadOutlined />}
               onClick={handleExportCSV}
-              type="dashed"
+              type="default"
             >
               Xuất CSV
             </Button>
@@ -337,6 +397,7 @@ const Orders = () => {
           rowKey={(record) => record.idOrder || record.id}
           scroll={{ x: 1300 }}
           locale={{ emptyText: <EmptyState /> }}
+          size="middle"
         />
       </Card>
 

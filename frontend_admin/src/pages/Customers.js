@@ -34,6 +34,7 @@ import CustomerForm from "../components/customers/CustomerForm";
 import { exportToExcel, exportToCSV } from "../utils/exportUtils";
 import LoadingSkeleton from "../components/common/LoadingSkeleton";
 import EmptyState from "../components/common/EmptyState";
+import { formatDate } from "../utils/formatUtils";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -162,7 +163,7 @@ const Customers = () => {
         <Avatar
           src={avatar}
           icon={<UserOutlined />}
-          style={{ backgroundColor: "#1890ff" }}>
+          style={{ backgroundColor: "#2563EB" }}>
           {(record.name || record.customerName)?.charAt(0)?.toUpperCase()}
         </Avatar>
       ),
@@ -210,7 +211,7 @@ const Customers = () => {
       title: "Ngày tạo",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (date) => new Date(date).toLocaleDateString("vi-VN"),
+      render: (date) => formatDate(date, "DD/MM/YYYY"),
     },
     {
       title: "Hành động",
@@ -246,47 +247,112 @@ const Customers = () => {
   ];
 
   return (
-    <div>
-      <div className="page-header">
-        <Title level={1}>Quản lý Khách hàng</Title>
-        <p>Quản lý thông tin khách hàng và lịch sử mua hàng</p>
+    <div style={{ padding: "8px 0" }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <Title
+            level={2}
+            style={{
+              marginBottom: 4,
+              fontWeight: 700,
+              color: "#0F172A",
+            }}
+          >
+            Quản lý khách hàng
+          </Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>
+            Quản lý hồ sơ và phân loại khách hàng TechStore
+          </Text>
+        </div>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleCreateCustomer}
+          style={{
+            borderRadius: 9999,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          Thêm khách hàng
+        </Button>
       </div>
 
-      <Card className="table-container">
+      <Card
+        className="table-container"
+        style={{
+          borderRadius: 12,
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+          background: "#FFFFFF",
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
         {/* Filters */}
-        <div style={{ marginBottom: "16px" }}>
-          <Space wrap>
+        <div
+          className="table-toolbar"
+          style={{
+            marginBottom: 16,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <Space
+            wrap
+            style={{
+              display: "flex",
+              gap: 8,
+            }}
+          >
             <Input.Search
               placeholder="Tìm kiếm theo tên khách hàng..."
-              style={{ width: 300 }}
+              style={{ width: 300, maxWidth: "100%" }}
               onSearch={handleSearch}
               enterButton={<SearchOutlined />}
               allowClear
             />
             <Select
               placeholder="Loại khách hàng"
-              style={{ width: 150 }}
+              style={{ width: 170 }}
               allowClear
               onChange={handleCustomerTypeFilter}
-              value={customerTypeFilter}>
+              value={customerTypeFilter}
+            >
               <Option value="REGULAR">REGULAR</Option>
               <Option value="VIP">VIP</Option>
             </Select>
+          </Space>
+          <Space
+            wrap
+            style={{
+              display: "flex",
+              gap: 8,
+            }}
+          >
             <Button
               icon={<DownloadOutlined />}
-              onClick={handleExportExcel}>
+              onClick={handleExportExcel}
+            >
               Xuất Excel
             </Button>
             <Button
               icon={<DownloadOutlined />}
-              onClick={handleExportCSV}>
+              onClick={handleExportCSV}
+            >
               Xuất CSV
-            </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreateCustomer}>
-              Thêm khách hàng
             </Button>
           </Space>
         </div>
@@ -322,6 +388,7 @@ const Customers = () => {
                 />
               ),
             }}
+            size="middle"
           />
         )}
       </Card>

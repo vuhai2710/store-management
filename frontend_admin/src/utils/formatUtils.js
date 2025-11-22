@@ -145,4 +145,22 @@ export const formatStatus = (status, statusMap = {}) => {
   return statusMap[statusUpper] || { text: status, color: "default" };
 };
 
+/**
+ * Build full image URL from backend
+ * @param {string} imagePath - Image path returned by backend (relative or absolute)
+ * @returns {string}
+ */
+export const getImageUrl = (imagePath) => {
+  if (!imagePath) return "";
+  // If already an absolute URL, return as is
+  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+    return imagePath;
+  }
+
+  const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8080/api/v1";
+  const baseUrl = apiBaseUrl.replace("/api/v1", "");
+  const path = imagePath.startsWith("/") ? imagePath.substring(1) : imagePath;
+  return `${baseUrl}/${path}`;
+};
+
 

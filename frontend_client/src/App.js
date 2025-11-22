@@ -9,9 +9,7 @@ import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import HomePage from "./components/pages/HomePage";
 import ShopPage from "./components/pages/ShopPage";
-import BlogPage from "./components/pages/BlogPage";
 import CartPage from "./components/pages/CartPage";
-import ContactPage from "./components/pages/ContactPage";
 import ProductDetailPage from "./components/pages/ProductDetailPage";
 import LoginPage from "./components/pages/LoginPage";
 import RegisterPage from "./components/pages/RegisterPage";
@@ -327,12 +325,6 @@ function AppContent() {
           />
         );
 
-      case "blog":
-        return <BlogPage {...pageProps} />;
-
-      case "contact":
-        return <ContactPage {...pageProps} />;
-
       case "cart":
         return (
           <ProtectedRoute>
@@ -424,7 +416,7 @@ function AppContent() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "white" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#F8FAFC" }}>
       {/* Chỉ hiển thị Header nếu KHÔNG phải trang auth */}
       {!isAuthPage && (
         <Header

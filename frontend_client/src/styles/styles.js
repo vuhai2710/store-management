@@ -2,29 +2,31 @@
 const styles = {
   // --- Layout & Reusable Styles ---
   container: {
-    maxWidth: '1200px',
+    maxWidth: '1280px',
     margin: '0 auto',
-    padding: '0 1rem',
+    padding: '0 1.5rem',
   },
   buttonPrimary: {
-    backgroundColor: '#007bff', // Blue
-    color: 'white',
+    backgroundColor: '#2563EB', // primary blue-600
+    color: '#FFFFFF',
     padding: '0.75rem 1.5rem',
-    borderRadius: '0.5rem',
-    fontWeight: 'bold',
+    borderRadius: '0.75rem',
+    fontWeight: 600,
     border: 'none',
     cursor: 'pointer',
-    transition: 'background-color 0.3s, transform 0.3s',
+    boxShadow: '0 10px 25px rgba(37, 99, 235, 0.25)',
+    transition: 'background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease',
   },
   buttonSecondary: {
-    backgroundColor: '#28a745', // Green
-    color: 'white',
+    backgroundColor: '#1E293B', // secondary slate-800
+    color: '#FFFFFF',
     padding: '0.75rem 1.5rem',
-    borderRadius: '0.5rem',
-    fontWeight: 'bold',
+    borderRadius: '0.75rem',
+    fontWeight: 600,
     border: 'none',
     cursor: 'pointer',
-    transition: 'background-color 0.3s',
+    boxShadow: '0 8px 20px rgba(15, 23, 42, 0.25)',
+    transition: 'background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease',
   },
   buttonOutline: {
     backgroundColor: 'transparent',
@@ -39,19 +41,20 @@ const styles = {
   inputField: {
     width: '100%',
     padding: '0.75rem 1rem',
-    border: '1px solid #ccc',
-    borderRadius: '0.25rem',
+    border: '1px solid #E2E8F0',
+    borderRadius: '0.75rem',
+    backgroundColor: '#FFFFFF',
     outline: 'none',
   },
   // --- Header Styles ---
   headerTopBar: {
-    backgroundColor: '#f8f9fa',
-    borderBottom: '1px solid #e9ecef',
+    backgroundColor: '#F8FAFC',
+    borderBottom: '1px solid #E2E8F0',
     padding: '0.5rem 0',
   },
   headerMain: {
-    backgroundColor: 'white',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    backgroundColor: '#FFFFFF',
+    boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
     position: 'sticky',
     top: 0,
     zIndex: 40,
@@ -59,19 +62,19 @@ const styles = {
   logo: {
     fontSize: '1.5rem',
     fontWeight: 'bold',
-    color: '#007bff',
+    color: '#2563EB',
   },
   navLink: {
-    color: '#495057',
+    color: '#475569',
     textDecoration: 'none',
     fontWeight: 'normal',
-    transition: 'color 0.3s',
+    transition: 'color 0.2s ease',
     background: 'none',
     border: 'none',
     cursor: 'pointer',
   },
   navLinkActive: {
-    color: '#007bff',
+    color: '#2563EB',
     fontWeight: 'bold',
     background: 'none',
     border: 'none',
@@ -79,19 +82,22 @@ const styles = {
   },
   // --- Product Card Styles ---
   card: {
-    border: '1px solid #dee2e6',
-    borderRadius: '0.5rem',
+    border: '1px solid #E2E8F0',
+    borderRadius: '0.75rem',
     overflow: 'hidden',
-    backgroundColor: 'white',
-    transition: 'box-shadow 0.3s',
+    backgroundColor: '#FFFFFF',
+    boxShadow: '0 10px 25px rgba(15, 23, 42, 0.06)',
+    transition: 'box-shadow 0.2s ease, transform 0.1s ease',
   },
   cardImage: {
-    backgroundColor: '#e9ecef',
+    backgroundColor: '#E5E7EB',
     height: '12rem',
+    width: '100%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    overflow: 'hidden',
   },
   cardContent: {
     padding: '1rem',
@@ -103,17 +109,17 @@ const styles = {
     marginBottom: '0.5rem',
   },
   cardPrice: {
-    color: '#28a745',
+    color: '#16A34A',
     fontWeight: 'bold',
     marginBottom: '0.75rem',
   },
   // --- Cart/Table Styles ---
   tableHead: {
-    backgroundColor: '#f8f9fa',
-    borderBottom: '1px solid #dee2e6',
+    backgroundColor: '#F8FAFC',
+    borderBottom: '1px solid #E2E8F0',
   },
   tableRow: {
-    borderBottom: '1px solid #dee2e6',
+    borderBottom: '1px solid #E2E8F0',
   },
   // --- Shop/Sidebar Styles (Desktop First) ---
   shopLayout: {
@@ -123,12 +129,12 @@ const styles = {
   },
   sidebar: {
     padding: '1.5rem',
-    backgroundColor: '#f8f8f8',
-    borderRadius: '0.5rem',
+    backgroundColor: '#F8FAFC',
+    borderRadius: '0.75rem',
   },
   sidebarSection: {
     marginBottom: '2rem',
-    borderBottom: '1px solid #e9ecef',
+    borderBottom: '1px solid #E2E8F0',
     paddingBottom: '1.5rem',
   },
   latestProductItem: {
@@ -136,7 +142,7 @@ const styles = {
     gap: '0.75rem', 
     alignItems: 'center', 
     paddingBottom: '1rem', 
-    borderBottom: '1px dotted #dee2e6'
+    borderBottom: '1px dotted #E2E8F0'
   }
 };
 

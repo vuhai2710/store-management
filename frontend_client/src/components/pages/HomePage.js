@@ -124,9 +124,9 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
     alignItems: 'center', 
     textAlign: 'center',
     padding: '1.5rem',
-    borderRadius: '0.5rem',
-    backgroundColor: 'white',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+    borderRadius: '0.75rem',
+    backgroundColor: '#FFFFFF',
+    boxShadow: '0 12px 30px rgba(15, 23, 42, 0.06)',
     transition: 'transform 0.3s'
   };
 
@@ -153,7 +153,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
   return (
     <div>
       {/* 1. Hero Carousel Section (Đã làm lại thanh lịch hơn) */}
-      <section style={{ position: 'relative', height: '80vh', background: 'linear-gradient(135deg, #1f2937, #1e3a8a, #1f2937)', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', height: '80vh', background: 'linear-gradient(135deg, #020617, #1E293B, #2563EB)', overflow: 'hidden' }}>
         <div style={{ position: 'relative', height: '100%', ...styles.container, display: 'flex', alignItems: 'center' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'center', width: '100%' }}>
             <div style={{ color: 'white', zIndex: 10 }}>
@@ -183,18 +183,18 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
         <div style={styles.container}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
             <div style={serviceIconStyle}>
-              <Truck size={36} style={{ color: '#007bff', marginBottom: '0.75rem' }} />
+              <Truck size={36} style={{ color: '#2563EB', marginBottom: '0.75rem' }} />
               <h4 style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>MIỄN PHÍ VẬN CHUYỂN</h4>
               <p style={{ color: '#6c757d', fontSize: '0.875rem' }}>Trên mọi đơn hàng 
                  500.000đ</p>
             </div>
             <div style={serviceIconStyle}>
-              <RefreshCw size={36} style={{ color: '#007bff', marginBottom: '0.75rem' }} />
+              <RefreshCw size={36} style={{ color: '#2563EB', marginBottom: '0.75rem' }} />
               <h4 style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>ĐỔI TRẢ 30 NGÀY</h4>
               <p style={{ color: '#6c757d', fontSize: '0.875rem' }}>Đổi trả dễ dàng</p>
             </div>
             <div style={serviceIconStyle}>
-              <Headset size={36} style={{ color: '#007bff', marginBottom: '0.75rem' }} />
+              <Headset size={36} style={{ color: '#2563EB', marginBottom: '0.75rem' }} />
               <h4 style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>HỖ TRỢ 24/7</h4>
               <p style={{ color: '#6c757d', fontSize: '0.875rem' }}>Hỗ trợ tận tâm</p>
             </div>
@@ -238,7 +238,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
 
       {/* Login Prompt for unauthenticated users */}
       {!isAuthenticated && (
-        <section style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
+        <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
           <div style={styles.container}>
             <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
               <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
@@ -283,7 +283,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
                 </p>
                 
                 <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', alignItems: 'center' }}>
-                    <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#007bff' }}>
+                    <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563EB' }}>
                         Chỉ {formatPrice(dealProduct.price)} 
                     </p>
                 </div>
@@ -317,7 +317,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
               <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold' }}>Sản phẩm bán chạy 🔥</h2>
               <button 
                 onClick={() => setCurrentPage('shop')}
-                style={{ color: '#007bff', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
+                style={{ color: '#2563EB', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 Xem tất cả →
               </button>
@@ -368,7 +368,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
                       <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold' }}>Gợi ý dành cho bạn ⭐</h2>
                       <button 
                         onClick={() => setCurrentPage('shop')}
-                        style={{ color: '#007bff', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
+                        style={{ color: '#2563EB', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
                       >
                         Xem tất cả →
                       </button>
@@ -405,7 +405,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
       
       {/* 7. Featured Products */}
       {isAuthenticated && featuredProducts.length > 0 && (
-        <section style={{ padding: '4rem 0', backgroundColor: '#f8f8f8' }}>
+        <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
           <div style={styles.container}>
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '3rem' }}>Sản phẩm nổi bật</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
@@ -430,7 +430,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
               <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold' }}>Sản phẩm mới 🆕</h2>
               <button 
                 onClick={() => setCurrentPage('shop')}
-                style={{ color: '#007bff', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
+                style={{ color: '#2563EB', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 Xem tất cả →
               </button>

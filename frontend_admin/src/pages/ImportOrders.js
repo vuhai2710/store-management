@@ -268,26 +268,75 @@ const ImportOrders = () => {
   };
 
   return (
-    <div>
-      <div className="page-header" style={{ marginBottom: "24px" }}>
-        <Title level={1}>Quản lý Đơn nhập hàng</Title>
-        <p>Quản lý và theo dõi các đơn nhập hàng từ nhà cung cấp</p>
+    <div style={{ padding: "8px 0" }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <Title
+            level={2}
+            style={{
+              marginBottom: 4,
+              fontWeight: 700,
+              color: "#0F172A",
+            }}
+          >
+            Quản lý đơn nhập hàng
+          </Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>
+            Theo dõi các đơn nhập từ nhà cung cấp cho kho TechStore
+          </Text>
+        </div>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleCreateImportOrder}
+          style={{
+            borderRadius: 9999,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          Tạo đơn nhập hàng
+        </Button>
       </div>
 
-      <Card>
+      <Card
+        style={{
+          borderRadius: 12,
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+          background: "#FFFFFF",
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
         <div
           style={{
-            marginBottom: "16px",
+            marginBottom: 16,
             display: "flex",
             justifyContent: "space-between",
-            gap: "16px",
+            gap: 16,
             flexWrap: "wrap",
           }}
         >
-          <Space wrap>
+          <Space
+            wrap
+            style={{
+              display: "flex",
+              gap: 8,
+            }}
+          >
             <Select
               placeholder="Lọc theo nhà cung cấp"
-              style={{ width: 200 }}
+              style={{ width: 220 }}
               allowClear
               value={supplierFilter}
               onChange={handleSupplierFilter}
@@ -308,7 +357,13 @@ const ImportOrders = () => {
               <Button onClick={handleResetFilters}>Xóa bộ lọc</Button>
             )}
           </Space>
-          <Space>
+          <Space
+            wrap
+            style={{
+              display: "flex",
+              gap: 8,
+            }}
+          >
             <Button icon={<ReloadOutlined />} onClick={fetchImportOrdersList}>
               Làm mới
             </Button>
@@ -317,9 +372,6 @@ const ImportOrders = () => {
             </Button>
             <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
               Xuất CSV
-            </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateImportOrder}>
-              Tạo đơn nhập hàng
             </Button>
           </Space>
         </div>
@@ -354,6 +406,7 @@ const ImportOrders = () => {
                 />
               ),
             }}
+            size="middle"
           />
         )}
       </Card>

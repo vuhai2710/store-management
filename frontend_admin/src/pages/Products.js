@@ -352,14 +352,58 @@ const Products = () => {
   }, [list, columns]);
 
   return (
-    <div>
-      <div className="page-header" style={{ marginBottom: 12 }}>
-        <Title level={2}>Quản lý Sản phẩm</Title>
-        <Text>Danh sách, lọc, tạo/sửa/xóa sản phẩm</Text>
+    <div style={{ padding: "8px 0" }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <Title
+            level={2}
+            style={{
+              marginBottom: 4,
+              fontWeight: 700,
+              color: "#0F172A",
+            }}
+          >
+            Quản lý sản phẩm
+          </Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>
+            Danh sách và quản lý tồn kho sản phẩm TechStore
+          </Text>
+        </div>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleCreate}
+          style={{
+            borderRadius: 9999,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          Thêm sản phẩm
+        </Button>
       </div>
 
-      <Card style={{ marginBottom: 12 }}>
-        <Row gutter={[8, 8]}>
+      <Card
+        style={{
+          marginBottom: 12,
+          borderRadius: 12,
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+          background: "#FFFFFF",
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
+        <Row gutter={[8, 12]}>
           <Col xs={24} sm={12} md={6}>
             <Input
               placeholder="Mã sản phẩm"
@@ -463,7 +507,14 @@ const Products = () => {
           </Col>
 
           <Col xs={24} sm={24} md={8}>
-            <Space wrap>
+            <Space
+              wrap
+              style={{
+                display: "flex",
+                justifyContent: "flex-start",
+                gap: 8,
+              }}
+            >
               <Button
                 type="primary"
                 icon={<SearchOutlined />}
@@ -479,18 +530,20 @@ const Products = () => {
               <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
                 Xuất CSV
               </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleCreate}>
-                Thêm sản phẩm
-              </Button>
             </Space>
           </Col>
         </Row>
       </Card>
 
-      <Card>
+      <Card
+        style={{
+          borderRadius: 12,
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+          background: "#FFFFFF",
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
         {loading && (!list || list.length === 0) ? (
           <LoadingSkeleton type="table" rows={5} />
         ) : (
@@ -518,6 +571,7 @@ const Products = () => {
                 />
               ),
             }}
+            size="middle"
           />
         )}
       </Card>

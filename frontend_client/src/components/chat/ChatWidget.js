@@ -387,15 +387,18 @@ const ChatWidget = () => {
             bottom: "20px",
             right: "20px",
             zIndex: 1000,
-          }}>
-          <div style={{ position: "relative", display: "inline-block" }}>
+          }}
+        >
+          <div style={{ position: "relative", display: "inline-block" }}
+          >
             <button
               onClick={toggleWidget}
+              aria-label="Mở chat hỗ trợ"
               style={{
                 width: "60px",
                 height: "60px",
                 borderRadius: "50%",
-                backgroundColor: "#007bff",
+                backgroundColor: "#2563EB",
                 color: "white",
                 border: "none",
                 cursor: "pointer",
@@ -457,7 +460,7 @@ const ChatWidget = () => {
             backgroundColor: "white",
             borderRadius: "0.5rem",
             boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-            border: "1px solid #dee2e6",
+            border: "1px solid #E2E8F0",
             display: "flex",
             flexDirection: "column",
             zIndex: 1001,
@@ -467,7 +470,7 @@ const ChatWidget = () => {
           <div
             style={{
               padding: "1rem",
-              backgroundColor: "#007bff",
+              backgroundColor: "#2563EB",
               color: "white",
               borderRadius: "0.5rem 0.5rem 0 0",
               display: "flex",
@@ -539,7 +542,7 @@ const ChatWidget = () => {
                 style={{
                   padding: "0.75rem 1rem",
                   backgroundColor: "#e9ecef",
-                  borderBottom: "1px solid #dee2e6",
+                  borderBottom: "1px solid #E2E8F0",
                   fontSize: "0.875rem",
                   fontWeight: "500",
                   color: "#495057",
@@ -581,6 +584,9 @@ const ChatWidget = () => {
                   // Stop propagation when scrolling within content
                   e.stopPropagation();
                 }}
+                role="log"
+                aria-live="polite"
+                aria-relevant="additions text"
                 style={{
                   flex: 1,
                   overflowY: "auto",
@@ -589,7 +595,7 @@ const ChatWidget = () => {
                   display: "flex",
                   flexDirection: "column",
                   gap: "0.75rem",
-                  backgroundColor: "#f8f9fa",
+                  backgroundColor: "#F8FAFC",
                   maxHeight: "100%",
                   position: "relative",
                 }}>
@@ -674,7 +680,7 @@ const ChatWidget = () => {
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                              color: isMyMessage ? "#fff" : "#007bff",
+                              color: isMyMessage ? "#fff" : "#2563EB",
                               textDecoration: "underline",
                               wordBreak: "break-all",
                             }}>
@@ -714,7 +720,7 @@ const ChatWidget = () => {
                           maxWidth: "70%",
                           padding: "0.75rem 1rem",
                           borderRadius: "0.5rem",
-                          backgroundColor: isMyMessage ? "#007bff" : "white",
+                          backgroundColor: isMyMessage ? "#2563EB" : "white",
                           color: isMyMessage ? "white" : "#495057",
                           boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
                         }}>
@@ -767,7 +773,7 @@ const ChatWidget = () => {
                 onSubmit={sendMessage}
                 style={{
                   padding: "1rem",
-                  borderTop: "1px solid #dee2e6",
+                  borderTop: "1px solid #E2E8F0",
                   display: "flex",
                   gap: "0.5rem",
                 }}>
@@ -776,11 +782,12 @@ const ChatWidget = () => {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Nhập tin nhắn..."
+                  aria-label="Nội dung tin nhắn"
                   disabled={!connected}
                   style={{
                     flex: 1,
                     padding: "0.75rem",
-                    border: "1px solid #dee2e6",
+                    border: "1px solid #E2E8F0",
                     borderRadius: "0.5rem",
                     fontSize: "0.875rem",
                     outline: "none",
@@ -792,7 +799,7 @@ const ChatWidget = () => {
                   style={{
                     padding: "0.75rem 1rem",
                     backgroundColor:
-                      connected && newMessage.trim() ? "#007bff" : "#6c757d",
+                      connected && newMessage.trim() ? "#2563EB" : "#6c757d",
                     color: "white",
                     border: "none",
                     borderRadius: "0.5rem",
@@ -804,7 +811,9 @@ const ChatWidget = () => {
                     alignItems: "center",
                     justifyContent: "center",
                     opacity: connected && newMessage.trim() ? 1 : 0.6,
-                  }}>
+                  }}
+                  aria-label="Gửi tin nhắn"
+                >
                   <Send size={18} />
                 </button>
               </form>
@@ -817,3 +826,4 @@ const ChatWidget = () => {
 };
 
 export default ChatWidget;
+

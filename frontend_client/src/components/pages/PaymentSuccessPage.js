@@ -194,7 +194,7 @@ const PaymentSuccessPage = ({ setCurrentPage }) => {
             marginBottom: '2rem',
             padding: '1rem 1.5rem',
             borderRadius: '0.5rem',
-            backgroundColor: '#f8f9fa',
+            backgroundColor: '#F8FAFC',
             textAlign: 'left',
           }}>
             <p style={{ marginBottom: '0.5rem', fontSize: '1rem', color: '#495057' }}>
@@ -357,7 +357,7 @@ const PaymentSuccessPage = ({ setCurrentPage }) => {
   };
 
   return (
-    <section style={{ padding: '4rem 0', backgroundColor: '#f8f9fa', minHeight: '80vh' }}>
+    <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC', minHeight: '80vh' }}>
       <div style={styles.container}>{renderContent()}</div>
 
       <style>{`
@@ -377,4 +377,5 @@ const PaymentSuccessPage = ({ setCurrentPage }) => {
 };
 
 export default PaymentSuccessPage;
+
 

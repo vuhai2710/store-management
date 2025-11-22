@@ -5,6 +5,8 @@ import styles from "../../styles/styles";
 import { useAuth } from "../../hooks/useAuth";
 import LoadingSpinner from "../common/LoadingSpinner";
 import { isValidEmail, isValidPhone } from "../../utils/validationUtils";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
 
 const RegisterPage = ({ setCurrentPage }) => {
   const { register } = useAuth();
@@ -183,16 +185,17 @@ const RegisterPage = ({ setCurrentPage }) => {
   const inputStyle = {
     width: "100%",
     padding: "0.875rem 1rem 0.875rem 3rem",
-    border: "1px solid #dee2e6",
-    borderRadius: "0.5rem",
-    fontSize: "1rem",
+    border: "1px solid #E2E8F0",
+    borderRadius: "0.75rem",
+    fontSize: "0.95rem",
     outline: "none",
-    transition: "border-color 0.3s, box-shadow 0.3s",
+    backgroundColor: "#FFFFFF",
+    transition: "border-color 0.2s ease, box-shadow 0.2s ease",
   };
 
   const inputWrapperStyle = {
     position: "relative",
-    marginBottom: "1.5rem",
+    marginBottom: "1.25rem",
   };
 
   const iconStyle = {
@@ -200,14 +203,14 @@ const RegisterPage = ({ setCurrentPage }) => {
     left: "1rem",
     top: "50%",
     transform: "translateY(-50%)",
-    color: "#6c757d",
+    color: "#9CA3AF",
     pointerEvents: "none",
   };
 
   const errorStyle = {
-    color: "#dc3545",
-    fontSize: "0.875rem",
-    marginTop: "0.25rem",
+    color: "#DC2626",
+    fontSize: "0.8rem",
+    marginTop: "0.35rem",
   };
 
   return (
@@ -217,23 +220,25 @@ const RegisterPage = ({ setCurrentPage }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        padding: "2rem 0",
+        background:
+          "radial-gradient(circle at top, rgba(37,99,235,0.12), transparent 55%), #F8FAFC",
+        padding: "2.5rem 1rem",
       }}>
       <div style={styles.container}>
         <div
           style={{
-            maxWidth: "450px",
+            maxWidth: "480px",
             margin: "0 auto",
             backgroundColor: "white",
             borderRadius: "1rem",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)",
+            boxShadow: "0 24px 60px rgba(15, 23, 42, 0.16)",
             overflow: "hidden",
           }}>
           {/* Header */}
           <div
             style={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              background:
+                "linear-gradient(135deg, #2563EB 0%, #1E293B 60%, #020617 100%)",
               padding: "2rem",
               textAlign: "center",
               color: "white",
@@ -278,27 +283,15 @@ const RegisterPage = ({ setCurrentPage }) => {
                 }}>
                 Tên đăng nhập *
               </label>
-              <div style={{ position: "relative" }}>
-                <User size={20} style={iconStyle} />
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  placeholder="Nhập tên đăng nhập (tối thiểu 4 ký tự)"
-                  style={{
-                    ...inputStyle,
-                    borderColor: errors.username ? "#dc3545" : "#dee2e6",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-                  onBlur={(e) =>
-                  (e.target.style.borderColor = errors.username
-                    ? "#dc3545"
-                    : "#dee2e6")
-                  }
-                />
-              </div>
-              {errors.username && <p style={errorStyle}>{errors.username}</p>}
+              <Input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="Nhập tên đăng nhập (tối thiểu 4 ký tự)"
+                leftIcon={<User size={20} />}
+                error={errors.username}
+              />
             </div>
 
             {/* Customer Name Field */}
@@ -313,29 +306,15 @@ const RegisterPage = ({ setCurrentPage }) => {
                 }}>
                 Họ và tên *
               </label>
-              <div style={{ position: "relative" }}>
-                <User size={20} style={iconStyle} />
-                <input
-                  type="text"
-                  name="customerName"
-                  value={formData.customerName}
-                  onChange={handleChange}
-                  placeholder="Nhập họ và tên của bạn"
-                  style={{
-                    ...inputStyle,
-                    borderColor: errors.customerName ? "#dc3545" : "#dee2e6",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-                  onBlur={(e) =>
-                  (e.target.style.borderColor = errors.customerName
-                    ? "#dc3545"
-                    : "#dee2e6")
-                  }
-                />
-              </div>
-              {errors.customerName && (
-                <p style={errorStyle}>{errors.customerName}</p>
-              )}
+              <Input
+                type="text"
+                name="customerName"
+                value={formData.customerName}
+                onChange={handleChange}
+                placeholder="Nhập họ và tên của bạn"
+                leftIcon={<User size={20} />}
+                error={errors.customerName}
+              />
             </div>
 
             {/* Email Field */}
@@ -350,27 +329,15 @@ const RegisterPage = ({ setCurrentPage }) => {
                 }}>
                 Email *
               </label>
-              <div style={{ position: "relative" }}>
-                <Mail size={20} style={iconStyle} />
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Nhập địa chỉ email"
-                  style={{
-                    ...inputStyle,
-                    borderColor: errors.email ? "#dc3545" : "#dee2e6",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-                  onBlur={(e) =>
-                  (e.target.style.borderColor = errors.email
-                    ? "#dc3545"
-                    : "#dee2e6")
-                  }
-                />
-              </div>
-              {errors.email && <p style={errorStyle}>{errors.email}</p>}
+              <Input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Nhập địa chỉ email"
+                leftIcon={<Mail size={20} />}
+                error={errors.email}
+              />
             </div>
 
             {/* Phone Number Field */}
@@ -385,29 +352,15 @@ const RegisterPage = ({ setCurrentPage }) => {
                 }}>
                 Số điện thoại *
               </label>
-              <div style={{ position: "relative" }}>
-                <Phone size={20} style={iconStyle} />
-                <input
-                  type="tel"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleChange}
-                  placeholder="Nhập số điện thoại (VD: 0123456789)"
-                  style={{
-                    ...inputStyle,
-                    borderColor: errors.phoneNumber ? "#dc3545" : "#dee2e6",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-                  onBlur={(e) =>
-                  (e.target.style.borderColor = errors.phoneNumber
-                    ? "#dc3545"
-                    : "#dee2e6")
-                  }
-                />
-              </div>
-              {errors.phoneNumber && (
-                <p style={errorStyle}>{errors.phoneNumber}</p>
-              )}
+              <Input
+                type="tel"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                placeholder="Nhập số điện thoại (VD: 0123456789)"
+                leftIcon={<Phone size={20} />}
+                error={errors.phoneNumber}
+              />
             </div>
 
             {/* Address Field (Optional) */}
@@ -422,27 +375,14 @@ const RegisterPage = ({ setCurrentPage }) => {
                 }}>
                 Địa chỉ (Tùy chọn)
               </label>
-              <div style={{ position: "relative" }}>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  placeholder="Nhập địa chỉ của bạn"
-                  style={{
-                    ...inputStyle,
-                    paddingLeft: "1rem",
-                    borderColor: errors.address ? "#dc3545" : "#dee2e6",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-                  onBlur={(e) =>
-                  (e.target.style.borderColor = errors.address
-                    ? "#dc3545"
-                    : "#dee2e6")
-                  }
-                />
-              </div>
-              {errors.address && <p style={errorStyle}>{errors.address}</p>}
+              <Input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="Nhập địa chỉ của bạn"
+                error={errors.address}
+              />
             </div>
 
             {/* Password Field */}
@@ -457,44 +397,29 @@ const RegisterPage = ({ setCurrentPage }) => {
                 }}>
                 Mật khẩu *
               </label>
-              <div style={{ position: "relative" }}>
-                <Lock size={20} style={iconStyle} />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Tạo mật khẩu (tối thiểu 4 ký tự)"
-                  style={{
-                    ...inputStyle,
-                    paddingRight: "3rem",
-                    borderColor: errors.password ? "#dc3545" : "#dee2e6",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-                  onBlur={(e) =>
-                  (e.target.style.borderColor = errors.password
-                    ? "#dc3545"
-                    : "#dee2e6")
-                  }
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: "absolute",
-                    right: "1rem",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#6c757d",
-                    padding: "0.25rem",
-                  }}>
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-              {errors.password && <p style={errorStyle}>{errors.password}</p>}
+              <Input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Tạo mật khẩu (tối thiểu 4 ký tự)"
+                leftIcon={<Lock size={20} />}
+                rightIcon={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "#6c757d",
+                      padding: "0.25rem",
+                    }}>
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                }
+                error={errors.password}
+              />
             </div>
 
             {/* Confirm Password Field */}
@@ -509,50 +434,29 @@ const RegisterPage = ({ setCurrentPage }) => {
                 }}>
                 Xác nhận mật khẩu *
               </label>
-              <div style={{ position: "relative" }}>
-                <Lock size={20} style={iconStyle} />
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Nhập lại mật khẩu"
-                  style={{
-                    ...inputStyle,
-                    paddingRight: "3rem",
-                    borderColor: errors.confirmPassword ? "#dc3545" : "#dee2e6",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-                  onBlur={(e) =>
-                  (e.target.style.borderColor = errors.confirmPassword
-                    ? "#dc3545"
-                    : "#dee2e6")
-                  }
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  style={{
-                    position: "absolute",
-                    right: "1rem",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#6c757d",
-                    padding: "0.25rem",
-                  }}>
-                  {showConfirmPassword ? (
-                    <EyeOff size={20} />
-                  ) : (
-                    <Eye size={20} />
-                  )}
-                </button>
-              </div>
-              {errors.confirmPassword && (
-                <p style={errorStyle}>{errors.confirmPassword}</p>
-              )}
+              <Input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Nhập lại mật khẩu"
+                leftIcon={<Lock size={20} />}
+                rightIcon={
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "#6c757d",
+                      padding: "0.25rem",
+                    }}>
+                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                }
+                error={errors.confirmPassword}
+              />
             </div>
 
             {/* Terms and Conditions section removed: registration doesn't depend on checkbox */}
@@ -573,38 +477,13 @@ const RegisterPage = ({ setCurrentPage }) => {
             )}
 
             {/* Submit Button */}
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              style={{
-                width: "100%",
-                padding: "1rem",
-                background: isLoading
-                  ? "#6c757d"
-                  : "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                color: "white",
-                border: "none",
-                borderRadius: "0.5rem",
-                fontSize: "1rem",
-                fontWeight: "bold",
-                cursor: isLoading ? "not-allowed" : "pointer",
-                transition: "transform 0.2s, box-shadow 0.2s",
-                marginBottom: "1rem",
-                opacity: isLoading ? 0.6 : 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "0.5rem",
-              }}>
-              {isLoading ? (
-                <>
-                  <LoadingSpinner size={20} color="white" />
-                  <span>Đang đăng ký...</span>
-                </>
-              ) : (
-                "Đăng Ký Ngay"
-              )}
-            </button>
+              fullWidth
+              style={{ marginBottom: "1rem" }}>
+              {isLoading ? "Đang đăng ký..." : "Đăng Ký Ngay"}
+            </Button>
 
             {/* Divider */}
             <div
@@ -619,14 +498,14 @@ const RegisterPage = ({ setCurrentPage }) => {
                 style={{
                   flex: 1,
                   height: "1px",
-                  backgroundColor: "#dee2e6",
+                  backgroundColor: "#E2E8F0",
                 }}></div>
               <span style={{ padding: "0 1rem" }}>hoặc</span>
               <div
                 style={{
                   flex: 1,
                   height: "1px",
-                  backgroundColor: "#dee2e6",
+                  backgroundColor: "#E2E8F0",
                 }}></div>
             </div>
 
