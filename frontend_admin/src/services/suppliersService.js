@@ -10,11 +10,25 @@ export const suppliersService = {
       return unwrap(resp); // -> array
     } catch {
       const resp = await api.get(API_ENDPOINTS.SUPPLIERS.BASE, {
-        params: { pageNo: 1, pageSize: 1000, sortBy: "idSupplier", sortDirection: "ASC" },
+        params: {
+          pageNo: 1,
+          pageSize: 1000,
+          sortBy: "idSupplier",
+          sortDirection: "ASC",
+        },
       });
       const data = unwrap(resp);
-      return Array.isArray(data?.content) ? data.content : (Array.isArray(data) ? data : []);
+      return Array.isArray(data?.content)
+        ? data.content
+        : Array.isArray(data)
+        ? data
+        : [];
     }
+  },
+
+  getSupplierById: async (id) => {
+    const resp = await api.get(API_ENDPOINTS.SUPPLIERS.BY_ID(id));
+    return unwrap(resp);
   },
 
   createSupplier: async (supplierData) => {

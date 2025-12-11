@@ -26,3 +26,5 @@ public class ChatMessageRequest {
     @NotBlank(message = "Tin nhắn không được để trống")
     private String message;
 }
+
+

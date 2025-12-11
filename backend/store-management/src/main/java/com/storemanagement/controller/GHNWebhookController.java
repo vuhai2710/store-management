@@ -5,6 +5,7 @@ import com.storemanagement.model.Order;
 import com.storemanagement.model.Shipment;
 import com.storemanagement.repository.OrderRepository;
 import com.storemanagement.repository.ShipmentRepository;
+import com.storemanagement.service.SystemSettingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ public class GHNWebhookController {
     
     private final ShipmentRepository shipmentRepository;
     private final OrderRepository orderRepository;
+    private final SystemSettingService systemSettingService;
 
     @PostMapping("/webhook")
     @Transactional
@@ -155,9 +157,15 @@ public class GHNWebhookController {
         if ("delivered".equals(ghnStatus)) {
             // Khi GHN giao hàng thành công → Order.status = COMPLETED
             if (order.getStatus() != Order.OrderStatus.COMPLETED) {
+                LocalDateTime now = LocalDateTime.now();
                 log.info("Updating order status to COMPLETED. Order ID: {}", order.getIdOrder());
                 order.setStatus(Order.OrderStatus.COMPLETED);
-                order.setDeliveredAt(LocalDateTime.now());
+                order.setDeliveredAt(now);
+                order.setCompletedAt(now); // Thời điểm hoàn thành dùng để tính hạn đổi trả
+                // Snapshot returnWindowDays từ system settings
+                int returnWindowDays = systemSettingService.getReturnWindowDays();
+                order.setReturnWindowDays(returnWindowDays);
+                log.info("Order COMPLETED: completedAt={}, returnWindowDays={} for order: {}", now, returnWindowDays, order.getIdOrder());
                 orderRepository.save(order);
             }
         } else if ("cancel".equals(ghnStatus)) {

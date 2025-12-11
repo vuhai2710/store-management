@@ -10,3 +10,5 @@ import java.util.Optional;
 public interface OrderDetailRepository extends JpaRepository<OrderDetail, Integer> {
     Optional<OrderDetail> findByIdOrderDetail(Integer idOrderDetail);
 }
+
+

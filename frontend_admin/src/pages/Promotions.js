@@ -20,7 +20,12 @@ import {
   InputNumber,
   Switch,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  ReloadOutlined,
+} from "@ant-design/icons";
 import {
   fetchPromotions,
   fetchPromotionRules,
@@ -41,6 +46,33 @@ const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 const { RangePicker } = DatePicker;
 const { Option } = Select;
+
+/**
+ * Parse datetime từ backend (yyyy-MM-dd HH:mm:ss) sang dayjs object
+ * Hỗ trợ nhiều format: backend format, ISO, DD/MM/YYYY...
+ */
+const parseDateFromBackend = (dateString) => {
+  if (!dateString) return null;
+
+  const formats = [
+    "YYYY-MM-DD HH:mm:ss", // Backend format
+    "YYYY-MM-DDTHH:mm:ss", // ISO format
+    "YYYY-MM-DD",
+    "DD/MM/YYYY HH:mm:ss",
+    "DD/MM/YYYY HH:mm",
+    "DD/MM/YYYY",
+  ];
+
+  // Thử parse với các format đã định nghĩa
+  let parsed = dayjs(dateString, formats, true);
+
+  // Nếu không parse được, thử với dayjs mặc định
+  if (!parsed.isValid()) {
+    parsed = dayjs(dateString);
+  }
+
+  return parsed.isValid() ? parsed : null;
+};
 
 const Promotions = () => {
   const dispatch = useDispatch();
@@ -149,6 +181,10 @@ const Promotions = () => {
 
   const handleOpenEditPromotion = (record) => {
     setEditingPromotion(record);
+
+    const startDate = parseDateFromBackend(record.startDate);
+    const endDate = parseDateFromBackend(record.endDate);
+
     promoForm.setFieldsValue({
       code: record.code,
       discountType: record.discountType,
@@ -156,12 +192,8 @@ const Promotions = () => {
         record.discountValue != null ? Number(record.discountValue) : null,
       minOrderAmount:
         record.minOrderAmount != null ? Number(record.minOrderAmount) : null,
-      usageLimit:
-        record.usageLimit != null ? Number(record.usageLimit) : null,
-      dateRange: [
-        record.startDate ? dayjs(record.startDate) : null,
-        record.endDate ? dayjs(record.endDate) : null,
-      ],
+      usageLimit: record.usageLimit != null ? Number(record.usageLimit) : null,
+      dateRange: startDate && endDate ? [startDate, endDate] : null,
       isActive: record.isActive !== undefined ? record.isActive : true,
     });
     setIsPromoModalVisible(true);
@@ -177,8 +209,7 @@ const Promotions = () => {
       code: values.code?.trim(),
       discountType: values.discountType,
       discountValue: values.discountValue,
-      minOrderAmount:
-        values.minOrderAmount != null ? values.minOrderAmount : 0,
+      minOrderAmount: values.minOrderAmount != null ? values.minOrderAmount : 0,
       usageLimit:
         values.usageLimit != null && values.usageLimit !== ""
           ? values.usageLimit
@@ -186,9 +217,7 @@ const Promotions = () => {
       startDate: values.dateRange[0]
         .startOf("day")
         .format("DD/MM/YYYY HH:mm:ss"),
-      endDate: values.dateRange[1]
-        .endOf("day")
-        .format("DD/MM/YYYY HH:mm:ss"),
+      endDate: values.dateRange[1].endOf("day").format("DD/MM/YYYY HH:mm:ss"),
       isActive: values.isActive ?? true,
     };
 
@@ -233,6 +262,10 @@ const Promotions = () => {
 
   const handleOpenEditRule = (record) => {
     setEditingRule(record);
+
+    const startDate = parseDateFromBackend(record.startDate);
+    const endDate = parseDateFromBackend(record.endDate);
+
     ruleForm.setFieldsValue({
       ruleName: record.ruleName,
       discountType: record.discountType,
@@ -242,10 +275,7 @@ const Promotions = () => {
         record.minOrderAmount != null ? Number(record.minOrderAmount) : null,
       customerType: record.customerType || "ALL",
       priority: record.priority != null ? Number(record.priority) : 0,
-      dateRange: [
-        record.startDate ? dayjs(record.startDate) : null,
-        record.endDate ? dayjs(record.endDate) : null,
-      ],
+      dateRange: startDate && endDate ? [startDate, endDate] : null,
       isActive: record.isActive !== undefined ? record.isActive : true,
     });
     setIsRuleModalVisible(true);
@@ -261,20 +291,15 @@ const Promotions = () => {
       ruleName: values.ruleName?.trim(),
       discountType: values.discountType,
       discountValue: values.discountValue,
-      minOrderAmount:
-        values.minOrderAmount != null ? values.minOrderAmount : 0,
+      minOrderAmount: values.minOrderAmount != null ? values.minOrderAmount : 0,
       customerType: values.customerType || "ALL",
       startDate: values.dateRange[0]
         .startOf("day")
         .format("DD/MM/YYYY HH:mm:ss"),
-      endDate: values.dateRange[1]
-        .endOf("day")
-        .format("DD/MM/YYYY HH:mm:ss"),
+      endDate: values.dateRange[1].endOf("day").format("DD/MM/YYYY HH:mm:ss"),
       isActive: values.isActive ?? true,
       priority:
-        values.priority != null && values.priority !== ""
-          ? values.priority
-          : 0,
+        values.priority != null && values.priority !== "" ? values.priority : 0,
     };
 
     setRuleSubmitting(true);
@@ -327,7 +352,9 @@ const Promotions = () => {
       dataIndex: "discountValue",
       key: "discountValue",
       render: (value, record) =>
-        record.discountType === "PERCENTAGE" ? `${value}%` : formatCurrency(value),
+        record.discountType === "PERCENTAGE"
+          ? `${value}%`
+          : formatCurrency(value),
     },
     {
       title: "Đơn tối thiểu",
@@ -359,7 +386,9 @@ const Promotions = () => {
       dataIndex: "isActive",
       key: "isActive",
       render: (isActive) => (
-        <Tag color={isActive ? "green" : "red"}>{isActive ? "Hoạt động" : "Tạm dừng"}</Tag>
+        <Tag color={isActive ? "green" : "red"}>
+          {isActive ? "Hoạt động" : "Tạm dừng"}
+        </Tag>
       ),
     },
     {
@@ -371,16 +400,14 @@ const Promotions = () => {
             type="link"
             icon={<EditOutlined />}
             size="small"
-            onClick={() => handleOpenEditPromotion(record)}
-          >
+            onClick={() => handleOpenEditPromotion(record)}>
             Sửa
           </Button>
           <Popconfirm
             title="Bạn có chắc muốn xóa mã giảm giá này?"
             onConfirm={() => handleDeletePromotion(record.idPromotion)}
             okText="Xóa"
-            cancelText="Hủy"
-          >
+            cancelText="Hủy">
             <Button type="link" danger icon={<DeleteOutlined />} size="small">
               Xóa
             </Button>
@@ -411,7 +438,9 @@ const Promotions = () => {
       dataIndex: "discountValue",
       key: "discountValue",
       render: (value, record) =>
-        record.discountType === "PERCENTAGE" ? `${value}%` : formatCurrency(value),
+        record.discountType === "PERCENTAGE"
+          ? `${value}%`
+          : formatCurrency(value),
     },
     {
       title: "Đơn tối thiểu",
@@ -424,7 +453,10 @@ const Promotions = () => {
       dataIndex: "customerType",
       key: "customerType",
       render: (type) => (
-        <Tag color={type === "VIP" ? "gold" : type === "REGULAR" ? "blue" : "default"}>
+        <Tag
+          color={
+            type === "VIP" ? "gold" : type === "REGULAR" ? "blue" : "default"
+          }>
           {type === "ALL" ? "Tất cả" : type === "VIP" ? "VIP" : "Thường"}
         </Tag>
       ),
@@ -444,7 +476,9 @@ const Promotions = () => {
       dataIndex: "isActive",
       key: "isActive",
       render: (isActive) => (
-        <Tag color={isActive ? "green" : "red"}>{isActive ? "Hoạt động" : "Tạm dừng"}</Tag>
+        <Tag color={isActive ? "green" : "red"}>
+          {isActive ? "Hoạt động" : "Tạm dừng"}
+        </Tag>
       ),
     },
     {
@@ -456,16 +490,14 @@ const Promotions = () => {
             type="link"
             icon={<EditOutlined />}
             size="small"
-            onClick={() => handleOpenEditRule(record)}
-          >
+            onClick={() => handleOpenEditRule(record)}>
             Sửa
           </Button>
           <Popconfirm
             title="Bạn có chắc muốn xóa quy tắc này?"
             onConfirm={() => handleDeleteRule(record.idRule)}
             okText="Xóa"
-            cancelText="Hủy"
-          >
+            cancelText="Hủy">
             <Button type="link" danger icon={<DeleteOutlined />} size="small">
               Xóa
             </Button>
@@ -486,8 +518,7 @@ const Promotions = () => {
           justifyContent: "space-between",
           gap: 12,
           flexWrap: "wrap",
-        }}
-      >
+        }}>
         <div>
           <Title
             level={2}
@@ -495,8 +526,7 @@ const Promotions = () => {
               marginBottom: 4,
               fontWeight: 700,
               color: "#0F172A",
-            }}
-          >
+            }}>
             Quản lý khuyến mãi & giảm giá
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
@@ -512,16 +542,14 @@ const Promotions = () => {
           boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
           background: "#FFFFFF",
         }}
-        bodyStyle={{ padding: 16 }}
-      >
+        bodyStyle={{ padding: 16 }}>
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
           <TabPane tab="Mã giảm giá" key="promotions">
             <Space style={{ marginBottom: 16 }}>
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
-                onClick={handleOpenCreatePromotion}
-              >
+                onClick={handleOpenCreatePromotion}>
                 Thêm mã giảm giá
               </Button>
               <Button icon={<ReloadOutlined />} onClick={fetchPromotionsList}>
@@ -529,7 +557,8 @@ const Promotions = () => {
               </Button>
             </Space>
 
-            {promotions.loading && (!promotions.list || promotions.list.length === 0) ? (
+            {promotions.loading &&
+            (!promotions.list || promotions.list.length === 0) ? (
               <LoadingSkeleton type="table" rows={5} />
             ) : promotions.list.length === 0 ? (
               <EmptyState description="Chưa có mã giảm giá nào" />
@@ -557,8 +586,7 @@ const Promotions = () => {
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
-                onClick={handleOpenCreateRule}
-              >
+                onClick={handleOpenCreateRule}>
                 Thêm quy tắc
               </Button>
               <Button icon={<ReloadOutlined />} onClick={fetchRulesList}>
@@ -600,13 +628,11 @@ const Promotions = () => {
           promoForm.resetFields();
         }}
         footer={null}
-        destroyOnClose
-      >
+        destroyOnClose>
         <Form
           form={promoForm}
           layout="vertical"
-          onFinish={handleSubmitPromotion}
-        >
+          onFinish={handleSubmitPromotion}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -615,8 +641,7 @@ const Promotions = () => {
                 rules={[
                   { required: true, message: "Vui lòng nhập mã giảm giá" },
                   { max: 50, message: "Mã giảm giá không được quá 50 ký tự" },
-                ]}
-              >
+                ]}>
                 <Input placeholder="Nhập mã giảm giá (ví dụ: SPRING10)" />
               </Form.Item>
             </Col>
@@ -626,8 +651,7 @@ const Promotions = () => {
                 label="Loại giảm giá"
                 rules={[
                   { required: true, message: "Vui lòng chọn loại giảm giá" },
-                ]}
-              >
+                ]}>
                 <Select placeholder="Chọn loại giảm giá">
                   <Option value="PERCENTAGE">Phần trăm</Option>
                   <Option value="FIXED_AMOUNT">Số tiền cố định</Option>
@@ -648,8 +672,7 @@ const Promotions = () => {
                     min: 0,
                     message: "Giá trị giảm phải lớn hơn hoặc bằng 0",
                   },
-                ]}
-              >
+                ]}>
                 <InputNumber
                   style={{ width: "100%" }}
                   min={0}
@@ -658,10 +681,7 @@ const Promotions = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="minOrderAmount"
-                label="Đơn tối thiểu"
-              >
+              <Form.Item name="minOrderAmount" label="Đơn tối thiểu">
                 <InputNumber
                   style={{ width: "100%" }}
                   min={0}
@@ -673,10 +693,7 @@ const Promotions = () => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                name="usageLimit"
-                label="Số lần sử dụng tối đa"
-              >
+              <Form.Item name="usageLimit" label="Số lần sử dụng tối đa">
                 <InputNumber
                   style={{ width: "100%" }}
                   min={0}
@@ -693,21 +710,13 @@ const Promotions = () => {
                     required: true,
                     message: "Vui lòng chọn thời gian áp dụng",
                   },
-                ]}
-              >
-                <RangePicker
-                  style={{ width: "100%" }}
-                  format="DD/MM/YYYY"
-                />
+                ]}>
+                <RangePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item
-            name="isActive"
-            label="Trạng thái"
-            valuePropName="checked"
-          >
+          <Form.Item name="isActive" label="Trạng thái" valuePropName="checked">
             <Switch checkedChildren="Hoạt động" unCheckedChildren="Tạm dừng" />
           </Form.Item>
 
@@ -718,15 +727,13 @@ const Promotions = () => {
                   setIsPromoModalVisible(false);
                   setEditingPromotion(null);
                   promoForm.resetFields();
-                }}
-              >
+                }}>
                 Hủy
               </Button>
               <Button
                 type="primary"
                 htmlType="submit"
-                loading={promoSubmitting}
-              >
+                loading={promoSubmitting}>
                 {editingPromotion ? "Cập nhật" : "Tạo mới"}
               </Button>
             </Space>
@@ -735,7 +742,9 @@ const Promotions = () => {
       </Modal>
 
       <Modal
-        title={editingRule ? "Chỉnh sửa quy tắc giảm giá" : "Thêm quy tắc giảm giá"}
+        title={
+          editingRule ? "Chỉnh sửa quy tắc giảm giá" : "Thêm quy tắc giảm giá"
+        }
         open={isRuleModalVisible}
         onCancel={() => {
           setIsRuleModalVisible(false);
@@ -743,13 +752,8 @@ const Promotions = () => {
           ruleForm.resetFields();
         }}
         footer={null}
-        destroyOnClose
-      >
-        <Form
-          form={ruleForm}
-          layout="vertical"
-          onFinish={handleSubmitRule}
-        >
+        destroyOnClose>
+        <Form form={ruleForm} layout="vertical" onFinish={handleSubmitRule}>
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item
@@ -757,8 +761,7 @@ const Promotions = () => {
                 label="Tên quy tắc"
                 rules={[
                   { required: true, message: "Vui lòng nhập tên quy tắc" },
-                ]}
-              >
+                ]}>
                 <Input placeholder="Nhập tên quy tắc" />
               </Form.Item>
             </Col>
@@ -771,8 +774,7 @@ const Promotions = () => {
                 label="Loại giảm giá"
                 rules={[
                   { required: true, message: "Vui lòng chọn loại giảm giá" },
-                ]}
-              >
+                ]}>
                 <Select placeholder="Chọn loại giảm giá">
                   <Option value="PERCENTAGE">Phần trăm</Option>
                   <Option value="FIXED_AMOUNT">Số tiền cố định</Option>
@@ -790,8 +792,7 @@ const Promotions = () => {
                     min: 0,
                     message: "Giá trị giảm phải lớn hơn hoặc bằng 0",
                   },
-                ]}
-              >
+                ]}>
                 <InputNumber
                   style={{ width: "100%" }}
                   min={0}
@@ -803,10 +804,7 @@ const Promotions = () => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                name="minOrderAmount"
-                label="Đơn tối thiểu"
-              >
+              <Form.Item name="minOrderAmount" label="Đơn tối thiểu">
                 <InputNumber
                   style={{ width: "100%" }}
                   min={0}
@@ -815,10 +813,7 @@ const Promotions = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="customerType"
-                label="Loại khách hàng"
-              >
+              <Form.Item name="customerType" label="Loại khách hàng">
                 <Select placeholder="Chọn loại khách hàng">
                   <Option value="ALL">Tất cả</Option>
                   <Option value="REGULAR">Thường</Option>
@@ -830,10 +825,7 @@ const Promotions = () => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                name="priority"
-                label="Độ ưu tiên"
-              >
+              <Form.Item name="priority" label="Độ ưu tiên">
                 <InputNumber
                   style={{ width: "100%" }}
                   min={0}
@@ -850,21 +842,13 @@ const Promotions = () => {
                     required: true,
                     message: "Vui lòng chọn thời gian áp dụng",
                   },
-                ]}
-              >
-                <RangePicker
-                  style={{ width: "100%" }}
-                  format="DD/MM/YYYY"
-                />
+                ]}>
+                <RangePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item
-            name="isActive"
-            label="Trạng thái"
-            valuePropName="checked"
-          >
+          <Form.Item name="isActive" label="Trạng thái" valuePropName="checked">
             <Switch checkedChildren="Hoạt động" unCheckedChildren="Tạm dừng" />
           </Form.Item>
 
@@ -875,15 +859,10 @@ const Promotions = () => {
                   setIsRuleModalVisible(false);
                   setEditingRule(null);
                   ruleForm.resetFields();
-                }}
-              >
+                }}>
                 Hủy
               </Button>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={ruleSubmitting}
-              >
+              <Button type="primary" htmlType="submit" loading={ruleSubmitting}>
                 {editingRule ? "Cập nhật" : "Tạo mới"}
               </Button>
             </Space>
@@ -895,4 +874,3 @@ const Promotions = () => {
 };
 
 export default Promotions;
-

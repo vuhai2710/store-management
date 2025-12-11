@@ -387,10 +387,8 @@ const ChatWidget = () => {
             bottom: "20px",
             right: "20px",
             zIndex: 1000,
-          }}
-        >
-          <div style={{ position: "relative", display: "inline-block" }}
-          >
+          }}>
+          <div style={{ position: "relative", display: "inline-block" }}>
             <button
               onClick={toggleWidget}
               aria-label="Mở chat hỗ trợ"
@@ -812,8 +810,7 @@ const ChatWidget = () => {
                     justifyContent: "center",
                     opacity: connected && newMessage.trim() ? 1 : 0.6,
                   }}
-                  aria-label="Gửi tin nhắn"
-                >
+                  aria-label="Gửi tin nhắn">
                   <Send size={18} />
                 </button>
               </form>
@@ -826,4 +823,3 @@ const ChatWidget = () => {
 };
 
 export default ChatWidget;
-

@@ -11,6 +11,7 @@ import com.storemanagement.model.Product;
 import com.storemanagement.repository.InventoryTransactionRepository;
 import com.storemanagement.repository.ProductRepository;
 import com.storemanagement.service.PayOSService;
+import com.storemanagement.service.SystemSettingService;
 import com.storemanagement.utils.ProductStatus;
 import com.storemanagement.utils.ReferenceType;
 import com.storemanagement.utils.TransactionType;
@@ -39,6 +40,7 @@ public class PaymentController {
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final ProductRepository productRepository;
     private final ObjectMapper objectMapper;
+    private final SystemSettingService systemSettingService;
 
     @PostMapping("/create/{orderId}")
     @PreAuthorize("hasRole('CUSTOMER')")
@@ -64,7 +66,14 @@ public class PaymentController {
                     orderId);
 
             if (order.getStatus() == Order.OrderStatus.PENDING) {
+                java.time.LocalDateTime now = java.time.LocalDateTime.now();
                 order.setStatus(Order.OrderStatus.COMPLETED);
+                order.setDeliveredAt(now);
+                order.setCompletedAt(now); // Thời điểm hoàn thành dùng để tính hạn đổi trả
+                // Snapshot returnWindowDays từ system settings
+                int returnWindowDays = systemSettingService.getReturnWindowDays();
+                order.setReturnWindowDays(returnWindowDays);
+                log.info("Order COMPLETED: completedAt={}, returnWindowDays={} for order: {}", now, returnWindowDays, orderId);
                 orderRepository.save(order);
             }
 
@@ -163,7 +172,14 @@ public class PaymentController {
             if ("00".equals(webhookCode)) {
                 log.info("Payment SUCCESS for order ID: {}. Updating order status to COMPLETED.", order.getIdOrder());
 
+                java.time.LocalDateTime now = java.time.LocalDateTime.now();
                 order.setStatus(Order.OrderStatus.COMPLETED);
+                order.setDeliveredAt(now);
+                order.setCompletedAt(now); // Thời điểm hoàn thành dùng để tính hạn đổi trả
+                // Snapshot returnWindowDays từ system settings
+                int returnWindowDays = systemSettingService.getReturnWindowDays();
+                order.setReturnWindowDays(returnWindowDays);
+                log.info("Order COMPLETED: completedAt={}, returnWindowDays={} for order: {}", now, returnWindowDays, order.getIdOrder());
                 orderRepository.save(order);
 
                 if (order.getOrderDetails() != null) {
@@ -291,7 +307,14 @@ public class PaymentController {
 
                         if (normalized.contains("PAID") || normalized.contains("SUCCESS")) {
                             if (order.getStatus() == Order.OrderStatus.PENDING) {
+                                java.time.LocalDateTime now = java.time.LocalDateTime.now();
                                 order.setStatus(Order.OrderStatus.COMPLETED);
+                                order.setDeliveredAt(now);
+                                order.setCompletedAt(now); // Thời điểm hoàn thành dùng để tính hạn đổi trả
+                                // Snapshot returnWindowDays từ system settings
+                                int returnWindowDays = systemSettingService.getReturnWindowDays();
+                                order.setReturnWindowDays(returnWindowDays);
+                                log.info("Order COMPLETED: completedAt={}, returnWindowDays={} for order: {}", now, returnWindowDays, order.getIdOrder());
                                 orderRepository.save(order);
 
                                 if (order.getOrderDetails() != null) {

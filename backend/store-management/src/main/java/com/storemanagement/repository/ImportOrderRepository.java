@@ -35,3 +35,5 @@ public interface ImportOrderRepository extends JpaRepository<ImportOrder, Intege
            "WHERE io.idImportOrder = :id")
     ImportOrder findByIdWithDetails(@Param("id") Integer id);
 }
+
+

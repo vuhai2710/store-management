@@ -68,4 +68,27 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable
     );
+
+    /**
+     * Advanced filter with referenceType, productName, sku support
+     */
+    @Query("SELECT it FROM InventoryTransaction it " +
+           "WHERE (:transactionType IS NULL OR it.transactionType = :transactionType) " +
+           "AND (:referenceType IS NULL OR it.referenceType = :referenceType) " +
+           "AND (:productId IS NULL OR it.product.idProduct = :productId) " +
+           "AND (:productName IS NULL OR :productName = '' OR LOWER(it.product.productName) LIKE LOWER(CONCAT('%', :productName, '%'))) " +
+           "AND (:sku IS NULL OR :sku = '' OR LOWER(it.product.sku) LIKE LOWER(CONCAT('%', :sku, '%'))) " +
+           "AND (:startDate IS NULL OR it.transactionDate >= :startDate) " +
+           "AND (:endDate IS NULL OR it.transactionDate <= :endDate) " +
+           "ORDER BY it.transactionDate DESC")
+    Page<InventoryTransaction> findByAdvancedCriteria(
+            @Param("transactionType") TransactionType transactionType,
+            @Param("referenceType") com.storemanagement.utils.ReferenceType referenceType,
+            @Param("productId") Integer productId,
+            @Param("productName") String productName,
+            @Param("sku") String sku,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
+    );
 }

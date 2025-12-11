@@ -59,7 +59,8 @@ const Login = () => {
       navigate("/dashboard");
     } catch (error) {
       console.error("Lỗi đăng nhập:", error);
-      message.error(error || "Đăng nhập thất bại!");
+      // error is the rejected value from authSlice (already formatted message)
+      message.error(error || "Sai tài khoản hoặc mật khẩu");
     } finally {
       setLoading(false);
     }
@@ -186,23 +187,6 @@ const Login = () => {
             </Button>
           </Form.Item>
         </Form>
-
-        <div style={{ textAlign: "center", marginTop: "16px" }}>
-          <Text type="secondary" style={{ fontSize: "13px" }}>
-            Chưa có tài khoản?{" "}
-            <Link
-              onClick={() => navigate("/register")}
-              style={{ fontWeight: "500" }}>
-              Đăng ký ngay
-            </Link>
-          </Text>
-        </div>
-
-        <div style={{ textAlign: "center", marginTop: "16px" }}>
-          <Text type="secondary" style={{ fontSize: "12px" }}>
-            Demo Account: admin / admin
-          </Text>
-        </div>
       </Card>
 
       {/* Forgot Password Modal */}

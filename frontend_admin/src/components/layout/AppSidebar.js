@@ -15,6 +15,8 @@ import {
   FolderOutlined,
   ImportOutlined,
   GiftOutlined,
+  RollbackOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { USER_ROLES } from "../../constants/roles";
 
@@ -41,6 +43,12 @@ const AppSidebar = () => {
         key: "/orders",
         icon: <ShoppingCartOutlined />,
         label: "Quản lý Đơn hàng",
+        roles: [USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE],
+      },
+      {
+        key: "/order-returns",
+        icon: <RollbackOutlined />,
+        label: "Đơn Đổi/Trả hàng",
         roles: [USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE],
       },
       {
@@ -109,6 +117,12 @@ const AppSidebar = () => {
         label: "Khuyến mãi & Giảm giá",
         roles: [USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE],
       },
+      {
+        key: "/settings",
+        icon: <SettingOutlined />,
+        label: "Cài đặt hệ thống",
+        roles: [USER_ROLES.ADMIN],
+      },
     ];
 
     // Filter menu items based on user role
@@ -155,9 +169,7 @@ const AppSidebar = () => {
           background:
             "linear-gradient(90deg, #020617 0%, #020617 40%, #111827 100%)",
         }}>
-        <span>
-          {collapsed ? "TS" : "TechStore"}
-        </span>
+        <span>{collapsed ? "TS" : "TechStore"}</span>
         {!collapsed && (
           <span
             style={{

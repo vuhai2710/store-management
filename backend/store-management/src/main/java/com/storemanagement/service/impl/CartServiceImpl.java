@@ -95,15 +95,26 @@ public class CartServiceImpl implements CartService {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy sản phẩm"));
 
-        if (product.getStatus() == ProductStatus.OUT_OF_STOCK) {
-            throw new RuntimeException("Sản phẩm đã hết hàng");
-        }
         if (product.getStatus() == ProductStatus.DISCONTINUED) {
             throw new RuntimeException("Sản phẩm đã ngừng kinh doanh");
         }
 
-        if (product.getStockQuantity() < request.getQuantity()) {
-            throw new RuntimeException("Số lượng sản phẩm không đủ. Còn lại: " + product.getStockQuantity());
+        // Lấy stockQuantity, nếu null thì mặc định là 0
+        int availableStock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;
+
+        // Kiểm tra status OUT_OF_STOCK nhưng vẫn có stock -> cập nhật status
+        if (product.getStatus() == ProductStatus.OUT_OF_STOCK) {
+            if (availableStock > 0) {
+                // Có stock nhưng status chưa được cập nhật -> tự động sửa
+                product.setStatus(ProductStatus.IN_STOCK);
+                productRepository.save(product);
+            } else {
+                throw new RuntimeException("Sản phẩm đã hết hàng");
+            }
+        }
+
+        if (availableStock < request.getQuantity()) {
+            throw new RuntimeException("Số lượng sản phẩm không đủ. Còn lại: " + availableStock);
         }
 
         CartItem existingItem = cartItemRepository
@@ -113,8 +124,8 @@ public class CartServiceImpl implements CartService {
         if (existingItem != null) {
             int newQuantity = existingItem.getQuantity() + request.getQuantity();
 
-            if (product.getStockQuantity() < newQuantity) {
-                throw new RuntimeException("Số lượng sản phẩm không đủ. Còn lại: " + product.getStockQuantity());
+            if (availableStock < newQuantity) {
+                throw new RuntimeException("Số lượng sản phẩm không đủ. Còn lại: " + availableStock);
             }
 
             existingItem.setQuantity(newQuantity);
@@ -143,9 +154,10 @@ public class CartServiceImpl implements CartService {
         }
 
         Product product = cartItem.getProduct();
+        int availableStock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;
 
-        if (product.getStockQuantity() < request.getQuantity()) {
-            throw new RuntimeException("Số lượng sản phẩm không đủ. Còn lại: " + product.getStockQuantity());
+        if (availableStock < request.getQuantity()) {
+            throw new RuntimeException("Số lượng sản phẩm không đủ. Còn lại: " + availableStock);
         }
 
         cartItem.setQuantity(request.getQuantity());

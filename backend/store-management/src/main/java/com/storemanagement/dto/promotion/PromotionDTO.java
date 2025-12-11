@@ -28,3 +28,5 @@ public class PromotionDTO extends BaseDTO {
     private LocalDateTime endDate;
     private Boolean isActive;
 }
+
+

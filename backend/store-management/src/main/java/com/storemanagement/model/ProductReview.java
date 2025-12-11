@@ -45,3 +45,5 @@ public class ProductReview extends BaseEntity {
     @Builder.Default
     private Integer editCount = 0;
 }
+
+

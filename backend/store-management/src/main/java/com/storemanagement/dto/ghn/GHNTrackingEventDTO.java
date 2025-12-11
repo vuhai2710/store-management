@@ -24,3 +24,5 @@ public class GHNTrackingEventDTO {
     @JsonProperty("location")
     private String location;
 }
+
+

@@ -11,6 +11,7 @@ import {
   LogOut,
   Settings,
   Package,
+  RotateCcw,
 } from "lucide-react";
 import styles from "../../styles/styles";
 
@@ -154,6 +155,35 @@ const UserDropdown = ({ userName, setCurrentPage, handleLogout }) => {
             }>
             <Package size={18} />
             <span>Đơn hàng của tôi</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setCurrentPage("return-history");
+              setIsOpen(false);
+            }}
+            style={{
+              width: "100%",
+              padding: "0.75rem 1rem",
+              border: "none",
+              backgroundColor: "transparent",
+              textAlign: "left",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              color: "#495057",
+              fontSize: "0.875rem",
+              transition: "background-color 0.2s",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "#f8f9fa")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "transparent")
+            }>
+            <RotateCcw size={18} />
+            <span>Theo dõi đổi trả</span>
           </button>
 
           <div style={{ borderTop: "1px solid #e9ecef", marginTop: "0.25rem" }}>

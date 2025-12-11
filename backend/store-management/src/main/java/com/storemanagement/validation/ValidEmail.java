@@ -11,7 +11,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidEmail {
 
-    String message() default "Email (@gmail.com)";
+    String message() default "Email không hợp lệ";
 
     Class<?>[] groups() default {};
 

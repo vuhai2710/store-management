@@ -17,3 +17,5 @@ public interface ShippingAddressRepository extends JpaRepository<ShippingAddress
     
     Optional<ShippingAddress> findByIdShippingAddressAndCustomerIdCustomer(Integer addressId, Integer customerId);
 }
+
+

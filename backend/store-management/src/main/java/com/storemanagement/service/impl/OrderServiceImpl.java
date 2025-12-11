@@ -13,6 +13,7 @@ import com.storemanagement.service.GHNService;
 import com.storemanagement.service.OrderService;
 import com.storemanagement.service.PdfService;
 import com.storemanagement.service.PromotionService;
+import com.storemanagement.service.SystemSettingService;
 import com.storemanagement.utils.PageUtils;
 import com.storemanagement.utils.ProductStatus;
 import com.storemanagement.utils.ReferenceType;
@@ -54,6 +55,7 @@ public class OrderServiceImpl implements OrderService {
     private final PromotionService promotionService;
     private final PromotionRepository promotionRepository;
     private final PromotionRuleRepository promotionRuleRepository;
+    private final SystemSettingService systemSettingService;
 
     @Override
     @Transactional(readOnly = true)
@@ -175,6 +177,7 @@ public class OrderServiceImpl implements OrderService {
                 .promotion(promotion) // Promotion if coupon code was used
                 .promotionCode(promotionCode) // Promotion code
                 .promotionRule(promotionRule) // Promotion rule if automatic discount was applied
+                .shippingFee(request.getShippingFee()) // Phí giao hàng từ FE
                 .orderDetails(new ArrayList<>())
                 .build();
 
@@ -278,6 +281,14 @@ public class OrderServiceImpl implements OrderService {
         log.info("Creating order directly (Buy Now) for customer: {}, product: {}, quantity: {}",
                 customerId, request.getProductId(), request.getQuantity());
 
+        // Bước 1.0: Validate input parameters
+        if (request.getProductId() == null) {
+            throw new IllegalArgumentException("Vui lòng chọn sản phẩm");
+        }
+        if (request.getQuantity() == null || request.getQuantity() < 1) {
+            throw new IllegalArgumentException("Số lượng phải lớn hơn 0");
+        }
+
         // Bước 1.1: Kiểm tra customer tồn tại
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng"));
@@ -356,6 +367,7 @@ public class OrderServiceImpl implements OrderService {
                 .promotion(promotion) // Promotion if coupon code was used
                 .promotionCode(promotionCode) // Promotion code
                 .promotionRule(promotionRule) // Promotion rule if automatic discount was applied
+                .shippingFee(request.getShippingFee()) // Phí giao hàng từ FE
                 .orderDetails(new ArrayList<>())
                 .build();
 
@@ -770,10 +782,18 @@ public class OrderServiceImpl implements OrderService {
         // Bước 2.2: Set order.deliveredAt = hiện tại
         order.setDeliveredAt(LocalDateTime.now());
 
-        // Bước 2.3: Cập nhật shipment.shippingStatus = DELIVERED
+        // Bước 2.3: Set order.completedAt = hiện tại (dùng để tính hạn đổi trả)
+        order.setCompletedAt(LocalDateTime.now());
+
+        // Bước 2.4: Snapshot returnWindowDays từ system settings tại thời điểm hoàn thành
+        int returnWindowDays = systemSettingService.getReturnWindowDays();
+        order.setReturnWindowDays(returnWindowDays);
+        log.info("Order COMPLETED: completedAt={}, returnWindowDays={} for order: {}", order.getCompletedAt(), returnWindowDays, orderId);
+
+        // Bước 2.4: Cập nhật shipment.shippingStatus = DELIVERED
         shipment.setShippingStatus(Shipment.ShippingStatus.DELIVERED);
 
-        // Bước 2.4: Lưu cả order và shipment
+        // Bước 2.5: Lưu cả order và shipment
         Order savedOrder = orderRepository.save(order);
         shipmentRepository.save(shipment);
 
@@ -863,6 +883,18 @@ public class OrderServiceImpl implements OrderService {
 
         // Cập nhật status
         order.setStatus(newStatus);
+        
+        // Nếu chuyển sang COMPLETED → Set deliveredAt, completedAt và snapshot returnWindowDays
+        if (newStatus == Order.OrderStatus.COMPLETED) {
+            LocalDateTime now = LocalDateTime.now();
+            order.setDeliveredAt(now);
+            order.setCompletedAt(now); // Thời điểm hoàn thành dùng để tính hạn đổi trả
+            int returnWindowDays = systemSettingService.getReturnWindowDays();
+            order.setReturnWindowDays(returnWindowDays);
+            log.info("Order COMPLETED: completedAt={}, returnWindowDays={} for order: {}", 
+                    now, returnWindowDays, orderId);
+        }
+        
         Order savedOrder = orderRepository.save(order);
 
         log.info("Order status updated successfully: orderId={}, oldStatus={}, newStatus={}",

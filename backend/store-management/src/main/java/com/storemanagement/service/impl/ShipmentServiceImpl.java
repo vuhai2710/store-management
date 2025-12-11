@@ -18,6 +18,7 @@ import com.storemanagement.repository.OrderRepository;
 import com.storemanagement.repository.ShipmentRepository;
 import com.storemanagement.service.GHNService;
 import com.storemanagement.service.ShipmentService;
+import com.storemanagement.service.SystemSettingService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     private final ShipmentMapper shipmentMapper;
     private final GHNService ghnService;
     private final GHNConfig ghnConfig;
+    private final SystemSettingService systemSettingService;
 
     @Override
     @Transactional(readOnly = true)
@@ -357,9 +359,15 @@ public class ShipmentServiceImpl implements ShipmentService {
         
         if ("delivered".equals(ghnStatus)) {
             if (order.getStatus() != Order.OrderStatus.COMPLETED) {
+                LocalDateTime now = LocalDateTime.now();
                 log.info("Updating order status to COMPLETED. Order ID: {}", order.getIdOrder());
                 order.setStatus(Order.OrderStatus.COMPLETED);
-                order.setDeliveredAt(LocalDateTime.now());
+                order.setDeliveredAt(now);
+                order.setCompletedAt(now); // Thời điểm hoàn thành dùng để tính hạn đổi trả
+                // Snapshot returnWindowDays từ system settings
+                int returnWindowDays = systemSettingService.getReturnWindowDays();
+                order.setReturnWindowDays(returnWindowDays);
+                log.info("Order COMPLETED: completedAt={}, returnWindowDays={} for order: {}", now, returnWindowDays, order.getIdOrder());
                 orderRepository.save(order);
             }
         } else if ("cancel".equals(ghnStatus)) {

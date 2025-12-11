@@ -1,10 +1,6 @@
 import React from "react";
 import { Layout, Avatar, Dropdown, Space } from "antd";
-import {
-  UserOutlined,
-  SettingOutlined,
-  LogoutOutlined,
-} from "@ant-design/icons";
+import { UserOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../../store/slices/authSlice";
@@ -25,8 +21,6 @@ const AppHeader = ({ user: userProp }) => {
   const handleMenuClick = ({ key }) => {
     if (key === "profile") {
       navigate("/profile");
-    } else if (key === "settings") {
-      // TODO: Navigate to settings page
     } else if (key === "logout") {
       handleLogout();
     }
@@ -54,11 +48,6 @@ const AppHeader = ({ user: userProp }) => {
       key: "profile",
       icon: <UserOutlined />,
       label: "Thông tin cá nhân",
-    },
-    {
-      key: "settings",
-      icon: <SettingOutlined />,
-      label: "Cài đặt",
     },
     {
       type: "divider",
@@ -110,8 +99,7 @@ const AppHeader = ({ user: userProp }) => {
             flexDirection: "column",
             justifyContent: "center",
             height: 32,
-          }}
-        >
+          }}>
           <div
             style={{
               fontSize: 18,

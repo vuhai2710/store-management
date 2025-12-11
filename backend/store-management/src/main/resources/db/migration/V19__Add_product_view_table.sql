@@ -1,5 +1,3 @@
--- Migration V19: Add product_view table for tracking product views
-
 CREATE TABLE product_view (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NULL,

@@ -33,3 +33,5 @@ public class ChatConversation extends BaseEntity {
     @Column(name = "last_viewed_by_customer_at")
     private java.time.LocalDateTime lastViewedByCustomerAt;
 }
+
+

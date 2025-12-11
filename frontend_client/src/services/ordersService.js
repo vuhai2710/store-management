@@ -20,6 +20,7 @@ export const ordersService = {
       paymentMethod: orderData.paymentMethod || 'CASH',
       notes: orderData.notes && orderData.notes.trim() !== '' ? orderData.notes.trim() : null,
       promotionCode: orderData.promotionCode && orderData.promotionCode.trim() !== '' ? orderData.promotionCode.trim() : null,
+      shippingFee: orderData.shippingFee != null && orderData.shippingFee > 0 ? Number(orderData.shippingFee) : null, // Phí giao hàng từ GHN
     };
     
     // Remove null/undefined fields if not required
@@ -31,6 +32,9 @@ export const ordersService = {
     }
     if (!body.promotionCode) {
       delete body.promotionCode;
+    }
+    if (body.shippingFee == null) {
+      delete body.shippingFee;
     }
     
     // Validate payment method - chỉ hỗ trợ CASH và PAYOS
@@ -52,6 +56,7 @@ export const ordersService = {
    * @param {number} orderData.shippingAddressId - Shipping address ID (optional)
    * @param {string} orderData.paymentMethod - Payment method (CASH, TRANSFER, ZALOPAY, PAYOS)
    * @param {string} orderData.notes - Order note (optional)
+   * @param {number} orderData.shippingFee - Shipping fee from GHN (optional)
    * @returns {Promise<OrderDTO>}
    */
   buyNow: async (orderData) => {
@@ -61,6 +66,7 @@ export const ordersService = {
       shippingAddressId: orderData.shippingAddressId,
       paymentMethod: orderData.paymentMethod || 'CASH',
       notes: orderData.notes || null,
+      shippingFee: orderData.shippingFee != null && orderData.shippingFee > 0 ? Number(orderData.shippingFee) : null, // Phí giao hàng từ GHN
     };
     const resp = await api.post(API_ENDPOINTS.ORDERS.BUY_NOW, body);
     return unwrap(resp);

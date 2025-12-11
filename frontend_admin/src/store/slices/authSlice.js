@@ -16,9 +16,13 @@ export const login = createAsyncThunk(
         user: user, // User info fetched from /users/profile in authService
       };
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || error.message || "Đăng nhập thất bại"
-      );
+      // api.js interceptor transforms error to { message, status, errors, ... }
+      const status = error.status;
+      // Show specific message for authentication errors (400, 401, 403)
+      if (status === 400 || status === 401 || status === 403) {
+        return rejectWithValue("Sai tài khoản hoặc mật khẩu");
+      }
+      return rejectWithValue(error.message || "Đăng nhập thất bại");
     }
   }
 );

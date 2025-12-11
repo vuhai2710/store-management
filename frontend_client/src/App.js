@@ -18,6 +18,9 @@ import OrdersPage from "./components/pages/OrdersPage";
 import ProfilePage from "./components/pages/ProfilePage";
 import PaymentSuccessPage from "./components/pages/PaymentSuccessPage";
 import PaymentCancelPage from "./components/pages/PaymentCancelPage";
+import RequestReturnPage from "./pages/returns/RequestReturnPage";
+import ReturnHistoryPage from "./pages/returns/ReturnHistoryPage";
+import ReturnDetailPage from "./pages/returns/ReturnDetailPage";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import ChatWidget from "./components/chat/ChatWidget";
@@ -42,14 +45,16 @@ function AppContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(() => {
     // Restore page from localStorage on mount
-    const savedPage = localStorage.getItem('currentPage');
-    return savedPage || 'home';
+    const savedPage = localStorage.getItem("currentPage");
+    return savedPage || "home";
   });
   const [selectedProductId, setSelectedProductId] = useState(() => {
     // Restore selected product from localStorage on mount
-    const savedProductId = localStorage.getItem('selectedProductId');
+    const savedProductId = localStorage.getItem("selectedProductId");
     return savedProductId ? parseInt(savedProductId) : null;
   });
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [selectedReturnId, setSelectedReturnId] = useState(null);
   const [cart, setCart] = useState([]);
   const [cartData, setCartData] = useState(null);
   const [cartLoading, setCartLoading] = useState(false);
@@ -67,10 +72,10 @@ function AppContent() {
   // Map URL path (từ PayOS redirect) sang currentPage khi load lại
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.startsWith('/payment/success')) {
-      setCurrentPage('payment-success');
-    } else if (path.startsWith('/payment/cancel')) {
-      setCurrentPage('payment-cancel');
+    if (path.startsWith("/payment/success")) {
+      setCurrentPage("payment-success");
+    } else if (path.startsWith("/payment/cancel")) {
+      setCurrentPage("payment-cancel");
     }
     setInitializedFromUrl(true);
   }, []);
@@ -78,25 +83,28 @@ function AppContent() {
   useEffect(() => {
     if (!initializedFromUrl) return;
 
-    if (currentPage !== 'payment-success' && currentPage !== 'payment-cancel') {
+    if (currentPage !== "payment-success" && currentPage !== "payment-cancel") {
       const path = window.location.pathname;
-      if (path.startsWith('/payment/success') || path.startsWith('/payment/cancel')) {
-        window.history.replaceState({}, '', '/');
+      if (
+        path.startsWith("/payment/success") ||
+        path.startsWith("/payment/cancel")
+      ) {
+        window.history.replaceState({}, "", "/");
       }
     }
   }, [currentPage, initializedFromUrl]);
 
   // Save currentPage to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('currentPage', currentPage);
+    localStorage.setItem("currentPage", currentPage);
   }, [currentPage]);
 
   // Save selectedProductId to localStorage whenever it changes
   useEffect(() => {
     if (selectedProductId) {
-      localStorage.setItem('selectedProductId', selectedProductId.toString());
+      localStorage.setItem("selectedProductId", selectedProductId.toString());
     } else {
-      localStorage.removeItem('selectedProductId');
+      localStorage.removeItem("selectedProductId");
     }
   }, [selectedProductId]);
 
@@ -126,6 +134,22 @@ function AppContent() {
 
     loadCart();
   }, [isAuthenticated, authLoading]);
+
+  // Function to reload cart (can be passed to child components)
+  const reloadCart = async () => {
+    if (isAuthenticated) {
+      try {
+        setCartLoading(true);
+        const cartDataResponse = await cartService.getCart();
+        setCartData(cartDataResponse);
+        setCart(cartDataResponse.cartItems || cartDataResponse.items || []);
+      } catch (error) {
+        console.error("Error reloading cart:", error);
+      } finally {
+        setCartLoading(false);
+      }
+    }
+  };
 
   // --- AUTH LOGIC ---
   const handleLogout = async () => {
@@ -360,7 +384,42 @@ function AppContent() {
       case "orders":
         return (
           <ProtectedRoute>
-            <OrdersPage setCurrentPage={setCurrentPage} />
+            <OrdersPage
+              setCurrentPage={setCurrentPage}
+              setSelectedOrderId={setSelectedOrderId}
+              setSelectedReturnId={setSelectedReturnId}
+              reloadCart={reloadCart}
+            />
+          </ProtectedRoute>
+        );
+
+      case "return-request":
+        return (
+          <ProtectedRoute>
+            <RequestReturnPage
+              setCurrentPage={setCurrentPage}
+              orderId={selectedOrderId}
+            />
+          </ProtectedRoute>
+        );
+
+      case "return-history":
+        return (
+          <ProtectedRoute>
+            <ReturnHistoryPage
+              setCurrentPage={setCurrentPage}
+              setSelectedReturnId={setSelectedReturnId}
+            />
+          </ProtectedRoute>
+        );
+
+      case "return-detail":
+        return (
+          <ProtectedRoute>
+            <ReturnDetailPage
+              setCurrentPage={setCurrentPage}
+              returnId={selectedReturnId}
+            />
           </ProtectedRoute>
         );
 

@@ -144,4 +144,35 @@ public class InventoryTransactionController {
 
         return ResponseEntity.ok(ApiResponse.success("Lọc lịch sử nhập/xuất kho thành công", transactions));
     }
+
+    /**
+     * Advanced filter with referenceType, productName, sku support
+     */
+    @GetMapping("/filter-advanced")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> filterTransactionsAdvanced(
+            @RequestParam(required = false) TransactionType transactionType,
+            @RequestParam(required = false) ReferenceType referenceType,
+            @RequestParam(required = false) Integer productId,
+            @RequestParam(required = false) String productName,
+            @RequestParam(required = false) String sku,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "transactionDate") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
+
+        LocalDateTime start = startDate != null ? LocalDateTime.parse(startDate) : null;
+        LocalDateTime end = endDate != null ? LocalDateTime.parse(endDate) : null;
+
+        PageResponse<InventoryTransactionDTO> transactions = 
+                inventoryTransactionService.getTransactionsByAdvancedCriteria(
+                        transactionType, referenceType, productId, productName, sku, start, end, pageable);
+
+        return ResponseEntity.ok(ApiResponse.success("Lọc lịch sử nhập/xuất kho thành công", transactions));
+    }
 }

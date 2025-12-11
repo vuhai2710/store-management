@@ -24,7 +24,10 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Get eligible orders for this product
+  // State to track already reviewed order detail IDs
+  const [reviewedOrderDetailIds, setReviewedOrderDetailIds] = useState(new Set());
+
+  // Get eligible orders for this product (excluding already reviewed order details)
   const eligibleOrders = userOrders.filter(
     (order) =>
       order.status === 'COMPLETED' &&
@@ -33,12 +36,36 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
           detail.idProduct ||
           detail.productId ||
           (detail.product && (detail.product.idProduct || detail.product.id));
-        return detailProductId && Number(detailProductId) === Number(productId);
+        const orderDetailId = detail.idOrderDetail || detail.id;
+        // Only include if product matches AND not already reviewed
+        return (
+          detailProductId &&
+          Number(detailProductId) === Number(productId) &&
+          !reviewedOrderDetailIds.has(orderDetailId)
+        );
       })
   );
 
+  // Fetch user's reviews to get already reviewed order detail IDs
+  const fetchMyReviews = async () => {
+    try {
+      const myReviewsData = await reviewService.getMyReviews({
+        pageNo: 1,
+        pageSize: 1000,
+      });
+      const myReviews = myReviewsData?.content || [];
+      const reviewedIds = new Set(
+        myReviews.map((r) => r.orderDetailId || r.idOrderDetail)
+      );
+      setReviewedOrderDetailIds(reviewedIds);
+    } catch (error) {
+      console.error('Error fetching my reviews:', error);
+    }
+  };
+
   useEffect(() => {
     fetchReviews();
+    fetchMyReviews();
   }, [productId, pagination.currentPage, ratingFilter]);
 
   const fetchReviews = async () => {
@@ -104,8 +131,9 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
       setEditingReview(null);
       setShowReviewForm(false);
       
-      // Reload reviews
+      // Reload reviews and refresh reviewed order detail IDs
       fetchReviews();
+      fetchMyReviews();
     } catch (error) {
       setError(error.response?.data?.message || 'Có lỗi xảy ra khi đánh giá');
     } finally {
@@ -274,7 +302,13 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
                           detail.idProduct ||
                           detail.productId ||
                           (detail.product && (detail.product.idProduct || detail.product.id));
-                        return detailProductId && Number(detailProductId) === Number(productId);
+                        const orderDetailId = detail.idOrderDetail || detail.id;
+                        // Only show order details that match product AND not already reviewed
+                        return (
+                          detailProductId &&
+                          Number(detailProductId) === Number(productId) &&
+                          !reviewedOrderDetailIds.has(orderDetailId)
+                        );
                       })
                       .map((detail) => (
                         <option key={detail.idOrderDetail} value={detail.idOrderDetail}>

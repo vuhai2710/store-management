@@ -69,6 +69,15 @@ public class Order {
     @Column(name = "delivered_at")
     private LocalDateTime deliveredAt; // Thời điểm customer xác nhận đã nhận hàng
 
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt; // Thời điểm đơn hàng hoàn thành (dùng để tính hạn đổi trả)
+
+    @Column(name = "return_window_days")
+    private Integer returnWindowDays; // Snapshot của số ngày cho phép đổi/trả tại thời điểm hoàn thành đơn
+
+    @Column(name = "shipping_fee", precision = 12, scale = 2)
+    private BigDecimal shippingFee; // Phí giao hàng
+
     @Column(name = "payment_link_id", length = 255)
     private String paymentLinkId;
 

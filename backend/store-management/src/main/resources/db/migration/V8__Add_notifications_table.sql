@@ -1,8 +1,3 @@
--- ============================================================
--- BẢNG NOTIFICATIONS
--- Lưu thông báo cho users (admin, employee, customer)
--- ============================================================
-
 CREATE TABLE notifications (
     id_notification INT NOT NULL AUTO_INCREMENT,
     id_user INT NOT NULL COMMENT 'User nhận thông báo',
@@ -21,30 +16,3 @@ CREATE TABLE notifications (
     INDEX idx_created_at (created_at DESC),
     INDEX idx_notification_type (notification_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Bảng lưu thông báo cho users';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

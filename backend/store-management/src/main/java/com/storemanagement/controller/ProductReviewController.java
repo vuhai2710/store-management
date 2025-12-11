@@ -53,10 +53,8 @@ public class ProductReviewController {
 
         PageResponse<ProductReviewDTO> reviews;
         if (rating != null) {
-            // Filter by rating
             reviews = productReviewService.getProductReviewsByRating(productId, rating, pageable);
         } else {
-            // Get all reviews
             reviews = productReviewService.getProductReviews(productId, pageable);
         }
         

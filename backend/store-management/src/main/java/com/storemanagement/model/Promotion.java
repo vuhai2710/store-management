@@ -54,3 +54,5 @@ public class Promotion extends BaseEntity {
         PERCENTAGE, FIXED_AMOUNT
     }
 }
+
+

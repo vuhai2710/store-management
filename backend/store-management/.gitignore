@@ -101,10 +101,14 @@ application-prod.yml
 *.p12
 *.jks
 secrets.yaml
-secrets.json
+secrets.jsonk
 
 # Documentation (personal notes - optional)
 *.pdf
 !**/documentation/**/*.pdf
 
 EnvChecker.java
+
+.windsurf/
+
+PHAN_TICH_DU_AN.md

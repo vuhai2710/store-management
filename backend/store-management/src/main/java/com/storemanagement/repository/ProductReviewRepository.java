@@ -39,3 +39,5 @@ public interface ProductReviewRepository extends JpaRepository<ProductReview, In
 
     long countByProductIdProduct(Integer productId);
 }
+
+

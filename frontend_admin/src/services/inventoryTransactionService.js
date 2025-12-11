@@ -33,7 +33,9 @@ export const inventoryTransactionService = {
       sortDirection,
     };
 
-    const response = await api.get("/inventory-transactions", { params: queryParams });
+    const response = await api.get("/inventory-transactions", {
+      params: queryParams,
+    });
     return unwrap(response); // Returns PageResponse<InventoryTransactionDTO>
   },
 
@@ -59,9 +61,12 @@ export const inventoryTransactionService = {
       sortDirection,
     };
 
-    const response = await api.get(`/inventory-transactions/product/${productId}`, {
-      params: queryParams,
-    });
+    const response = await api.get(
+      `/inventory-transactions/product/${productId}`,
+      {
+        params: queryParams,
+      }
+    );
     return unwrap(response);
   },
 
@@ -110,6 +115,59 @@ export const inventoryTransactionService = {
   },
 
   /**
+   * Advanced filter transactions with referenceType, productName, sku support
+   * GET /api/v1/inventory-transactions/filter-advanced
+   * @param {Object} params - Filter parameters
+   * @param {string} params.transactionType - Transaction type (IN or OUT)
+   * @param {string} params.referenceType - Reference type (PURCHASE_ORDER, SALE_ORDER, ADJUSTMENT, SALE_RETURN, SALE_EXCHANGE)
+   * @param {number} params.productId - Product ID
+   * @param {string} params.productName - Product name (partial match)
+   * @param {string} params.sku - SKU code (partial match)
+   * @param {string} params.startDate - Start date (ISO format without timezone, e.g., "2024-01-01T00:00:00")
+   * @param {string} params.endDate - End date (ISO format without timezone, e.g., "2024-12-31T23:59:59")
+   * @param {number} params.pageNo - Page number (default: 1)
+   * @param {number} params.pageSize - Page size (default: 10)
+   * @param {string} params.sortBy - Sort field (default: "transactionDate")
+   * @param {string} params.sortDirection - Sort direction ASC/DESC (default: "DESC")
+   * @returns {Promise<PageResponse<InventoryTransactionDTO>>}
+   */
+  filterTransactionsAdvanced: async (params = {}) => {
+    const {
+      transactionType,
+      referenceType,
+      productId,
+      productName,
+      sku,
+      startDate,
+      endDate,
+      pageNo = 1,
+      pageSize = 10,
+      sortBy = "transactionDate",
+      sortDirection = "DESC",
+    } = params;
+
+    const queryParams = {
+      pageNo,
+      pageSize,
+      sortBy,
+      sortDirection,
+    };
+
+    if (transactionType) queryParams.transactionType = transactionType;
+    if (referenceType) queryParams.referenceType = referenceType;
+    if (productId) queryParams.productId = productId;
+    if (productName) queryParams.productName = productName;
+    if (sku) queryParams.sku = sku;
+    if (startDate) queryParams.startDate = startDate;
+    if (endDate) queryParams.endDate = endDate;
+
+    const response = await api.get("/inventory-transactions/filter-advanced", {
+      params: queryParams,
+    });
+    return unwrap(response);
+  },
+
+  /**
    * Get transactions by reference type and ID
    * GET /api/v1/inventory-transactions/reference
    * @param {string} referenceType - Reference type (e.g., PURCHASE_ORDER, SALE_ORDER)
@@ -117,7 +175,11 @@ export const inventoryTransactionService = {
    * @param {Object} params - Query parameters
    * @returns {Promise<PageResponse<InventoryTransactionDTO>>}
    */
-  getTransactionsByReference: async (referenceType, referenceId, params = {}) => {
+  getTransactionsByReference: async (
+    referenceType,
+    referenceId,
+    params = {}
+  ) => {
     const {
       pageNo = 1,
       pageSize = 10,
@@ -208,5 +270,3 @@ export const inventoryTransactionService = {
     return unwrap(response);
   },
 };
-
-

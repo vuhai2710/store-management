@@ -18,3 +18,5 @@ public interface PromotionMapper {
 
     List<PromotionDTO> toDTOList(List<Promotion> promotions);
 }
+
+

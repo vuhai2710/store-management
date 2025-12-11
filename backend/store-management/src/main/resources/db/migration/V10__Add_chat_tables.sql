@@ -1,8 +1,3 @@
--- ============================================================
--- V10: Add chat system tables for Customer-Admin/Employee communication
--- ============================================================
-
--- Create chat_conversations table
 CREATE TABLE chat_conversations (
   id_conversation INT NOT NULL AUTO_INCREMENT,
   id_customer     INT NOT NULL,
@@ -17,7 +12,6 @@ CREATE TABLE chat_conversations (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Create chat_messages table
 CREATE TABLE chat_messages (
   id_message      INT NOT NULL AUTO_INCREMENT,
   id_conversation INT NOT NULL,
@@ -33,29 +27,3 @@ CREATE TABLE chat_messages (
     FOREIGN KEY (id_conversation) REFERENCES chat_conversations (id_conversation)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

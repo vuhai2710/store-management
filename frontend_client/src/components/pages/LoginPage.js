@@ -1,6 +1,6 @@
 // src/components/pages/LoginPage.js
 import React, { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, LogIn, AlertCircle } from "lucide-react";
 import styles from "../../styles/styles";
 import { useAuth } from "../../hooks/useAuth";
 import LoadingSpinner from "../common/LoadingSpinner";
@@ -69,10 +69,10 @@ const LoginPage = ({ setCurrentPage }) => {
         setCurrentPage("home");
       } catch (error) {
         console.error("Login error:", error);
-        setApiError(
-          error?.message ||
-            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
-        );
+        // error là Error instance từ AuthContext với message đã được format
+        const errorMessage =
+          error?.message || "Tài khoản hoặc mật khẩu không đúng";
+        setApiError(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -309,14 +309,19 @@ const LoginPage = ({ setCurrentPage }) => {
             {apiError && (
               <div
                 style={{
-                  padding: "0.75rem",
+                  padding: "0.875rem 1rem",
                   marginBottom: "1rem",
-                  backgroundColor: "#f8d7da",
-                  color: "#721c24",
-                  borderRadius: "0.25rem",
+                  backgroundColor: "#FEE2E2",
+                  color: "#DC2626",
+                  borderRadius: "0.5rem",
                   fontSize: "0.875rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  border: "1px solid #FECACA",
                 }}>
-                {apiError}
+                <AlertCircle size={20} style={{ flexShrink: 0 }} />
+                <span>{apiError}</span>
               </div>
             )}
 

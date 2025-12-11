@@ -8,6 +8,7 @@ import com.storemanagement.mapper.ProductReviewMapper;
 import com.storemanagement.model.*;
 import com.storemanagement.repository.*;
 import com.storemanagement.service.ProductReviewService;
+import com.storemanagement.service.SystemSettingService;
 import com.storemanagement.utils.PageUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     private final CustomerRepository customerRepository;
     private final OrderDetailRepository orderDetailRepository;
     private final ProductReviewMapper productReviewMapper;
+    private final SystemSettingService systemSettingService;
 
     @Override
     public ProductReviewDTO createReview(Integer customerId, Integer productId, CreateReviewRequestDTO request) {
@@ -136,13 +138,16 @@ public class ProductReviewServiceImpl implements ProductReviewService {
             throw new RuntimeException("Không có quyền chỉnh sửa đánh giá này");
         }
 
-        // Validate review was created within 24 hours
+        // Get review edit window from system settings
+        int reviewEditWindowHours = systemSettingService.getReviewEditWindowHours();
+
+        // Validate review was created within allowed time
         LocalDateTime createdAt = review.getCreatedAt();
         LocalDateTime now = LocalDateTime.now();
         long hoursSinceCreation = ChronoUnit.HOURS.between(createdAt, now);
 
-        if (hoursSinceCreation >= 24) {
-            throw new RuntimeException("Chỉ có thể chỉnh sửa đánh giá trong vòng 24 giờ sau khi tạo");
+        if (hoursSinceCreation >= reviewEditWindowHours) {
+            throw new RuntimeException("Chỉ có thể chỉnh sửa đánh giá trong vòng " + reviewEditWindowHours + " giờ sau khi tạo");
         }
         
         // Validate edit count: chỉ cho phép edit 1 lần

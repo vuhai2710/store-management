@@ -21,7 +21,10 @@ import {
 } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { fetchImportOrders, setFilters } from "../store/slices/importOrdersSlice";
+import {
+  fetchImportOrders,
+  setFilters,
+} from "../store/slices/importOrdersSlice";
 import ImportOrderForm from "../components/importOrders/ImportOrderForm";
 import { usePagination } from "../hooks/usePagination";
 import { importOrderService } from "../services/importOrderService";
@@ -40,9 +43,12 @@ const { RangePicker } = DatePicker;
 const ImportOrders = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { list: importOrders, loading, pagination, filters } = useSelector(
-    (state) => state.importOrders || {}
-  );
+  const {
+    list: importOrders,
+    loading,
+    pagination,
+    filters,
+  } = useSelector((state) => state.importOrders || {});
 
   const {
     currentPage,
@@ -54,7 +60,9 @@ const ImportOrders = () => {
   } = usePagination(1, 10);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [supplierFilter, setSupplierFilter] = useState(filters.supplierId || null);
+  const [supplierFilter, setSupplierFilter] = useState(
+    filters.supplierId || null
+  );
   const [dateRange, setDateRange] = useState(
     filters.startDate && filters.endDate
       ? [dayjs(filters.startDate), dayjs(filters.endDate)]
@@ -86,8 +94,11 @@ const ImportOrders = () => {
       const startDate = dateRange[0];
       const endDate = dateRange[1];
       if (startDate && endDate) {
-        params.startDate = startDate.startOf("day").toISOString();
-        params.endDate = endDate.endOf("day").toISOString();
+        // Format date without timezone for backend LocalDateTime.parse()
+        params.startDate = startDate
+          .startOf("day")
+          .format("YYYY-MM-DDTHH:mm:ss");
+        params.endDate = endDate.endOf("day").format("YYYY-MM-DDTHH:mm:ss");
       }
     }
 
@@ -121,8 +132,8 @@ const ImportOrders = () => {
     if (dates && dates.length === 2) {
       dispatch(
         setFilters({
-          startDate: dates[0].startOf("day").toISOString(),
-          endDate: dates[1].endOf("day").toISOString(),
+          startDate: dates[0].startOf("day").format("YYYY-MM-DDTHH:mm:ss"),
+          endDate: dates[1].endOf("day").format("YYYY-MM-DDTHH:mm:ss"),
         })
       );
     } else {
@@ -149,7 +160,9 @@ const ImportOrders = () => {
   const handlePrintImportOrder = async (importOrderId, e) => {
     e?.stopPropagation();
     try {
-      const blob = await importOrderService.exportImportOrderToPdf(importOrderId);
+      const blob = await importOrderService.exportImportOrderToPdf(
+        importOrderId
+      );
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -243,27 +256,35 @@ const ImportOrders = () => {
 
   const handleExportExcel = () => {
     if (!importOrders || importOrders.length === 0) {
-      message.warning('Không có dữ liệu để xuất');
+      message.warning("Không có dữ liệu để xuất");
       return;
     }
     try {
-      exportToExcel(importOrders, `don-nhap-hang-${new Date().toISOString().split('T')[0]}`, columns);
-      message.success('Xuất file Excel thành công!');
+      exportToExcel(
+        importOrders,
+        `don-nhap-hang-${new Date().toISOString().split("T")[0]}`,
+        columns
+      );
+      message.success("Xuất file Excel thành công!");
     } catch (error) {
-      message.error(error?.message || 'Xuất file Excel thất bại!');
+      message.error(error?.message || "Xuất file Excel thất bại!");
     }
   };
 
   const handleExportCSV = () => {
     if (!importOrders || importOrders.length === 0) {
-      message.warning('Không có dữ liệu để xuất');
+      message.warning("Không có dữ liệu để xuất");
       return;
     }
     try {
-      exportToCSV(importOrders, `don-nhap-hang-${new Date().toISOString().split('T')[0]}`, columns);
-      message.success('Xuất file CSV thành công!');
+      exportToCSV(
+        importOrders,
+        `don-nhap-hang-${new Date().toISOString().split("T")[0]}`,
+        columns
+      );
+      message.success("Xuất file CSV thành công!");
     } catch (error) {
-      message.error(error?.message || 'Xuất file CSV thất bại!');
+      message.error(error?.message || "Xuất file CSV thất bại!");
     }
   };
 
@@ -278,8 +299,7 @@ const ImportOrders = () => {
           justifyContent: "space-between",
           gap: 12,
           flexWrap: "wrap",
-        }}
-      >
+        }}>
         <div>
           <Title
             level={2}
@@ -287,8 +307,7 @@ const ImportOrders = () => {
               marginBottom: 4,
               fontWeight: 700,
               color: "#0F172A",
-            }}
-          >
+            }}>
             Quản lý đơn nhập hàng
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
@@ -303,8 +322,7 @@ const ImportOrders = () => {
             borderRadius: 9999,
             display: "flex",
             alignItems: "center",
-          }}
-        >
+          }}>
           Tạo đơn nhập hàng
         </Button>
       </div>
@@ -316,8 +334,7 @@ const ImportOrders = () => {
           boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
           background: "#FFFFFF",
         }}
-        bodyStyle={{ padding: 16 }}
-      >
+        bodyStyle={{ padding: 16 }}>
         <div
           style={{
             marginBottom: 16,
@@ -325,22 +342,19 @@ const ImportOrders = () => {
             justifyContent: "space-between",
             gap: 16,
             flexWrap: "wrap",
-          }}
-        >
+          }}>
           <Space
             wrap
             style={{
               display: "flex",
               gap: 8,
-            }}
-          >
+            }}>
             <Select
               placeholder="Lọc theo nhà cung cấp"
               style={{ width: 220 }}
               allowClear
               value={supplierFilter}
-              onChange={handleSupplierFilter}
-            >
+              onChange={handleSupplierFilter}>
               {suppliers.map((supplier) => (
                 <Option key={supplier.idSupplier} value={supplier.idSupplier}>
                   {supplier.supplierName}
@@ -362,8 +376,7 @@ const ImportOrders = () => {
             style={{
               display: "flex",
               gap: 8,
-            }}
-          >
+            }}>
             <Button icon={<ReloadOutlined />} onClick={fetchImportOrdersList}>
               Làm mới
             </Button>
@@ -416,8 +429,7 @@ const ImportOrders = () => {
         open={isModalVisible}
         onCancel={handleModalClose}
         footer={null}
-        width={800}
-      >
+        width={800}>
         <ImportOrderForm onSuccess={handleModalSuccess} />
       </Modal>
     </div>
@@ -425,4 +437,3 @@ const ImportOrders = () => {
 };
 
 export default ImportOrders;
-

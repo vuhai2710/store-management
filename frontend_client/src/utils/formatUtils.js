@@ -3,6 +3,43 @@
  */
 
 /**
+ * Parse date string from backend (format: dd/MM/yyyy HH:mm:ss)
+ * Backend JacksonConfig uses pattern "dd/MM/yyyy HH:mm:ss"
+ * IMPORTANT: Always parse dd/MM/yyyy format FIRST because new Date() interprets as MM/dd/yyyy
+ * @param {string|Date} date - Date string or Date object
+ * @returns {Date|null}
+ */
+export const parseBackendDate = (date) => {
+  if (!date) return null;
+  if (date instanceof Date) return date;
+  
+  // PRIORITY: Parse dd/MM/yyyy HH:mm:ss format FIRST (backend format)
+  if (typeof date === 'string' && date.includes('/')) {
+    const parts = date.split(' ');
+    const datePart = parts[0];
+    const timePart = parts[1] || '00:00:00';
+    
+    const [day, month, year] = datePart.split('/').map(Number);
+    const [hours, minutes, seconds] = timePart.split(':').map(Number);
+    
+    if (day && month && year && day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      return new Date(year, month - 1, day, hours || 0, minutes || 0, seconds || 0);
+    }
+  }
+  
+  // Fallback: Try parsing ISO string or timestamp
+  const directParse = new Date(date);
+  if (!isNaN(directParse.getTime())) {
+    const year = directParse.getFullYear();
+    if (year >= 2000 && year <= 2100) {
+      return directParse;
+    }
+  }
+  
+  return null;
+};
+
+/**
  * Format price to currency string
  * @param {number} price - Price to format
  * @param {string} currency - Currency symbol (default: '₫')
@@ -21,8 +58,10 @@ export const formatPrice = (price, currency = '₫') => {
  */
 export const formatDate = (date, format = 'dd/MM/yyyy') => {
   if (!date) return '';
-  const d = new Date(date);
-  if (isNaN(d.getTime())) return '';
+  
+  // Use parseBackendDate to handle dd/MM/yyyy format from backend
+  const d = parseBackendDate(date);
+  if (!d || isNaN(d.getTime())) return '';
   
   const day = String(d.getDate()).padStart(2, '0');
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -122,6 +161,8 @@ export const formatInventoryStatus = (status) => {
   };
   return statusLabels[status] || status;
 };
+
+
 
 
 

@@ -27,6 +27,7 @@ public interface OrderMapper {
     @Mapping(target = "promotionCode", source = "promotionCode")
     @Mapping(target = "idPromotion", expression = "java(entity.getPromotion() != null ? entity.getPromotion().getIdPromotion() : null)")
     @Mapping(target = "idPromotionRule", expression = "java(entity.getPromotionRule() != null ? entity.getPromotionRule().getIdRule() : null)")
+    @Mapping(target = "shippingFee", source = "shippingFee")
     @Mapping(target = "orderItems", ignore = true)
     @Mapping(target = "productId", ignore = true)
     @Mapping(target = "quantity", ignore = true)

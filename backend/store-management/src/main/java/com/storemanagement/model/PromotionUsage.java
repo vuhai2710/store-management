@@ -40,3 +40,5 @@ public class PromotionUsage extends BaseEntity {
         }
     }
 }
+
+

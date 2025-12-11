@@ -3,6 +3,7 @@ package com.storemanagement.dto.order;
 import com.storemanagement.model.Order;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,6 +42,12 @@ public class OrderDTO {
     private String shippingAddressSnapshot; // Snapshot của địa chỉ tại thời điểm đặt hàng
 
     private LocalDateTime deliveredAt; // Thời điểm customer xác nhận đã nhận hàng
+
+    private LocalDateTime completedAt; // Thời điểm đơn hàng hoàn thành (dùng để tính hạn đổi trả)
+
+    private Integer returnWindowDays; // Snapshot số ngày cho phép đổi/trả tại thời điểm hoàn thành đơn
+
+    private BigDecimal shippingFee; // Phí giao hàng từ Shipment
 
     private String paymentLinkId;
 

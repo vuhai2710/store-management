@@ -1,8 +1,3 @@
--- ============================================================
--- V9: Add product_images table for multiple images per product
--- ============================================================
-
--- Create product_images table
 CREATE TABLE product_images (
   id_product_image INT NOT NULL AUTO_INCREMENT,
   id_product       INT NOT NULL,
@@ -18,31 +13,4 @@ CREATE TABLE product_images (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Add index for sorting by display_order
 CREATE INDEX idx_product_images_order ON product_images (id_product, display_order);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

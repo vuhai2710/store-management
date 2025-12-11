@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Table,
   Button,
@@ -11,7 +11,8 @@ import {
   Modal,
   message,
   Tooltip,
-} from 'antd';
+  Badge,
+} from "antd";
 import {
   PlusOutlined,
   SearchOutlined,
@@ -19,19 +20,25 @@ import {
   PrinterOutlined,
   ReloadOutlined,
   DownloadOutlined,
-} from '@ant-design/icons';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { fetchOrders, setPagination, setFilters } from '../store/slices/ordersSlice';
-import OrderForm from '../components/orders/OrderForm';
-import { usePagination } from '../hooks/usePagination';
-import StatusBadge from '../components/common/StatusBadge';
-import { exportToExcel, exportToCSV } from '../utils/exportUtils';
-import LoadingSkeleton from '../components/common/LoadingSkeleton';
-import EmptyState from '../components/common/EmptyState';
-import { formatDate } from '../utils/formatUtils';
-import dayjs from 'dayjs';
-import customParseFormat from 'dayjs/plugin/customParseFormat';
+  SwapOutlined,
+} from "@ant-design/icons";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import {
+  fetchOrders,
+  setPagination,
+  setFilters,
+} from "../store/slices/ordersSlice";
+import OrderForm from "../components/orders/OrderForm";
+import { usePagination } from "../hooks/usePagination";
+import StatusBadge from "../components/common/StatusBadge";
+import { exportToExcel, exportToCSV } from "../utils/exportUtils";
+import LoadingSkeleton from "../components/common/LoadingSkeleton";
+import EmptyState from "../components/common/EmptyState";
+import { formatDate } from "../utils/formatUtils";
+import { useAdminReturnService } from "../hooks/useAdminReturnService";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 dayjs.extend(customParseFormat);
 
 const { Title, Text } = Typography;
@@ -39,20 +46,28 @@ const { Option } = Select;
 
 // Order status mapping
 const ORDER_STATUS = {
-  PENDING: { text: 'Chờ xác nhận', color: 'warning' },
-  CONFIRMED: { text: 'Đã xác nhận', color: 'processing' },
-  COMPLETED: { text: 'Hoàn thành', color: 'success' },
-  CANCELED: { text: 'Đã hủy', color: 'error' },
+  PENDING: { text: "Chờ xác nhận", color: "warning" },
+  CONFIRMED: { text: "Đã xác nhận", color: "processing" },
+  COMPLETED: { text: "Hoàn thành", color: "success" },
+  CANCELED: { text: "Đã hủy", color: "error" },
 };
 
 const Orders = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { orders, loading, pagination, filters } = useSelector((state) => state.orders);
+  const { orders, loading, pagination, filters } = useSelector(
+    (state) => state.orders
+  );
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
   const [statusFilter, setStatusFilter] = useState(filters.status || null);
-  const [customerIdFilter, setCustomerIdFilter] = useState(filters.customerId || null);
+  const [customerIdFilter, setCustomerIdFilter] = useState(
+    filters.customerId || null
+  );
+
+  // Order returns data for badge display
+  const { getReturns } = useAdminReturnService();
+  const [orderReturnsMap, setOrderReturnsMap] = useState({});
 
   // Use pagination hook
   const {
@@ -69,8 +84,8 @@ const Orders = () => {
     const params = {
       pageNo: currentPage,
       pageSize,
-      sortBy: 'orderDate',
-      sortDirection: 'DESC',
+      sortBy: "orderDate",
+      sortDirection: "DESC",
     };
 
     if (statusFilter) params.status = statusFilter;
@@ -82,6 +97,27 @@ const Orders = () => {
   useEffect(() => {
     fetchOrdersList();
   }, [fetchOrdersList]);
+
+  // Fetch order returns to show badge on orders with active return requests
+  useEffect(() => {
+    const fetchOrderReturns = async () => {
+      try {
+        // Get active return requests (REQUESTED, APPROVED statuses)
+        const response = await getReturns({ pageSize: 1000 });
+        const returnsMap = {};
+        (response.content || []).forEach((returnItem) => {
+          if (!returnsMap[returnItem.orderId]) {
+            returnsMap[returnItem.orderId] = [];
+          }
+          returnsMap[returnItem.orderId].push(returnItem);
+        });
+        setOrderReturnsMap(returnsMap);
+      } catch (error) {
+        console.error("Error fetching order returns:", error);
+      }
+    };
+    fetchOrderReturns();
+  }, [getReturns]);
 
   // Sync total from Redux to hook
   useEffect(() => {
@@ -123,26 +159,26 @@ const Orders = () => {
   const handlePrintInvoice = async (orderId, e) => {
     e?.stopPropagation();
     try {
-      const { ordersService } = await import('../services/ordersService');
+      const { ordersService } = await import("../services/ordersService");
       const blob = await ordersService.exportOrderToPdf(orderId);
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = `hoa-don-${orderId}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      message.success('Xuất hóa đơn thành công!');
+      message.success("Xuất hóa đơn thành công!");
     } catch (error) {
-      message.error('Xuất hóa đơn thất bại!');
+      message.error("Xuất hóa đơn thất bại!");
     }
   };
 
   const getStatusInfo = (status) => {
-    if (!status) return { text: status, color: 'default' };
+    if (!status) return { text: status, color: "default" };
     const statusUpper = status.toUpperCase();
-    return ORDER_STATUS[statusUpper] || { text: status, color: 'default' };
+    return ORDER_STATUS[statusUpper] || { text: status, color: "default" };
   };
 
   // Lấy ngày từ nhiều key (DTO dùng orderDate, phòng khi trả snake_case)
@@ -155,65 +191,90 @@ const Orders = () => {
 
   const columns = [
     {
-      title: 'Mã đơn hàng',
-      dataIndex: 'idOrder',
-      key: 'idOrder',
-      width: 100,
-      render: (text) => <Text strong>#{text}</Text>,
+      title: "Mã đơn hàng",
+      dataIndex: "idOrder",
+      key: "idOrder",
+      width: 130,
+      render: (text, record) => {
+        const orderId = record.idOrder || record.id;
+        const orderReturns = orderReturnsMap[orderId];
+        const hasActiveReturn =
+          orderReturns &&
+          orderReturns.some(
+            (r) => r.status === "REQUESTED" || r.status === "APPROVED"
+          );
+        return (
+          <Space>
+            <Text strong>#{text}</Text>
+            {hasActiveReturn && (
+              <Tooltip title="Có yêu cầu đổi/trả">
+                <Tag color="orange" style={{ marginLeft: 4 }}>
+                  <SwapOutlined /> Đổi/Trả
+                </Tag>
+              </Tooltip>
+            )}
+          </Space>
+        );
+      },
     },
     {
-      title: 'Khách hàng',
-      key: 'customer',
-      render: (record) => record.customerName || 'N/A',
+      title: "Khách hàng",
+      key: "customer",
+      render: (record) => record.customerName || "N/A",
     },
     {
-      title: 'Tổng tiền',
-      dataIndex: 'totalAmount',
-      key: 'totalAmount',
+      title: "Tổng tiền",
+      dataIndex: "totalAmount",
+      key: "totalAmount",
       width: 150,
       render: (amount) => (
-        <Text strong>{amount ? `${Number(amount).toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}</Text>
+        <Text strong>
+          {amount ? `${Number(amount).toLocaleString("vi-VN")} VNĐ` : "0 VNĐ"}
+        </Text>
       ),
     },
     {
-      title: 'Thanh toán',
-      dataIndex: 'paymentMethod',
-      key: 'paymentMethod',
+      title: "Thanh toán",
+      dataIndex: "paymentMethod",
+      key: "paymentMethod",
       width: 120,
       render: (method) => {
         if (!method) return <Tag>N/A</Tag>;
         const methodUpper = method.toUpperCase();
-        if (methodUpper === 'CASH') {
+        if (methodUpper === "CASH") {
           return <Tag color="green">Tiền mặt</Tag>;
-        } else if (methodUpper === 'PAYOS') {
+        } else if (methodUpper === "PAYOS") {
           return <Tag color="blue">PayOS</Tag>;
-        } else if (methodUpper === 'TRANSFER') {
+        } else if (methodUpper === "TRANSFER") {
           return <Tag color="purple">Chuyển khoản</Tag>;
-        } else if (methodUpper === 'ZALOPAY') {
+        } else if (methodUpper === "ZALOPAY") {
           return <Tag color="orange">ZaloPay</Tag>;
         }
         return <Tag>{method}</Tag>;
       },
     },
     {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
       width: 130,
-      render: (status) => <StatusBadge status={status} statusMap={ORDER_STATUS} />,
+      render: (status) => (
+        <StatusBadge status={status} statusMap={ORDER_STATUS} />
+      ),
     },
     {
-      title: 'Ngày đặt',
-      key: 'orderDate',
+      title: "Ngày đặt",
+      key: "orderDate",
       width: 160,
       // dùng render để tự chọn field và format
-      render: (_, record) => formatDate(getOrderDateValue(record), "DD/MM/YYYY HH:mm"),
+      render: (_, record) =>
+        formatDate(getOrderDateValue(record), "DD/MM/YYYY HH:mm"),
     },
     {
-      title: 'Hành động',
-      key: 'actions',
+      title: "Hành động",
+      key: "actions",
       width: 120,
-      fixed: 'right',
+      fixed: "right",
       render: (_, record) => {
         const orderId = record.idOrder || record.id;
         return (
@@ -240,60 +301,66 @@ const Orders = () => {
 
   const handleExportExcel = () => {
     if (!orders || orders.length === 0) {
-      message.warning('Không có dữ liệu để xuất');
+      message.warning("Không có dữ liệu để xuất");
       return;
     }
     try {
-      exportToExcel(orders, `don-hang-${new Date().toISOString().split('T')[0]}`, columns);
-      message.success('Xuất file Excel thành công!');
+      exportToExcel(
+        orders,
+        `don-hang-${new Date().toISOString().split("T")[0]}`,
+        columns
+      );
+      message.success("Xuất file Excel thành công!");
     } catch (error) {
-      message.error(error?.message || 'Xuất file Excel thất bại!');
+      message.error(error?.message || "Xuất file Excel thất bại!");
     }
   };
 
   const handleExportCSV = () => {
     if (!orders || orders.length === 0) {
-      message.warning('Không có dữ liệu để xuất');
+      message.warning("Không có dữ liệu để xuất");
       return;
     }
     try {
-      exportToCSV(orders, `don-hang-${new Date().toISOString().split('T')[0]}`, columns);
-      message.success('Xuất file CSV thành công!');
+      exportToCSV(
+        orders,
+        `don-hang-${new Date().toISOString().split("T")[0]}`,
+        columns
+      );
+      message.success("Xuất file CSV thành công!");
     } catch (error) {
-      message.error(error?.message || 'Xuất file CSV thất bại!');
+      message.error(error?.message || "Xuất file CSV thất bại!");
     }
   };
 
   useEffect(() => {
     if (loading) {
-      message.loading({ content: 'Đang tải dữ liệu...', key: 'fetchOrders' });
+      message.loading({ content: "Đang tải dữ liệu...", key: "fetchOrders" });
     } else {
-      message.destroy('fetchOrders');
+      message.destroy("fetchOrders");
     }
   }, [loading]);
 
   return (
-    <div className="page-orders" style={{ padding: '8px 0' }}>
+    <div className="page-orders" style={{ padding: "8px 0" }}>
       <div
         className="page-header"
         style={{
           marginBottom: 16,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
           gap: 12,
-          flexWrap: 'wrap',
-        }}
-      >
+          flexWrap: "wrap",
+        }}>
         <div>
           <Title
             level={2}
             style={{
               marginBottom: 4,
               fontWeight: 700,
-              color: '#0F172A',
-            }}
-          >
+              color: "#0F172A",
+            }}>
             Quản lý đơn hàng
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
@@ -306,59 +373,53 @@ const Orders = () => {
           onClick={handleCreateOrder}
           style={{
             borderRadius: 9999,
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
+            display: "flex",
+            alignItems: "center",
+          }}>
           Tạo đơn hàng
         </Button>
       </div>
       <Card
         style={{
           borderRadius: 12,
-          border: '1px solid #E2E8F0',
-          boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)',
-          background: '#FFFFFF',
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+          background: "#FFFFFF",
         }}
-        bodyStyle={{ padding: 16 }}
-      >
+        bodyStyle={{ padding: 16 }}>
         <div
           className="table-toolbar"
           style={{
             marginBottom: 16,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
             gap: 12,
-            flexWrap: 'wrap',
-          }}
-        >
+            flexWrap: "wrap",
+          }}>
           <div
             className="filters"
             style={{
-              display: 'flex',
-              flexWrap: 'wrap',
+              display: "flex",
+              flexWrap: "wrap",
               gap: 8,
-            }}
-          >
+            }}>
             <Select
               placeholder="Trạng thái"
               value={statusFilter}
               onChange={handleStatusFilter}
-              style={{ width: 160 }}
-            >
+              style={{ width: 160 }}>
               <Option value="">Tất cả</Option>
               {Object.keys(ORDER_STATUS).map((key) => (
                 <Option key={key} value={key}>
                   <StatusBadge status={key} statusMap={ORDER_STATUS} />
-                  {ORDER_STATUS[key].text}
                 </Option>
               ))}
             </Select>
             <Input.Search
               placeholder="Tìm theo khách hàng"
               onSearch={handleCustomerIdFilter}
-              style={{ width: 260, maxWidth: '100%' }}
+              style={{ width: 260, maxWidth: "100%" }}
               allowClear
             />
             <Button onClick={handleResetFilters} icon={<ReloadOutlined />}>
@@ -368,22 +429,17 @@ const Orders = () => {
           <div
             className="export-buttons"
             style={{
-              display: 'flex',
-              flexWrap: 'wrap',
+              display: "flex",
+              flexWrap: "wrap",
               gap: 8,
-            }}
-          >
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={handleExportExcel}
-            >
+            }}>
+            <Button icon={<DownloadOutlined />} onClick={handleExportExcel}>
               Xuất Excel
             </Button>
             <Button
               icon={<DownloadOutlined />}
               onClick={handleExportCSV}
-              type="default"
-            >
+              type="default">
               Xuất CSV
             </Button>
           </div>
@@ -408,8 +464,7 @@ const Orders = () => {
         onCancel={() => setIsModalVisible(false)}
         footer={null}
         width={900}
-        destroyOnClose
-      >
+        destroyOnClose>
         <OrderForm
           order={editingOrder}
           onSuccess={() => {

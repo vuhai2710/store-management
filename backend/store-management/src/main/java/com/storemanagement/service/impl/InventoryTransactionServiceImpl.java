@@ -127,4 +127,26 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
         return PageUtils.toPageResponse(transactionPage, 
                 inventoryTransactionMapper.toDTOList(transactionPage.getContent()));
     }
+
+    @Override
+    public PageResponse<InventoryTransactionDTO> getTransactionsByAdvancedCriteria(
+            TransactionType transactionType,
+            com.storemanagement.utils.ReferenceType referenceType,
+            Integer productId,
+            String productName,
+            String sku,
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            Pageable pageable) {
+        
+        log.info("Getting inventory transactions by advanced criteria - type: {}, refType: {}, productId: {}, productName: {}, sku: {}, from: {} to: {}", 
+                transactionType, referenceType, productId, productName, sku, startDate, endDate);
+        
+        Page<InventoryTransaction> transactionPage = 
+                inventoryTransactionRepository.findByAdvancedCriteria(
+                        transactionType, referenceType, productId, productName, sku, startDate, endDate, pageable);
+        
+        return PageUtils.toPageResponse(transactionPage, 
+                inventoryTransactionMapper.toDTOList(transactionPage.getContent()));
+    }
 }
