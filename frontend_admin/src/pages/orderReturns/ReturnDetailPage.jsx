@@ -82,28 +82,28 @@ const ReturnDetailPage = () => {
    */
   const calculateRefundAmount = (data) => {
     if (!data || !data.items) return 0;
-    
+
     // Tính tổng tiền sản phẩm yêu cầu trả
     const itemsTotal = data.items.reduce(
-      (sum, item) => sum + (Number(item.price) || 0) * (item.quantity || 0), 
+      (sum, item) => sum + (Number(item.price) || 0) * (item.quantity || 0),
       0
     );
-    
+
     // Nếu không có thông tin đơn hàng hoặc không có giảm giá -> hoàn nguyên giá
     const orderTotal = Number(data.orderTotalAmount) || 0;
     const orderDiscount = Number(data.orderDiscount) || 0;
-    
+
     if (orderTotal <= 0) {
       // Không có thông tin đơn hàng, hoàn nguyên giá sản phẩm
       return Math.round(itemsTotal);
     }
-    
+
     // Tính tỷ lệ sau giảm giá
     const discountRatio = (orderTotal - orderDiscount) / orderTotal;
-    
+
     // Số tiền hoàn = tổng tiền sp trả * tỷ lệ giảm giá
     const refundAmount = itemsTotal * discountRatio;
-    
+
     return Math.round(refundAmount);
   };
 

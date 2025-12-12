@@ -1,5 +1,6 @@
 // src/components/pages/ProfilePage.js
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import {
   User,
   Mail,
@@ -190,10 +191,10 @@ const ProfilePage = ({ setCurrentPage }) => {
       setProfile(updatedProfile);
       setEditingProfile(false);
       await refreshUser();
-      alert("Cập nhật thông tin thành công");
+      toast.success("Cập nhật thông tin thành công");
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert(
+      toast.error(
         error?.message || "Không thể cập nhật thông tin. Vui lòng thử lại."
       );
     } finally {
@@ -229,10 +230,10 @@ const ProfilePage = ({ setCurrentPage }) => {
       });
       setDistricts([]);
       setWards([]);
-      alert("Tạo địa chỉ thành công");
+      toast.success("Tạo địa chỉ thành công");
     } catch (error) {
       console.error("Error creating address:", error);
-      alert(error?.message || "Không thể tạo địa chỉ. Vui lòng thử lại.");
+      toast.error(error?.message || "Không thể tạo địa chỉ. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -264,10 +265,12 @@ const ProfilePage = ({ setCurrentPage }) => {
       });
       setDistricts([]);
       setWards([]);
-      alert("Cập nhật địa chỉ thành công");
+      toast.success("Cập nhật địa chỉ thành công");
     } catch (error) {
       console.error("Error updating address:", error);
-      alert(error?.message || "Không thể cập nhật địa chỉ. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể cập nhật địa chỉ. Vui lòng thử lại."
+      );
     } finally {
       setLoading(false);
     }
@@ -286,10 +289,10 @@ const ProfilePage = ({ setCurrentPage }) => {
           (addr) => (addr.idShippingAddress || addr.id) !== addressId
         )
       );
-      alert("Xóa địa chỉ thành công");
+      toast.success("Xóa địa chỉ thành công");
     } catch (error) {
       console.error("Error deleting address:", error);
-      alert(error?.message || "Không thể xóa địa chỉ. Vui lòng thử lại.");
+      toast.error(error?.message || "Không thể xóa địa chỉ. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -308,10 +311,10 @@ const ProfilePage = ({ setCurrentPage }) => {
             : { ...addr, isDefault: false }
         )
       );
-      alert("Đặt địa chỉ mặc định thành công");
+      toast.success("Đặt địa chỉ mặc định thành công");
     } catch (error) {
       console.error("Error setting default address:", error);
-      alert(
+      toast.error(
         error?.message || "Không thể đặt địa chỉ mặc định. Vui lòng thử lại."
       );
     } finally {
@@ -323,12 +326,12 @@ const ProfilePage = ({ setCurrentPage }) => {
     e.preventDefault();
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp");
+      toast.warning("Mật khẩu xác nhận không khớp");
       return;
     }
 
     if (passwordForm.newPassword.length < 4) {
-      alert("Mật khẩu mới phải có ít nhất 4 ký tự");
+      toast.warning("Mật khẩu mới phải có ít nhất 4 ký tự");
       return;
     }
 
@@ -344,10 +347,12 @@ const ProfilePage = ({ setCurrentPage }) => {
         newPassword: "",
         confirmPassword: "",
       });
-      alert("Đổi mật khẩu thành công");
+      toast.success("Đổi mật khẩu thành công");
     } catch (error) {
       console.error("Error changing password:", error);
-      alert(error?.message || "Không thể đổi mật khẩu. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể đổi mật khẩu. Vui lòng thử lại."
+      );
     } finally {
       setLoading(false);
     }
@@ -361,13 +366,13 @@ const ProfilePage = ({ setCurrentPage }) => {
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      alert("Vui lòng chọn file ảnh");
+      toast.warning("Vui lòng chọn file ảnh");
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert("File ảnh quá lớn. Vui lòng chọn file nhỏ hơn 5MB");
+      toast.warning("File ảnh quá lớn. Vui lòng chọn file nhỏ hơn 5MB");
       return;
     }
 
@@ -381,11 +386,11 @@ const ProfilePage = ({ setCurrentPage }) => {
       if (userData?.avatarUrl) {
         setAvatar(userData.avatarUrl);
         await refreshUser(); // Refresh user data in context
-        alert("Upload ảnh đại diện thành công");
+        toast.success("Upload ảnh đại diện thành công");
       }
     } catch (error) {
       console.error("Error uploading avatar:", error);
-      alert(
+      toast.error(
         error?.message || "Không thể upload ảnh đại diện. Vui lòng thử lại."
       );
     } finally {
@@ -405,10 +410,12 @@ const ProfilePage = ({ setCurrentPage }) => {
       await userService.deleteAvatar();
       setAvatar(null);
       await refreshUser(); // Refresh user data in context
-      alert("Xóa ảnh đại diện thành công");
+      toast.success("Xóa ảnh đại diện thành công");
     } catch (error) {
       console.error("Error deleting avatar:", error);
-      alert(error?.message || "Không thể xóa ảnh đại diện. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể xóa ảnh đại diện. Vui lòng thử lại."
+      );
     } finally {
       setAvatarLoading(false);
     }
@@ -1895,4 +1902,3 @@ const ProfilePage = ({ setCurrentPage }) => {
 };
 
 export default ProfilePage;
-

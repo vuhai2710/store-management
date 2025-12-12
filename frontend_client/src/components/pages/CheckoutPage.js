@@ -1,5 +1,6 @@
 // src/components/pages/CheckoutPage.js
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import { MapPin, Plus, Edit, Trash2, CreditCard, Truck } from "lucide-react";
 import styles from "../../styles/styles";
 import LoadingSpinner from "../common/LoadingSpinner";
@@ -9,11 +10,14 @@ import { shippingAddressService } from "../../services/shippingAddressService";
 import { paymentService } from "../../services/paymentService";
 import { ghnService } from "../../services/ghnService";
 import { promotionService } from "../../services/promotionService";
+import { productsService } from "../../services/productsService";
 import { formatPrice, getImageUrl } from "../../utils/formatUtils";
 import { useAuth } from "../../contexts/AuthContext";
+import { useBuyNow } from "../../contexts/BuyNowContext";
 
 const CheckoutPage = ({ setCurrentPage }) => {
   const { isAuthenticated } = useAuth();
+  const { buyNowItem, clearBuyNow, isBuyNowMode } = useBuyNow();
   const [cart, setCart] = useState(null);
   const [shippingAddresses, setShippingAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
@@ -44,11 +48,52 @@ const CheckoutPage = ({ setCurrentPage }) => {
   const [automaticDiscount, setAutomaticDiscount] = useState(0);
   const [automaticDiscountInfo, setAutomaticDiscountInfo] = useState(null);
 
-  const cartItems = cart?.cartItems || cart?.items || [];
+  // Buy Now product (loaded from API if needed)
+  const [buyNowProduct, setBuyNowProduct] = useState(null);
+  const [loadingBuyNowProduct, setLoadingBuyNowProduct] = useState(false);
+
+  // Xác định items để hiển thị và tính toán
+  // Nếu là Buy Now mode → dùng buyNowItem
+  // Nếu là Cart mode → dùng cartItems
+  const checkoutItems = isBuyNowMode && buyNowItem
+    ? [{
+        productId: buyNowItem.productId,
+        quantity: buyNowItem.quantity,
+        product: buyNowProduct || buyNowItem.product,
+        price: (buyNowProduct || buyNowItem.product)?.price || 0,
+      }]
+    : (cart?.cartItems || cart?.items || []);
 
   // Default shop district ID (should be configured in backend, using placeholder for now)
   // TODO: Get this from backend config or API endpoint
   const SHOP_DISTRICT_ID = 1442; // Example: Ho Chi Minh City, District 1 (need to configure in backend)
+
+  // Load Buy Now product details if in Buy Now mode
+  useEffect(() => {
+    const loadBuyNowProduct = async () => {
+      if (!isBuyNowMode || !buyNowItem) return;
+
+      // Nếu đã có product info từ context, không cần load lại
+      if (buyNowItem.product && buyNowItem.product.productName) {
+        setBuyNowProduct(buyNowItem.product);
+        return;
+      }
+
+      try {
+        setLoadingBuyNowProduct(true);
+        const productData = await productsService.getProductById(buyNowItem.productId);
+        setBuyNowProduct(productData);
+      } catch (error) {
+        console.error("Error loading buy now product:", error);
+        toast.error("Không thể tải thông tin sản phẩm");
+        setCurrentPage("shop");
+      } finally {
+        setLoadingBuyNowProduct(false);
+      }
+    };
+
+    loadBuyNowProduct();
+  }, [isBuyNowMode, buyNowItem, setCurrentPage]);
 
   // Fetch cart and shipping addresses
   useEffect(() => {
@@ -62,11 +107,13 @@ const CheckoutPage = ({ setCurrentPage }) => {
         setLoading(true);
         setError(null);
 
-        // Fetch cart
-        const cartData = await cartService.getCart();
-        setCart(cartData);
+        // Chỉ fetch cart nếu KHÔNG phải Buy Now mode
+        if (!isBuyNowMode) {
+          const cartData = await cartService.getCart();
+          setCart(cartData);
+        }
 
-        // Fetch shipping addresses
+        // Fetch shipping addresses (cần cho cả 2 mode)
         const addressesData = await shippingAddressService.getAllAddresses();
         setShippingAddresses(addressesData || []);
 
@@ -92,17 +139,17 @@ const CheckoutPage = ({ setCurrentPage }) => {
     };
 
     fetchData();
-  }, [isAuthenticated, setCurrentPage]);
+  }, [isAuthenticated, setCurrentPage, isBuyNowMode]);
 
   // Calculate shipping fee when address is selected
   useEffect(() => {
     const calculateShippingFee = async () => {
-      if (
-        !selectedAddressId ||
-        !cart ||
-        !shippingAddresses ||
-        shippingAddresses.length === 0
-      ) {
+      // Kiểm tra có items để tính phí ship không
+      const hasItems = isBuyNowMode 
+        ? (buyNowItem && buyNowProduct)
+        : (cart && (cart.cartItems?.length > 0 || cart.items?.length > 0));
+
+      if (!selectedAddressId || !hasItems || !shippingAddresses || shippingAddresses.length === 0) {
         setShippingFee(0);
         return;
       }
@@ -126,24 +173,28 @@ const CheckoutPage = ({ setCurrentPage }) => {
         return;
       }
 
-      const cartItems = cart.cartItems || cart.items || [];
-      if (!cartItems || cartItems.length === 0) {
-        setShippingFee(0);
-        return;
-      }
-
       try {
         setLoadingShippingFee(true);
         setShippingFeeError(null);
 
-        // Calculate total weight (estimate 1kg per item or use actual weight if available)
-        const estimatedWeight = cartItems.reduce((total, item) => {
-          const itemWeight = item.weight || item.product?.weight || 1000; // Default 1kg per item
-          const quantity = item.quantity || item.qty || 1;
-          return total + itemWeight * quantity;
-        }, 0);
+        let estimatedWeight = 0;
+        let orderTotal = 0;
 
-        const cartTotal = cart.totalAmount || cart.total || 0;
+        if (isBuyNowMode && buyNowItem && buyNowProduct) {
+          // Buy Now mode: tính weight và total từ buyNowItem
+          const itemWeight = buyNowProduct.weight || 1000; // Default 1kg
+          estimatedWeight = itemWeight * buyNowItem.quantity;
+          orderTotal = (buyNowProduct.price || 0) * buyNowItem.quantity;
+        } else {
+          // Cart mode: tính từ cart items
+          const cartItemsList = cart.cartItems || cart.items || [];
+          estimatedWeight = cartItemsList.reduce((total, item) => {
+            const itemWeight = item.weight || item.product?.weight || 1000;
+            const quantity = item.quantity || item.qty || 1;
+            return total + itemWeight * quantity;
+          }, 0);
+          orderTotal = cart.totalAmount || cart.total || 0;
+        }
 
         // Calculate shipping fee using GHN API
         const feeResponse = await ghnService.calculateShippingFee({
@@ -154,7 +205,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
           length: 20,
           width: 20,
           height: 20,
-          insuranceValue: Math.round(cartTotal), // Order total as insurance value
+          insuranceValue: Math.round(orderTotal), // Order total as insurance value
         });
 
         if (feeResponse && feeResponse.total) {
@@ -177,19 +228,38 @@ const CheckoutPage = ({ setCurrentPage }) => {
     };
 
     calculateShippingFee();
-  }, [selectedAddressId, shippingAddresses, cart]);
+  }, [selectedAddressId, shippingAddresses, cart, isBuyNowMode, buyNowItem, buyNowProduct]);
 
   // Calculate automatic discount when cart total changes
   useEffect(() => {
     const calculateAutomaticDiscount = async () => {
-      if (!cart || !cartItems || cartItems.length === 0) {
+      // Tính tổng tiền và items dựa trên mode
+      let orderTotal = 0;
+      let items = [];
+
+      if (isBuyNowMode && buyNowItem && buyNowProduct) {
+        orderTotal = (buyNowProduct.price || 0) * buyNowItem.quantity;
+        items = [{
+          productId: buyNowItem.productId,
+          quantity: buyNowItem.quantity,
+          price: buyNowProduct.price,
+        }];
+      } else if (cart) {
+        const cartItemsList = cart.cartItems || cart.items || [];
+        if (cartItemsList.length === 0) {
+          setAutomaticDiscount(0);
+          setAutomaticDiscountInfo(null);
+          return;
+        }
+        orderTotal = cart.totalAmount || cart.total || 0;
+        items = cartItemsList;
+      } else {
         setAutomaticDiscount(0);
         setAutomaticDiscountInfo(null);
         return;
       }
 
-      const cartTotal = cart.totalAmount || cart.total || 0;
-      if (cartTotal <= 0) {
+      if (orderTotal <= 0) {
         setAutomaticDiscount(0);
         setAutomaticDiscountInfo(null);
         return;
@@ -197,8 +267,8 @@ const CheckoutPage = ({ setCurrentPage }) => {
 
       try {
         const discountResponse = await promotionService.calculateDiscount({
-          totalAmount: cartTotal,
-          items: cartItems,
+          totalAmount: orderTotal,
+          items: items,
         });
 
         if (
@@ -220,7 +290,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
     };
 
     calculateAutomaticDiscount();
-  }, [cart, cartItems]);
+  }, [cart, isBuyNowMode, buyNowItem, buyNowProduct]);
 
   const handleAddressFormChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -248,7 +318,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
       });
     } catch (error) {
       console.error("Error creating address:", error);
-      alert(error?.message || "Không thể tạo địa chỉ. Vui lòng thử lại.");
+      toast.error(error?.message || "Không thể tạo địa chỉ. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -260,14 +330,22 @@ const CheckoutPage = ({ setCurrentPage }) => {
       return;
     }
 
-    if (
-      !cart ||
-      (!cart.cartItems && !cart.items) ||
-      (cart.cartItems && cart.cartItems.length === 0) ||
-      (cart.items && cart.items.length === 0)
-    ) {
-      setError("Giỏ hàng trống");
-      return;
+    // Kiểm tra có items không (tùy mode)
+    if (isBuyNowMode) {
+      if (!buyNowItem || !buyNowProduct) {
+        setError("Không tìm thấy thông tin sản phẩm");
+        return;
+      }
+    } else {
+      if (
+        !cart ||
+        (!cart.cartItems && !cart.items) ||
+        (cart.cartItems && cart.cartItems.length === 0) ||
+        (cart.items && cart.items.length === 0)
+      ) {
+        setError("Giỏ hàng trống");
+        return;
+      }
     }
 
     if (!paymentMethod) {
@@ -279,15 +357,36 @@ const CheckoutPage = ({ setCurrentPage }) => {
       setSubmitting(true);
       setError(null);
 
-      // Create order - ensure shippingAddressId is a number
-      const order = await ordersService.checkout({
-        shippingAddressId: Number(selectedAddressId),
-        paymentMethod: paymentMethod,
-        notes: notes && notes.trim() !== "" ? notes.trim() : undefined,
-        promotionCode:
-          promotionValid && promotionCode ? promotionCode.trim() : undefined,
-        shippingFee: shippingFee > 0 ? shippingFee : undefined, // Phí giao hàng
-      });
+      let order;
+
+      if (isBuyNowMode) {
+        // ========== BUY NOW MODE ==========
+        // Gọi API buy-now với đầy đủ thông tin
+        order = await ordersService.buyNow({
+          productId: buyNowItem.productId,
+          quantity: buyNowItem.quantity,
+          shippingAddressId: Number(selectedAddressId),
+          paymentMethod: paymentMethod,
+          notes: notes && notes.trim() !== "" ? notes.trim() : undefined,
+          promotionCode:
+            promotionValid && promotionCode ? promotionCode.trim() : undefined,
+          shippingFee: shippingFee > 0 ? shippingFee : undefined,
+        });
+        
+        // Clear BuyNow context sau khi đặt hàng thành công
+        clearBuyNow();
+      } else {
+        // ========== CART MODE ==========
+        // Gọi API checkout từ giỏ hàng
+        order = await ordersService.checkout({
+          shippingAddressId: Number(selectedAddressId),
+          paymentMethod: paymentMethod,
+          notes: notes && notes.trim() !== "" ? notes.trim() : undefined,
+          promotionCode:
+            promotionValid && promotionCode ? promotionCode.trim() : undefined,
+          shippingFee: shippingFee > 0 ? shippingFee : undefined,
+        });
+      }
 
       // If payment method is PAYOS, create payment link and redirect
       if (paymentMethod === "PAYOS") {
@@ -339,13 +438,13 @@ const CheckoutPage = ({ setCurrentPage }) => {
           setSubmitting(false);
 
           // Show error alert
-          alert(`Lỗi: ${paymentErrorMessage}`);
+          toast.error(`Lỗi: ${paymentErrorMessage}`);
           return;
         }
       }
 
       // For CASH payment, redirect to orders page
-      alert("Đặt hàng thành công!");
+      toast.success("Đặt hàng thành công!");
       setCurrentPage("orders");
     } catch (error) {
       console.error("Error placing order:", error);
@@ -369,7 +468,8 @@ const CheckoutPage = ({ setCurrentPage }) => {
     }
   };
 
-  if (loading) {
+  // Loading state (including buy now product loading)
+  if (loading || loadingBuyNowProduct) {
     return (
       <section style={{ padding: "4rem 0" }}>
         <div style={styles.container}>
@@ -387,7 +487,8 @@ const CheckoutPage = ({ setCurrentPage }) => {
     );
   }
 
-  if (error && !cart) {
+  // Error state - hiển thị khi không có items
+  if (error && !isBuyNowMode && !cart) {
     return (
       <section style={{ padding: "4rem 0" }}>
         <div style={styles.container}>
@@ -411,12 +512,12 @@ const CheckoutPage = ({ setCurrentPage }) => {
     );
   }
 
-  if (
-    !cart ||
-    (!cart.cartItems && !cart.items) ||
-    (cart.cartItems && cart.cartItems.length === 0) ||
-    (cart.items && cart.items.length === 0)
-  ) {
+  // Kiểm tra có items để checkout không
+  const hasCheckoutItems = isBuyNowMode 
+    ? (buyNowItem && buyNowProduct)
+    : (cart && ((cart.cartItems?.length > 0) || (cart.items?.length > 0)));
+
+  if (!hasCheckoutItems) {
     return (
       <section style={{ padding: "4rem 0" }}>
         <div style={styles.container}>
@@ -427,7 +528,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                 fontSize: "1.125rem",
                 marginBottom: "1.5rem",
               }}>
-              Giỏ hàng trống
+              {isBuyNowMode ? "Không tìm thấy sản phẩm" : "Giỏ hàng trống"}
             </p>
             <button
               onClick={() => setCurrentPage("shop")}
@@ -440,13 +541,17 @@ const CheckoutPage = ({ setCurrentPage }) => {
     );
   }
 
-  const cartTotal = cart?.totalAmount || cart?.total || 0;
+  // Tính tổng tiền dựa trên mode
+  const orderSubtotal = isBuyNowMode && buyNowProduct
+    ? (buyNowProduct.price || 0) * buyNowItem.quantity
+    : (cart?.totalAmount || cart?.total || 0);
+  
   // Logic: Ưu tiên coupon code, nếu không có thì dùng automatic discount
   const totalDiscount =
     promotionValid && promotionDiscount > 0
       ? promotionDiscount
       : automaticDiscount;
-  const finalTotal = Math.max(0, cartTotal + shippingFee - totalDiscount);
+  const finalTotal = Math.max(0, orderSubtotal + shippingFee - totalDiscount);
 
   return (
     <section style={{ padding: "4rem 0", backgroundColor: "#f8f8f8" }}>
@@ -764,6 +869,16 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   gap: "0.5rem",
                 }}>
                 <Truck size={24} /> Sản phẩm trong đơn hàng
+                {isBuyNowMode && (
+                  <span style={{ 
+                    fontSize: "0.875rem", 
+                    fontWeight: "normal", 
+                    color: "#28a745",
+                    marginLeft: "0.5rem" 
+                  }}>
+                    (Mua ngay)
+                  </span>
+                )}
               </h3>
 
               <div
@@ -772,25 +887,28 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   flexDirection: "column",
                   gap: "1rem",
                 }}>
-                {cartItems.map((item) => {
+                {checkoutItems.map((item, index) => {
+                  // Lấy thông tin sản phẩm từ item (hỗ trợ cả cart item và buy now item)
+                  const product = item.product || buyNowProduct;
                   const productName =
                     item.productName ||
-                    item.product?.productName ||
+                    product?.productName ||
+                    product?.name ||
                     item.name ||
                     "Sản phẩm không xác định";
                   const productPrice =
-                    item.productPrice || item.price || item.product?.price || 0;
+                    item.productPrice || item.price || product?.price || 0;
                   const quantity = item.quantity || item.qty || 0;
                   const itemTotal = item.subtotal || productPrice * quantity;
                   const productImage =
                     item.productImageUrl ||
                     item.productImage ||
-                    item.product?.imageUrl ||
+                    product?.imageUrl ||
                     item.imageUrl;
 
                   return (
                     <div
-                      key={item.idCartItem || item.id}
+                      key={item.idCartItem || item.id || item.productId || index}
                       style={{
                         display: "flex",
                         gap: "1rem",
@@ -1013,11 +1131,10 @@ const CheckoutPage = ({ setCurrentPage }) => {
                           setLoadingPromotion(true);
                           setPromotionError(null);
 
-                          const cartTotal = cart.totalAmount || cart.total || 0;
                           const validateResponse =
                             await promotionService.validatePromotion({
                               code: promotionCode.trim(),
-                              totalAmount: cartTotal,
+                              totalAmount: orderSubtotal,
                             });
 
                           if (validateResponse && validateResponse.valid) {
@@ -1148,8 +1265,8 @@ const CheckoutPage = ({ setCurrentPage }) => {
                     marginBottom: "0.5rem",
                     color: "#495057",
                   }}>
-                  <span>Tạm tính</span>
-                  <span>{formatPrice(cartTotal)}</span>
+                  <span>Tạm tính ({isBuyNowMode ? "1 sản phẩm" : `${checkoutItems.length} sản phẩm`})</span>
+                  <span>{formatPrice(orderSubtotal)}</span>
                 </div>
                 <div
                   style={{
@@ -1304,7 +1421,13 @@ const CheckoutPage = ({ setCurrentPage }) => {
               </button>
 
               <button
-                onClick={() => setCurrentPage("cart")}
+                onClick={() => {
+                  // Clear BuyNow context khi quay lại
+                  if (isBuyNowMode) {
+                    clearBuyNow();
+                  }
+                  setCurrentPage(isBuyNowMode ? "shop" : "cart");
+                }}
                 style={{
                   ...styles.buttonSecondary,
                   width: "100%",
@@ -1312,7 +1435,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   marginTop: "0.5rem",
                   fontSize: "0.875rem",
                 }}>
-                Quay về giỏ hàng
+                {isBuyNowMode ? "Tiếp tục mua sắm" : "Quay về giỏ hàng"}
               </button>
             </div>
           </div>

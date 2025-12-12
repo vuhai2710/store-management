@@ -24,7 +24,8 @@ const ReturnItemTable = ({ items }) => {
       key: "price",
       width: 140,
       align: "right",
-      render: (val) => val != null ? `${Number(val).toLocaleString("vi-VN")} ₫` : "-",
+      render: (val) =>
+        val != null ? `${Number(val).toLocaleString("vi-VN")} ₫` : "-",
     },
     {
       title: "Thành tiền gốc",
@@ -43,8 +44,13 @@ const ReturnItemTable = ({ items }) => {
       width: 140,
       align: "right",
       render: (val, record) => {
-        const refund = val ?? (Number(record.price) || 0) * (record.quantity || 0);
-        return <Text strong style={{ color: '#52c41a' }}>{Number(refund).toLocaleString("vi-VN")} ₫</Text>;
+        const refund =
+          val ?? (Number(record.price) || 0) * (record.quantity || 0);
+        return (
+          <Text strong style={{ color: "#52c41a" }}>
+            {Number(refund).toLocaleString("vi-VN")} ₫
+          </Text>
+        );
       },
     },
   ];

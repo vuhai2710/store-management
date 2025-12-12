@@ -1,5 +1,5 @@
-import api from './api';
-import { API_ENDPOINTS } from '../constants/apiEndpoints';
+import api from "./api";
+import { API_ENDPOINTS } from "../constants/apiEndpoints";
 
 const unwrap = (resp) => resp?.data ?? resp;
 
@@ -16,13 +16,24 @@ export const ordersService = {
   checkout: async (orderData) => {
     // Validate and format data
     const body = {
-      shippingAddressId: orderData.shippingAddressId ? Number(orderData.shippingAddressId) : null,
-      paymentMethod: orderData.paymentMethod || 'CASH',
-      notes: orderData.notes && orderData.notes.trim() !== '' ? orderData.notes.trim() : null,
-      promotionCode: orderData.promotionCode && orderData.promotionCode.trim() !== '' ? orderData.promotionCode.trim() : null,
-      shippingFee: orderData.shippingFee != null && orderData.shippingFee > 0 ? Number(orderData.shippingFee) : null, // Phí giao hàng từ GHN
+      shippingAddressId: orderData.shippingAddressId
+        ? Number(orderData.shippingAddressId)
+        : null,
+      paymentMethod: orderData.paymentMethod || "CASH",
+      notes:
+        orderData.notes && orderData.notes.trim() !== ""
+          ? orderData.notes.trim()
+          : null,
+      promotionCode:
+        orderData.promotionCode && orderData.promotionCode.trim() !== ""
+          ? orderData.promotionCode.trim()
+          : null,
+      shippingFee:
+        orderData.shippingFee != null && orderData.shippingFee > 0
+          ? Number(orderData.shippingFee)
+          : null, // Phí giao hàng từ GHN
     };
-    
+
     // Remove null/undefined fields if not required
     if (!body.shippingAddressId) {
       delete body.shippingAddressId;
@@ -36,13 +47,15 @@ export const ordersService = {
     if (body.shippingFee == null) {
       delete body.shippingFee;
     }
-    
+
     // Validate payment method - chỉ hỗ trợ CASH và PAYOS
-    const validPaymentMethods = ['CASH', 'PAYOS'];
+    const validPaymentMethods = ["CASH", "PAYOS"];
     if (!validPaymentMethods.includes(body.paymentMethod)) {
-      throw new Error(`Phương thức thanh toán không hợp lệ. Chỉ hỗ trợ: Thanh toán khi nhận hàng (CASH) hoặc Thanh toán online qua PayOS (PAYOS)`);
+      throw new Error(
+        `Phương thức thanh toán không hợp lệ. Chỉ hỗ trợ: Thanh toán khi nhận hàng (CASH) hoặc Thanh toán online qua PayOS (PAYOS)`
+      );
     }
-    
+
     const resp = await api.post(API_ENDPOINTS.ORDERS.CHECKOUT, body);
     return unwrap(resp);
   },
@@ -54,19 +67,48 @@ export const ordersService = {
    * @param {number} orderData.productId - Product ID
    * @param {number} orderData.quantity - Quantity
    * @param {number} orderData.shippingAddressId - Shipping address ID (optional)
-   * @param {string} orderData.paymentMethod - Payment method (CASH, TRANSFER, ZALOPAY, PAYOS)
+   * @param {string} orderData.paymentMethod - Payment method (CASH, PAYOS)
    * @param {string} orderData.notes - Order note (optional)
    * @param {number} orderData.shippingFee - Shipping fee from GHN (optional)
+   * @param {string} orderData.promotionCode - Promotion code (optional)
    * @returns {Promise<OrderDTO>}
    */
   buyNow: async (orderData) => {
+    // Validate required fields
+    if (!orderData.productId) {
+      throw new Error("Vui lòng chọn sản phẩm");
+    }
+    if (!orderData.quantity || orderData.quantity < 1) {
+      throw new Error("Số lượng phải lớn hơn 0");
+    }
+    if (!orderData.paymentMethod) {
+      throw new Error("Vui lòng chọn phương thức thanh toán");
+    }
+
+    // Validate payment method
+    const validPaymentMethods = ["CASH", "PAYOS"];
+    if (!validPaymentMethods.includes(orderData.paymentMethod)) {
+      throw new Error(
+        "Phương thức thanh toán không hợp lệ. Chỉ hỗ trợ: COD (CASH) hoặc PayOS"
+      );
+    }
+
     const body = {
       productId: orderData.productId,
       quantity: orderData.quantity,
-      shippingAddressId: orderData.shippingAddressId,
-      paymentMethod: orderData.paymentMethod || 'CASH',
+      shippingAddressId: orderData.shippingAddressId
+        ? Number(orderData.shippingAddressId)
+        : null,
+      paymentMethod: orderData.paymentMethod,
       notes: orderData.notes || null,
-      shippingFee: orderData.shippingFee != null && orderData.shippingFee > 0 ? Number(orderData.shippingFee) : null, // Phí giao hàng từ GHN
+      shippingFee:
+        orderData.shippingFee != null && orderData.shippingFee > 0
+          ? Number(orderData.shippingFee)
+          : null,
+      promotionCode:
+        orderData.promotionCode && orderData.promotionCode.trim() !== ""
+          ? orderData.promotionCode.trim()
+          : null,
     };
     const resp = await api.post(API_ENDPOINTS.ORDERS.BUY_NOW, body);
     return unwrap(resp);
@@ -81,8 +123,8 @@ export const ordersService = {
   getMyOrders: async ({
     pageNo = 1,
     pageSize = 10,
-    sortBy = 'orderDate',
-    sortDirection = 'DESC',
+    sortBy = "orderDate",
+    sortDirection = "DESC",
     status,
   } = {}) => {
     const params = { pageNo, pageSize, sortBy, sortDirection };
@@ -124,4 +166,3 @@ export const ordersService = {
     return unwrap(resp);
   },
 };
-

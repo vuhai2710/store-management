@@ -1,8 +1,11 @@
 // App.js
 import React, { useState, useEffect, useRef } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Import context
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { BuyNowProvider } from "./contexts/BuyNowContext";
 
 // Import components
 import Header from "./components/layout/Header";
@@ -175,7 +178,7 @@ function AppContent() {
       const quantity = product.qty || product.quantity || 1;
 
       if (!productId) {
-        alert("Không tìm thấy ID sản phẩm");
+        toast.warning("Không tìm thấy ID sản phẩm");
         return;
       }
 
@@ -245,7 +248,7 @@ function AppContent() {
         error?.message ||
         error?.response?.data?.message ||
         "Không thể thêm sản phẩm vào giỏ hàng";
-      alert(errorMessage);
+      toast.error(errorMessage);
       throw error; // Re-throw to let component handle it
     }
   };
@@ -267,7 +270,7 @@ function AppContent() {
       }
     } catch (error) {
       console.error("Error updating cart:", error);
-      alert(error?.message || "Không thể cập nhật giỏ hàng");
+      toast.error(error?.message || "Không thể cập nhật giỏ hàng");
     }
   };
 
@@ -289,7 +292,7 @@ function AppContent() {
       setCart(updatedCart.cartItems || updatedCart.items || []);
     } catch (error) {
       console.error("Error removing from cart:", error);
-      alert(error?.message || "Không thể xóa sản phẩm khỏi giỏ hàng");
+      toast.error(error?.message || "Không thể xóa sản phẩm khỏi giỏ hàng");
     }
   };
 
@@ -514,6 +517,21 @@ function AppContent() {
           }}
         />
       )}
+
+      {/* Toast Container */}
+      <ToastContainer
+        position="top-right"
+        autoClose={2500}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        className="text-sm"
+      />
     </div>
   );
 }
@@ -522,7 +540,9 @@ export default function OganiApp() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <AppContent />
+        <BuyNowProvider>
+          <AppContent />
+        </BuyNowProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

@@ -278,8 +278,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderDTO createOrderDirectly(Integer customerId, OrderDTO request) {
-        log.info("Creating order directly (Buy Now) for customer: {}, product: {}, quantity: {}",
-                customerId, request.getProductId(), request.getQuantity());
+        log.info("Creating order directly (Buy Now) for customer: {}, product: {}, quantity: {}, paymentMethod: {}",
+                customerId, request.getProductId(), request.getQuantity(), request.getPaymentMethod());
 
         // Bước 1.0: Validate input parameters
         if (request.getProductId() == null) {
@@ -287,6 +287,10 @@ public class OrderServiceImpl implements OrderService {
         }
         if (request.getQuantity() == null || request.getQuantity() < 1) {
             throw new IllegalArgumentException("Số lượng phải lớn hơn 0");
+        }
+        // Validate paymentMethod - không cho phép null, phải chọn COD hoặc PAYOS
+        if (request.getPaymentMethod() == null) {
+            throw new IllegalArgumentException("Vui lòng chọn phương thức thanh toán");
         }
 
         // Bước 1.1: Kiểm tra customer tồn tại

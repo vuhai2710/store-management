@@ -1,5 +1,6 @@
 // src/components/pages/ProductDetailPage.js
 import React, { useState, useEffect, useRef } from "react";
+import { toast } from "react-toastify";
 import {
   Minus,
   Plus,
@@ -24,9 +25,9 @@ import {
   INVENTORY_STATUS_COLORS,
 } from "../../constants/inventoryStatus";
 import { useAuth } from "../../hooks/useAuth";
-import { ordersService } from "../../services/ordersService";
-import { shippingAddressService } from "../../services/shippingAddressService";
+import { useBuyNow } from "../../contexts/BuyNowContext";
 import { reviewService } from "../../services/reviewService";
+import { ordersService } from "../../services/ordersService";
 
 const ProductDetailPage = ({
   productId,
@@ -36,6 +37,7 @@ const ProductDetailPage = ({
   handleViewProductDetail,
 }) => {
   const { isAuthenticated, customer, user } = useAuth();
+  const { setBuyNow } = useBuyNow();
   const [product, setProduct] = useState(null);
   const [images, setImages] = useState([]);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -306,7 +308,7 @@ const ProductDetailPage = ({
 
   const handleCreateReview = async () => {
     if (!reviewForm.orderDetailId || !reviewForm.comment.trim()) {
-      alert("Vui lòng điền đầy đủ thông tin đánh giá");
+      toast.warning("Vui lòng điền đầy đủ thông tin đánh giá");
       return;
     }
 
@@ -338,10 +340,12 @@ const ProductDetailPage = ({
         comment: "",
       });
 
-      alert("Đánh giá đã được gửi thành công!");
+      toast.success("Đánh giá đã được gửi thành công!");
     } catch (error) {
       console.error("Error creating review:", error);
-      alert(error?.message || "Không thể tạo đánh giá. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể tạo đánh giá. Vui lòng thử lại."
+      );
     } finally {
       setSubmittingReview(false);
     }
@@ -349,7 +353,7 @@ const ProductDetailPage = ({
 
   const handleUpdateReview = async (reviewId) => {
     if (!reviewForm.comment.trim()) {
-      alert("Vui lòng điền đầy đủ thông tin đánh giá");
+      toast.warning("Vui lòng điền đầy đủ thông tin đánh giá");
       return;
     }
 
@@ -381,10 +385,12 @@ const ProductDetailPage = ({
         comment: "",
       });
 
-      alert("Đánh giá đã được cập nhật thành công!");
+      toast.success("Đánh giá đã được cập nhật thành công!");
     } catch (error) {
       console.error("Error updating review:", error);
-      alert(error?.message || "Không thể cập nhật đánh giá. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể cập nhật đánh giá. Vui lòng thử lại."
+      );
     } finally {
       setSubmittingReview(false);
     }
@@ -410,10 +416,12 @@ const ProductDetailPage = ({
       setReviewsTotalPages(reviewsData?.totalPages || 1);
       setReviewsTotalElements(reviewsData?.totalElements || 0);
 
-      alert("Đánh giá đã được xóa thành công!");
+      toast.success("Đánh giá đã được xóa thành công!");
     } catch (error) {
       console.error("Error deleting review:", error);
-      alert(error?.message || "Không thể xóa đánh giá. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể xóa đánh giá. Vui lòng thử lại."
+      );
     }
   };
 
@@ -424,7 +432,7 @@ const ProductDetailPage = ({
     }
 
     if (!product) {
-      alert("Không tìm thấy thông tin sản phẩm");
+      toast.warning("Không tìm thấy thông tin sản phẩm");
       return;
     }
 
@@ -444,73 +452,65 @@ const ProductDetailPage = ({
     }
   };
 
-  const handleBuyNow = async () => {
+  /**
+   * handleBuyNow - Xử lý khi user nhấn "Mua Ngay"
+   * 
+   * LUỒNG MỚI (giống Shopee/Lazada):
+   * 1. KHÔNG tạo đơn hàng ngay
+   * 2. Lưu productId + quantity vào BuyNowContext
+   * 3. Điều hướng sang trang Checkout
+   * 4. Tại Checkout, user chọn địa chỉ, phương thức thanh toán, xem phí ship
+   * 5. User nhấn "Đặt hàng" → lúc này mới gọi API tạo đơn
+   */
+  const handleBuyNow = () => {
     if (!isAuthenticated) {
       setCurrentPage("login");
       return;
     }
 
     if (!product) {
-      alert("Không tìm thấy thông tin sản phẩm");
+      toast.warning("Không tìm thấy thông tin sản phẩm");
       return;
     }
 
-    try {
-      setBuyNowLoading(true);
-
-      // Get shipping addresses to find default address
-      let defaultAddressId = null;
-      try {
-        const addresses = await shippingAddressService.getAllAddresses();
-        if (addresses && addresses.length > 0) {
-          const defaultAddress =
-            addresses.find((addr) => addr.isDefault) || addresses[0];
-          defaultAddressId =
-            defaultAddress.idShippingAddress || defaultAddress.id;
-        }
-      } catch (addressError) {
-        console.error("Error fetching shipping addresses:", addressError);
-      }
-
-      // If no shipping address, redirect to checkout page (user needs to add address first)
-      if (!defaultAddressId) {
-        alert("Vui lòng thêm địa chỉ giao hàng trước khi đặt hàng");
-        setCurrentPage("account");
-        return;
-      }
-
-      // Create order directly using buy-now API (không qua giỏ hàng)
-      const productId = product.idProduct || product.id;
-      const orderData = {
-        productId: productId,
-        quantity: qty,
-        shippingAddressId: defaultAddressId,
-        paymentMethod: "CASH", // Default payment method
-        notes: null,
-      };
-
-      const orderResult = await ordersService.buyNow(orderData);
-
-      // Đặt hàng thành công - chuyển tới trang chi tiết đơn hàng
-      if (orderResult && orderResult.idOrder) {
-        alert("Đặt hàng thành công!");
-        setCurrentPage("order-detail", { orderId: orderResult.idOrder });
-      } else {
-        alert("Đặt hàng thành công!");
-        setCurrentPage("orders");
-      }
-    } catch (error) {
-      console.error("Error in buy now:", error);
-      let errorMessage = "Không thể đặt hàng. Vui lòng thử lại.";
-      if (error?.message) {
-        errorMessage = error.message;
-      } else if (error?.responseData?.message) {
-        errorMessage = error.responseData.message;
-      }
-      alert(errorMessage);
-    } finally {
-      setBuyNowLoading(false);
+    const productIdValue = product.idProduct || product.id;
+    
+    // Kiểm tra số lượng hợp lệ
+    if (qty < 1) {
+      toast.warning("Số lượng phải lớn hơn 0");
+      return;
     }
+
+    // Kiểm tra tồn kho
+    const stockQuantity = product.stockQuantity || 0;
+    if (qty > stockQuantity) {
+      toast.warning(`Chỉ còn ${stockQuantity} sản phẩm trong kho`);
+      return;
+    }
+
+    // Lưu thông tin sản phẩm vào BuyNowContext
+    // KHÔNG gọi API tạo đơn hàng ở đây
+    setBuyNow({
+      productId: productIdValue,
+      quantity: qty,
+      product: {
+        idProduct: productIdValue,
+        productName: product.productName || product.name,
+        price: product.price,
+        imageUrl: product.imageUrl,
+        stockQuantity: product.stockQuantity,
+        weight: product.weight || 1000, // Default 1kg if not specified
+      },
+    });
+
+    // Điều hướng sang trang Checkout
+    // Tại đây user sẽ:
+    // - Xem lại sản phẩm
+    // - Chọn địa chỉ giao hàng
+    // - Xem phí vận chuyển GHN
+    // - Chọn phương thức thanh toán (COD / PayOS)
+    // - Nhấn "Đặt hàng" để tạo đơn
+    setCurrentPage("checkout");
   };
 
   // Get item in cart

@@ -1,5 +1,6 @@
 // src/components/pages/OrdersPage.js
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import {
   Package,
   Search,
@@ -201,10 +202,12 @@ const OrdersPage = ({
         status: statusFilter || undefined,
       });
       setOrders(ordersData?.content || []);
-      alert("Hủy đơn hàng thành công");
+      toast.success("Hủy đơn hàng thành công");
     } catch (error) {
       console.error("Error canceling order:", error);
-      alert(error?.message || "Không thể hủy đơn hàng. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể hủy đơn hàng. Vui lòng thử lại."
+      );
     }
   };
 
@@ -222,10 +225,10 @@ const OrdersPage = ({
         status: statusFilter || undefined,
       });
       setOrders(ordersData?.content || []);
-      alert("Xác nhận nhận hàng thành công");
+      toast.success("Xác nhận nhận hàng thành công");
     } catch (error) {
       console.error("Error confirming delivery:", error);
-      alert(
+      toast.error(
         error?.message || "Không thể xác nhận nhận hàng. Vui lòng thử lại."
       );
     }
@@ -237,13 +240,13 @@ const OrdersPage = ({
       setSelectedOrder(orderDetail);
     } catch (error) {
       console.error("Error fetching order detail:", error);
-      alert(error?.message || "Không thể tải chi tiết đơn hàng.");
+      toast.error(error?.message || "Không thể tải chi tiết đơn hàng.");
     }
   };
 
   const handleBuyAgain = async (order) => {
     if (!order || !order.orderDetails || order.orderDetails.length === 0) {
-      alert("Không có sản phẩm để mua lại.");
+      toast.warning("Không có sản phẩm để mua lại.");
       return;
     }
 
@@ -296,13 +299,13 @@ const OrdersPage = ({
           setCurrentPage("cart");
         }
       } else {
-        alert(
+        toast.error(
           "Không thể thêm sản phẩm vào giỏ hàng.\nCó thể các sản phẩm đã hết hàng hoặc ngừng kinh doanh."
         );
       }
     } catch (error) {
       console.error("Error buying again:", error);
-      alert(
+      toast.error(
         error?.message ||
           "Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại."
       );
@@ -331,7 +334,7 @@ const OrdersPage = ({
   // Handle submitting a review
   const handleSubmitReview = async () => {
     if (!selectedProductForReview || !reviewForm.comment.trim()) {
-      alert("Vui lòng nhập nội dung đánh giá");
+      toast.warning("Vui lòng nhập nội dung đánh giá");
       return;
     }
 
@@ -363,10 +366,12 @@ const OrdersPage = ({
       setSelectedProductForReview(null);
       setReviewForm({ rating: 5, comment: "" });
 
-      alert("Đánh giá đã được gửi thành công!");
+      toast.success("Đánh giá đã được gửi thành công!");
     } catch (error) {
       console.error("Error submitting review:", error);
-      alert(error?.message || "Không thể gửi đánh giá. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể gửi đánh giá. Vui lòng thử lại."
+      );
     } finally {
       setSubmittingReview(false);
     }
@@ -399,10 +404,10 @@ const OrdersPage = ({
   const isWithinReturnPeriod = (order) => {
     // Lấy returnWindowDays từ order (snapshot), fallback về system settings nếu không có
     const orderReturnWindowDays = order?.returnWindowDays ?? returnPeriodDays;
-    
+
     // Ưu tiên sử dụng completedAt, fallback sang deliveredAt, rồi orderDate
     const completedAt = order?.completedAt || order?.deliveredAt;
-    
+
     if (!completedAt) {
       // Fallback: sử dụng orderDate nếu có
       if (order?.orderDate) {
@@ -410,8 +415,16 @@ const OrdersPage = ({
         if (!orderDate) return true;
         const now = new Date();
         // Tính theo ngày, không theo giờ
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const orderDateStart = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+        const todayStart = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate()
+        );
+        const orderDateStart = new Date(
+          orderDate.getFullYear(),
+          orderDate.getMonth(),
+          orderDate.getDate()
+        );
         const diffTime = todayStart - orderDateStart;
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         return diffDays <= orderReturnWindowDays;
@@ -424,8 +437,16 @@ const OrdersPage = ({
     if (!completedDate) return true;
     const now = new Date();
     // Tính theo ngày, không theo giờ
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const completedDateStart = new Date(completedDate.getFullYear(), completedDate.getMonth(), completedDate.getDate());
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const completedDateStart = new Date(
+      completedDate.getFullYear(),
+      completedDate.getMonth(),
+      completedDate.getDate()
+    );
     const diffTime = todayStart - completedDateStart;
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
@@ -437,10 +458,10 @@ const OrdersPage = ({
   const getRemainingDays = (order) => {
     // Lấy returnWindowDays từ order (snapshot), fallback về system settings nếu không có
     const orderReturnWindowDays = order?.returnWindowDays ?? returnPeriodDays;
-    
+
     // Ưu tiên sử dụng completedAt, fallback sang deliveredAt, rồi orderDate
     const completedAt = order?.completedAt || order?.deliveredAt;
-    
+
     if (!completedAt) {
       // Fallback: sử dụng orderDate nếu có
       if (order?.orderDate) {
@@ -448,8 +469,16 @@ const OrdersPage = ({
         if (!orderDate) return orderReturnWindowDays;
         const now = new Date();
         // Tính theo ngày, không theo giờ
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const orderDateStart = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+        const todayStart = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate()
+        );
+        const orderDateStart = new Date(
+          orderDate.getFullYear(),
+          orderDate.getMonth(),
+          orderDate.getDate()
+        );
         const diffTime = todayStart - orderDateStart;
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         return Math.max(0, orderReturnWindowDays - diffDays);
@@ -462,8 +491,16 @@ const OrdersPage = ({
     if (!completedDate) return orderReturnWindowDays;
     const now = new Date();
     // Tính theo ngày, không theo giờ
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const completedDateStart = new Date(completedDate.getFullYear(), completedDate.getMonth(), completedDate.getDate());
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const completedDateStart = new Date(
+      completedDate.getFullYear(),
+      completedDate.getMonth(),
+      completedDate.getDate()
+    );
     const diffTime = todayStart - completedDateStart;
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
@@ -475,7 +512,7 @@ const OrdersPage = ({
 
     const orderId = order.idOrder || order.id;
     if (!orderId) {
-      alert("Không tìm thấy mã đơn hàng để thanh toán.");
+      toast.warning("Không tìm thấy mã đơn hàng để thanh toán.");
       return;
     }
 
@@ -486,12 +523,14 @@ const OrdersPage = ({
       if (paymentData && paymentData.paymentLinkUrl) {
         window.location.href = paymentData.paymentLinkUrl;
       } else {
-        alert("Không nhận được liên kết thanh toán PayOS. Vui lòng thử lại.");
+        toast.error(
+          "Không nhận được liên kết thanh toán PayOS. Vui lòng thử lại."
+        );
         setIsCreatingPayOSLink(false);
       }
     } catch (error) {
       console.error("Error creating PayOS payment link:", error);
-      alert(
+      toast.error(
         error?.message ||
           "Không thể tạo liên kết thanh toán PayOS. Vui lòng thử lại."
       );
@@ -1001,33 +1040,63 @@ const OrdersPage = ({
                 </p>
 
                 {/* Hiển thị hạn đổi trả cho đơn COMPLETED */}
-                {selectedOrder.status === "COMPLETED" && (selectedOrder.completedAt || selectedOrder.deliveredAt) && (
-                  <p style={{ marginBottom: "0.5rem" }}>
-                    <strong>Hạn đổi trả:</strong>{" "}
-                    {(() => {
-                      const returnDays = selectedOrder.returnWindowDays ?? returnPeriodDays;
-                      if (returnDays === 0) return <span style={{ color: "#059669" }}>Không giới hạn</span>;
-                      // Ưu tiên completedAt, fallback sang deliveredAt
-                      const completedAt = selectedOrder.completedAt || selectedOrder.deliveredAt;
-                      const completedDate = parseBackendDate(completedAt);
-                      if (!completedDate) return <span style={{ color: "#6c757d" }}>Không xác định</span>;
-                      const deadline = new Date(completedDate);
-                      deadline.setDate(deadline.getDate() + returnDays);
-                      // So sánh theo ngày, không theo giờ
-                      const now = new Date();
-                      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                      const deadlineEnd = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate(), 23, 59, 59);
-                      const isExpired = todayStart > deadlineEnd;
-                      const remainingDays = getRemainingDays(selectedOrder);
-                      return (
-                        <span style={{ color: isExpired ? "#DC2626" : "#059669" }}>
-                          {formatDate(deadline, "dd/MM/yyyy")}
-                          {isExpired ? " (Đã hết hạn)" : ` (Còn ${remainingDays} ngày)`}
-                        </span>
-                      );
-                    })()}
-                  </p>
-                )}
+                {selectedOrder.status === "COMPLETED" &&
+                  (selectedOrder.completedAt || selectedOrder.deliveredAt) && (
+                    <p style={{ marginBottom: "0.5rem" }}>
+                      <strong>Hạn đổi trả:</strong>{" "}
+                      {(() => {
+                        const returnDays =
+                          selectedOrder.returnWindowDays ?? returnPeriodDays;
+                        if (returnDays === 0)
+                          return (
+                            <span style={{ color: "#059669" }}>
+                              Không giới hạn
+                            </span>
+                          );
+                        // Ưu tiên completedAt, fallback sang deliveredAt
+                        const completedAt =
+                          selectedOrder.completedAt ||
+                          selectedOrder.deliveredAt;
+                        const completedDate = parseBackendDate(completedAt);
+                        if (!completedDate)
+                          return (
+                            <span style={{ color: "#6c757d" }}>
+                              Không xác định
+                            </span>
+                          );
+                        const deadline = new Date(completedDate);
+                        deadline.setDate(deadline.getDate() + returnDays);
+                        // So sánh theo ngày, không theo giờ
+                        const now = new Date();
+                        const todayStart = new Date(
+                          now.getFullYear(),
+                          now.getMonth(),
+                          now.getDate()
+                        );
+                        const deadlineEnd = new Date(
+                          deadline.getFullYear(),
+                          deadline.getMonth(),
+                          deadline.getDate(),
+                          23,
+                          59,
+                          59
+                        );
+                        const isExpired = todayStart > deadlineEnd;
+                        const remainingDays = getRemainingDays(selectedOrder);
+                        return (
+                          <span
+                            style={{
+                              color: isExpired ? "#DC2626" : "#059669",
+                            }}>
+                            {formatDate(deadline, "dd/MM/yyyy")}
+                            {isExpired
+                              ? " (Đã hết hạn)"
+                              : ` (Còn ${remainingDays} ngày)`}
+                          </span>
+                        );
+                      })()}
+                    </p>
+                  )}
 
                 {/* Tóm tắt tiền */}
                 {selectedOrder.totalAmount != null && (
@@ -1048,17 +1117,29 @@ const OrdersPage = ({
                 {/* Phí giao hàng */}
                 <p style={{ marginBottom: "0.25rem" }}>
                   <strong>Phí giao hàng:</strong>{" "}
-                  {selectedOrder.shippingFee != null && Number(selectedOrder.shippingFee) > 0 ? (
+                  {selectedOrder.shippingFee != null &&
+                  Number(selectedOrder.shippingFee) > 0 ? (
                     <>
                       {formatPrice(selectedOrder.shippingFee)}
                       {selectedOrder.paymentMethod === "CASH" && (
-                        <span style={{ color: "#6c757d", fontSize: "0.875rem", fontStyle: "italic", marginLeft: "0.5rem" }}>
+                        <span
+                          style={{
+                            color: "#6c757d",
+                            fontSize: "0.875rem",
+                            fontStyle: "italic",
+                            marginLeft: "0.5rem",
+                          }}>
                           (Người nhận thanh toán khi nhận hàng)
                         </span>
                       )}
                     </>
                   ) : (
-                    <span style={{ color: "#6c757d", fontSize: "0.875rem", fontStyle: "italic" }}>
+                    <span
+                      style={{
+                        color: "#6c757d",
+                        fontSize: "0.875rem",
+                        fontStyle: "italic",
+                      }}>
                       Người nhận thanh toán khi nhận hàng
                     </span>
                   )}
@@ -1072,18 +1153,21 @@ const OrdersPage = ({
                   }}>
                   <strong>Tổng thanh toán:</strong>{" "}
                   {formatPrice(
-                    selectedOrder.finalAmount || 
-                    (selectedOrder.totalAmount != null 
-                      ? (selectedOrder.totalAmount || 0) + (Number(selectedOrder.shippingFee) || 0) - (selectedOrder.discount || 0)
-                      : 0)
+                    selectedOrder.finalAmount ||
+                      (selectedOrder.totalAmount != null
+                        ? (selectedOrder.totalAmount || 0) +
+                          (Number(selectedOrder.shippingFee) || 0) -
+                          (selectedOrder.discount || 0)
+                        : 0)
                   )}
                   {selectedOrder.paymentMethod === "CASH" && (
-                    <span style={{ 
-                      color: "#F59E0B", 
-                      fontSize: "0.875rem", 
-                      marginLeft: "0.5rem",
-                      fontWeight: "normal"
-                    }}>
+                    <span
+                      style={{
+                        color: "#F59E0B",
+                        fontSize: "0.875rem",
+                        marginLeft: "0.5rem",
+                        fontWeight: "normal",
+                      }}>
                       (Thanh toán khi nhận hàng)
                     </span>
                   )}
@@ -1749,7 +1833,10 @@ const OrdersPage = ({
                             fontWeight: "600",
                           }}>
                           <AlertCircle size={18} />
-                          Đã hết thời gian đổi/trả ({selectedOrder?.returnWindowDays ?? returnPeriodDays} ngày)
+                          Đã hết thời gian đổi/trả (
+                          {selectedOrder?.returnWindowDays ??
+                            returnPeriodDays}{" "}
+                          ngày)
                         </div>
                       ) : (
                         <div

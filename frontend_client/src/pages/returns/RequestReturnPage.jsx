@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { toast } from "react-toastify";
 import { useReturnService } from "../../hooks/useReturnService";
 import ReturnItemCard from "../../components/returns/ReturnItemCard";
 import api from "../../services/api";
@@ -25,27 +26,40 @@ const RequestReturnPage = ({ orderId, setCurrentPage }) => {
   const isWithinReturnPeriod = useCallback((orderData, fallbackDays) => {
     // Lấy returnWindowDays từ order snapshot, fallback về config nếu không có
     const orderReturnWindowDays = orderData?.returnWindowDays ?? fallbackDays;
-    
+
     // 0 = không giới hạn, null = đơn cũ chưa có snapshot → cho phép
-    if (orderReturnWindowDays === 0 || orderReturnWindowDays == null) return true;
-    
+    if (orderReturnWindowDays === 0 || orderReturnWindowDays == null)
+      return true;
+
     // Lấy baseTime: completedAt → deliveredAt → orderDate (cùng logic với BE)
-    const baseTimeStr = orderData?.completedAt || orderData?.deliveredAt || orderData?.orderDate;
+    const baseTimeStr =
+      orderData?.completedAt || orderData?.deliveredAt || orderData?.orderDate;
     if (!baseTimeStr) return true; // Không có ngày → cho phép
-    
+
     // Parse đúng format dd/MM/yyyy HH:mm:ss từ backend
     const baseTime = parseBackendDate(baseTimeStr);
     if (!baseTime) return true;
-    
+
     // Tính deadline
     const deadline = new Date(baseTime);
     deadline.setDate(deadline.getDate() + orderReturnWindowDays);
-    
+
     // So sánh theo ngày
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const deadlineEnd = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate(), 23, 59, 59);
-    
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const deadlineEnd = new Date(
+      deadline.getFullYear(),
+      deadline.getMonth(),
+      deadline.getDate(),
+      23,
+      59,
+      59
+    );
+
     return todayStart <= deadlineEnd;
   }, []);
 
@@ -71,9 +85,9 @@ const RequestReturnPage = ({ orderId, setCurrentPage }) => {
     if (order) {
       // Sử dụng returnWindowDays từ order snapshot
       const orderReturnWindowDays = order.returnWindowDays ?? returnPeriodDays;
-      
+
       if (!isWithinReturnPeriod(order, returnPeriodDays)) {
-        alert(
+        toast.warning(
           `Đơn hàng đã vượt quá thời gian đổi trả (${orderReturnWindowDays} ngày)`
         );
         setCurrentPage("return-history");
@@ -130,7 +144,7 @@ const RequestReturnPage = ({ orderId, setCurrentPage }) => {
     }));
 
     if (items.length === 0) {
-      alert("Vui lòng chọn ít nhất một sản phẩm.");
+      toast.warning("Vui lòng chọn ít nhất một sản phẩm.");
       return;
     }
 
@@ -149,7 +163,7 @@ const RequestReturnPage = ({ orderId, setCurrentPage }) => {
       }
       setCurrentPage("return-history");
     } catch (error) {
-      alert("Gửi yêu cầu thất bại: " + error.message);
+      toast.error("Gửi yêu cầu thất bại: " + error.message);
     }
   };
 

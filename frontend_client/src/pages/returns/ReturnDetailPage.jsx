@@ -62,7 +62,8 @@ const ReturnDetailPage = ({ returnId, setCurrentPage }) => {
                       Số lượng trả: {item.quantity}
                     </p>
                     <p className="text-sm text-gray-500">
-                      Đơn giá: {new Intl.NumberFormat("vi-VN", {
+                      Đơn giá:{" "}
+                      {new Intl.NumberFormat("vi-VN", {
                         style: "currency",
                         currency: "VND",
                       }).format(item.price || 0)}
@@ -73,7 +74,10 @@ const ReturnDetailPage = ({ returnId, setCurrentPage }) => {
                       {new Intl.NumberFormat("vi-VN", {
                         style: "currency",
                         currency: "VND",
-                      }).format(item.lineRefundAmount ?? (item.price || 0) * (item.quantity || 0))}
+                      }).format(
+                        item.lineRefundAmount ??
+                          (item.price || 0) * (item.quantity || 0)
+                      )}
                     </span>
                     <p className="text-xs text-gray-400">Tiền hoàn</p>
                   </div>
