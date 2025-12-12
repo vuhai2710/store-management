@@ -117,12 +117,6 @@ const AppSidebar = () => {
         label: "Khuyến mãi & Giảm giá",
         roles: [USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE],
       },
-      {
-        key: "/settings",
-        icon: <SettingOutlined />,
-        label: "Cài đặt hệ thống",
-        roles: [USER_ROLES.ADMIN],
-      },
     ];
 
     // Filter menu items based on user role

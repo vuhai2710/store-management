@@ -350,16 +350,16 @@ public class OrderReturnServiceImpl implements OrderReturnService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<OrderReturnDTO> getAllReturns(Pageable pageable, String status, String returnType) {
-        log.info("Getting all return/exchange list for admin with status={}, returnType={}", status, returnType);
-        
-        Page<OrderReturn> page;
+    public PageResponse<OrderReturnDTO> getAllReturns(Pageable pageable, String status, String returnType, String keyword, String customerKeyword) {
+        log.info("Getting all return/exchange list for admin with status={}, returnType={}, keyword={}, customerKeyword={}", 
+                status, returnType, keyword, customerKeyword);
         
         // Parse status and returnType if provided
+        // Note: status "ALL" or null/empty means no status filter
         OrderReturn.ReturnStatus statusEnum = null;
         OrderReturn.ReturnType typeEnum = null;
         
-        if (status != null && !status.isEmpty()) {
+        if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("ALL")) {
             try {
                 statusEnum = OrderReturn.ReturnStatus.valueOf(status);
             } catch (IllegalArgumentException e) {
@@ -367,7 +367,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
             }
         }
         
-        if (returnType != null && !returnType.isEmpty()) {
+        if (returnType != null && !returnType.isEmpty() && !returnType.equalsIgnoreCase("ALL")) {
             try {
                 typeEnum = OrderReturn.ReturnType.valueOf(returnType);
             } catch (IllegalArgumentException e) {
@@ -375,16 +375,17 @@ public class OrderReturnServiceImpl implements OrderReturnService {
             }
         }
         
-        // Apply filters
-        if (statusEnum != null && typeEnum != null) {
-            page = orderReturnRepository.findByStatusAndReturnTypeOrderByCreatedAtDesc(statusEnum, typeEnum, pageable);
-        } else if (statusEnum != null) {
-            page = orderReturnRepository.findByStatusOrderByCreatedAtDesc(statusEnum, pageable);
-        } else if (typeEnum != null) {
-            page = orderReturnRepository.findByReturnTypeOrderByCreatedAtDesc(typeEnum, pageable);
-        } else {
-            page = orderReturnRepository.findAllByOrderByCreatedAtDesc(pageable);
-        }
+        // Trim keywords
+        String trimmedKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
+        String trimmedCustomerKeyword = (customerKeyword != null && !customerKeyword.trim().isEmpty()) ? customerKeyword.trim() : null;
+        
+        // Use the advanced search method that handles all filters
+        Page<OrderReturn> page = orderReturnRepository.searchAdvanced(
+                statusEnum, 
+                typeEnum, 
+                trimmedKeyword, 
+                trimmedCustomerKeyword, 
+                pageable);
         
         List<OrderReturnDTO> content = orderReturnMapper.toDTOList(page.getContent());
         return PageUtils.toPageResponse(page, content);

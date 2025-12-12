@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   Table,
   Tag,
@@ -14,6 +14,7 @@ import {
   Typography,
   InputNumber,
   Divider,
+  Empty,
 } from "antd";
 import {
   EyeOutlined,
@@ -23,6 +24,8 @@ import {
   ExclamationCircleOutlined,
   SettingOutlined,
   SaveOutlined,
+  SearchOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAdminReturnService } from "../../hooks/useAdminReturnService";
@@ -31,18 +34,64 @@ import { systemSettingService } from "../../services/systemSettingService";
 const { Option } = Select;
 const { Text } = Typography;
 
+// Debounce hook for realtime search
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+// Status options with labels
+const STATUS_OPTIONS = [
+  { value: "ALL", label: "Tất cả trạng thái" },
+  { value: "REQUESTED", label: "Chờ xử lý" },
+  { value: "APPROVED", label: "Đã duyệt" },
+  { value: "REJECTED", label: "Từ chối" },
+  { value: "COMPLETED", label: "Hoàn thành" },
+  { value: "CANCELED", label: "Đã hủy" },
+];
+
+// Type options
+const TYPE_OPTIONS = [
+  { value: "ALL", label: "Tất cả loại" },
+  { value: "RETURN", label: "Trả hàng" },
+  { value: "EXCHANGE", label: "Đổi hàng" },
+];
+
 const ReturnListPage = () => {
   const { getReturns, updateReturnStatus, loading } = useAdminReturnService();
   const [data, setData] = useState([]);
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 10,
-    total: 0,
-  });
-  const [statusFilter, setStatusFilter] = useState(undefined);
-  const [typeFilter, setTypeFilter] = useState(undefined);
-  const [searchOrderId, setSearchOrderId] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
+  
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [customerKeyword, setCustomerKeyword] = useState("");
   const navigate = useNavigate();
+  
+  // Use refs to store current filter values for fetchData
+  const filtersRef = useRef({
+    status: "ALL",
+    type: "ALL",
+    keyword: "",
+    customerKeyword: "",
+  });
+
+  // Debounced search keywords for realtime search
+  const debouncedKeyword = useDebounce(searchKeyword, 300);
+  const debouncedCustomerKeyword = useDebounce(customerKeyword, 300);
 
   // Settings state
   const [returnWindowDays, setReturnWindowDays] = useState(7);
@@ -77,45 +126,107 @@ const ReturnListPage = () => {
     }
   };
 
-  const fetchData = async (page = 1, pageSize = 10) => {
+  // Fetch data function - uses refs for filters to avoid stale closures
+  const fetchData = useCallback(async (page, size) => {
     try {
-      const response = await getReturns({
+      const { status, type, keyword, customerKeyword: custKeyword } = filtersRef.current;
+      
+      const params = {
         pageNo: page,
-        pageSize,
-        status: statusFilter || undefined,
-        returnType: typeFilter || undefined,
-        orderId: searchOrderId || undefined,
-      });
+        pageSize: size,
+      };
+
+      // Only add status if not "ALL"
+      if (status && status !== "ALL") {
+        params.status = status;
+      }
+
+      // Only add returnType if not "ALL"
+      if (type && type !== "ALL") {
+        params.returnType = type;
+      }
+
+      // Add keyword for search (mã phiếu, mã đơn)
+      if (keyword && keyword.trim()) {
+        params.keyword = keyword.trim();
+      }
+
+      // Add customerKeyword for customer search (tên/id khách)
+      if (custKeyword && custKeyword.trim()) {
+        params.customerKeyword = custKeyword.trim();
+      }
+
+      console.log("Fetching returns with params:", params);
+      const response = await getReturns(params);
       console.log("Admin returns response:", response);
+      
+      // Always set data from response, even if empty
       setData(response.content || []);
-      setPagination({
-        current: response.pageNo || 1,
-        pageSize: response.pageSize || 10,
-        total: response.totalElements || 0,
-      });
+      setCurrentPage(response.pageNo || 1);
+      setPageSize(response.pageSize || 10);
+      setTotalElements(response.totalElements || 0);
     } catch (error) {
       console.error("Error fetching returns:", error);
+      // On error, show empty data
+      setData([]);
+      setTotalElements(0);
     }
-  };
+  }, [getReturns]);
 
+  // Update refs when filters change
   useEffect(() => {
-    fetchData(1, pagination.pageSize);
-  }, [statusFilter, typeFilter]);
+    filtersRef.current = {
+      status: statusFilter,
+      type: typeFilter,
+      keyword: debouncedKeyword,
+      customerKeyword: debouncedCustomerKeyword,
+    };
+    // Reset to page 1 and fetch when filters change
+    setCurrentPage(1);
+    fetchData(1, pageSize);
+  }, [statusFilter, typeFilter, debouncedKeyword, debouncedCustomerKeyword]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleTableChange = (paginationConfig) => {
-    fetchData(paginationConfig.current, paginationConfig.pageSize);
-  };
+  // Handle table pagination change
+  const handleTableChange = useCallback((paginationConfig) => {
+    const newPage = paginationConfig.current;
+    const newPageSize = paginationConfig.pageSize;
+    
+    // If pageSize changed, update and fetch page 1
+    if (newPageSize !== pageSize) {
+      setPageSize(newPageSize);
+      setCurrentPage(1);
+      fetchData(1, newPageSize);
+      return;
+    }
+    
+    // Just page change - fetch directly
+    setCurrentPage(newPage);
+    fetchData(newPage, newPageSize);
+  }, [fetchData, pageSize]);
 
-  const handleResetFilters = () => {
-    setStatusFilter(undefined);
-    setTypeFilter(undefined);
-    setSearchOrderId("");
-    fetchData(1, pagination.pageSize);
-  };
+  // Handle filter changes
+  const handleStatusChange = useCallback((value) => {
+    setStatusFilter(value);
+  }, []);
 
-  const handleSearch = () => {
-    fetchData(1, pagination.pageSize);
-  };
+  const handleTypeChange = useCallback((value) => {
+    setTypeFilter(value);
+  }, []);
+
+  const handleSearchChange = useCallback((e) => {
+    setSearchKeyword(e.target.value);
+  }, []);
+
+  const handleCustomerSearchChange = useCallback((e) => {
+    setCustomerKeyword(e.target.value);
+  }, []);
+
+  const handleResetFilters = useCallback(() => {
+    setStatusFilter("ALL");
+    setTypeFilter("ALL");
+    setSearchKeyword("");
+    setCustomerKeyword("");
+  }, []);
 
   const handleApprove = async (record) => {
     Modal.confirm({
@@ -128,7 +239,7 @@ const ReturnListPage = () => {
         try {
           await updateReturnStatus(record.idReturn, "APPROVED");
           message.success("Đã duyệt yêu cầu thành công");
-          fetchData(pagination.current, pagination.pageSize);
+          fetchData(currentPage, pageSize);
         } catch (error) {
           message.error(error?.message || "Không thể duyệt yêu cầu");
         }
@@ -148,7 +259,7 @@ const ReturnListPage = () => {
         try {
           await updateReturnStatus(record.idReturn, "REJECTED");
           message.success("Đã từ chối yêu cầu");
-          fetchData(pagination.current, pagination.pageSize);
+          fetchData(currentPage, pageSize);
         } catch (error) {
           message.error(error?.message || "Không thể từ chối yêu cầu");
         }
@@ -177,7 +288,7 @@ const ReturnListPage = () => {
         try {
           await updateReturnStatus(record.idReturn, "COMPLETED");
           message.success("Đã hoàn thành yêu cầu");
-          fetchData(pagination.current, pagination.pageSize);
+          fetchData(currentPage, pageSize);
         } catch (error) {
           message.error(error?.message || "Không thể hoàn thành yêu cầu");
         }
@@ -185,7 +296,19 @@ const ReturnListPage = () => {
     });
   };
 
-  const columns = [
+  // Status color and label helper
+  const getStatusDisplay = (status) => {
+    const statusMap = {
+      REQUESTED: { color: "gold", label: "Chờ xử lý" },
+      APPROVED: { color: "blue", label: "Đã duyệt" },
+      COMPLETED: { color: "green", label: "Hoàn tất" },
+      REJECTED: { color: "red", label: "Từ chối" },
+      CANCELED: { color: "default", label: "Đã hủy" },
+    };
+    return statusMap[status] || { color: "default", label: status };
+  };
+
+  const columns = useMemo(() => [
     {
       title: "Mã phiếu",
       dataIndex: "idReturn",
@@ -197,6 +320,21 @@ const ReturnListPage = () => {
       dataIndex: "orderId",
       key: "orderId",
       render: (id) => <a onClick={() => navigate(`/orders/${id}`)}>#{id}</a>,
+    },
+    {
+      title: "Khách hàng",
+      dataIndex: "customerName",
+      key: "customerName",
+      render: (name, record) => (
+        <span>
+          {name || "N/A"}
+          {record.customerId && (
+            <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
+              ID: {record.customerId}
+            </Text>
+          )}
+        </span>
+      ),
     },
     {
       title: "Loại",
@@ -213,28 +351,7 @@ const ReturnListPage = () => {
       dataIndex: "status",
       key: "status",
       render: (status) => {
-        let color = "default";
-        let label = status;
-        if (status === "REQUESTED") {
-          color = "gold";
-          label = "Chờ xử lý";
-        }
-        if (status === "APPROVED") {
-          color = "blue";
-          label = "Đã duyệt";
-        }
-        if (status === "COMPLETED") {
-          color = "green";
-          label = "Hoàn tất";
-        }
-        if (status === "REJECTED") {
-          color = "red";
-          label = "Từ chối";
-        }
-        if (status === "CANCELED") {
-          color = "default";
-          label = "Đã hủy";
-        }
+        const { color, label } = getStatusDisplay(status);
         return <Tag color={color}>{label}</Tag>;
       },
     },
@@ -291,7 +408,24 @@ const ReturnListPage = () => {
         </Space>
       ),
     },
-  ];
+  ], [navigate]);
+
+  // Custom empty component
+  const emptyComponent = useMemo(() => (
+    <Empty
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+      description={
+        <span>
+          Không có yêu cầu đổi trả phù hợp
+          {(statusFilter !== "ALL" || typeFilter !== "ALL" || searchKeyword || customerKeyword) && (
+            <Button type="link" onClick={handleResetFilters}>
+              Xóa bộ lọc
+            </Button>
+          )}
+        </span>
+      }
+    />
+  ), [statusFilter, typeFilter, searchKeyword, customerKeyword, handleResetFilters]);
 
   return (
     <Card title="Quản lý Đơn Đổi/Trả hàng">
@@ -325,43 +459,53 @@ const ReturnListPage = () => {
 
       {/* Filters */}
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        <Col xs={24} sm={12} md={6}>
+        <Col xs={24} sm={12} md={4}>
           <Select
             placeholder="Trạng thái"
-            value={statusFilter || undefined}
-            onChange={setStatusFilter}
-            style={{ width: "100%" }}
-            allowClear>
-            <Option value="REQUESTED">Chờ xử lý</Option>
-            <Option value="APPROVED">Đã duyệt</Option>
-            <Option value="REJECTED">Từ chối</Option>
-            <Option value="COMPLETED">Hoàn thành</Option>
-            <Option value="CANCELED">Đã hủy</Option>
+            value={statusFilter}
+            onChange={handleStatusChange}
+            style={{ width: "100%" }}>
+            {STATUS_OPTIONS.map((opt) => (
+              <Option key={opt.value} value={opt.value}>
+                {opt.label}
+              </Option>
+            ))}
           </Select>
         </Col>
-        <Col xs={24} sm={12} md={6}>
+        <Col xs={24} sm={12} md={4}>
           <Select
             placeholder="Loại yêu cầu"
-            value={typeFilter || undefined}
-            onChange={setTypeFilter}
-            style={{ width: "100%" }}
-            allowClear>
-            <Option value="RETURN">Trả hàng</Option>
-            <Option value="EXCHANGE">Đổi hàng</Option>
+            value={typeFilter}
+            onChange={handleTypeChange}
+            style={{ width: "100%" }}>
+            {TYPE_OPTIONS.map((opt) => (
+              <Option key={opt.value} value={opt.value}>
+                {opt.label}
+              </Option>
+            ))}
           </Select>
         </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Input.Search
-            placeholder="Tìm theo mã đơn hàng"
-            value={searchOrderId}
-            onChange={(e) => setSearchOrderId(e.target.value)}
-            onSearch={handleSearch}
+        <Col xs={24} sm={12} md={5}>
+          <Input
+            placeholder="Tìm mã phiếu, mã đơn..."
+            prefix={<SearchOutlined />}
+            value={searchKeyword}
+            onChange={handleSearchChange}
             allowClear
           />
         </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Button icon={<ReloadOutlined />} onClick={handleResetFilters}>
-            Đặt lại bộ lọc
+        <Col xs={24} sm={12} md={5}>
+          <Input
+            placeholder="Tìm tên/ID khách hàng..."
+            prefix={<UserOutlined />}
+            value={customerKeyword}
+            onChange={handleCustomerSearchChange}
+            allowClear
+          />
+        </Col>
+        <Col xs={24} sm={12} md={4}>
+          <Button icon={<ReloadOutlined />} onClick={handleResetFilters} block>
+            Đặt lại
           </Button>
         </Col>
       </Row>
@@ -370,10 +514,18 @@ const ReturnListPage = () => {
         columns={columns}
         rowKey="idReturn"
         dataSource={data}
-        pagination={pagination}
+        pagination={{
+          current: currentPage,
+          pageSize: pageSize,
+          total: totalElements,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) => `${range[0]}-${range[1]} / ${total} yêu cầu`,
+        }}
         loading={loading}
         onChange={handleTableChange}
         scroll={{ x: 1000 }}
+        locale={{ emptyText: emptyComponent }}
       />
     </Card>
   );

@@ -454,7 +454,7 @@ const ProductDetailPage = ({
 
   /**
    * handleBuyNow - Xử lý khi user nhấn "Mua Ngay"
-   * 
+   *
    * LUỒNG MỚI (giống Shopee/Lazada):
    * 1. KHÔNG tạo đơn hàng ngay
    * 2. Lưu productId + quantity vào BuyNowContext
@@ -474,7 +474,7 @@ const ProductDetailPage = ({
     }
 
     const productIdValue = product.idProduct || product.id;
-    
+
     // Kiểm tra số lượng hợp lệ
     if (qty < 1) {
       toast.warning("Số lượng phải lớn hơn 0");

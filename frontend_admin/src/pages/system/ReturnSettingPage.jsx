@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   Form,
@@ -12,66 +12,55 @@ import {
   message,
   Row,
   Col,
+  Tooltip,
 } from "antd";
 import {
   SaveOutlined,
   ReloadOutlined,
   SettingOutlined,
   ClockCircleOutlined,
-  StarOutlined,
   SwapOutlined,
   DollarOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
 import { systemSettingService } from "../../services/systemSettingService";
 
 const { Title, Text, Paragraph } = Typography;
 
 /**
- * Trang quản lý cài đặt hệ thống
+ * Trang cài đặt đổi trả
  * Chỉ ADMIN mới có quyền truy cập
+ *
+ * Backend API:
+ * - GET  /api/v1/settings/return-window
+ * - PUT  /api/v1/settings/return-window?days=<number>
  */
-const SettingsPage = () => {
-  const [returnForm] = Form.useForm();
-  const [refundForm] = Form.useForm();
-  const [exchangeSizeForm] = Form.useForm();
-  const [reviewForm] = Form.useForm();
+const ReturnSettingPage = () => {
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [savingReturn, setSavingReturn] = useState(false);
-  const [savingRefund, setSavingRefund] = useState(false);
-  const [savingExchangeSize, setSavingExchangeSize] = useState(false);
-  const [savingReview, setSavingReview] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [currentReturnDays, setCurrentReturnDays] = useState(7);
-  const [currentRefundDays, setCurrentRefundDays] = useState(7);
-  const [currentExchangeSizeDays, setCurrentExchangeSizeDays] = useState(7);
-  const [currentReviewHours, setCurrentReviewHours] = useState(24);
   const [error, setError] = useState(null);
 
-  // Fetch current settings on mount
-  useEffect(() => {
-    fetchCurrentSettings();
-  }, []);
+  // Giá trị mặc định cho các field optional (chỉ hiển thị UI, không gửi API)
+  const [refundDays, setRefundDays] = useState(7);
+  const [exchangeSizeDays, setExchangeSizeDays] = useState(7);
 
-  const fetchCurrentSettings = async () => {
+  // Fetch current settings on mount
+  const fetchCurrentSettings = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [returnDays, refundDays, exchangeSizeDays, reviewHours] =
-        await Promise.all([
-          systemSettingService.getReturnWindow().catch(() => 7),
-          systemSettingService.getRefundWindow().catch(() => 7),
-          systemSettingService.getExchangeSizeWindow().catch(() => 7),
-          systemSettingService.getReviewEditWindow().catch(() => 24),
-        ]);
+      const returnDays = await systemSettingService.getReturnWindow();
       setCurrentReturnDays(returnDays);
-      setCurrentRefundDays(refundDays);
-      setCurrentExchangeSizeDays(exchangeSizeDays);
-      setCurrentReviewHours(reviewHours);
-      returnForm.setFieldsValue({ returnWindowDays: returnDays });
-      refundForm.setFieldsValue({ refundWindowDays: refundDays });
-      exchangeSizeForm.setFieldsValue({
-        exchangeSizeWindowDays: exchangeSizeDays,
+      // Các field optional lấy giá trị theo return days làm mặc định
+      setRefundDays(returnDays);
+      setExchangeSizeDays(returnDays);
+      form.setFieldsValue({
+        returnWindowDays: returnDays,
+        refundWindowDays: returnDays,
+        exchangeSizeWindowDays: returnDays,
       });
-      reviewForm.setFieldsValue({ reviewEditWindowHours: reviewHours });
     } catch (err) {
       console.error("Failed to fetch settings:", err);
       setError("Không thể tải cài đặt. Vui lòng thử lại.");
@@ -79,133 +68,65 @@ const SettingsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [form]);
 
-  const handleSaveReturn = async (values) => {
-    const { returnWindowDays } = values;
+  useEffect(() => {
+    fetchCurrentSettings();
+  }, [fetchCurrentSettings]);
 
-    if (!returnWindowDays || returnWindowDays < 1) {
-      message.error("Số ngày phải lớn hơn hoặc bằng 1");
-      return;
-    }
-
-    setSavingReturn(true);
+  // Handle save - CHỈ gửi returnWindowDays lên backend
+  const handleSave = async () => {
     try {
+      const values = await form.validateFields(["returnWindowDays"]);
+      const { returnWindowDays } = values;
+
+      if (!returnWindowDays || returnWindowDays < 1 || returnWindowDays > 365) {
+        message.error("Số ngày đổi trả phải từ 1 đến 365");
+        return;
+      }
+
+      setSaving(true);
       await systemSettingService.updateReturnWindow(returnWindowDays);
       setCurrentReturnDays(returnWindowDays);
-      message.success("Cập nhật cài đặt đổi/trả thành công!");
+      message.success("Cập nhật cài đặt đổi trả thành công!");
     } catch (err) {
       console.error("Failed to update return window setting:", err);
+      if (err.errorFields) {
+        // Form validation error
+        return;
+      }
       message.error(
         err.response?.data?.message ||
           "Không thể cập nhật cài đặt. Vui lòng thử lại."
       );
     } finally {
-      setSavingReturn(false);
+      setSaving(false);
     }
   };
 
-  const handleSaveRefund = async (values) => {
-    const { refundWindowDays } = values;
-
-    if (!refundWindowDays || refundWindowDays < 1) {
-      message.error("Số ngày phải lớn hơn hoặc bằng 1");
-      return;
-    }
-
-    setSavingRefund(true);
-    try {
-      await systemSettingService.updateRefundWindow(refundWindowDays);
-      setCurrentRefundDays(refundWindowDays);
-      message.success("Cập nhật cài đặt hoàn tiền thành công!");
-    } catch (err) {
-      console.error("Failed to update refund window setting:", err);
-      message.error(
-        err.response?.data?.message ||
-          "Không thể cập nhật cài đặt. Vui lòng thử lại."
-      );
-    } finally {
-      setSavingRefund(false);
-    }
-  };
-
-  const handleSaveExchangeSize = async (values) => {
-    const { exchangeSizeWindowDays } = values;
-
-    if (!exchangeSizeWindowDays || exchangeSizeWindowDays < 1) {
-      message.error("Số ngày phải lớn hơn hoặc bằng 1");
-      return;
-    }
-
-    setSavingExchangeSize(true);
-    try {
-      await systemSettingService.updateExchangeSizeWindow(
-        exchangeSizeWindowDays
-      );
-      setCurrentExchangeSizeDays(exchangeSizeWindowDays);
-      message.success("Cập nhật cài đặt đổi kích thước thành công!");
-    } catch (err) {
-      console.error("Failed to update exchange size window setting:", err);
-      message.error(
-        err.response?.data?.message ||
-          "Không thể cập nhật cài đặt. Vui lòng thử lại."
-      );
-    } finally {
-      setSavingExchangeSize(false);
-    }
-  };
-
-  const handleSaveReview = async (values) => {
-    const { reviewEditWindowHours } = values;
-
-    if (!reviewEditWindowHours || reviewEditWindowHours < 1) {
-      message.error("Số giờ phải lớn hơn hoặc bằng 1");
-      return;
-    }
-
-    setSavingReview(true);
-    try {
-      await systemSettingService.updateReviewEditWindow(reviewEditWindowHours);
-      setCurrentReviewHours(reviewEditWindowHours);
-      message.success("Cập nhật cài đặt đánh giá thành công!");
-    } catch (err) {
-      console.error("Failed to update review edit window setting:", err);
-      message.error(
-        err.response?.data?.message ||
-          "Không thể cập nhật cài đặt. Vui lòng thử lại."
-      );
-    } finally {
-      setSavingReview(false);
-    }
-  };
-
-  const handleResetReturn = () => {
-    returnForm.setFieldsValue({ returnWindowDays: currentReturnDays });
-  };
-
-  const handleResetRefund = () => {
-    refundForm.setFieldsValue({ refundWindowDays: currentRefundDays });
-  };
-
-  const handleResetExchangeSize = () => {
-    exchangeSizeForm.setFieldsValue({
-      exchangeSizeWindowDays: currentExchangeSizeDays,
+  // Reset form về giá trị ban đầu
+  const handleReset = () => {
+    form.setFieldsValue({
+      returnWindowDays: currentReturnDays,
+      refundWindowDays: refundDays,
+      exchangeSizeWindowDays: exchangeSizeDays,
     });
   };
 
-  const handleResetReview = () => {
-    reviewForm.setFieldsValue({ reviewEditWindowHours: currentReviewHours });
+  // Check if form is valid for submit button
+  const isFormValid = () => {
+    const returnDays = form.getFieldValue("returnWindowDays");
+    return returnDays && returnDays >= 1 && returnDays <= 365;
   };
 
   return (
-    <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
+    <div style={{ padding: "24px", maxWidth: "900px", margin: "0 auto" }}>
       <Title level={2}>
-        <SettingOutlined /> Cài đặt hệ thống
+        <SettingOutlined /> Cài đặt đổi trả
       </Title>
 
       <Paragraph type="secondary">
-        Quản lý các cài đặt chung của hệ thống bao gồm thời gian đổi/trả hàng và
-        thời gian chỉnh sửa đánh giá.
+        Quản lý thời gian cho phép khách hàng yêu cầu đổi/trả hàng sau khi nhận.
       </Paragraph>
 
       <Divider />
@@ -223,327 +144,176 @@ const SettingsPage = () => {
       )}
 
       <Spin spinning={loading}>
-        <Row gutter={[24, 24]}>
-          {/* Cài đặt đổi/trả hàng */}
-          <Col xs={24} lg={12}>
-            <Card
-              title={
-                <Space>
-                  <ClockCircleOutlined />
-                  <span>Thời gian đổi/trả hàng</span>
-                </Space>
-              }
-              extra={
-                <Text type="secondary">
-                  Hiện tại: <strong>{currentReturnDays} ngày</strong>
-                </Text>
-              }>
-              <Form
-                form={returnForm}
-                layout="vertical"
-                onFinish={handleSaveReturn}
-                initialValues={{ returnWindowDays: currentReturnDays }}>
-                <Form.Item
-                  name="returnWindowDays"
-                  label="Số ngày cho phép đổi/trả"
-                  rules={[
-                    { required: true, message: "Vui lòng nhập số ngày" },
-                    {
-                      type: "number",
-                      min: 1,
-                      message: "Số ngày phải lớn hơn hoặc bằng 1",
-                    },
-                  ]}
-                  extra="Khách hàng chỉ có thể yêu cầu đổi/trả trong khoảng thời gian này sau khi nhận hàng.">
-                  <InputNumber
-                    min={1}
-                    max={365}
-                    style={{ width: "100%" }}
-                    placeholder="Nhập số ngày"
-                    addonAfter="ngày"
-                    size="large"
-                  />
-                </Form.Item>
-
-                <Alert
-                  message="Lưu ý"
-                  description={
-                    <ul style={{ margin: 0, paddingLeft: 20 }}>
-                      <li>
-                        Thay đổi sẽ áp dụng cho tất cả đơn hàng mới và hiện có.
-                      </li>
-                      <li>Giá trị khuyến nghị: 7-30 ngày.</li>
-                    </ul>
+        <Card>
+          <Form
+            form={form}
+            layout="vertical"
+            initialValues={{
+              returnWindowDays: currentReturnDays,
+              refundWindowDays: refundDays,
+              exchangeSizeWindowDays: exchangeSizeDays,
+            }}
+            onValuesChange={() => {
+              // Force re-render để cập nhật trạng thái nút Lưu
+              form.validateFields(["returnWindowDays"]).catch(() => {});
+            }}>
+            <Row gutter={[24, 16]}>
+              {/* Số ngày đổi trả - BẮT BUỘC */}
+              <Col xs={24}>
+                <Card
+                  type="inner"
+                  title={
+                    <Space>
+                      <ClockCircleOutlined style={{ color: "#1890ff" }} />
+                      <span>Số ngày đổi trả</span>
+                      <Text type="danger">*</Text>
+                    </Space>
                   }
-                  type="info"
-                  showIcon
-                  style={{ marginBottom: 16 }}
-                />
+                  extra={
+                    <Text type="secondary">
+                      Hiện tại: <strong>{currentReturnDays} ngày</strong>
+                    </Text>
+                  }>
+                  <Form.Item
+                    name="returnWindowDays"
+                    label="Số ngày cho phép đổi/trả hàng"
+                    rules={[
+                      { required: true, message: "Vui lòng nhập số ngày" },
+                      {
+                        type: "number",
+                        min: 1,
+                        max: 365,
+                        message: "Số ngày phải từ 1 đến 365",
+                      },
+                    ]}
+                    extra="Khách hàng chỉ có thể yêu cầu đổi/trả trong khoảng thời gian này sau khi nhận hàng.">
+                    <InputNumber
+                      min={1}
+                      max={365}
+                      style={{ width: "100%", maxWidth: 300 }}
+                      placeholder="Nhập số ngày (1-365)"
+                      addonAfter="ngày"
+                      size="large"
+                    />
+                  </Form.Item>
+                </Card>
+              </Col>
 
-                <Form.Item>
-                  <Space>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      icon={<SaveOutlined />}
-                      loading={savingReturn}
-                      size="large">
-                      Lưu
-                    </Button>
-                    <Button
-                      icon={<ReloadOutlined />}
-                      onClick={handleResetReturn}
-                      disabled={savingReturn}
-                      size="large">
-                      Đặt lại
-                    </Button>
-                  </Space>
-                </Form.Item>
-              </Form>
-            </Card>
-          </Col>
+              {/* Số ngày hoàn tiền - OPTIONAL, chỉ hiển thị */}
+              <Col xs={24} md={12}>
+                <Card
+                  type="inner"
+                  title={
+                    <Space>
+                      <DollarOutlined style={{ color: "#52c41a" }} />
+                      <span>Số ngày hoàn tiền</span>
+                      <Tooltip title="Chỉ hiển thị tham khảo, không lưu vào hệ thống">
+                        <InfoCircleOutlined style={{ color: "#999" }} />
+                      </Tooltip>
+                    </Space>
+                  }>
+                  <Form.Item
+                    name="refundWindowDays"
+                    label={
+                      <Space>
+                        <span>Số ngày cho phép hoàn tiền</span>
+                        <Text type="secondary">(Tham khảo)</Text>
+                      </Space>
+                    }
+                    extra="Giá trị này chỉ để tham khảo, không gửi lên server.">
+                    <InputNumber
+                      min={1}
+                      max={365}
+                      style={{ width: "100%" }}
+                      placeholder="Nhập số ngày"
+                      addonAfter="ngày"
+                      disabled
+                    />
+                  </Form.Item>
+                </Card>
+              </Col>
 
-          {/* Cài đặt hoàn tiền */}
-          <Col xs={24} lg={12}>
-            <Card
-              title={
-                <Space>
-                  <DollarOutlined />
-                  <span>Thời gian hoàn tiền</span>
-                </Space>
+              {/* Số ngày đổi kích thước - OPTIONAL, chỉ hiển thị */}
+              <Col xs={24} md={12}>
+                <Card
+                  type="inner"
+                  title={
+                    <Space>
+                      <SwapOutlined style={{ color: "#faad14" }} />
+                      <span>Số ngày đổi kích thước</span>
+                      <Tooltip title="Chỉ hiển thị tham khảo, không lưu vào hệ thống">
+                        <InfoCircleOutlined style={{ color: "#999" }} />
+                      </Tooltip>
+                    </Space>
+                  }>
+                  <Form.Item
+                    name="exchangeSizeWindowDays"
+                    label={
+                      <Space>
+                        <span>Số ngày cho phép đổi size</span>
+                        <Text type="secondary">(Tham khảo)</Text>
+                      </Space>
+                    }
+                    extra="Giá trị này chỉ để tham khảo, không gửi lên server.">
+                    <InputNumber
+                      min={1}
+                      max={365}
+                      style={{ width: "100%" }}
+                      placeholder="Nhập số ngày"
+                      addonAfter="ngày"
+                      disabled
+                    />
+                  </Form.Item>
+                </Card>
+              </Col>
+            </Row>
+
+            <Divider />
+
+            <Alert
+              message="Lưu ý quan trọng"
+              description={
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  <li>
+                    Chỉ có <strong>"Số ngày đổi trả"</strong> được lưu vào hệ
+                    thống.
+                  </li>
+                  <li>
+                    Thay đổi sẽ áp dụng cho tất cả đơn hàng mới và hiện có.
+                  </li>
+                  <li>Giá trị khuyến nghị: 7-30 ngày.</li>
+                </ul>
               }
-              extra={
-                <Text type="secondary">
-                  Hiện tại: <strong>{currentRefundDays} ngày</strong>
-                </Text>
-              }>
-              <Form
-                form={refundForm}
-                layout="vertical"
-                onFinish={handleSaveRefund}
-                initialValues={{ refundWindowDays: currentRefundDays }}>
-                <Form.Item
-                  name="refundWindowDays"
-                  label="Số ngày cho phép hoàn tiền"
-                  rules={[
-                    { required: true, message: "Vui lòng nhập số ngày" },
-                    {
-                      type: "number",
-                      min: 1,
-                      message: "Số ngày phải lớn hơn hoặc bằng 1",
-                    },
-                  ]}
-                  extra="Khách hàng chỉ có thể yêu cầu hoàn tiền trong khoảng thời gian này sau khi nhận hàng.">
-                  <InputNumber
-                    min={1}
-                    max={365}
-                    style={{ width: "100%" }}
-                    placeholder="Nhập số ngày"
-                    addonAfter="ngày"
-                    size="large"
-                  />
-                </Form.Item>
+              type="info"
+              showIcon
+              style={{ marginBottom: 24 }}
+            />
 
-                <Alert
-                  message="Lưu ý"
-                  description={
-                    <ul style={{ margin: 0, paddingLeft: 20 }}>
-                      <li>Thay đổi sẽ áp dụng cho tất cả đơn hàng mới.</li>
-                      <li>Giá trị khuyến nghị: 7-14 ngày.</li>
-                    </ul>
-                  }
-                  type="info"
-                  showIcon
-                  style={{ marginBottom: 16 }}
-                />
-
-                <Form.Item>
-                  <Space>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      icon={<SaveOutlined />}
-                      loading={savingRefund}
-                      size="large">
-                      Lưu
-                    </Button>
-                    <Button
-                      icon={<ReloadOutlined />}
-                      onClick={handleResetRefund}
-                      disabled={savingRefund}
-                      size="large">
-                      Đặt lại
-                    </Button>
-                  </Space>
-                </Form.Item>
-              </Form>
-            </Card>
-          </Col>
-
-          {/* Cài đặt đổi kích thước */}
-          <Col xs={24} lg={12}>
-            <Card
-              title={
-                <Space>
-                  <SwapOutlined />
-                  <span>Thời gian đổi kích thước</span>
-                </Space>
-              }
-              extra={
-                <Text type="secondary">
-                  Hiện tại: <strong>{currentExchangeSizeDays} ngày</strong>
-                </Text>
-              }>
-              <Form
-                form={exchangeSizeForm}
-                layout="vertical"
-                onFinish={handleSaveExchangeSize}
-                initialValues={{
-                  exchangeSizeWindowDays: currentExchangeSizeDays,
-                }}>
-                <Form.Item
-                  name="exchangeSizeWindowDays"
-                  label="Số ngày cho phép đổi kích thước"
-                  rules={[
-                    { required: true, message: "Vui lòng nhập số ngày" },
-                    {
-                      type: "number",
-                      min: 1,
-                      message: "Số ngày phải lớn hơn hoặc bằng 1",
-                    },
-                  ]}
-                  extra="Khách hàng chỉ có thể yêu cầu đổi kích thước trong khoảng thời gian này sau khi nhận hàng.">
-                  <InputNumber
-                    min={1}
-                    max={365}
-                    style={{ width: "100%" }}
-                    placeholder="Nhập số ngày"
-                    addonAfter="ngày"
-                    size="large"
-                  />
-                </Form.Item>
-
-                <Alert
-                  message="Lưu ý"
-                  description={
-                    <ul style={{ margin: 0, paddingLeft: 20 }}>
-                      <li>
-                        Áp dụng cho các sản phẩm có nhiều size như quần áo, giày
-                        dép.
-                      </li>
-                      <li>Giá trị khuyến nghị: 7-15 ngày.</li>
-                    </ul>
-                  }
-                  type="info"
-                  showIcon
-                  style={{ marginBottom: 16 }}
-                />
-
-                <Form.Item>
-                  <Space>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      icon={<SaveOutlined />}
-                      loading={savingExchangeSize}
-                      size="large">
-                      Lưu
-                    </Button>
-                    <Button
-                      icon={<ReloadOutlined />}
-                      onClick={handleResetExchangeSize}
-                      disabled={savingExchangeSize}
-                      size="large">
-                      Đặt lại
-                    </Button>
-                  </Space>
-                </Form.Item>
-              </Form>
-            </Card>
-          </Col>
-
-          {/* Cài đặt thời gian sửa đánh giá */}
-          <Col xs={24} lg={12}>
-            <Card
-              title={
-                <Space>
-                  <StarOutlined />
-                  <span>Thời gian sửa đánh giá</span>
-                </Space>
-              }
-              extra={
-                <Text type="secondary">
-                  Hiện tại: <strong>{currentReviewHours} giờ</strong>
-                </Text>
-              }>
-              <Form
-                form={reviewForm}
-                layout="vertical"
-                onFinish={handleSaveReview}
-                initialValues={{ reviewEditWindowHours: currentReviewHours }}>
-                <Form.Item
-                  name="reviewEditWindowHours"
-                  label="Số giờ cho phép sửa đánh giá"
-                  rules={[
-                    { required: true, message: "Vui lòng nhập số giờ" },
-                    {
-                      type: "number",
-                      min: 1,
-                      message: "Số giờ phải lớn hơn hoặc bằng 1",
-                    },
-                  ]}
-                  extra="Khách hàng chỉ có thể chỉnh sửa đánh giá trong khoảng thời gian này sau khi tạo.">
-                  <InputNumber
-                    min={1}
-                    max={720}
-                    style={{ width: "100%" }}
-                    placeholder="Nhập số giờ"
-                    addonAfter="giờ"
-                    size="large"
-                  />
-                </Form.Item>
-
-                <Alert
-                  message="Lưu ý"
-                  description={
-                    <ul style={{ margin: 0, paddingLeft: 20 }}>
-                      <li>
-                        Khách hàng chỉ được phép sửa đánh giá 1 lần duy nhất.
-                      </li>
-                      <li>Giá trị khuyến nghị: 24-72 giờ.</li>
-                    </ul>
-                  }
-                  type="info"
-                  showIcon
-                  style={{ marginBottom: 16 }}
-                />
-
-                <Form.Item>
-                  <Space>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      icon={<SaveOutlined />}
-                      loading={savingReview}
-                      size="large">
-                      Lưu
-                    </Button>
-                    <Button
-                      icon={<ReloadOutlined />}
-                      onClick={handleResetReview}
-                      disabled={savingReview}
-                      size="large">
-                      Đặt lại
-                    </Button>
-                  </Space>
-                </Form.Item>
-              </Form>
-            </Card>
-          </Col>
-        </Row>
+            <Form.Item>
+              <Space size="middle">
+                <Button
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  loading={saving}
+                  size="large"
+                  onClick={handleSave}
+                  disabled={!isFormValid()}>
+                  Lưu cài đặt
+                </Button>
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={handleReset}
+                  disabled={saving}
+                  size="large">
+                  Đặt lại
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Card>
       </Spin>
     </div>
   );
 };
 
-export default SettingsPage;
+export default ReturnSettingPage;

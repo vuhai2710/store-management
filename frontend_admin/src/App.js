@@ -49,7 +49,7 @@ import Promotions from "./pages/Promotions";
 import ProductReviews from "./pages/ProductReviews";
 import ReturnListPage from "./pages/orderReturns/ReturnListPage";
 import ReturnDetailPage from "./pages/orderReturns/ReturnDetailPage";
-import SettingsPage from "./pages/system/ReturnSettingPage";
+import ReturnSettingPage from "./pages/system/ReturnSettingPage";
 
 const { Content } = Layout;
 
@@ -396,7 +396,7 @@ function App() {
               path="/settings"
               element={
                 <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                  <SettingsPage />
+                  <ReturnSettingPage />
                 </ProtectedRoute>
               }
             />

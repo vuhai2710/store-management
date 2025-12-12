@@ -13,6 +13,8 @@ import java.util.List;
 public interface OrderReturnMapper {
 
     @Mapping(target = "orderId", source = "order.idOrder")
+    @Mapping(target = "customerId", expression = "java(entity.getCreatedByCustomer() != null ? entity.getCreatedByCustomer().getIdCustomer() : null)")
+    @Mapping(target = "customerName", expression = "java(entity.getCreatedByCustomer() != null ? entity.getCreatedByCustomer().getCustomerName() : null)")
     @Mapping(target = "orderFinalAmount", source = "order.finalAmount")
     @Mapping(target = "orderTotalAmount", source = "order.totalAmount")
     @Mapping(target = "orderDiscount", source = "order.discount")

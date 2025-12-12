@@ -117,7 +117,9 @@ public class OrderReturnController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDirection,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String returnType) {
+            @RequestParam(required = false) String returnType,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String customerKeyword) {
 
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC")
                 ? Sort.Direction.DESC
@@ -125,7 +127,7 @@ public class OrderReturnController {
 
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<OrderReturnDTO> page = orderReturnService.getAllReturns(pageable, status, returnType);
+        PageResponse<OrderReturnDTO> page = orderReturnService.getAllReturns(pageable, status, returnType, keyword, customerKeyword);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách yêu cầu đổi/trả thành công", page));
     }
 

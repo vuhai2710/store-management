@@ -14,7 +14,7 @@ public interface OrderReturnService {
 
     PageResponse<OrderReturnDTO> getMyReturns(Integer customerId, Pageable pageable);
 
-    PageResponse<OrderReturnDTO> getAllReturns(Pageable pageable, String status, String returnType);
+    PageResponse<OrderReturnDTO> getAllReturns(Pageable pageable, String status, String returnType, String keyword, String customerKeyword);
 
     OrderReturnDTO approve(Integer idReturn, Integer employeeId, String noteAdmin, BigDecimal refundAmount);
 

@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, useCallback } from "react";
 
 /**
  * BuyNowContext - Lưu trữ thông tin sản phẩm khi user nhấn "Mua Ngay"
- * 
+ *
  * LUỒNG HOẠT ĐỘNG:
  * 1. User nhấn "Mua Ngay" trên ProductDetailPage
  * 2. FE lưu productId + quantity vào BuyNowContext
@@ -58,8 +58,7 @@ export const BuyNowProvider = ({ children }) => {
         setBuyNow,
         clearBuyNow,
         isBuyNowMode,
-      }}
-    >
+      }}>
       {children}
     </BuyNowContext.Provider>
   );

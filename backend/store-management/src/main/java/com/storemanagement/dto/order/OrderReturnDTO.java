@@ -17,6 +17,10 @@ import java.util.List;
 public class OrderReturnDTO {
     private Integer idReturn;
     private Integer orderId;
+    
+    // Customer info for admin display
+    private Integer customerId;
+    private String customerName;
 
     private OrderReturn.ReturnType returnType;
     private OrderReturn.ReturnStatus status;

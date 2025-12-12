@@ -72,6 +72,7 @@ public class OrderReturn {
         REQUESTED,
         APPROVED,
         REJECTED,
-        COMPLETED
+        COMPLETED,
+        CANCELED
     }
 }
