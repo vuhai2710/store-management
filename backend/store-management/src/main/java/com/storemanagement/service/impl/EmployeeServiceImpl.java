@@ -72,8 +72,15 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<EmployeeDTO> getAllEmployeesPaginated(Pageable pageable) {
-        Page<Employee> employeePage = employeeRepository.findAll(pageable);
+    public PageResponse<EmployeeDTO> getAllEmployeesPaginated(String keyword, Pageable pageable) {
+        Page<Employee> employeePage;
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            employeePage = employeeRepository.searchByKeyword(keyword.trim(), pageable);
+        } else {
+            employeePage = employeeRepository.findAll(pageable);
+        }
+        
         List<EmployeeDTO> employeeDTOs = employeeMapper.toDTOList(employeePage.getContent());
         return PageUtils.toPageResponse(employeePage, employeeDTOs);
     }

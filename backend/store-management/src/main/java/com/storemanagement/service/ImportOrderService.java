@@ -11,7 +11,7 @@ public interface ImportOrderService {
 
     PurchaseOrderDTO getImportOrderById(Integer id);
 
-    PageResponse<PurchaseOrderDTO> getAllImportOrders(Pageable pageable);
+    PageResponse<PurchaseOrderDTO> getAllImportOrders(String keyword, Pageable pageable);
 
     PageResponse<PurchaseOrderDTO> getImportOrdersBySupplier(Integer supplierId, Pageable pageable);
 

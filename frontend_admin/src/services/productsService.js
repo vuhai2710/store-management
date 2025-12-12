@@ -9,8 +9,7 @@ export const productsService = {
     pageSize = 10,
     sortBy = "idProduct",
     sortDirection = "ASC",
-    code,
-    name,
+    keyword,
     categoryId,
     brand,
     minPrice,
@@ -23,8 +22,8 @@ export const productsService = {
       sortBy,
       sortDirection,
     };
-    if (code) params.code = code;
-    if (name) params.name = name;
+    // Use keyword for both code and name search
+    if (keyword && keyword.trim()) params.keyword = keyword.trim();
     if (categoryId) params.categoryId = categoryId;
     if (brand) params.brand = brand;
     if (minPrice != null) params.minPrice = minPrice;

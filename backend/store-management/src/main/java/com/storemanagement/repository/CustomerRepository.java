@@ -35,4 +35,14 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
                 (:name IS NULL AND :phone IS NULL)
             """)
     Page<Customer> searchCustomers(@Param("name") String name, @Param("phone") String phone, Pageable pageable);
+
+    /**
+     * Search customers by keyword (name, phone, email)
+     */
+    @Query("SELECT c FROM Customer c WHERE " +
+           "(:keyword IS NULL OR :keyword = '' OR " +
+           "LOWER(c.customerName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(c.phoneNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(c.user.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Customer> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 }

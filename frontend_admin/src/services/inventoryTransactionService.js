@@ -269,4 +269,64 @@ export const inventoryTransactionService = {
     });
     return unwrap(response);
   },
+
+  /**
+   * Unified search/filter transactions using Specification pattern
+   * GET /api/v1/inventory-transactions/search
+   * Supports all filter combinations including referenceId for filtering by specific order
+   *
+   * @param {Object} params - Filter parameters
+   * @param {string} params.transactionType - Transaction type (IN or OUT) - optional
+   * @param {string} params.referenceType - Reference type (PURCHASE_ORDER, SALE_ORDER, ADJUSTMENT, SALE_RETURN, SALE_EXCHANGE) - optional
+   * @param {number} params.referenceId - Specific reference ID (e.g., orderId) - optional
+   * @param {number} params.productId - Product ID - optional
+   * @param {string} params.productName - Product name (partial match) - optional
+   * @param {string} params.sku - SKU code (partial match) - optional
+   * @param {string} params.fromDate - Start date (ISO format without timezone, e.g., "2024-01-01T00:00:00") - optional
+   * @param {string} params.toDate - End date (ISO format without timezone, e.g., "2024-12-31T23:59:59") - optional
+   * @param {number} params.pageNo - Page number (default: 1)
+   * @param {number} params.pageSize - Page size (default: 10)
+   * @param {string} params.sortBy - Sort field (default: "transactionDate")
+   * @param {string} params.sortDirection - Sort direction ASC/DESC (default: "DESC")
+   * @returns {Promise<PageResponse<InventoryTransactionDTO>>}
+   */
+  searchTransactions: async (params = {}) => {
+    const {
+      transactionType,
+      referenceType,
+      referenceId,
+      productId,
+      productName,
+      sku,
+      brand,
+      fromDate,
+      toDate,
+      pageNo = 1,
+      pageSize = 10,
+      sortBy = "transactionDate",
+      sortDirection = "DESC",
+    } = params;
+
+    const queryParams = {
+      pageNo,
+      pageSize,
+      sortBy,
+      sortDirection,
+    };
+
+    if (transactionType) queryParams.transactionType = transactionType;
+    if (referenceType) queryParams.referenceType = referenceType;
+    if (referenceId) queryParams.referenceId = referenceId;
+    if (productId) queryParams.productId = productId;
+    if (productName) queryParams.productName = productName;
+    if (sku) queryParams.sku = sku;
+    if (brand) queryParams.brand = brand;
+    if (fromDate) queryParams.fromDate = fromDate;
+    if (toDate) queryParams.toDate = toDate;
+
+    const response = await api.get("/inventory-transactions/search", {
+      params: queryParams,
+    });
+    return unwrap(response);
+  },
 };

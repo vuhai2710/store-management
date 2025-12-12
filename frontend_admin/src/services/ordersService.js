@@ -18,6 +18,7 @@ export const ordersService = {
    * @param {string} params.sortDirection - Sort direction ASC/DESC (default: "DESC")
    * @param {string} params.status - Filter by status (PENDING, CONFIRMED, COMPLETED, CANCELED)
    * @param {number} params.customerId - Filter by customer ID
+   * @param {string} params.keyword - Search keyword (order ID, customer name, phone)
    * @returns {Promise<PageResponse<OrderDTO>>}
    */
   getOrders: async (params = {}) => {
@@ -28,6 +29,7 @@ export const ordersService = {
       sortDirection = "DESC",
       status,
       customerId,
+      keyword,
     } = params;
 
     const queryParams = {
@@ -39,6 +41,7 @@ export const ordersService = {
 
     if (status) queryParams.status = status;
     if (customerId) queryParams.customerId = customerId;
+    if (keyword) queryParams.keyword = keyword;
 
     const response = await api.get("/orders", { params: queryParams });
     return unwrap(response); // Returns PageResponse<OrderDTO>
@@ -92,7 +95,7 @@ export const ordersService = {
   },
 
   // Legacy methods (kept for backward compatibility, may not be used)
-  
+
   /**
    * Update order (Not available in backend - kept for compatibility)
    * @deprecated Backend doesn't support direct order update
@@ -100,7 +103,9 @@ export const ordersService = {
   updateOrder: async (id, orderData) => {
     console.warn("updateOrder is deprecated. Use updateOrderStatus instead.");
     // Backend doesn't have update order endpoint, only status update
-    throw new Error("Update order is not supported. Use updateOrderStatus instead.");
+    throw new Error(
+      "Update order is not supported. Use updateOrderStatus instead."
+    );
   },
 
   /**
@@ -108,7 +113,9 @@ export const ordersService = {
    * @deprecated Backend doesn't support order deletion
    */
   deleteOrder: async (id) => {
-    console.warn("deleteOrder is deprecated. Backend doesn't support order deletion.");
+    console.warn(
+      "deleteOrder is deprecated. Backend doesn't support order deletion."
+    );
     throw new Error("Delete order is not supported by backend.");
   },
 
@@ -117,7 +124,9 @@ export const ordersService = {
    * @deprecated Backend doesn't have stats endpoint
    */
   getOrderStats: async (params = {}) => {
-    console.warn("getOrderStats is deprecated. Backend doesn't have stats endpoint.");
+    console.warn(
+      "getOrderStats is deprecated. Backend doesn't have stats endpoint."
+    );
     // Calculate stats from orders list if needed
     return null;
   },
@@ -127,8 +136,12 @@ export const ordersService = {
    * @deprecated Backend doesn't have bulk export endpoint
    */
   exportOrders: async (params = {}) => {
-    console.warn("exportOrders is deprecated. Backend doesn't have bulk export endpoint.");
-    throw new Error("Bulk export is not supported. Use exportOrderToPdf for individual orders.");
+    console.warn(
+      "exportOrders is deprecated. Backend doesn't have bulk export endpoint."
+    );
+    throw new Error(
+      "Bulk export is not supported. Use exportOrderToPdf for individual orders."
+    );
   },
 
   /**

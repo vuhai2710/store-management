@@ -126,8 +126,11 @@ export const ordersService = {
     sortBy = "orderDate",
     sortDirection = "DESC",
     status,
+    keyword,
   } = {}) => {
     const params = { pageNo, pageSize, sortBy, sortDirection };
+    if (status) params.status = status;
+    if (keyword && keyword.trim()) params.keyword = keyword.trim();
     if (status) params.status = status;
     const resp = await api.get(API_ENDPOINTS.ORDERS.MY_ORDERS, { params });
     return unwrap(resp);

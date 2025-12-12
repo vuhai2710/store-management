@@ -1,11 +1,17 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useReturnService } from "../../hooks/useReturnService";
+import { useDebounce } from "../../hooks/useDebounce";
+import { Search } from "lucide-react";
 
 const ReturnHistoryPage = ({ setCurrentPage, setSelectedReturnId }) => {
   const { getMyReturns, loading } = useReturnService();
   const [returns, setReturns] = useState([]);
   const [filteredReturns, setFilteredReturns] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
+
+  // Search state
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const debouncedKeyword = useDebounce(searchKeyword, 300);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -42,8 +48,18 @@ const ReturnHistoryPage = ({ setCurrentPage, setSelectedReturnId }) => {
       result = result.filter((item) => item.returnType === typeFilter);
     }
 
+    // Apply keyword search
+    if (debouncedKeyword && debouncedKeyword.trim()) {
+      const keyword = debouncedKeyword.toLowerCase().trim();
+      result = result.filter(
+        (item) =>
+          item.idReturn?.toString().includes(keyword) ||
+          item.reason?.toLowerCase().includes(keyword)
+      );
+    }
+
     setFilteredReturns(result);
-  }, [returns, statusFilter, typeFilter]);
+  }, [returns, statusFilter, typeFilter, debouncedKeyword]);
 
   const fetchReturns = async () => {
     try {
@@ -60,6 +76,7 @@ const ReturnHistoryPage = ({ setCurrentPage, setSelectedReturnId }) => {
   };
 
   const handleResetFilters = () => {
+    setSearchKeyword("");
     setStatusFilter("ALL");
     setTypeFilter("ALL");
   };
@@ -94,6 +111,25 @@ const ReturnHistoryPage = ({ setCurrentPage, setSelectedReturnId }) => {
       {/* Filters */}
       <div className="bg-white rounded shadow p-4 mb-4">
         <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tìm kiếm
+            </label>
+            <div className="relative">
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo mã phiếu, lý do..."
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                className="w-full border border-gray-300 rounded-md pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Trạng thái

@@ -17,7 +17,7 @@ public interface OrderService {
     
     OrderDTO createOrderForCustomer(Integer employeeId, OrderDTO request);
     
-    PageResponse<OrderDTO> getMyOrders(Integer customerId, Order.OrderStatus status, Pageable pageable);
+    PageResponse<OrderDTO> getMyOrders(Integer customerId, Order.OrderStatus status, String keyword, Pageable pageable);
     
     OrderDTO getMyOrderById(Integer customerId, Integer orderId);
     
@@ -25,7 +25,7 @@ public interface OrderService {
     
     OrderDTO confirmDelivery(Integer customerId, Integer orderId);
 
-    PageResponse<OrderDTO> getAllOrders(Order.OrderStatus status, Integer customerId, Pageable pageable);
+    PageResponse<OrderDTO> getAllOrders(Order.OrderStatus status, Integer customerId, String keyword, Pageable pageable);
 
     OrderDTO updateOrderStatus(Integer orderId, Order.OrderStatus newStatus);
 }

@@ -24,6 +24,7 @@ import { paymentService } from "../../services/paymentService";
 import { cartService } from "../../services/cartService";
 import { reviewService } from "../../services/reviewService";
 import { useReturnService } from "../../hooks/useReturnService";
+import { useDebounce } from "../../hooks/useDebounce";
 import {
   formatPrice,
   formatDate,
@@ -51,6 +52,7 @@ const OrdersPage = ({
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [statusFilter, setStatusFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [isCreatingPayOSLink, setIsCreatingPayOSLink] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [hasActiveReturn, setHasActiveReturn] = useState(false);
@@ -173,6 +175,7 @@ const OrdersPage = ({
           pageNo,
           pageSize,
           status: statusFilter || undefined,
+          keyword: debouncedSearchTerm?.trim() || undefined,
         });
 
         setOrders(ordersData?.content || []);
@@ -186,7 +189,12 @@ const OrdersPage = ({
     };
 
     fetchOrders();
-  }, [pageNo, statusFilter]);
+  }, [pageNo, statusFilter, debouncedSearchTerm]);
+
+  // Reset page when search term changes
+  useEffect(() => {
+    setPageNo(1);
+  }, [debouncedSearchTerm]);
 
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này?")) {
@@ -538,17 +546,6 @@ const OrdersPage = ({
     }
   };
 
-  // Filter orders by search term
-  const filteredOrders = orders.filter((order) => {
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      order.idOrder?.toString().includes(searchLower) ||
-      order.customerName?.toLowerCase().includes(searchLower) ||
-      order.customerPhone?.includes(searchTerm)
-    );
-  });
-
   if (loading) {
     return (
       <section style={{ padding: "4rem 0" }}>
@@ -655,7 +652,7 @@ const OrdersPage = ({
         )}
 
         {/* Orders List */}
-        {filteredOrders.length === 0 ? (
+        {orders.length === 0 ? (
           <div
             style={{
               textAlign: "center",
@@ -691,7 +688,7 @@ const OrdersPage = ({
                 gap: "1rem",
                 marginBottom: "2rem",
               }}>
-              {filteredOrders.map((order) => {
+              {orders.map((order) => {
                 const status = order.status || ORDER_STATUS.PENDING;
                 const statusColor = ORDER_STATUS_COLORS[status] || "#6c757d";
                 const statusLabel = ORDER_STATUS_LABELS[status] || status;

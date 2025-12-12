@@ -35,11 +35,12 @@ public class AdminPromotionController {
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDirection) {
+            @RequestParam(defaultValue = "DESC") String sortDirection,
+            @RequestParam(required = false) String keyword) {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<PromotionDTO> promotions = promotionService.getAllPromotions(pageable);
+        PageResponse<PromotionDTO> promotions = promotionService.getAllPromotions(keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách mã giảm giá thành công", promotions));
     }
 

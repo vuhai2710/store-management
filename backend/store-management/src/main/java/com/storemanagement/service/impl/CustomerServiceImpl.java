@@ -59,8 +59,15 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public PageResponse<CustomerDTO> getAllCustomersPaginated(Pageable pageable) {
-        Page<Customer> customerPage = customerRepository.findAll(pageable);
+    public PageResponse<CustomerDTO> getAllCustomersPaginated(String keyword, Pageable pageable) {
+        Page<Customer> customerPage;
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            customerPage = customerRepository.searchByKeyword(keyword.trim(), pageable);
+        } else {
+            customerPage = customerRepository.findAll(pageable);
+        }
+        
         List<CustomerDTO> customerDtos = customerMapper.toDTOList(customerPage.getContent());
         return PageUtils.toPageResponse(customerPage, customerDtos);
     }

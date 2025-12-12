@@ -4,12 +4,22 @@ import { API_ENDPOINTS } from "../constants/apiEndpoints";
 const promotionsService = {
   /**
    * Lấy danh sách promotions
-   * @param {object} params - { pageNo, pageSize, sortBy, sortDirection }
+   * @param {object} params - { pageNo, pageSize, sortBy, sortDirection, keyword }
    */
   getAllPromotions: async (params = {}) => {
-    const { pageNo = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "DESC" } = params;
+    const {
+      pageNo = 1,
+      pageSize = 10,
+      sortBy = "createdAt",
+      sortDirection = "DESC",
+      keyword,
+    } = params;
+    const queryParams = { pageNo, pageSize, sortBy, sortDirection };
+    if (keyword && keyword.trim()) {
+      queryParams.keyword = keyword.trim();
+    }
     const response = await api.get(API_ENDPOINTS.PROMOTIONS.BASE, {
-      params: { pageNo, pageSize, sortBy, sortDirection },
+      params: queryParams,
     });
     return response.data?.data || response.data;
   },
@@ -28,7 +38,10 @@ const promotionsService = {
    * @param {object} promotionData - Dữ liệu promotion
    */
   createPromotion: async (promotionData) => {
-    const response = await api.post(API_ENDPOINTS.PROMOTIONS.BASE, promotionData);
+    const response = await api.post(
+      API_ENDPOINTS.PROMOTIONS.BASE,
+      promotionData
+    );
     return response.data?.data || response.data;
   },
 
@@ -38,7 +51,10 @@ const promotionsService = {
    * @param {object} promotionData - Dữ liệu promotion
    */
   updatePromotion: async (id, promotionData) => {
-    const response = await api.put(API_ENDPOINTS.PROMOTIONS.BY_ID(id), promotionData);
+    const response = await api.put(
+      API_ENDPOINTS.PROMOTIONS.BY_ID(id),
+      promotionData
+    );
     return response.data?.data || response.data;
   },
 
@@ -53,12 +69,22 @@ const promotionsService = {
 
   /**
    * Lấy danh sách promotion rules
-   * @param {object} params - { pageNo, pageSize, sortBy, sortDirection }
+   * @param {object} params - { pageNo, pageSize, sortBy, sortDirection, keyword }
    */
   getAllPromotionRules: async (params = {}) => {
-    const { pageNo = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "DESC" } = params;
+    const {
+      pageNo = 1,
+      pageSize = 10,
+      sortBy = "createdAt",
+      sortDirection = "DESC",
+      keyword,
+    } = params;
+    const queryParams = { pageNo, pageSize, sortBy, sortDirection };
+    if (keyword && keyword.trim()) {
+      queryParams.keyword = keyword.trim();
+    }
     const response = await api.get(API_ENDPOINTS.PROMOTIONS.RULES, {
-      params: { pageNo, pageSize, sortBy, sortDirection },
+      params: queryParams,
     });
     return response.data?.data || response.data;
   },
@@ -87,7 +113,10 @@ const promotionsService = {
    * @param {object} ruleData - Dữ liệu rule
    */
   updatePromotionRule: async (id, ruleData) => {
-    const response = await api.put(API_ENDPOINTS.PROMOTIONS.RULE_BY_ID(id), ruleData);
+    const response = await api.put(
+      API_ENDPOINTS.PROMOTIONS.RULE_BY_ID(id),
+      ruleData
+    );
     return response.data?.data || response.data;
   },
 
@@ -102,4 +131,3 @@ const promotionsService = {
 };
 
 export { promotionsService };
-

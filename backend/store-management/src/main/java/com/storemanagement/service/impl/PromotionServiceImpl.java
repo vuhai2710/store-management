@@ -195,10 +195,17 @@ public class PromotionServiceImpl implements PromotionService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<PromotionDTO> getAllPromotions(Pageable pageable) {
-        log.info("Getting all promotions");
+    public PageResponse<PromotionDTO> getAllPromotions(String keyword, Pageable pageable) {
+        log.info("Getting all promotions with keyword: {}", keyword);
 
-        Page<Promotion> promotions = promotionRepository.findAll(pageable);
+        Page<Promotion> promotions;
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            promotions = promotionRepository.searchByKeyword(keyword.trim(), pageable);
+        } else {
+            promotions = promotionRepository.findAll(pageable);
+        }
+        
         return PageUtils.toPageResponse(promotions.map(promotionMapper::toDTO));
     }
 

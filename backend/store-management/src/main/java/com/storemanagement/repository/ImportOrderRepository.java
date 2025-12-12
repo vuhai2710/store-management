@@ -34,6 +34,15 @@ public interface ImportOrderRepository extends JpaRepository<ImportOrder, Intege
            "LEFT JOIN FETCH io.supplier " +
            "WHERE io.idImportOrder = :id")
     ImportOrder findByIdWithDetails(@Param("id") Integer id);
+
+    /**
+     * Search import orders by keyword (supplier name, order ID)
+     */
+    @Query("SELECT io FROM ImportOrder io WHERE " +
+           "(:keyword IS NULL OR :keyword = '' OR " +
+           "CAST(io.idImportOrder AS string) LIKE CONCAT('%', :keyword, '%') OR " +
+           "LOWER(io.supplier.supplierName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<ImportOrder> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 }
 
 

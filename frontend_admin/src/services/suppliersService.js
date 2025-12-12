@@ -26,6 +26,28 @@ export const suppliersService = {
     }
   },
 
+  /**
+   * Lấy danh sách suppliers phân trang với tìm kiếm
+   * @param {object} params - { pageNo, pageSize, sortBy, sortDirection, keyword }
+   */
+  getSuppliersPaginated: async (params = {}) => {
+    const {
+      pageNo = 1,
+      pageSize = 10,
+      sortBy = "idSupplier",
+      sortDirection = "ASC",
+      keyword,
+    } = params;
+    const queryParams = { pageNo, pageSize, sortBy, sortDirection };
+    if (keyword && keyword.trim()) {
+      queryParams.keyword = keyword.trim();
+    }
+    const resp = await api.get(API_ENDPOINTS.SUPPLIERS.BASE, {
+      params: queryParams,
+    });
+    return unwrap(resp);
+  },
+
   getSupplierById: async (id) => {
     const resp = await api.get(API_ENDPOINTS.SUPPLIERS.BY_ID(id));
     return unwrap(resp);

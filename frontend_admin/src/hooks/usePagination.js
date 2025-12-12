@@ -1,9 +1,12 @@
 /**
  * Custom Hook - usePagination
  * Hook để quản lý pagination state
+ * 
+ * QUAN TRỌNG: Các functions được memoize bằng useCallback để tránh
+ * gây re-render không cần thiết khi được sử dụng làm dependency của useEffect
  */
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { APP_CONFIG } from "../constants";
 
 export const usePagination = (
@@ -14,23 +17,36 @@ export const usePagination = (
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [total, setTotal] = useState(0);
 
-  const handlePageChange = (page, newPageSize) => {
+  // Memoize handlePageChange để tránh re-render không cần thiết
+  const handlePageChange = useCallback((page, newPageSize) => {
     setCurrentPage(page);
-    if (newPageSize !== pageSize) {
+    if (newPageSize !== undefined) {
       setPageSize(newPageSize);
     }
-  };
+  }, []);
 
-  const handlePageSizeChange = (current, size) => {
+  // Memoize handlePageSizeChange
+  const handlePageSizeChange = useCallback((current, size) => {
     setPageSize(size);
     setCurrentPage(1); // Reset về trang 1 khi thay đổi page size
-  };
+  }, []);
 
-  const resetPagination = () => {
+  // Memoize resetPagination - QUAN TRỌNG: không reset total để tránh mất dữ liệu
+  const resetPagination = useCallback(() => {
     setCurrentPage(1);
-    setPageSize(initialPageSize);
-    setTotal(0);
-  };
+  }, []);
+
+  // Memoize pagination object để tránh tạo object mới mỗi render
+  const pagination = useMemo(() => ({
+    current: currentPage,
+    pageSize,
+    total,
+    showSizeChanger: true,
+    showTotal: (total) => `Tổng ${total} bản ghi`,
+    pageSizeOptions: APP_CONFIG.PAGE_SIZE_OPTIONS,
+    onChange: handlePageChange,
+    onShowSizeChange: handlePageSizeChange,
+  }), [currentPage, pageSize, total, handlePageChange, handlePageSizeChange]);
 
   return {
     currentPage,
@@ -40,15 +56,6 @@ export const usePagination = (
     handlePageChange,
     handlePageSizeChange,
     resetPagination,
-    pagination: {
-      current: currentPage,
-      pageSize,
-      total,
-      showSizeChanger: true,
-      showTotal: (total) => `Tổng ${total} bản ghi`,
-      pageSizeOptions: APP_CONFIG.PAGE_SIZE_OPTIONS,
-      onChange: handlePageChange,
-      onShowSizeChange: handlePageSizeChange,
-    },
+    pagination,
   };
 };

@@ -7,6 +7,9 @@ import "react-toastify/dist/ReactToastify.css";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { BuyNowProvider } from "./contexts/BuyNowContext";
 
+// Import hooks
+import { useDebounce } from "./hooks/useDebounce";
+
 // Import components
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
@@ -62,6 +65,7 @@ function AppContent() {
   const [cartData, setCartData] = useState(null);
   const [cartLoading, setCartLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortOption, setSortOption] = useState("default");
   const [initializedFromUrl, setInitializedFromUrl] = useState(false);
@@ -348,7 +352,7 @@ function AppContent() {
             setSelectedCategory={setSelectedCategory}
             sortOption={sortOption}
             setSortOption={setSortOption}
-            searchTerm={searchTerm}
+            searchTerm={debouncedSearchTerm}
           />
         );
 

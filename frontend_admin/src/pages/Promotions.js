@@ -25,6 +25,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   ReloadOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import {
   fetchPromotions,
@@ -37,6 +38,7 @@ import {
   deletePromotionRule,
 } from "../store/slices/promotionsSlice";
 import { usePagination } from "../hooks/usePagination";
+import { useDebounce } from "../hooks/useDebounce";
 import { formatCurrency, formatDate } from "../utils/formatUtils";
 import LoadingSkeleton from "../components/common/LoadingSkeleton";
 import EmptyState from "../components/common/EmptyState";
@@ -79,6 +81,14 @@ const Promotions = () => {
   const { promotions, rules } = useSelector((state) => state.promotions || {});
   const [activeTab, setActiveTab] = useState("promotions");
 
+  // Search state for promotions
+  const [promoSearchKeyword, setPromoSearchKeyword] = useState("");
+  const debouncedPromoKeyword = useDebounce(promoSearchKeyword, 300);
+
+  // Search state for rules
+  const [ruleSearchKeyword, setRuleSearchKeyword] = useState("");
+  const debouncedRuleKeyword = useDebounce(ruleSearchKeyword, 300);
+
   const [isPromoModalVisible, setIsPromoModalVisible] = useState(false);
   const [editingPromotion, setEditingPromotion] = useState(null);
   const [promoSubmitting, setPromoSubmitting] = useState(false);
@@ -95,6 +105,7 @@ const Promotions = () => {
     pageSize: promoPageSize,
     setTotal: setPromoTotal,
     handlePageChange: handlePromoPageChange,
+    resetPagination: resetPromoPagination,
     pagination: promoPagination,
   } = usePagination(1, 10);
 
@@ -104,6 +115,7 @@ const Promotions = () => {
     pageSize: rulePageSize,
     setTotal: setRuleTotal,
     handlePageChange: handleRulePageChange,
+    resetPagination: resetRulePagination,
     pagination: rulePagination,
   } = usePagination(1, 10);
 
@@ -114,9 +126,10 @@ const Promotions = () => {
         pageSize: promoPageSize,
         sortBy: "createdAt",
         sortDirection: "DESC",
+        keyword: debouncedPromoKeyword?.trim() || undefined,
       })
     );
-  }, [dispatch, promoPage, promoPageSize]);
+  }, [dispatch, promoPage, promoPageSize, debouncedPromoKeyword]);
 
   const fetchRulesList = useCallback(() => {
     dispatch(
@@ -125,9 +138,10 @@ const Promotions = () => {
         pageSize: rulePageSize,
         sortBy: "createdAt",
         sortDirection: "DESC",
+        keyword: debouncedRuleKeyword?.trim() || undefined,
       })
     );
-  }, [dispatch, rulePage, rulePageSize]);
+  }, [dispatch, rulePage, rulePageSize, debouncedRuleKeyword]);
 
   useEffect(() => {
     if (activeTab === "promotions") {
@@ -136,6 +150,21 @@ const Promotions = () => {
       fetchRulesList();
     }
   }, [activeTab, fetchPromotionsList, fetchRulesList]);
+
+  // Reset pagination when search keyword changes
+  useEffect(() => {
+    if (debouncedPromoKeyword !== undefined) {
+      resetPromoPagination();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedPromoKeyword]);
+
+  useEffect(() => {
+    if (debouncedRuleKeyword !== undefined) {
+      resetRulePagination();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedRuleKeyword]);
 
   useEffect(() => {
     if (promotions.pagination.totalElements) {
@@ -545,17 +574,40 @@ const Promotions = () => {
         bodyStyle={{ padding: 16 }}>
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
           <TabPane tab="Mã giảm giá" key="promotions">
-            <Space style={{ marginBottom: 16 }}>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleOpenCreatePromotion}>
-                Thêm mã giảm giá
-              </Button>
-              <Button icon={<ReloadOutlined />} onClick={fetchPromotionsList}>
-                Làm mới
-              </Button>
-            </Space>
+            <div
+              style={{
+                marginBottom: 16,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 12,
+              }}>
+              <Input
+                placeholder="Tìm kiếm mã giảm giá..."
+                prefix={<SearchOutlined style={{ color: "#94A3B8" }} />}
+                value={promoSearchKeyword}
+                onChange={(e) => setPromoSearchKeyword(e.target.value)}
+                allowClear
+                style={{ maxWidth: 300 }}
+              />
+              <Space>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleOpenCreatePromotion}>
+                  Thêm mã giảm giá
+                </Button>
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={() => {
+                    setPromoSearchKeyword("");
+                    fetchPromotionsList();
+                  }}>
+                  Làm mới
+                </Button>
+              </Space>
+            </div>
 
             {promotions.loading &&
             (!promotions.list || promotions.list.length === 0) ? (
@@ -582,17 +634,40 @@ const Promotions = () => {
           </TabPane>
 
           <TabPane tab="Quy tắc giảm giá tự động" key="rules">
-            <Space style={{ marginBottom: 16 }}>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleOpenCreateRule}>
-                Thêm quy tắc
-              </Button>
-              <Button icon={<ReloadOutlined />} onClick={fetchRulesList}>
-                Làm mới
-              </Button>
-            </Space>
+            <div
+              style={{
+                marginBottom: 16,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 12,
+              }}>
+              <Input
+                placeholder="Tìm kiếm quy tắc..."
+                prefix={<SearchOutlined style={{ color: "#94A3B8" }} />}
+                value={ruleSearchKeyword}
+                onChange={(e) => setRuleSearchKeyword(e.target.value)}
+                allowClear
+                style={{ maxWidth: 300 }}
+              />
+              <Space>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleOpenCreateRule}>
+                  Thêm quy tắc
+                </Button>
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={() => {
+                    setRuleSearchKeyword("");
+                    fetchRulesList();
+                  }}>
+                  Làm mới
+                </Button>
+              </Space>
+            </div>
 
             {rules.loading && (!rules.list || rules.list.length === 0) ? (
               <LoadingSkeleton type="table" rows={5} />

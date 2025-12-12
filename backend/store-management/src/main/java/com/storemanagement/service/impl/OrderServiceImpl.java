@@ -451,13 +451,16 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<OrderDTO> getMyOrders(Integer customerId, Order.OrderStatus status, Pageable pageable) {
-        log.info("Getting orders for customer: {}, status filter: {}", customerId, status);
+    public PageResponse<OrderDTO> getMyOrders(Integer customerId, Order.OrderStatus status, String keyword, Pageable pageable) {
+        log.info("Getting orders for customer: {}, status filter: {}, keyword: {}", customerId, status, keyword);
 
         Page<Order> orderPage;
 
-        // Nếu có status filter → Gọi method filter theo status
-        if (status != null) {
+        // If keyword is provided, use search query
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            orderPage = orderRepository.searchMyOrders(customerId, status, keyword.trim(), pageable);
+        } else if (status != null) {
+            // Nếu có status filter → Gọi method filter theo status
             orderPage = orderRepository.findByCustomerIdCustomerAndStatusOrderByOrderDateDesc(customerId, status,
                     pageable);
         } else {
@@ -810,13 +813,15 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<OrderDTO> getAllOrders(Order.OrderStatus status, Integer customerId, Pageable pageable) {
-        log.info("Getting all orders with filters - status: {}, customerId: {}", status, customerId);
+    public PageResponse<OrderDTO> getAllOrders(Order.OrderStatus status, Integer customerId, String keyword, Pageable pageable) {
+        log.info("Getting all orders with filters - status: {}, customerId: {}, keyword: {}", status, customerId, keyword);
 
         Page<Order> orderPage;
 
-        // Áp dụng filters
-        if (customerId != null || status != null) {
+        // If keyword is provided, use search query
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            orderPage = orderRepository.searchByFilters(customerId, status, keyword.trim(), pageable);
+        } else if (customerId != null || status != null) {
             // Có ít nhất 1 filter
             orderPage = orderRepository.findByFilters(customerId, status, pageable);
         } else {

@@ -175,4 +175,42 @@ public class InventoryTransactionController {
 
         return ResponseEntity.ok(ApiResponse.success("Lọc lịch sử nhập/xuất kho thành công", transactions));
     }
+
+    /**
+     * Unified filter API using Specification pattern.
+     * Supports all filter combinations including referenceId for filtering by specific order.
+     * All parameters are optional and combined with AND logic.
+     * 
+     * Example: GET /api/v1/inventory-transactions/search?referenceType=SALE_ORDER&referenceId=123
+     * This will return only transactions for order #123
+     */
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<PageResponse<InventoryTransactionDTO>>> searchTransactions(
+            @RequestParam(required = false) TransactionType transactionType,
+            @RequestParam(required = false) ReferenceType referenceType,
+            @RequestParam(required = false) Integer referenceId,
+            @RequestParam(required = false) Integer productId,
+            @RequestParam(required = false) String productName,
+            @RequestParam(required = false) String sku,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "transactionDate") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
+
+        LocalDateTime start = fromDate != null ? LocalDateTime.parse(fromDate) : null;
+        LocalDateTime end = toDate != null ? LocalDateTime.parse(toDate) : null;
+
+        PageResponse<InventoryTransactionDTO> transactions = 
+                inventoryTransactionService.filterTransactions(
+                        transactionType, referenceType, referenceId, productId, productName, sku, brand, start, end, pageable);
+
+        return ResponseEntity.ok(ApiResponse.success("Tìm kiếm lịch sử nhập/xuất kho thành công", transactions));
+    }
 }

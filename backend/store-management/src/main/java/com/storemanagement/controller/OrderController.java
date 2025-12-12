@@ -115,7 +115,8 @@ public class OrderController {
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "orderDate") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDirection,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String keyword) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
@@ -133,7 +134,7 @@ public class OrderController {
             }
         }
         
-        PageResponse<OrderDTO> orders = orderService.getMyOrders(customerId, orderStatus, pageable);
+        PageResponse<OrderDTO> orders = orderService.getMyOrders(customerId, orderStatus, keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đơn hàng thành công", orders));
     }
 
@@ -178,7 +179,8 @@ public class OrderController {
             @RequestParam(defaultValue = "orderDate") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDirection,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) Integer customerId) {
+            @RequestParam(required = false) Integer customerId,
+            @RequestParam(required = false) String keyword) {
 
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
@@ -194,7 +196,7 @@ public class OrderController {
             }
         }
 
-        PageResponse<OrderDTO> orders = orderService.getAllOrders(orderStatus, customerId, pageable);
+        PageResponse<OrderDTO> orders = orderService.getAllOrders(orderStatus, customerId, keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đơn hàng thành công", orders));
     }
 

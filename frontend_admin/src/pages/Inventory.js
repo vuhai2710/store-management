@@ -14,7 +14,8 @@ import {
   Input,
   message,
   DatePicker,
-  Spin,
+  Tabs,
+  Tooltip,
 } from "antd";
 import {
   InboxOutlined,
@@ -23,16 +24,36 @@ import {
   HistoryOutlined,
   ReloadOutlined,
   SearchOutlined,
+  UnorderedListOutlined,
+  ClearOutlined,
 } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProducts } from "../store/slices/productsSlice";
 import { inventoryTransactionService } from "../services/inventoryTransactionService";
+import { categoriesService } from "../services/categoriesService";
+import { productsService } from "../services/productsService";
 import { usePagination } from "../hooks/usePagination";
+import { useDebounce } from "../hooks/useDebounce";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
+
+// Constants for reference types
+const REFERENCE_TYPES = {
+  PURCHASE_ORDER: { label: "Đơn nhập hàng", color: "blue" },
+  SALE_ORDER: { label: "Đơn bán hàng", color: "green" },
+  ADJUSTMENT: { label: "Điều chỉnh", color: "orange" },
+  SALE_RETURN: { label: "Trả hàng", color: "red" },
+  SALE_EXCHANGE: { label: "Đổi hàng", color: "purple" },
+};
+
+// Constants for transaction types
+const TRANSACTION_TYPES = {
+  IN: { label: "Nhập kho", color: "green" },
+  OUT: { label: "Xuất kho", color: "red" },
+};
 
 const Inventory = () => {
   const dispatch = useDispatch();
@@ -41,45 +62,279 @@ const Inventory = () => {
     loading: productsLoading,
     pagination: productsPagination,
   } = useSelector((state) => state.products || {});
+
+  // Active tab state
+  const [activeTab, setActiveTab] = useState("inventory");
+
+  // ==================== TAB TỒN KHO - STATES ====================
+  const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
+  // Filter states cho tab Tồn kho
+  const [inventoryProductSearch, setInventoryProductSearch] = useState("");
+  const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState(null);
+  const [inventoryBrandFilter, setInventoryBrandFilter] = useState(null);
+  const [inventoryStatusFilter, setInventoryStatusFilter] = useState(null);
+  // Pagination cho tab Tồn kho
+  const [inventoryPagination, setInventoryPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  // Thống kê tổng kho (không phụ thuộc vào phân trang)
+  const [inventoryStats, setInventoryStats] = useState({
+    totalProducts: 0,
+    lowStockCount: 0,
+    outOfStockCount: 0,
+    inStockCount: 0,
+    totalValue: 0,
+  });
+
+  // Debounce cho tab Tồn kho
+  const debouncedInventoryProductSearch = useDebounce(inventoryProductSearch, 400);
+
+  // ==================== TAB LỊCH SỬ - STATES ====================
+  // Product history modal states
   const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [transactions, setTransactions] = useState([]);
-  const [transactionsLoading, setTransactionsLoading] = useState(false);
-  const [transactionTypeFilter, setTransactionTypeFilter] = useState(null);
-  const [referenceTypeFilter, setReferenceTypeFilter] = useState(null);
-  const [productNameSearch, setProductNameSearch] = useState("");
-  const [skuSearch, setSkuSearch] = useState("");
-  const [dateRange, setDateRange] = useState(null);
+  const [modalTransactions, setModalTransactions] = useState([]);
+  const [modalTransactionsLoading, setModalTransactionsLoading] =
+    useState(false);
+  const [modalTransactionTypeFilter, setModalTransactionTypeFilter] =
+    useState(null);
+  const [modalReferenceTypeFilter, setModalReferenceTypeFilter] =
+    useState(null);
+  const [modalDateRange, setModalDateRange] = useState(null);
 
-  // Pagination for transactions
+  // All history tab states
+  const [allTransactions, setAllTransactions] = useState([]);
+  const [allTransactionsLoading, setAllTransactionsLoading] = useState(false);
+  const [historyProductNameSearch, setHistoryProductNameSearch] = useState("");
+  const [historyBrandFilter, setHistoryBrandFilter] = useState(null);
+  const [historyTransactionType, setHistoryTransactionType] = useState(null);
+  const [historyReferenceType, setHistoryReferenceType] = useState(null);
+  const [historyDateRange, setHistoryDateRange] = useState(null);
+  const [historyPagination, setHistoryPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+
+  // Debounced values for auto-search (tab Lịch sử)
+  const debouncedProductName = useDebounce(historyProductNameSearch, 400);
+
+  // Pagination for modal transactions
   const {
-    currentPage,
-    pageSize,
-    setTotal,
-    handlePageChange,
-    resetPagination,
-    pagination: tablePagination,
+    currentPage: modalCurrentPage,
+    pageSize: modalPageSize,
+    setTotal: setModalTotal,
+    handlePageChange: handleModalPageChange,
+    resetPagination: resetModalPagination,
+    pagination: modalTablePagination,
   } = usePagination(1, 10);
 
-  // Fetch products
+  // ==================== LOAD CATEGORIES & BRANDS ====================
   useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const cats = await categoriesService.getAll();
+        setCategories(Array.isArray(cats) ? cats : []);
+      } catch (error) {
+        console.error("Error loading categories:", error);
+        setCategories([]);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // Load brands từ products
+  useEffect(() => {
+    const loadBrands = async () => {
+      try {
+        // Lấy tất cả products để extract unique brands
+        const res = await productsService.getProductsPaginated({ pageNo: 1, pageSize: 1000 });
+        const allProducts = res?.content || [];
+        const uniqueBrands = [...new Set(allProducts.map(p => p.brand).filter(Boolean))].sort();
+        setBrands(uniqueBrands);
+      } catch (error) {
+        console.error("Error loading brands:", error);
+        setBrands([]);
+      }
+    };
+    loadBrands();
+  }, []);
+
+  // ==================== LOAD INVENTORY STATS (KHÔNG PHỤ THUỘC PHÂN TRANG) ====================
+  useEffect(() => {
+    const loadInventoryStats = async () => {
+      try {
+        // Lấy tất cả products để tính thống kê tổng
+        const res = await productsService.getProductsPaginated({ pageNo: 1, pageSize: 10000 });
+        const allProducts = res?.content || [];
+        const total = res?.totalElements || allProducts.length;
+        
+        const lowStock = allProducts.filter(p => (p.stockQuantity || 0) > 0 && (p.stockQuantity || 0) < 10).length;
+        const outOfStock = allProducts.filter(p => (p.stockQuantity || 0) === 0).length;
+        const inStock = allProducts.filter(p => (p.stockQuantity || 0) >= 10).length;
+        const totalValue = allProducts.reduce((sum, p) => sum + ((p.stockQuantity || 0) * (p.price || 0)), 0);
+
+        setInventoryStats({
+          totalProducts: total,
+          lowStockCount: lowStock,
+          outOfStockCount: outOfStock,
+          inStockCount: inStock,
+          totalValue: totalValue,
+        });
+      } catch (error) {
+        console.error("Error loading inventory stats:", error);
+      }
+    };
+    loadInventoryStats();
+  }, []);
+
+  // ==================== FETCH PRODUCTS (TAB TỒN KHO) ====================
+  const fetchInventoryProducts = useCallback(() => {
     dispatch(
       fetchProducts({
-        pageNo: 1,
-        pageSize: 1000, // Get all products for inventory view
+        pageNo: inventoryPagination.current,
+        pageSize: inventoryPagination.pageSize,
         sortBy: "idProduct",
         sortDirection: "ASC",
+        keyword: debouncedInventoryProductSearch?.trim() || undefined,
+        categoryId: inventoryCategoryFilter || undefined,
+        brand: inventoryBrandFilter || undefined,
+        inventoryStatus: inventoryStatusFilter || undefined,
       })
     );
-  }, [dispatch]);
+  }, [
+    dispatch,
+    inventoryPagination.current,
+    inventoryPagination.pageSize,
+    debouncedInventoryProductSearch,
+    inventoryCategoryFilter,
+    inventoryBrandFilter,
+    inventoryStatusFilter,
+  ]);
 
-  // Fetch transactions for selected product using advanced filter
-  const fetchTransactions = useCallback(
+  // Fetch products khi filter thay đổi (auto-search với debounce)
+  useEffect(() => {
+    if (activeTab === "inventory") {
+      // Reset về page 1 khi filter thay đổi (trừ pagination change)
+      fetchInventoryProducts();
+    }
+  }, [
+    activeTab,
+    fetchInventoryProducts,
+  ]);
+
+  // Sync total từ redux
+  useEffect(() => {
+    if (productsPagination?.totalElements !== undefined) {
+      setInventoryPagination((prev) => ({
+        ...prev,
+        total: productsPagination.totalElements,
+      }));
+    }
+  }, [productsPagination?.totalElements]);
+
+  // ==================== FETCH TRANSACTIONS (TAB LỊCH SỬ) ====================
+  const fetchAllTransactions = useCallback(
+    async (params = {}) => {
+      try {
+        setAllTransactionsLoading(true);
+
+        const queryParams = {
+          pageNo: params.pageNo || historyPagination.current,
+          pageSize: params.pageSize || historyPagination.pageSize,
+          sortBy: "transactionDate",
+          sortDirection: "DESC",
+        };
+
+        // Filter theo loại giao dịch (không gửi nếu null = Tất cả)
+        if (historyTransactionType) {
+          queryParams.transactionType = historyTransactionType;
+        }
+
+        // Filter theo loại tham chiếu (không gửi nếu null = Tất cả)
+        if (historyReferenceType) {
+          queryParams.referenceType = historyReferenceType;
+        }
+
+        if (debouncedProductName && debouncedProductName.trim()) {
+          queryParams.productName = debouncedProductName.trim();
+        }
+
+        // Filter theo thương hiệu
+        if (historyBrandFilter) {
+          queryParams.brand = historyBrandFilter;
+        }
+
+        // Date range chỉ gửi khi user chọn và bấm Tìm kiếm
+        if (historyDateRange && historyDateRange.length === 2) {
+          const [startDate, endDate] = historyDateRange;
+          if (startDate && endDate) {
+            try {
+              queryParams.fromDate = startDate
+                .startOf("day")
+                .format("YYYY-MM-DDTHH:mm:ss");
+              queryParams.toDate = endDate
+                .endOf("day")
+                .format("YYYY-MM-DDTHH:mm:ss");
+            } catch (e) {
+              console.error("Error formatting date:", e);
+            }
+          }
+        }
+
+        const response = await inventoryTransactionService.searchTransactions(
+          queryParams
+        );
+
+        if (response && response.content) {
+          setAllTransactions(response.content || []);
+          setHistoryPagination((prev) => ({
+            ...prev,
+            total: response.totalElements || 0,
+            current: params.pageNo || prev.current,
+            pageSize: params.pageSize || prev.pageSize,
+          }));
+        } else {
+          setAllTransactions([]);
+          setHistoryPagination((prev) => ({ ...prev, total: 0 }));
+        }
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+        message.error("Lỗi khi tải lịch sử nhập/xuất kho");
+        setAllTransactions([]);
+      } finally {
+        setAllTransactionsLoading(false);
+      }
+    },
+    [
+      historyPagination.current,
+      historyPagination.pageSize,
+      debouncedProductName,
+      historyBrandFilter,
+      historyTransactionType,
+      historyReferenceType,
+      historyDateRange,
+    ]
+  );
+
+  // Auto-fetch khi các filter thay đổi (trừ dateRange - cần bấm nút)
+  useEffect(() => {
+    if (activeTab === "history") {
+      fetchAllTransactions({ pageNo: 1 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, debouncedProductName, historyBrandFilter, historyTransactionType, historyReferenceType]);
+
+  // Fetch transactions for selected product modal
+  const fetchModalTransactions = useCallback(
     async (productId, page = 1, size = 10) => {
       if (!productId) return;
 
       try {
-        setTransactionsLoading(true);
+        setModalTransactionsLoading(true);
         const params = {
           productId: productId,
           pageNo: page,
@@ -88,163 +343,150 @@ const Inventory = () => {
           sortDirection: "DESC",
         };
 
-        if (transactionTypeFilter) {
-          params.transactionType = transactionTypeFilter;
+        if (modalTransactionTypeFilter) {
+          params.transactionType = modalTransactionTypeFilter;
         }
 
-        if (referenceTypeFilter) {
-          params.referenceType = referenceTypeFilter;
+        if (modalReferenceTypeFilter) {
+          params.referenceType = modalReferenceTypeFilter;
         }
 
-        if (productNameSearch && productNameSearch.trim()) {
-          params.productName = productNameSearch.trim();
-        }
-
-        if (skuSearch && skuSearch.trim()) {
-          params.sku = skuSearch.trim();
-        }
-
-        if (dateRange && dateRange.length === 2) {
-          // DatePicker returns dayjs objects in antd v5
-          const startDate = dateRange[0];
-          const endDate = dateRange[1];
+        if (modalDateRange && modalDateRange.length === 2) {
+          const startDate = modalDateRange[0];
+          const endDate = modalDateRange[1];
           if (startDate && endDate) {
-            // Use dayjs format for LocalDateTime (without timezone)
             try {
-              params.startDate = startDate
+              params.fromDate = startDate
                 .startOf("day")
                 .format("YYYY-MM-DDTHH:mm:ss");
-              params.endDate = endDate
+              params.toDate = endDate
                 .endOf("day")
                 .format("YYYY-MM-DDTHH:mm:ss");
             } catch (e) {
-              // Fallback to native Date
               const start = new Date(startDate);
               start.setHours(0, 0, 0, 0);
               const end = new Date(endDate);
               end.setHours(23, 59, 59, 999);
-              // Format without timezone for LocalDateTime
-              params.startDate = start.toISOString().slice(0, 19);
-              params.endDate = end.toISOString().slice(0, 19);
+              params.fromDate = start.toISOString().slice(0, 19);
+              params.toDate = end.toISOString().slice(0, 19);
             }
           }
         }
 
-        // Use advanced filter API that properly supports all filter parameters
         const pageResponse =
-          await inventoryTransactionService.filterTransactionsAdvanced(params);
+          await inventoryTransactionService.searchTransactions(params);
 
         if (pageResponse && pageResponse.content) {
-          setTransactions(pageResponse.content || []);
-          setTotal(pageResponse.totalElements || 0);
+          setModalTransactions(pageResponse.content || []);
+          setModalTotal(pageResponse.totalElements || 0);
         } else {
-          setTransactions([]);
-          setTotal(0);
+          setModalTransactions([]);
+          setModalTotal(0);
         }
       } catch (error) {
         message.error("Lỗi khi tải lịch sử nhập/xuất kho");
-        setTransactions([]);
+        setModalTransactions([]);
       } finally {
-        setTransactionsLoading(false);
+        setModalTransactionsLoading(false);
       }
     },
     [
-      transactionTypeFilter,
-      referenceTypeFilter,
-      productNameSearch,
-      skuSearch,
-      dateRange,
-      setTotal,
+      modalTransactionTypeFilter,
+      modalReferenceTypeFilter,
+      modalDateRange,
+      setModalTotal,
     ]
   );
 
   const handleViewHistory = (product) => {
     setSelectedProduct(product);
     setIsHistoryModalVisible(true);
-    resetPagination();
-    // Fetch transactions for this product
-    fetchTransactions(product.idProduct, 1, pageSize);
+    resetModalPagination();
+    fetchModalTransactions(product.idProduct, 1, modalPageSize);
   };
 
-  const handleTransactionTypeFilter = (value) => {
-    setTransactionTypeFilter(value);
+  const handleModalTransactionTypeFilter = (value) => {
+    setModalTransactionTypeFilter(value);
     if (selectedProduct) {
-      resetPagination();
-      fetchTransactions(selectedProduct.idProduct, 1, pageSize);
+      resetModalPagination();
+      fetchModalTransactions(selectedProduct.idProduct, 1, modalPageSize);
     }
   };
 
-  const handleDateRangeChange = (dates) => {
-    setDateRange(dates);
+  const handleModalDateRangeChange = (dates) => {
+    setModalDateRange(dates);
     if (selectedProduct) {
-      resetPagination();
-      fetchTransactions(selectedProduct.idProduct, 1, pageSize);
+      resetModalPagination();
+      fetchModalTransactions(selectedProduct.idProduct, 1, modalPageSize);
     }
   };
 
-  const handleReferenceTypeFilter = (value) => {
-    setReferenceTypeFilter(value);
+  const handleModalReferenceTypeFilter = (value) => {
+    setModalReferenceTypeFilter(value);
     if (selectedProduct) {
-      resetPagination();
-      fetchTransactions(selectedProduct.idProduct, 1, pageSize);
+      resetModalPagination();
+      fetchModalTransactions(selectedProduct.idProduct, 1, modalPageSize);
     }
   };
 
-  const handleProductNameSearch = (value) => {
-    setProductNameSearch(value);
-    // Don't auto-search on every keystroke, use search button or debounce
-  };
-
-  const handleSkuSearch = (value) => {
-    setSkuSearch(value);
-    // Don't auto-search on every keystroke, use search button or debounce
-  };
-
-  const handleApplyFilters = () => {
+  const handleModalTableChange = (p) => {
+    handleModalPageChange(p.current, p.pageSize);
     if (selectedProduct) {
-      resetPagination();
-      fetchTransactions(selectedProduct.idProduct, 1, pageSize);
-    }
-  };
-
-  const handleTransactionTableChange = (p) => {
-    handlePageChange(p.current, p.pageSize);
-    if (selectedProduct) {
-      fetchTransactions(selectedProduct.idProduct, p.current, p.pageSize);
+      fetchModalTransactions(selectedProduct.idProduct, p.current, p.pageSize);
     }
   };
 
   const handleCloseHistoryModal = () => {
     setIsHistoryModalVisible(false);
     setSelectedProduct(null);
-    setTransactions([]);
-    setTransactionTypeFilter(null);
-    setReferenceTypeFilter(null);
-    setProductNameSearch("");
-    setSkuSearch("");
-    setDateRange(null);
+    setModalTransactions([]);
+    setModalTransactionTypeFilter(null);
+    setModalReferenceTypeFilter(null);
+    setModalDateRange(null);
   };
 
-  // Calculate statistics
-  const totalProducts =
-    productsPagination?.totalElements || products?.length || 0;
-  const lowStockProducts =
-    products?.filter(
-      (p) => (p.stockQuantity || 0) < 10 && (p.stockQuantity || 0) > 0
-    ) || [];
-  const outOfStockProducts =
-    products?.filter((p) => (p.stockQuantity || 0) === 0) || [];
-  const inStockProducts =
-    products?.filter((p) => (p.stockQuantity || 0) >= 10) || [];
+  // ==================== HANDLERS TAB LỊCH SỬ ====================
+  // Chỉ gọi khi bấm nút "Tìm kiếm theo ngày"
+  const handleHistoryDateSearch = () => {
+    fetchAllTransactions({ pageNo: 1 });
+  };
 
-  const inventoryValue =
-    products?.reduce((sum, p) => {
-      const quantity = p.stockQuantity || 0;
-      const price = p.price || 0;
-      return sum + quantity * price;
-    }, 0) || 0;
+  // Reset toàn bộ filter
+  const handleHistoryReset = () => {
+    setHistoryProductNameSearch("");
+    setHistoryBrandFilter(null);
+    setHistoryTransactionType(null);
+    setHistoryReferenceType(null);
+    setHistoryDateRange(null);
+    setHistoryPagination((prev) => ({ ...prev, current: 1 }));
+    // Gọi API load lại full data
+    setTimeout(() => {
+      fetchAllTransactions({ pageNo: 1 });
+    }, 0);
+  };
 
-  const columns = [
+  const handleHistoryTableChange = (paginationInfo) => {
+    const { current, pageSize } = paginationInfo;
+    setHistoryPagination((prev) => ({ ...prev, current, pageSize }));
+    fetchAllTransactions({ pageNo: current, pageSize });
+  };
+
+  // ==================== HANDLERS TAB TỒN KHO ====================
+  const handleInventoryTableChange = (paginationInfo) => {
+    const { current, pageSize } = paginationInfo;
+    setInventoryPagination((prev) => ({ ...prev, current, pageSize }));
+  };
+
+  const handleInventoryReset = () => {
+    setInventoryProductSearch("");
+    setInventoryCategoryFilter(null);
+    setInventoryBrandFilter(null);
+    setInventoryStatusFilter(null);
+    setInventoryPagination((prev) => ({ ...prev, current: 1 }));
+  };
+
+  // Product table columns
+  const productColumns = [
     {
       title: "ID",
       dataIndex: "idProduct",
@@ -341,15 +583,22 @@ const Inventory = () => {
     },
   ];
 
+  // Transaction columns for both modal and history tab
   const transactionColumns = [
+    {
+      title: "ID",
+      dataIndex: "idTransaction",
+      key: "idTransaction",
+      width: 70,
+    },
     {
       title: "Ngày giờ",
       dataIndex: "transactionDate",
       key: "transactionDate",
-      width: 180,
+      width: 160,
       render: (date) => {
         if (!date) return "N/A";
-        return new Date(date).toLocaleString("vi-VN");
+        return dayjs(date).format("DD/MM/YYYY HH:mm:ss");
       },
     },
     {
@@ -358,12 +607,11 @@ const Inventory = () => {
       key: "transactionType",
       width: 100,
       render: (type) => {
-        if (type === "IN") {
-          return <Tag color="green">Nhập</Tag>;
-        } else if (type === "OUT") {
-          return <Tag color="red">Xuất</Tag>;
-        }
-        return <Tag>{type}</Tag>;
+        const config = TRANSACTION_TYPES[type] || {
+          label: type,
+          color: "default",
+        };
+        return <Tag color={config.color}>{config.label}</Tag>;
       },
     },
     {
@@ -371,44 +619,472 @@ const Inventory = () => {
       dataIndex: "quantity",
       key: "quantity",
       width: 100,
+      align: "center",
       render: (quantity, record) => {
         const qty = quantity || 0;
-        const color = record.transactionType === "IN" ? "green" : "red";
-        return <Tag color={color}>{qty > 0 ? `+${qty}` : qty}</Tag>;
+        const isIn = record.transactionType === "IN";
+        return (
+          <Tag color={isIn ? "green" : "red"}>
+            {isIn ? `+${qty}` : `-${qty}`}
+          </Tag>
+        );
       },
     },
     {
       title: "Sản phẩm",
+      dataIndex: "productName",
       key: "productName",
-      render: (record) => record.productName || "N/A",
+      width: 180,
+      ellipsis: true,
+      render: (name, record) => (
+        <Tooltip title={name}>
+          <div>
+            <Text strong>{name || "N/A"}</Text>
+            {record.productCode && (
+              <div>
+                <Text type="secondary" style={{ fontSize: "11px" }}>
+                  Mã: {record.productCode}
+                </Text>
+              </div>
+            )}
+          </div>
+        </Tooltip>
+      ),
     },
     {
-      title: "Mã sản phẩm",
-      dataIndex: "productCode",
-      key: "productCode",
+      title: "SKU",
+      dataIndex: "sku",
+      key: "sku",
+      width: 100,
+      render: (sku) => sku || "N/A",
     },
     {
       title: "Loại tham chiếu",
       dataIndex: "referenceType",
       key: "referenceType",
-      render: (type) => type || "N/A",
-    },
-    {
-      title: "ID tham chiếu",
-      dataIndex: "referenceId",
-      key: "referenceId",
+      width: 130,
+      render: (type) => {
+        const config = REFERENCE_TYPES[type] || {
+          label: type || "N/A",
+          color: "default",
+        };
+        return <Tag color={config.color}>{config.label}</Tag>;
+      },
     },
     {
       title: "Nhân viên",
       dataIndex: "employeeName",
       key: "employeeName",
-      render: (name) => name || "N/A",
+      width: 120,
+      render: (name) => name || "Hệ thống",
     },
     {
       title: "Ghi chú",
       dataIndex: "notes",
       key: "notes",
+      width: 150,
       ellipsis: true,
+      render: (notes) => (
+        <Tooltip title={notes}>
+          <span>{notes || "-"}</span>
+        </Tooltip>
+      ),
+    },
+  ];
+
+  // Tab items - sử dụng JSX trực tiếp thay vì functional components để tránh remount
+  const tabItems = [
+    {
+      key: "inventory",
+      label: (
+        <span>
+          <UnorderedListOutlined />
+          Tồn kho
+        </span>
+      ),
+      children: (
+        <>
+          {/* Statistics Cards */}
+          <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
+            <Col xs={24} sm={6}>
+              <Card
+                style={{
+                  borderRadius: 12,
+                  border: "1px solid #E2E8F0",
+                  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+                }}>
+                <Statistic
+                  title="Tổng sản phẩm"
+                  value={inventoryStats.totalProducts}
+                  prefix={<InboxOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={6}>
+              <Card
+                style={{
+                  borderRadius: 12,
+                  border: "1px solid #E2E8F0",
+                  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+                }}>
+                <Statistic
+                  title="Sắp hết hàng"
+                  value={inventoryStats.lowStockCount}
+                  prefix={<WarningOutlined />}
+                  valueStyle={{ color: "#f97316" }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={6}>
+              <Card
+                style={{
+                  borderRadius: 12,
+                  border: "1px solid #E2E8F0",
+                  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+                }}>
+                <Statistic
+                  title="Hết hàng"
+                  value={inventoryStats.outOfStockCount}
+                  prefix={<WarningOutlined />}
+                  valueStyle={{ color: "#dc2626" }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={6}>
+              <Card
+                style={{
+                  borderRadius: 12,
+                  border: "1px solid #E2E8F0",
+                  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+                }}>
+                <Statistic
+                  title="Còn hàng"
+                  value={inventoryStats.inStockCount}
+                  prefix={<CheckCircleOutlined />}
+                  valueStyle={{ color: "#16a34a" }}
+                />
+              </Card>
+            </Col>
+          </Row>
+
+          <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
+            <Col span={24}>
+              <Card
+                style={{
+                  borderRadius: 12,
+                  border: "1px solid #E2E8F0",
+                  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+                }}>
+                <Statistic
+                  title="Tổng giá trị tồn kho"
+                  value={inventoryStats.totalValue.toLocaleString("vi-VN")}
+                  suffix="VNĐ"
+                  valueStyle={{ color: "#2563EB", fontSize: "24px" }}
+                />
+              </Card>
+            </Col>
+          </Row>
+
+          {/* Filter Card cho Tab Tồn kho */}
+          <Card
+            style={{
+              marginBottom: 16,
+              borderRadius: 12,
+              border: "1px solid #E2E8F0",
+              boxShadow: "0 4px 12px rgba(15, 23, 42, 0.04)",
+            }}
+            bodyStyle={{ padding: 16 }}>
+            <Row gutter={[16, 12]}>
+              <Col xs={24} sm={12} md={6}>
+                <Input
+                  placeholder="Tìm theo tên sản phẩm..."
+                  prefix={<SearchOutlined />}
+                  value={inventoryProductSearch}
+                  onChange={(e) => {
+                    setInventoryProductSearch(e.target.value);
+                    setInventoryPagination((prev) => ({ ...prev, current: 1 }));
+                  }}
+                  allowClear
+                />
+              </Col>
+              <Col xs={24} sm={12} md={5}>
+                <Select
+                  placeholder="Danh mục"
+                  value={inventoryCategoryFilter}
+                  onChange={(value) => {
+                    setInventoryCategoryFilter(value);
+                    setInventoryPagination((prev) => ({ ...prev, current: 1 }));
+                  }}
+                  allowClear
+                  style={{ width: "100%" }}
+                  showSearch
+                  optionFilterProp="label"
+                  options={[
+                    { value: null, label: "Tất cả danh mục" },
+                    ...categories.map((c) => ({
+                      value: c.idCategory,
+                      label: c.categoryName,
+                    })),
+                  ]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={5}>
+                <Select
+                  placeholder="Thương hiệu"
+                  value={inventoryBrandFilter}
+                  onChange={(value) => {
+                    setInventoryBrandFilter(value);
+                    setInventoryPagination((prev) => ({ ...prev, current: 1 }));
+                  }}
+                  allowClear
+                  style={{ width: "100%" }}
+                  showSearch
+                  optionFilterProp="label"
+                  options={[
+                    { value: null, label: "Tất cả thương hiệu" },
+                    ...brands.map((b) => ({
+                      value: b,
+                      label: b,
+                    })),
+                  ]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={5}>
+                <Select
+                  placeholder="Trạng thái tồn kho"
+                  value={inventoryStatusFilter}
+                  onChange={(value) => {
+                    setInventoryStatusFilter(value);
+                    setInventoryPagination((prev) => ({ ...prev, current: 1 }));
+                  }}
+                  allowClear
+                  style={{ width: "100%" }}>
+                  <Option value={null}>Tất cả</Option>
+                  <Option value="IN_STOCK">
+                    <Tag color="green">Còn hàng</Tag>
+                  </Option>
+                  <Option value="LOW_STOCK">
+                    <Tag color="orange">Sắp hết hàng</Tag>
+                  </Option>
+                  <Option value="OUT_OF_STOCK">
+                    <Tag color="red">Hết hàng</Tag>
+                  </Option>
+                </Select>
+              </Col>
+              <Col xs={24} sm={12} md={3}>
+                <Button
+                  icon={<ClearOutlined />}
+                  onClick={handleInventoryReset}
+                  style={{ width: "100%" }}>
+                  Xóa lọc
+                </Button>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Table Card */}
+          <Card
+            className="table-container"
+            style={{
+              borderRadius: 12,
+              border: "1px solid #E2E8F0",
+              boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+              background: "#FFFFFF",
+            }}
+            bodyStyle={{ padding: 16 }}>
+            <Table
+              columns={productColumns}
+              dataSource={products || []}
+              loading={productsLoading}
+              rowKey="idProduct"
+              pagination={{
+                current: inventoryPagination.current,
+                pageSize: inventoryPagination.pageSize,
+                total: inventoryPagination.total,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                pageSizeOptions: ["10", "20", "50", "100"],
+                showTotal: (total, range) =>
+                  `${range[0]}-${range[1]} của ${total} sản phẩm`,
+              }}
+              onChange={handleInventoryTableChange}
+              scroll={{ x: 1200 }}
+              size="middle"
+            />
+          </Card>
+        </>
+      ),
+    },
+    {
+      key: "history",
+      label: (
+        <span>
+          <HistoryOutlined />
+          Lịch sử nhập/xuất kho
+        </span>
+      ),
+      children: (
+        <>
+          {/* Filter Card - Tab Lịch sử */}
+          <Card
+            style={{
+              marginBottom: 16,
+              borderRadius: 12,
+              border: "1px solid #E2E8F0",
+              boxShadow: "0 4px 12px rgba(15, 23, 42, 0.04)",
+            }}
+            bodyStyle={{ padding: 16 }}>
+            <Row gutter={[16, 12]}>
+              {/* Tên sản phẩm - auto search */}
+              <Col xs={24} sm={12} md={5}>
+                <div style={{ marginBottom: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Tên sản phẩm</Text>
+                </div>
+                <Input
+                  placeholder="Tìm theo tên sản phẩm..."
+                  prefix={<SearchOutlined />}
+                  value={historyProductNameSearch}
+                  onChange={(e) => setHistoryProductNameSearch(e.target.value)}
+                  allowClear
+                />
+              </Col>
+              {/* Thương hiệu - auto search khi chọn */}
+              <Col xs={24} sm={12} md={4}>
+                <div style={{ marginBottom: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Thương hiệu</Text>
+                </div>
+                <Select
+                  placeholder="Tất cả"
+                  value={historyBrandFilter}
+                  onChange={(value) => setHistoryBrandFilter(value)}
+                  allowClear
+                  style={{ width: "100%" }}
+                  showSearch
+                  optionFilterProp="label"
+                  options={[
+                    { value: null, label: "Tất cả thương hiệu" },
+                    ...brands.map((b) => ({
+                      value: b,
+                      label: b,
+                    })),
+                  ]}
+                />
+              </Col>
+              {/* Loại giao dịch - auto search khi chọn */}
+              <Col xs={24} sm={12} md={4}>
+                <div style={{ marginBottom: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Loại giao dịch</Text>
+                </div>
+                <Select
+                  placeholder="Tất cả"
+                  value={historyTransactionType}
+                  onChange={(value) => setHistoryTransactionType(value)}
+                  allowClear
+                  style={{ width: "100%" }}>
+                  <Option value={null}>Tất cả</Option>
+                  <Option value="IN">
+                    <Tag color="green">Nhập kho</Tag>
+                  </Option>
+                  <Option value="OUT">
+                    <Tag color="red">Xuất kho</Tag>
+                  </Option>
+                </Select>
+              </Col>
+              {/* Loại tham chiếu - auto search khi chọn */}
+              <Col xs={24} sm={12} md={4}>
+                <div style={{ marginBottom: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Loại tham chiếu</Text>
+                </div>
+                <Select
+                  placeholder="Tất cả"
+                  value={historyReferenceType}
+                  onChange={(value) => setHistoryReferenceType(value)}
+                  allowClear
+                  style={{ width: "100%" }}>
+                  <Option value={null}>Tất cả</Option>
+                  <Option value="PURCHASE_ORDER">
+                    <Tag color="blue">Đơn nhập hàng</Tag>
+                  </Option>
+                  <Option value="SALE_ORDER">
+                    <Tag color="green">Đơn bán hàng</Tag>
+                  </Option>
+                  <Option value="ADJUSTMENT">
+                    <Tag color="orange">Điều chỉnh</Tag>
+                  </Option>
+                  <Option value="SALE_RETURN">
+                    <Tag color="red">Trả hàng</Tag>
+                  </Option>
+                  <Option value="SALE_EXCHANGE">
+                    <Tag color="purple">Đổi hàng</Tag>
+                  </Option>
+                </Select>
+              </Col>
+              {/* Khoảng thời gian - cần bấm nút Tìm kiếm */}
+              <Col xs={24} sm={12} md={5}>
+                <div style={{ marginBottom: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Khoảng thời gian</Text>
+                </div>
+                <RangePicker
+                  placeholder={["Từ ngày", "Đến ngày"]}
+                  format="DD/MM/YYYY"
+                  value={historyDateRange}
+                  onChange={(dates) => setHistoryDateRange(dates)}
+                  style={{ width: "100%" }}
+                />
+              </Col>
+              {/* Buttons */}
+              <Col xs={24} sm={12} md={2}>
+                <div style={{ marginBottom: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>&nbsp;</Text>
+                </div>
+                <Space>
+                  <Tooltip title="Tìm theo ngày">
+                    <Button
+                      type="primary"
+                      icon={<SearchOutlined />}
+                      onClick={handleHistoryDateSearch}
+                    />
+                  </Tooltip>
+                  <Tooltip title="Xóa bộ lọc">
+                    <Button
+                      icon={<ClearOutlined />}
+                      onClick={handleHistoryReset}
+                    />
+                  </Tooltip>
+                </Space>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Table Card */}
+          <Card
+            style={{
+              borderRadius: 12,
+              border: "1px solid #E2E8F0",
+              boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+              background: "#FFFFFF",
+            }}
+            bodyStyle={{ padding: 16 }}>
+            <Table
+              columns={transactionColumns}
+              dataSource={allTransactions}
+              loading={allTransactionsLoading}
+              rowKey="idTransaction"
+              pagination={{
+                ...historyPagination,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                pageSizeOptions: ["10", "20", "50", "100"],
+                showTotal: (total, range) =>
+                  `${range[0]}-${range[1]} của ${total} giao dịch`,
+              }}
+              onChange={handleHistoryTableChange}
+              scroll={{ x: 1400 }}
+              size="middle"
+            />
+          </Card>
+        </>
+      ),
     },
   ];
 
@@ -440,115 +1116,15 @@ const Inventory = () => {
         </div>
       </div>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
-        <Col xs={24} sm={6}>
-          <Card
-            style={{
-              borderRadius: 12,
-              border: "1px solid #E2E8F0",
-              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
-            }}>
-            <Statistic
-              title="Tổng sản phẩm"
-              value={totalProducts}
-              prefix={<InboxOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={6}>
-          <Card
-            style={{
-              borderRadius: 12,
-              border: "1px solid #E2E8F0",
-              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
-            }}>
-            <Statistic
-              title="Sắp hết hàng"
-              value={lowStockProducts.length}
-              prefix={<WarningOutlined />}
-              valueStyle={{ color: "#f97316" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={6}>
-          <Card
-            style={{
-              borderRadius: 12,
-              border: "1px solid #E2E8F0",
-              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
-            }}>
-            <Statistic
-              title="Hết hàng"
-              value={outOfStockProducts.length}
-              prefix={<WarningOutlined />}
-              valueStyle={{ color: "#dc2626" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={6}>
-          <Card
-            style={{
-              borderRadius: 12,
-              border: "1px solid #E2E8F0",
-              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
-            }}>
-            <Statistic
-              title="Còn hàng"
-              value={inStockProducts.length}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: "#16a34a" }}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        items={tabItems}
+        size="large"
+        style={{ marginBottom: 0 }}
+      />
 
-      <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
-        <Col span={24}>
-          <Card
-            style={{
-              borderRadius: 12,
-              border: "1px solid #E2E8F0",
-              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
-            }}>
-            <Statistic
-              title="Tổng giá trị tồn kho"
-              value={inventoryValue.toLocaleString("vi-VN")}
-              suffix="VNĐ"
-              valueStyle={{ color: "#2563EB", fontSize: "24px" }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      <Card
-        className="table-container"
-        style={{
-          borderRadius: 12,
-          border: "1px solid #E2E8F0",
-          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
-          background: "#FFFFFF",
-        }}
-        bodyStyle={{ padding: 16 }}>
-        <Table
-          columns={columns}
-          dataSource={products || []}
-          loading={productsLoading}
-          rowKey="idProduct"
-          pagination={{
-            current: 1,
-            pageSize: 10,
-            total: totalProducts,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} của ${total} sản phẩm`,
-          }}
-          scroll={{ x: 1200 }}
-          size="middle"
-        />
-      </Card>
-
-      {/* History Modal */}
+      {/* Product History Modal */}
       <Modal
         title={
           <div>
@@ -576,30 +1152,12 @@ const Inventory = () => {
           }}>
           <Row gutter={[12, 12]}>
             <Col xs={24} sm={12} md={6}>
-              <Input
-                placeholder="Tìm theo tên sản phẩm"
-                value={productNameSearch}
-                onChange={(e) => handleProductNameSearch(e.target.value)}
-                onPressEnter={handleApplyFilters}
-                allowClear
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Input
-                placeholder="Tìm theo SKU"
-                value={skuSearch}
-                onChange={(e) => handleSkuSearch(e.target.value)}
-                onPressEnter={handleApplyFilters}
-                allowClear
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
               <Select
                 placeholder="Loại giao dịch"
                 style={{ width: "100%" }}
                 allowClear
-                value={transactionTypeFilter}
-                onChange={handleTransactionTypeFilter}>
+                value={modalTransactionTypeFilter}
+                onChange={handleModalTransactionTypeFilter}>
                 <Option value="IN">Nhập kho</Option>
                 <Option value="OUT">Xuất kho</Option>
               </Select>
@@ -609,8 +1167,8 @@ const Inventory = () => {
                 placeholder="Loại tham chiếu"
                 style={{ width: "100%" }}
                 allowClear
-                value={referenceTypeFilter}
-                onChange={handleReferenceTypeFilter}>
+                value={modalReferenceTypeFilter}
+                onChange={handleModalReferenceTypeFilter}>
                 <Option value="PURCHASE_ORDER">Đơn nhập hàng</Option>
                 <Option value="SALE_ORDER">Đơn bán hàng</Option>
                 <Option value="ADJUSTMENT">Điều chỉnh</Option>
@@ -621,55 +1179,50 @@ const Inventory = () => {
             <Col xs={24} sm={12} md={8}>
               <RangePicker
                 placeholder={["Từ ngày", "Đến ngày"]}
-                value={dateRange}
-                onChange={handleDateRangeChange}
+                value={modalDateRange}
+                onChange={handleModalDateRangeChange}
                 format="DD/MM/YYYY"
                 style={{ width: "100%" }}
               />
             </Col>
-            <Col xs={24} sm={12} md={8}>
-              <Space>
-                <Button
-                  type="primary"
-                  icon={<SearchOutlined />}
-                  onClick={handleApplyFilters}>
-                  Tìm kiếm
-                </Button>
-                <Button
-                  icon={<ReloadOutlined />}
-                  onClick={() => {
-                    setTransactionTypeFilter(null);
-                    setReferenceTypeFilter(null);
-                    setProductNameSearch("");
-                    setSkuSearch("");
-                    setDateRange(null);
-                    if (selectedProduct) {
-                      resetPagination();
-                      fetchTransactions(selectedProduct.idProduct, 1, pageSize);
-                    }
-                  }}>
-                  Xóa lọc
-                </Button>
-              </Space>
+            <Col xs={24} sm={12} md={4}>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={() => {
+                  setModalTransactionTypeFilter(null);
+                  setModalReferenceTypeFilter(null);
+                  setModalDateRange(null);
+                  if (selectedProduct) {
+                    resetModalPagination();
+                    fetchModalTransactions(
+                      selectedProduct.idProduct,
+                      1,
+                      modalPageSize
+                    );
+                  }
+                }}
+                style={{ width: "100%" }}>
+                Xóa lọc
+              </Button>
             </Col>
           </Row>
         </div>
         <Table
           columns={transactionColumns}
-          dataSource={transactions}
-          loading={transactionsLoading}
+          dataSource={modalTransactions}
+          loading={modalTransactionsLoading}
           rowKey="idTransaction"
           pagination={{
-            ...tablePagination,
-            current: currentPage,
-            pageSize,
+            ...modalTablePagination,
+            current: modalCurrentPage,
+            pageSize: modalPageSize,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
               `${range[0]}-${range[1]} của ${total} giao dịch`,
           }}
-          onChange={handleTransactionTableChange}
-          scroll={{ x: 1000 }}
+          onChange={handleModalTableChange}
+          scroll={{ x: 1200 }}
           size="middle"
         />
       </Modal>

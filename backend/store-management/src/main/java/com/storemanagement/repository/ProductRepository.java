@@ -37,7 +37,8 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             AND (
                 :inventoryStatus IS NULL OR
                 (:inventoryStatus = 'COMING_SOON' AND (p.stockQuantity = 0 OR p.stockQuantity IS NULL) AND p.status != 'DISCONTINUED') OR
-                (:inventoryStatus = 'IN_STOCK' AND p.stockQuantity > 0) OR
+                (:inventoryStatus = 'IN_STOCK' AND p.stockQuantity >= 10) OR
+                (:inventoryStatus = 'LOW_STOCK' AND p.stockQuantity > 0 AND p.stockQuantity < 10) OR
                 (:inventoryStatus = 'OUT_OF_STOCK' AND (p.stockQuantity = 0 OR p.stockQuantity IS NULL) AND p.status = 'OUT_OF_STOCK')
             )
             """)

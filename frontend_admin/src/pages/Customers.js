@@ -22,6 +22,7 @@ import {
   EyeOutlined,
   UserOutlined,
   DownloadOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -35,6 +36,7 @@ import { exportToExcel, exportToCSV } from "../utils/exportUtils";
 import LoadingSkeleton from "../components/common/LoadingSkeleton";
 import EmptyState from "../components/common/EmptyState";
 import { formatDate } from "../utils/formatUtils";
+import { useDebounce } from "../hooks";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -47,8 +49,11 @@ const Customers = () => {
   );
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
-  const [searchText, setSearchText] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState("");
   const [customerTypeFilter, setCustomerTypeFilter] = useState(null);
+
+  // Debounced search keyword for realtime search
+  const debouncedKeyword = useDebounce(searchKeyword, 300);
 
   useEffect(() => {
     const params = {
@@ -63,9 +68,9 @@ const Customers = () => {
       params.customerType = customerTypeFilter;
     }
 
-    // Add search params if exists
-    if (searchText) {
-      params.name = searchText;
+    // Add search keyword if exists
+    if (debouncedKeyword) {
+      params.keyword = debouncedKeyword;
     }
 
     dispatch(fetchCustomers(params));
@@ -74,9 +79,14 @@ const Customers = () => {
     dispatch,
     pagination.current,
     pagination.pageSize,
-    searchText,
+    debouncedKeyword,
     customerTypeFilter,
   ]);
+
+  // Reset page when keyword changes
+  useEffect(() => {
+    dispatch(setPagination({ current: 1, pageSize: pagination.pageSize }));
+  }, [debouncedKeyword, dispatch, pagination.pageSize]);
 
   const handleTableChange = (newPagination, filters, sorter) => {
     dispatch(
@@ -87,33 +97,40 @@ const Customers = () => {
     );
   };
 
-  const handleSearch = (value) => {
-    setSearchText(value);
-    setCustomerTypeFilter(null); // Clear type filter when searching
+  const handleCustomerTypeFilter = (value) => {
+    setCustomerTypeFilter(value);
     dispatch(setPagination({ current: 1, pageSize: pagination.pageSize }));
   };
 
-  const handleCustomerTypeFilter = (value) => {
-    setCustomerTypeFilter(value);
-    setSearchText(""); // Clear search when filtering by type
+  const handleResetFilters = () => {
+    setSearchKeyword("");
+    setCustomerTypeFilter(null);
     dispatch(setPagination({ current: 1, pageSize: pagination.pageSize }));
   };
 
   const handleExportExcel = () => {
     try {
-      exportToExcel(customers, `khach-hang-${new Date().toISOString().split('T')[0]}`, columns);
-      message.success('Xuất file Excel thành công!');
+      exportToExcel(
+        customers,
+        `khach-hang-${new Date().toISOString().split("T")[0]}`,
+        columns
+      );
+      message.success("Xuất file Excel thành công!");
     } catch (error) {
-      message.error('Xuất file Excel thất bại!');
+      message.error("Xuất file Excel thất bại!");
     }
   };
 
   const handleExportCSV = () => {
     try {
-      exportToCSV(customers, `khach-hang-${new Date().toISOString().split('T')[0]}`, columns);
-      message.success('Xuất file CSV thành công!');
+      exportToCSV(
+        customers,
+        `khach-hang-${new Date().toISOString().split("T")[0]}`,
+        columns
+      );
+      message.success("Xuất file CSV thành công!");
     } catch (error) {
-      message.error('Xuất file CSV thất bại!');
+      message.error("Xuất file CSV thất bại!");
     }
   };
 
@@ -145,7 +162,7 @@ const Customers = () => {
           sortBy: "idCustomer",
           sortDirection: "ASC",
         };
-        if (searchText) params.name = searchText;
+        if (debouncedKeyword) params.keyword = debouncedKeyword;
         dispatch(fetchCustomers(params));
       }
     } catch (error) {
@@ -172,7 +189,9 @@ const Customers = () => {
       title: "Tên khách hàng",
       dataIndex: "name",
       key: "name",
-      render: (text, record) => <Text strong>{text || record.customerName || "N/A"}</Text>,
+      render: (text, record) => (
+        <Text strong>{text || record.customerName || "N/A"}</Text>
+      ),
     },
     {
       title: "Email",
@@ -257,8 +276,7 @@ const Customers = () => {
           justifyContent: "space-between",
           gap: 12,
           flexWrap: "wrap",
-        }}
-      >
+        }}>
         <div>
           <Title
             level={2}
@@ -266,8 +284,7 @@ const Customers = () => {
               marginBottom: 4,
               fontWeight: 700,
               color: "#0F172A",
-            }}
-          >
+            }}>
             Quản lý khách hàng
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
@@ -282,8 +299,7 @@ const Customers = () => {
             borderRadius: 9999,
             display: "flex",
             alignItems: "center",
-          }}
-        >
+          }}>
           Thêm khách hàng
         </Button>
       </div>
@@ -296,8 +312,7 @@ const Customers = () => {
           boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
           background: "#FFFFFF",
         }}
-        bodyStyle={{ padding: 16 }}
-      >
+        bodyStyle={{ padding: 16 }}>
         {/* Filters */}
         <div
           className="table-toolbar"
@@ -308,20 +323,19 @@ const Customers = () => {
             alignItems: "center",
             gap: 12,
             flexWrap: "wrap",
-          }}
-        >
+          }}>
           <Space
             wrap
             style={{
               display: "flex",
               gap: 8,
-            }}
-          >
-            <Input.Search
-              placeholder="Tìm kiếm theo tên khách hàng..."
-              style={{ width: 300, maxWidth: "100%" }}
-              onSearch={handleSearch}
-              enterButton={<SearchOutlined />}
+            }}>
+            <Input
+              placeholder="Tìm tên, SĐT, email..."
+              prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+              style={{ width: 280, maxWidth: "100%" }}
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
               allowClear
             />
             <Select
@@ -329,29 +343,24 @@ const Customers = () => {
               style={{ width: 170 }}
               allowClear
               onChange={handleCustomerTypeFilter}
-              value={customerTypeFilter}
-            >
+              value={customerTypeFilter}>
               <Option value="REGULAR">REGULAR</Option>
               <Option value="VIP">VIP</Option>
             </Select>
+            <Button onClick={handleResetFilters} icon={<ReloadOutlined />}>
+              Đặt lại
+            </Button>
           </Space>
           <Space
             wrap
             style={{
               display: "flex",
               gap: 8,
-            }}
-          >
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={handleExportExcel}
-            >
+            }}>
+            <Button icon={<DownloadOutlined />} onClick={handleExportExcel}>
               Xuất Excel
             </Button>
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={handleExportCSV}
-            >
+            <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
               Xuất CSV
             </Button>
           </Space>
@@ -414,7 +423,7 @@ const Customers = () => {
                 sortBy: "idCustomer",
                 sortDirection: "ASC",
               };
-              if (searchText) params.name = searchText;
+              if (debouncedKeyword) params.keyword = debouncedKeyword;
               dispatch(fetchCustomers(params));
             }
           }}

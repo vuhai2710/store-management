@@ -9,7 +9,22 @@ export const fetchSuppliers = createAsyncThunk(
       const response = await suppliersService.getAllSuppliers();
       return response;
     } catch (error) {
-      return rejectWithValue(error.message || "Lỗi khi lấy danh sách nhà cung cấp");
+      return rejectWithValue(
+        error.message || "Lỗi khi lấy danh sách nhà cung cấp"
+      );
+    }
+  }
+);
+
+// Paginated fetch with search
+export const fetchSuppliersPaginated = createAsyncThunk(
+  "suppliers/fetchSuppliersPaginated",
+  async (params, { rejectWithValue }) => {
+    try {
+      const response = await suppliersService.getSuppliersPaginated(params);
+      return response;
+    } catch (error) {
+      return rejectWithValue(handleApiError(error));
     }
   }
 );
@@ -56,6 +71,12 @@ const suppliersSlice = createSlice({
     suppliers: [],
     loading: false,
     error: null,
+    pagination: {
+      totalElements: 0,
+      totalPages: 0,
+      page: 0,
+      size: 10,
+    },
   },
   reducers: {
     clearError: (state) => {
@@ -73,6 +94,26 @@ const suppliersSlice = createSlice({
         state.suppliers = action.payload || [];
       })
       .addCase(fetchSuppliers.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error.message;
+      })
+      // Paginated fetch
+      .addCase(fetchSuppliersPaginated.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchSuppliersPaginated.fulfilled, (state, action) => {
+        state.loading = false;
+        const data = action.payload;
+        state.suppliers = data?.content || [];
+        state.pagination = {
+          totalElements: data?.totalElements || 0,
+          totalPages: data?.totalPages || 0,
+          page: data?.number || 0,
+          size: data?.size || 10,
+        };
+      })
+      .addCase(fetchSuppliersPaginated.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
       })
@@ -95,7 +136,9 @@ const suppliersSlice = createSlice({
       .addCase(updateSupplier.fulfilled, (state, action) => {
         state.loading = false;
         const updated = action.payload;
-        const idx = state.suppliers.findIndex((s) => s.idSupplier === updated.idSupplier);
+        const idx = state.suppliers.findIndex(
+          (s) => s.idSupplier === updated.idSupplier
+        );
         if (idx !== -1) state.suppliers[idx] = updated;
       })
       .addCase(updateSupplier.rejected, (state, action) => {
@@ -109,7 +152,9 @@ const suppliersSlice = createSlice({
       .addCase(deleteSupplier.fulfilled, (state, action) => {
         state.loading = false;
         const removedId = action.payload;
-        state.suppliers = state.suppliers.filter((s) => s.idSupplier !== removedId);
+        state.suppliers = state.suppliers.filter(
+          (s) => s.idSupplier !== removedId
+        );
       })
       .addCase(deleteSupplier.rejected, (state, action) => {
         state.loading = false;
@@ -120,5 +165,3 @@ const suppliersSlice = createSlice({
 
 export const { clearError } = suppliersSlice.actions;
 export default suppliersSlice.reducer;
-
-

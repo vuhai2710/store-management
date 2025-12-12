@@ -27,6 +27,7 @@ import {
 } from "../store/slices/importOrdersSlice";
 import ImportOrderForm from "../components/importOrders/ImportOrderForm";
 import { usePagination } from "../hooks/usePagination";
+import { useDebounce } from "../hooks/useDebounce";
 import { importOrderService } from "../services/importOrderService";
 import { suppliersService } from "../services/suppliersService";
 import dayjs from "dayjs";
@@ -60,6 +61,8 @@ const ImportOrders = () => {
   } = usePagination(1, 10);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const debouncedKeyword = useDebounce(searchKeyword, 300);
   const [supplierFilter, setSupplierFilter] = useState(
     filters.supplierId || null
   );
@@ -90,6 +93,11 @@ const ImportOrders = () => {
       sortDirection: "DESC",
     };
 
+    // Add keyword search
+    if (debouncedKeyword && debouncedKeyword.trim()) {
+      params.keyword = debouncedKeyword.trim();
+    }
+
     if (dateRange && dateRange.length === 2) {
       const startDate = dateRange[0];
       const endDate = dateRange[1];
@@ -107,7 +115,14 @@ const ImportOrders = () => {
     }
 
     dispatch(fetchImportOrders(params));
-  }, [dispatch, currentPage, pageSize, supplierFilter, dateRange]);
+  }, [
+    dispatch,
+    currentPage,
+    pageSize,
+    supplierFilter,
+    dateRange,
+    debouncedKeyword,
+  ]);
 
   useEffect(() => {
     fetchImportOrdersList();
@@ -116,6 +131,14 @@ const ImportOrders = () => {
   useEffect(() => {
     setTotal(pagination.total || 0);
   }, [pagination.total, setTotal]);
+
+  // Reset pagination when keyword changes
+  useEffect(() => {
+    if (debouncedKeyword !== undefined) {
+      resetPagination();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedKeyword]);
 
   const handleTableChange = (p, _filters, sorter) => {
     handlePageChange(p.current, p.pageSize);
@@ -143,6 +166,7 @@ const ImportOrders = () => {
   };
 
   const handleResetFilters = () => {
+    setSearchKeyword("");
     setSupplierFilter(null);
     setDateRange(null);
     dispatch(setFilters({ supplierId: null, startDate: null, endDate: null }));
@@ -349,6 +373,14 @@ const ImportOrders = () => {
               display: "flex",
               gap: 8,
             }}>
+            <Input
+              placeholder="Tìm kiếm mã đơn, nhà cung cấp..."
+              prefix={<SearchOutlined style={{ color: "#94A3B8" }} />}
+              style={{ width: 250 }}
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              allowClear
+            />
             <Select
               placeholder="Lọc theo nhà cung cấp"
               style={{ width: 220 }}
@@ -367,7 +399,7 @@ const ImportOrders = () => {
               onChange={handleDateRangeChange}
               format="DD/MM/YYYY"
             />
-            {(supplierFilter || dateRange) && (
+            {(supplierFilter || dateRange || searchKeyword) && (
               <Button onClick={handleResetFilters}>Xóa bộ lọc</Button>
             )}
           </Space>

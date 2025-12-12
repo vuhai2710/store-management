@@ -193,8 +193,15 @@ public class ImportOrderServiceImpl implements ImportOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<PurchaseOrderDTO> getAllImportOrders(Pageable pageable) {
-        Page<ImportOrder> orderPage = importOrderRepository.findAll(pageable);
+    public PageResponse<PurchaseOrderDTO> getAllImportOrders(String keyword, Pageable pageable) {
+        Page<ImportOrder> orderPage;
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            orderPage = importOrderRepository.searchByKeyword(keyword.trim(), pageable);
+        } else {
+            orderPage = importOrderRepository.findAll(pageable);
+        }
+        
         List<PurchaseOrderDTO> dtos = importOrderMapper.toDTOList(orderPage.getContent());
         
         // Set employee names

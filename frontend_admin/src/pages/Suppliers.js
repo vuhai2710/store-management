@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Table,
   Button,
@@ -18,28 +18,75 @@ import {
   DeleteOutlined,
   DownloadOutlined,
   EyeOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { fetchSuppliers, deleteSupplier } from "../store/slices/suppliersSlice";
+import {
+  fetchSuppliersPaginated,
+  deleteSupplier,
+} from "../store/slices/suppliersSlice";
 import SupplierForm from "../components/suppliers/SupplierForm";
 import { exportToExcel, exportToCSV } from "../utils/exportUtils";
 import LoadingSkeleton from "../components/common/LoadingSkeleton";
 import EmptyState from "../components/common/EmptyState";
+import { usePagination } from "../hooks/usePagination";
+import { useDebounce } from "../hooks/useDebounce";
 
 const { Title, Text } = Typography;
 
 const Suppliers = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { suppliers, loading } = useSelector((state) => state.suppliers);
+  const { suppliers, loading, pagination } = useSelector(
+    (state) => state.suppliers
+  );
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
-  const [searchText, setSearchText] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const debouncedKeyword = useDebounce(searchKeyword, 300);
+
+  const {
+    currentPage,
+    pageSize,
+    setTotal,
+    handlePageChange,
+    resetPagination,
+    pagination: tablePagination,
+  } = usePagination(1, 10);
+
+  const fetchList = useCallback(() => {
+    dispatch(
+      fetchSuppliersPaginated({
+        pageNo: currentPage,
+        pageSize,
+        sortBy: "idSupplier",
+        sortDirection: "ASC",
+        keyword: debouncedKeyword?.trim() || undefined,
+      })
+    );
+  }, [dispatch, currentPage, pageSize, debouncedKeyword]);
 
   useEffect(() => {
-    dispatch(fetchSuppliers());
-  }, [dispatch]);
+    fetchList();
+  }, [fetchList]);
+
+  useEffect(() => {
+    setTotal(pagination?.totalElements || 0);
+  }, [pagination?.totalElements, setTotal]);
+
+  // Reset pagination when keyword changes
+  useEffect(() => {
+    if (debouncedKeyword !== undefined) {
+      resetPagination();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedKeyword]);
+
+  const handleResetFilters = () => {
+    setSearchKeyword("");
+    resetPagination();
+  };
 
   const handleCreateSupplier = () => {
     setEditingSupplier(null);
@@ -59,16 +106,6 @@ const Suppliers = () => {
       message.error(error || "Xóa nhà cung cấp thất bại!");
     }
   };
-
-  const filteredSuppliers = (suppliers || []).filter((s) => {
-    const q = searchText.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      (s.supplierName || "").toLowerCase().includes(q) ||
-      (s.email || "").toLowerCase().includes(q) ||
-      (s.phoneNumber || "").toLowerCase().includes(q)
-    );
-  });
 
   const columns = [
     { title: "ID", dataIndex: "idSupplier", key: "idSupplier", width: 80 },
@@ -123,13 +160,13 @@ const Suppliers = () => {
   ];
 
   const handleExportExcel = () => {
-    if (!filteredSuppliers || filteredSuppliers.length === 0) {
+    if (!suppliers || suppliers.length === 0) {
       message.warning("Không có dữ liệu để xuất");
       return;
     }
     try {
       exportToExcel(
-        filteredSuppliers,
+        suppliers,
         `nha-cung-cap-${new Date().toISOString().split("T")[0]}`,
         columns
       );
@@ -140,13 +177,13 @@ const Suppliers = () => {
   };
 
   const handleExportCSV = () => {
-    if (!filteredSuppliers || filteredSuppliers.length === 0) {
+    if (!suppliers || suppliers.length === 0) {
       message.warning("Không có dữ liệu để xuất");
       return;
     }
     try {
       exportToCSV(
-        filteredSuppliers,
+        suppliers,
         `nha-cung-cap-${new Date().toISOString().split("T")[0]}`,
         columns
       );
@@ -218,13 +255,17 @@ const Suppliers = () => {
               display: "flex",
               gap: 8,
             }}>
-            <Input.Search
+            <Input
               placeholder="Tìm kiếm theo tên, email, SĐT..."
+              prefix={<SearchOutlined style={{ color: "#94A3B8" }} />}
               style={{ width: 320, maxWidth: "100%" }}
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              enterButton={<SearchOutlined />}
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              allowClear
             />
+            <Button icon={<ReloadOutlined />} onClick={handleResetFilters}>
+              Làm mới
+            </Button>
           </Space>
           <Space
             wrap
@@ -246,13 +287,17 @@ const Suppliers = () => {
         ) : (
           <Table
             columns={columns}
-            dataSource={filteredSuppliers}
+            dataSource={suppliers}
             loading={loading}
             rowKey="idSupplier"
             pagination={{
-              pageSize: 10,
+              current: tablePagination.current,
+              pageSize: tablePagination.pageSize,
+              total: tablePagination.total,
               showSizeChanger: true,
+              pageSizeOptions: ["10", "20", "50"],
               showQuickJumper: true,
+              onChange: handlePageChange,
             }}
             locale={{
               emptyText: (
@@ -282,7 +327,7 @@ const Suppliers = () => {
           supplier={editingSupplier}
           onSuccess={() => {
             setIsModalVisible(false);
-            dispatch(fetchSuppliers());
+            fetchList();
           }}
         />
       </Modal>

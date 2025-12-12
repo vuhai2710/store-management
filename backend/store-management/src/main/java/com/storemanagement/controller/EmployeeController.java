@@ -6,9 +6,9 @@ import com.storemanagement.dto.PageResponse;
 import com.storemanagement.service.EmployeeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -42,8 +42,14 @@ public class EmployeeController {
     @GetMapping("/paginated")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PageResponse<EmployeeDTO>>> getAllEmployeesPaginated(
-            @PageableDefault(size = 10, sort = "idEmployee", direction = Sort.Direction.DESC) Pageable pageable) {
-        PageResponse<EmployeeDTO> employees = employeeService.getAllEmployeesPaginated(pageable);
+            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "idEmployee") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection,
+            @RequestParam(required = false) String keyword) {
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
+        PageResponse<EmployeeDTO> employees = employeeService.getAllEmployeesPaginated(keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách nhân viên thành công", employees));
     }
 

@@ -40,6 +40,34 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     Page<Order> findByFilters(@Param("customerId") Integer customerId,
                               @Param("status") Order.OrderStatus status,
                               Pageable pageable);
+
+    /**
+     * Search orders with keyword (searches by order ID as string)
+     */
+    @Query("SELECT o FROM Order o WHERE " +
+           "(:customerId IS NULL OR o.customer.idCustomer = :customerId) AND " +
+           "(:status IS NULL OR o.status = :status) AND " +
+           "(:keyword IS NULL OR :keyword = '' OR CAST(o.idOrder AS string) LIKE CONCAT('%', :keyword, '%') OR " +
+           "LOWER(o.customer.customerName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(o.customer.phoneNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY o.orderDate DESC")
+    Page<Order> searchByFilters(@Param("customerId") Integer customerId,
+                                @Param("status") Order.OrderStatus status,
+                                @Param("keyword") String keyword,
+                                Pageable pageable);
+
+    /**
+     * Search customer orders with keyword
+     */
+    @Query("SELECT o FROM Order o WHERE " +
+           "o.customer.idCustomer = :customerId AND " +
+           "(:status IS NULL OR o.status = :status) AND " +
+           "(:keyword IS NULL OR :keyword = '' OR CAST(o.idOrder AS string) LIKE CONCAT('%', :keyword, '%')) " +
+           "ORDER BY o.orderDate DESC")
+    Page<Order> searchMyOrders(@Param("customerId") Integer customerId,
+                               @Param("status") Order.OrderStatus status,
+                               @Param("keyword") String keyword,
+                               Pageable pageable);
     
     /**
      * Lấy danh sách product IDs mà customer đã mua (từ order_details)

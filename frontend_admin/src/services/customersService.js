@@ -97,7 +97,7 @@ const handleSingleCustomerResponse = (customerDto) => {
 };
 export const customersService = {
   // Lấy tất cả customers với phân trang (ADMIN, EMPLOYEE)
-  // Backend: GET /api/v1/customers?pageNo=1&pageSize=5&sortBy=idCustomer&sortDirection=ASC
+  // Backend: GET /api/v1/customers?pageNo=1&pageSize=5&sortBy=idCustomer&sortDirection=ASC&keyword=...
   // Returns: ApiResponse<PageResponse<CustomerDto>>
   getAllCustomers: async (params = {}) => {
     try {
@@ -107,6 +107,11 @@ export const customersService = {
         sortBy: params.sortBy || "idCustomer",
         sortDirection: params.sortDirection || "ASC",
       };
+
+      // Add keyword for realtime search
+      if (params.keyword) {
+        requestParams.keyword = params.keyword;
+      }
 
       console.log("Calling getAllCustomers with params:", requestParams);
       const response = await api.get("/customers", { params: requestParams });
@@ -121,11 +126,7 @@ export const customersService = {
   // Alias cho getAllCustomers - dùng cho pagination/filtering
   // Tự động chọn endpoint dựa vào params
   getCustomers: async (params = {}) => {
-    // Nếu có name hoặc phone, dùng searchCustomers endpoint
-    if (params.name || params.phone) {
-      return customersService.searchCustomers(params);
-    }
-    // Nếu không có search, dùng getAllCustomers
+    // Use getAllCustomers which now supports keyword search
     return customersService.getAllCustomers(params);
   },
 

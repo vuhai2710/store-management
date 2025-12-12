@@ -16,7 +16,7 @@ public interface PromotionService {
 
     PromotionDTO createPromotion(PromotionDTO promotionDTO);
 
-    PageResponse<PromotionDTO> getAllPromotions(Pageable pageable);
+    PageResponse<PromotionDTO> getAllPromotions(String keyword, Pageable pageable);
 
     PromotionDTO getPromotionById(Integer id);
 

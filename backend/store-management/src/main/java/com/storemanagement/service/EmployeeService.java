@@ -9,7 +9,7 @@ import java.util.List;
 public interface EmployeeService {
     EmployeeDTO createEmployee(EmployeeDTO request);
     List<EmployeeDTO> getAllEmployees();
-    PageResponse<EmployeeDTO> getAllEmployeesPaginated(Pageable pageable);
+    PageResponse<EmployeeDTO> getAllEmployeesPaginated(String keyword, Pageable pageable);
     EmployeeDTO getEmployeeById(Integer id);
     EmployeeDTO getEmployeeByUserId(Integer userId);
     EmployeeDTO updateEmployeeByAdmin(Integer id, EmployeeDTO request);

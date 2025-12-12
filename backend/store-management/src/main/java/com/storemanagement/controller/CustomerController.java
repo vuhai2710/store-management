@@ -32,12 +32,13 @@ public class CustomerController {
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(defaultValue = "idCustomer") String sortBy,
-            @RequestParam(defaultValue = "ASC") String sortDirection) {
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+            @RequestParam(required = false) String keyword) {
 
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<CustomerDTO> customerPage = customerService.getAllCustomersPaginated(pageable);
+        PageResponse<CustomerDTO> customerPage = customerService.getAllCustomersPaginated(keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách customer thành công", customerPage));
     }
 

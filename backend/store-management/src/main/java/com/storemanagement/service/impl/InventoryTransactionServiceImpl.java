@@ -5,6 +5,7 @@ import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.InventoryTransactionMapper;
 import com.storemanagement.model.InventoryTransaction;
 import com.storemanagement.repository.InventoryTransactionRepository;
+import com.storemanagement.repository.specification.InventoryTransactionSpecification;
 import com.storemanagement.service.InventoryTransactionService;
 import com.storemanagement.utils.PageUtils;
 import com.storemanagement.utils.TransactionType;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -145,6 +147,31 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
         Page<InventoryTransaction> transactionPage = 
                 inventoryTransactionRepository.findByAdvancedCriteria(
                         transactionType, referenceType, productId, productName, sku, startDate, endDate, pageable);
+        
+        return PageUtils.toPageResponse(transactionPage, 
+                inventoryTransactionMapper.toDTOList(transactionPage.getContent()));
+    }
+
+    @Override
+    public PageResponse<InventoryTransactionDTO> filterTransactions(
+            TransactionType transactionType,
+            com.storemanagement.utils.ReferenceType referenceType,
+            Integer referenceId,
+            Integer productId,
+            String productName,
+            String sku,
+            String brand,
+            LocalDateTime fromDate,
+            LocalDateTime toDate,
+            Pageable pageable) {
+        
+        log.info("Filtering inventory transactions using Specification - type: {}, refType: {}, refId: {}, productId: {}, productName: {}, sku: {}, brand: {}, from: {} to: {}", 
+                transactionType, referenceType, referenceId, productId, productName, sku, brand, fromDate, toDate);
+        
+        Specification<InventoryTransaction> spec = InventoryTransactionSpecification.buildSpecification(
+                transactionType, referenceType, referenceId, productId, productName, sku, brand, fromDate, toDate);
+        
+        Page<InventoryTransaction> transactionPage = inventoryTransactionRepository.findAll(spec, pageable);
         
         return PageUtils.toPageResponse(transactionPage, 
                 inventoryTransactionMapper.toDTOList(transactionPage.getContent()));

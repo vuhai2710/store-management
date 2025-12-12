@@ -39,6 +39,7 @@ public class ProductController {
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "idProduct") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDirection,
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Integer categoryId,
@@ -52,9 +53,13 @@ public class ProductController {
 
         PageResponse<ProductDTO> productPage;
 
+        // Use keyword for search if provided, otherwise use individual params
+        String searchName = (keyword != null && !keyword.trim().isEmpty()) ? keyword : name;
+        String searchCode = (keyword != null && !keyword.trim().isEmpty()) ? keyword : code;
+
         // Nếu có bất kỳ tham số tìm kiếm/lọc nào, dùng searchProducts
-        if (code != null || name != null || categoryId != null || brand != null || minPrice != null || maxPrice != null || inventoryStatus != null) {
-            productPage = productService.searchProducts(code, name, categoryId, brand, minPrice, maxPrice, inventoryStatus, pageable);
+        if (searchCode != null || searchName != null || categoryId != null || brand != null || minPrice != null || maxPrice != null || inventoryStatus != null) {
+            productPage = productService.searchProducts(searchCode, searchName, categoryId, brand, minPrice, maxPrice, inventoryStatus, pageable);
         } else {
             productPage = productService.getAllProductsPaginated(pageable);
         }

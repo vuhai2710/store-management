@@ -20,6 +20,7 @@ export const importOrderService = {
    * @param {number} params.supplierId - Filter by supplier ID (optional)
    * @param {string} params.startDate - Filter start date ISO string (optional)
    * @param {string} params.endDate - Filter end date ISO string (optional)
+   * @param {string} params.keyword - Search keyword (optional)
    * @returns {Promise<PageResponse<PurchaseOrderDTO>>}
    */
   getImportOrders: async (params = {}) => {
@@ -31,6 +32,7 @@ export const importOrderService = {
       supplierId,
       startDate,
       endDate,
+      keyword,
     } = params;
 
     const queryParams = {
@@ -39,6 +41,11 @@ export const importOrderService = {
       sortBy,
       sortDirection,
     };
+
+    // Add keyword search
+    if (keyword && keyword.trim()) {
+      queryParams.keyword = keyword.trim();
+    }
 
     // Determine which endpoint to use based on filters
     let endpoint = API_ENDPOINTS.IMPORT_ORDERS.BASE;

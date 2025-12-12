@@ -12,7 +12,7 @@ import java.util.List;
 public interface CustomerService {
     CustomerDTO createCustomerForUser(User user, RegisterDTO request);
     List<CustomerDTO> getAllCustomers();
-    PageResponse<CustomerDTO> getAllCustomersPaginated(Pageable pageable);
+    PageResponse<CustomerDTO> getAllCustomersPaginated(String keyword, Pageable pageable);
 
     CustomerDTO getCustomerById(Integer id);
     CustomerDTO getCustomerByUsername(String username);

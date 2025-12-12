@@ -30,7 +30,7 @@ import {
   setFilters,
 } from "../store/slices/ordersSlice";
 import OrderForm from "../components/orders/OrderForm";
-import { usePagination } from "../hooks/usePagination";
+import { usePagination, useDebounce } from "../hooks";
 import StatusBadge from "../components/common/StatusBadge";
 import { exportToExcel, exportToCSV } from "../utils/exportUtils";
 import LoadingSkeleton from "../components/common/LoadingSkeleton";
@@ -61,9 +61,10 @@ const Orders = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
   const [statusFilter, setStatusFilter] = useState(filters.status || null);
-  const [customerIdFilter, setCustomerIdFilter] = useState(
-    filters.customerId || null
-  );
+  const [searchKeyword, setSearchKeyword] = useState("");
+
+  // Debounced search keyword for realtime search
+  const debouncedKeyword = useDebounce(searchKeyword, 300);
 
   // Order returns data for badge display
   const { getReturns } = useAdminReturnService();
@@ -79,7 +80,7 @@ const Orders = () => {
     pagination: tablePagination,
   } = usePagination(1, 10);
 
-  // Fetch orders when pagination or filters change
+  // Fetch orders when pagination, filters or keyword change
   const fetchOrdersList = useCallback(() => {
     const params = {
       pageNo: currentPage,
@@ -89,14 +90,19 @@ const Orders = () => {
     };
 
     if (statusFilter) params.status = statusFilter;
-    if (customerIdFilter) params.customerId = customerIdFilter;
+    if (debouncedKeyword) params.keyword = debouncedKeyword;
 
     dispatch(fetchOrders(params));
-  }, [dispatch, currentPage, pageSize, statusFilter, customerIdFilter]);
+  }, [dispatch, currentPage, pageSize, statusFilter, debouncedKeyword]);
 
   useEffect(() => {
     fetchOrdersList();
   }, [fetchOrdersList]);
+
+  // Reset page when keyword changes
+  useEffect(() => {
+    resetPagination();
+  }, [debouncedKeyword, resetPagination]);
 
   // Fetch order returns to show badge on orders with active return requests
   useEffect(() => {
@@ -134,16 +140,10 @@ const Orders = () => {
     resetPagination(); // Reset về page 1
   };
 
-  const handleCustomerIdFilter = (value) => {
-    setCustomerIdFilter(value);
-    dispatch(setFilters({ customerId: value }));
-    resetPagination(); // Reset về page 1
-  };
-
   const handleResetFilters = () => {
     setStatusFilter(null);
-    setCustomerIdFilter(null);
-    dispatch(setFilters({ status: null, customerId: null }));
+    setSearchKeyword("");
+    dispatch(setFilters({ status: null }));
     resetPagination();
   };
 
@@ -416,10 +416,12 @@ const Orders = () => {
                 </Option>
               ))}
             </Select>
-            <Input.Search
-              placeholder="Tìm theo khách hàng"
-              onSearch={handleCustomerIdFilter}
-              style={{ width: 260, maxWidth: "100%" }}
+            <Input
+              placeholder="Tìm mã đơn, tên KH, SĐT..."
+              prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              style={{ width: 280, maxWidth: "100%" }}
               allowClear
             />
             <Button onClick={handleResetFilters} icon={<ReloadOutlined />}>
