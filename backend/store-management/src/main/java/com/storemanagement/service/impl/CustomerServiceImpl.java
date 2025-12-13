@@ -33,10 +33,15 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public CustomerDTO createCustomerForUser(User user, RegisterDTO request) {
+        // Pre-validate phone number duplicate for better error message
+        if (customerRepository.findByPhoneNumber(request.getPhoneNumber()).isPresent()) {
+            throw new RuntimeException("Số điện thoại đã được sử dụng");
+        }
+
         Customer customer = customerMapper.toEntity(request);
         customer.setUser(user);
         Customer savedCustomer = customerRepository.save(customer);
-        
+
         // Tự động tạo ShippingAddress từ address trong request (nếu có)
         // Địa chỉ này sẽ được đánh dấu là default
         if (request.getAddress() != null && !request.getAddress().trim().isEmpty()) {
@@ -49,7 +54,7 @@ public class CustomerServiceImpl implements CustomerService {
                     .build();
             shippingAddressRepository.save(defaultAddress);
         }
-        
+
         return customerMapper.toDTO(savedCustomer);
     }
 
@@ -61,13 +66,13 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public PageResponse<CustomerDTO> getAllCustomersPaginated(String keyword, Pageable pageable) {
         Page<Customer> customerPage;
-        
+
         if (keyword != null && !keyword.trim().isEmpty()) {
             customerPage = customerRepository.searchByKeyword(keyword.trim(), pageable);
         } else {
             customerPage = customerRepository.findAll(pageable);
         }
-        
+
         List<CustomerDTO> customerDtos = customerMapper.toDTOList(customerPage.getContent());
         return PageUtils.toPageResponse(customerPage, customerDtos);
     }
@@ -136,7 +141,6 @@ public class CustomerServiceImpl implements CustomerService {
         List<CustomerDTO> customerDtos = customerMapper.toDTOList(page.getContent());
         return PageUtils.toPageResponse(page, customerDtos);
     }
-
 
     @Override
     public List<CustomerDTO> getCustomersByType(String type) {
@@ -245,7 +249,8 @@ public class CustomerServiceImpl implements CustomerService {
             throw new RuntimeException("Email không được phép cập nhật. Email chỉ được set khi tạo tài khoản.");
         }
 
-        // Customer chỉ được cập nhật một số thông tin cơ bản, không được thay đổi customerType
+        // Customer chỉ được cập nhật một số thông tin cơ bản, không được thay đổi
+        // customerType
         if (customerDto.getCustomerName() != null) {
             customer.setCustomerName(customerDto.getCustomerName());
         }

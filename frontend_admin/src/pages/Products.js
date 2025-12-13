@@ -71,9 +71,12 @@ const Products = () => {
   const debouncedKeyword = useDebounce(searchKeyword, 300);
   const [categoryId, setCategoryId] = useState(null);
   const [brand, setBrand] = useState("");
+  const debouncedBrand = useDebounce(brand, 300); // Debounce brand to prevent API calls on every keystroke
   const [supplierId, setSupplierId] = useState(null);
   const [minPrice, setMinPrice] = useState();
   const [maxPrice, setMaxPrice] = useState();
+  const debouncedMinPrice = useDebounce(minPrice, 400); // Debounce price inputs
+  const debouncedMaxPrice = useDebounce(maxPrice, 400); // Debounce price inputs
   const [inventoryStatusFilter, setInventoryStatusFilter] = useState(null); // Filter by inventory status: 'COMING_SOON', 'IN_STOCK', 'OUT_OF_STOCK', null (all)
 
   // Sort (quản lý riêng vì hook không xử lý sorter)
@@ -121,9 +124,11 @@ const Products = () => {
           sortDirection,
           keyword: debouncedKeyword?.trim() || undefined,
           categoryId: categoryId || undefined,
-          brand: brand?.trim() || undefined,
-          minPrice: minPrice != null ? Number(minPrice) : undefined,
-          maxPrice: maxPrice != null ? Number(maxPrice) : undefined,
+          brand: debouncedBrand?.trim() || undefined,
+          minPrice:
+            debouncedMinPrice != null ? Number(debouncedMinPrice) : undefined,
+          maxPrice:
+            debouncedMaxPrice != null ? Number(debouncedMaxPrice) : undefined,
           inventoryStatus: inventoryStatusFilter || undefined,
         })
       );
@@ -137,9 +142,9 @@ const Products = () => {
     sortDirection,
     debouncedKeyword,
     categoryId,
-    brand,
-    minPrice,
-    maxPrice,
+    debouncedBrand,
+    debouncedMinPrice,
+    debouncedMaxPrice,
     inventoryStatusFilter,
   ]);
 

@@ -99,8 +99,9 @@ export const AuthProvider = ({ children }) => {
    * @returns {Promise<void>}
    */
   const register = async (registerData) => {
+    // NOTE: Don't set isLoading here - let RegisterPage manage its own loading state
+    // Setting isLoading(true) causes AppContent to re-render, which unmounts RegisterPage
     try {
-      setIsLoading(true);
       const response = await authService.register(registerData);
 
       // Fetch customer info
@@ -112,18 +113,17 @@ export const AuthProvider = ({ children }) => {
       return response;
     } catch (error) {
       console.error("Register error:", error);
-      // api.js interceptor transforms error to { message, status, errors, ... }
-      const status = error.status;
-      // Show specific message for validation/auth errors
-      if (status === 400) {
-        throw new Error(error.message || "Thông tin đăng ký không hợp lệ");
-      }
-      if (status === 409) {
-        throw new Error("Tên đăng nhập hoặc email đã tồn tại");
-      }
-      throw new Error(error.message || "Đăng ký thất bại. Vui lòng thử lại.");
-    } finally {
-      setIsLoading(false);
+
+      // api.js interceptor transforms error to { message, status, errors, responseData, ... }
+      const status = error?.status;
+      const fieldErrors = error?.errors || error?.responseData?.errors;
+
+      // Create enhanced error with field errors
+      const enhancedError = new Error(error?.message || "Đăng ký thất bại. Vui lòng thử lại.");
+      enhancedError.status = status;
+      enhancedError.fieldErrors = fieldErrors;
+
+      throw enhancedError;
     }
   };
 
@@ -215,8 +215,8 @@ export const useAuth = () => {
       register: async () => {
         throw new Error("AuthProvider chưa được khởi tạo");
       },
-      logout: () => {},
-      updateProfile: async () => {},
+      logout: () => { },
+      updateProfile: async () => { },
     };
   }
   return context;

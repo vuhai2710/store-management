@@ -10,6 +10,8 @@ import {
   Star,
   User,
   MessageCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import styles from "../../styles/styles";
 import StarRating from "../layout/StarRating";
@@ -1264,6 +1266,7 @@ const ProductDetailPage = ({
               flexDirection: "column",
               alignItems: "center",
             }}>
+            {/* Main Image with Navigation Arrows */}
             <div
               style={{
                 width: "100%",
@@ -1275,6 +1278,7 @@ const ProductDetailPage = ({
                 borderRadius: "0.5rem",
                 marginBottom: "1rem",
                 overflow: "hidden",
+                position: "relative",
               }}>
               {mainImage ? (
                 <img
@@ -1285,17 +1289,106 @@ const ProductDetailPage = ({
               ) : (
                 <div style={{ fontSize: "10rem", opacity: 0.5 }}>📦</div>
               )}
+
+              {/* Navigation Arrows - Only show if multiple images */}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={() =>
+                      setSelectedImageIndex((prev) =>
+                        prev === 0 ? images.length - 1 : prev - 1
+                      )
+                    }
+                    style={{
+                      position: "absolute",
+                      left: "0.5rem",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: "40px",
+                      height: "40px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#fff")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        "rgba(255, 255, 255, 0.9)")
+                    }>
+                    <ChevronLeft size={24} color="#333" />
+                  </button>
+                  <button
+                    onClick={() =>
+                      setSelectedImageIndex((prev) =>
+                        prev === images.length - 1 ? 0 : prev + 1
+                      )
+                    }
+                    style={{
+                      position: "absolute",
+                      right: "0.5rem",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: "40px",
+                      height: "40px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#fff")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        "rgba(255, 255, 255, 0.9)")
+                    }>
+                    <ChevronRight size={24} color="#333" />
+                  </button>
+
+                  {/* Image Counter Badge */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: "0.75rem",
+                      right: "0.75rem",
+                      backgroundColor: "rgba(0, 0, 0, 0.6)",
+                      color: "white",
+                      padding: "0.25rem 0.5rem",
+                      borderRadius: "0.25rem",
+                      fontSize: "0.75rem",
+                      fontWeight: "600",
+                    }}>
+                    {selectedImageIndex + 1} / {images.length}
+                  </div>
+                </>
+              )}
             </div>
-            {/* Gallery Thumbnails */}
+
+            {/* Gallery Thumbnails - Show ALL images with horizontal scroll */}
             {images.length > 1 && (
               <div
                 style={{
                   display: "flex",
                   gap: "0.5rem",
                   width: "100%",
-                  justifyContent: "center",
+                  overflowX: "auto",
+                  paddingBottom: "0.5rem",
+                  scrollBehavior: "smooth",
                 }}>
-                {images.slice(0, 5).map((image, index) => {
+                {images.map((image, index) => {
                   const imageUrl = getImageUrl(image.imageUrl || image.url);
                   return (
                     <div

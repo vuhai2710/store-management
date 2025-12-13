@@ -1,5 +1,6 @@
 // src/components/pages/RegisterPage.js
 import React, { useState } from "react";
+import { toast } from "react-toastify";
 import { User, Mail, Lock, Eye, EyeOff, UserPlus, Phone } from "lucide-react";
 import styles from "../../styles/styles";
 import { useAuth } from "../../hooks/useAuth";
@@ -171,11 +172,30 @@ const RegisterPage = ({ setCurrentPage }) => {
           phoneNumber: formData.phoneNumber.trim(),
           address: formData.address.trim() || undefined,
         });
+
+        // Show success toast
+        toast.success("Đăng ký tài khoản thành công! Chào mừng bạn đến với Electronic Store.");
+
         // Redirect to home page after successful registration
         setCurrentPage("home");
       } catch (error) {
         console.error("Register error:", error);
-        setApiError(error?.message || "Đăng ký thất bại. Vui lòng thử lại.");
+
+        const errorMessage = error?.message || "Đăng ký thất bại. Vui lòng thử lại.";
+
+        // Show error toast
+        toast.error(errorMessage);
+
+        // Set inline error message
+        setApiError(errorMessage);
+
+        // If there are field-level errors, merge them into form errors
+        if (error?.fieldErrors) {
+          setErrors((prev) => ({
+            ...prev,
+            ...error.fieldErrors,
+          }));
+        }
       } finally {
         setIsLoading(false);
       }

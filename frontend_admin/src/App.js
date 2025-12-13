@@ -303,7 +303,7 @@ function App() {
 
             {/* Product Reviews - ADMIN, EMPLOYEE */}
             <Route
-              path="/reviews"
+              path="/products/:productId/reviews"
               element={
                 <ProtectedRoute
                   allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>

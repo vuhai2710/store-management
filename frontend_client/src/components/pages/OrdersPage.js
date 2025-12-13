@@ -16,6 +16,8 @@ import {
   Star,
   Clock,
   CheckCircle2,
+  RefreshCw,
+  ArrowLeftRight,
 } from "lucide-react";
 import styles from "../../styles/styles";
 import LoadingSpinner from "../common/LoadingSpinner";
@@ -45,6 +47,9 @@ const OrdersPage = ({
   setSelectedReturnId,
   reloadCart,
 }) => {
+  // Tab state
+  const [activeTab, setActiveTab] = useState("orders"); // 'orders' | 'returns'
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -71,10 +76,20 @@ const OrdersPage = ({
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  // States for Returns Tab (Đổi/Trả)
+  const [returns, setReturns] = useState([]);
+  const [returnsLoading, setReturnsLoading] = useState(false);
+  const [returnsError, setReturnsError] = useState(null);
+  const [returnsPageNo, setReturnsPageNo] = useState(1);
+  const [returnsTotalPages, setReturnsTotalPages] = useState(1);
+  const [selectedReturnDetail, setSelectedReturnDetail] = useState(null);
+
   const {
     hasActiveReturnRequest,
     getReturnPeriodDays,
     getReturnRequestByOrderId,
+    getMyReturns,
+    getReturnDetail,
   } = useReturnService();
 
   // Lock body scroll when modal is open
@@ -192,6 +207,33 @@ const OrdersPage = ({
 
     fetchOrders();
   }, [pageNo, statusFilter, debouncedSearchTerm]);
+
+  // Fetch returns when returns tab is active
+  useEffect(() => {
+    const fetchReturns = async () => {
+      if (activeTab !== "returns") return;
+
+      try {
+        setReturnsLoading(true);
+        setReturnsError(null);
+
+        const returnsData = await getMyReturns({
+          pageNo: returnsPageNo,
+          pageSize: DEFAULT_PAGE_SIZE,
+        });
+
+        setReturns(returnsData?.content || []);
+        setReturnsTotalPages(returnsData?.totalPages || 1);
+      } catch (error) {
+        console.error("Error fetching returns:", error);
+        setReturnsError("Không thể tải danh sách đổi/trả. Vui lòng thử lại sau.");
+      } finally {
+        setReturnsLoading(false);
+      }
+    };
+
+    fetchReturns();
+  }, [activeTab, returnsPageNo, getMyReturns]);
 
   // Reset page when search term changes
   useEffect(() => {
@@ -317,7 +359,7 @@ const OrdersPage = ({
       console.error("Error buying again:", error);
       toast.error(
         error?.message ||
-          "Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại."
+        "Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại."
       );
     } finally {
       setIsAddingToCart(false);
@@ -542,7 +584,7 @@ const OrdersPage = ({
       console.error("Error creating PayOS payment link:", error);
       toast.error(
         error?.message ||
-          "Không thể tạo liên kết thanh toán PayOS. Vui lòng thử lại."
+        "Không thể tạo liên kết thanh toán PayOS. Vui lòng thử lại."
       );
       setIsCreatingPayOSLink(false);
     }
@@ -573,392 +615,910 @@ const OrdersPage = ({
           style={{
             fontSize: "1.875rem",
             fontWeight: "bold",
-            marginBottom: "2rem",
+            marginBottom: "1.5rem",
           }}>
           Đơn hàng của tôi
         </h2>
 
-        {/* Filters */}
+        {/* Tabs */}
         <div
           style={{
             display: "flex",
-            gap: "1rem",
+            gap: "0",
             marginBottom: "2rem",
-            flexWrap: "wrap",
+            borderBottom: "2px solid #E2E8F0",
           }}>
-          <div style={{ flex: 1, minWidth: "200px" }}>
-            <div style={{ position: "relative" }}>
-              <Search
-                size={20}
-                style={{
-                  position: "absolute",
-                  left: "0.75rem",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  color: "#6c757d",
-                }}
-              />
-              <input
-                type="text"
-                placeholder="Tìm kiếm đơn hàng..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem 0.75rem 0.75rem 2.5rem",
-                  border: "1px solid #E2E8F0",
-                  borderRadius: "0.5rem",
-                  fontSize: "1rem",
-                }}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <Filter size={20} style={{ color: "#6c757d" }} />
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPageNo(1);
-              }}
-              style={{
-                padding: "0.75rem",
-                border: "1px solid #E2E8F0",
-                borderRadius: "0.5rem",
-                fontSize: "1rem",
-                cursor: "pointer",
-              }}>
-              <option value="">Tất cả trạng thái</option>
-              {Object.values(ORDER_STATUS).map((status) => (
-                <option key={status} value={status}>
-                  {ORDER_STATUS_LABELS[status]}
-                </option>
-              ))}
-            </select>
-          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab("orders")}
+            style={{
+              padding: "0.875rem 1.5rem",
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              fontWeight: "600",
+              fontSize: "1rem",
+              color: activeTab === "orders" ? "#2563EB" : "#6B7280",
+              borderBottom: activeTab === "orders" ? "2px solid #2563EB" : "2px solid transparent",
+              marginBottom: "-2px",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              transition: "all 0.2s ease",
+            }}>
+            <Package size={18} />
+            Đơn hàng
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("returns")}
+            style={{
+              padding: "0.875rem 1.5rem",
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              fontWeight: "600",
+              fontSize: "1rem",
+              color: activeTab === "returns" ? "#2563EB" : "#6B7280",
+              borderBottom: activeTab === "returns" ? "2px solid #2563EB" : "2px solid transparent",
+              marginBottom: "-2px",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              transition: "all 0.2s ease",
+            }}>
+            <ArrowLeftRight size={18} />
+            Đổi/Trả
+          </button>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div
-            style={{
-              padding: "1rem",
-              marginBottom: "1.5rem",
-              backgroundColor: "#f8d7da",
-              color: "#721c24",
-              borderRadius: "0.5rem",
-            }}>
-            {error}
-          </div>
-        )}
-
-        {/* Orders List */}
-        {orders.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "3rem",
-              backgroundColor: "white",
-              borderRadius: "0.5rem",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-            }}>
-            <Package
-              size={64}
-              style={{ color: "#6c757d", margin: "0 auto 1rem" }}
-            />
-            <p
-              style={{
-                color: "#6c757d",
-                fontSize: "1.125rem",
-                marginBottom: "1.5rem",
-              }}>
-              Không tìm thấy đơn hàng nào
-            </p>
-            <button
-              onClick={() => setCurrentPage("shop")}
-              style={styles.buttonPrimary}>
-              Bắt đầu mua sắm
-            </button>
-          </div>
-        ) : (
+        {/* Orders Tab Content */}
+        {activeTab === "orders" && (
           <>
             <div
               style={{
                 display: "flex",
-                flexDirection: "column",
                 gap: "1rem",
                 marginBottom: "2rem",
+                flexWrap: "wrap",
               }}>
-              {orders.map((order) => {
-                const status = order.status || ORDER_STATUS.PENDING;
-                const statusColor = ORDER_STATUS_COLORS[status] || "#6c757d";
-                const statusLabel = ORDER_STATUS_LABELS[status] || status;
-
-                return (
-                  <div
-                    key={order.idOrder || order.id}
+              <div style={{ flex: 1, minWidth: "200px" }}>
+                <div style={{ position: "relative" }}>
+                  <Search
+                    size={20}
                     style={{
-                      backgroundColor: "white",
-                      padding: "1.5rem",
-                      borderRadius: "0.5rem",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                      position: "absolute",
+                      left: "0.75rem",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      color: "#6c757d",
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm đơn hàng..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem 0.75rem 0.75rem 2.5rem",
                       border: "1px solid #E2E8F0",
-                    }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        marginBottom: "1rem",
-                      }}>
-                      <div>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "1rem",
-                            marginBottom: "0.5rem",
-                          }}>
-                          <h3
-                            style={{
-                              fontSize: "1.25rem",
-                              fontWeight: "bold",
-                              color: "#212529",
-                            }}>
-                            Đơn hàng #{order.idOrder || order.id}
-                          </h3>
-                          <span
-                            style={{
-                              padding: "0.25rem 0.75rem",
-                              backgroundColor: statusColor + "20",
-                              color: statusColor,
-                              borderRadius: "0.25rem",
-                              fontSize: "0.875rem",
-                              fontWeight: "600",
-                            }}>
-                            {statusLabel}
-                          </span>
-                        </div>
-                        <p
-                          style={{
-                            color: "#6c757d",
-                            fontSize: "0.875rem",
-                            marginBottom: "0.25rem",
-                          }}>
-                          Ngày đặt:{" "}
-                          {formatDate(order.orderDate, "dd/MM/yyyy HH:mm")}
-                        </p>
-                        {order.deliveredAt && (
-                          <p style={{ color: "#6c757d", fontSize: "0.875rem" }}>
-                            Đã giao:{" "}
-                            {formatDate(order.deliveredAt, "dd/MM/yyyy HH:mm")}
-                          </p>
-                        )}
-                      </div>
-                      <div style={{ textAlign: "right" }}>
-                        <p
-                          style={{
-                            fontSize: "1.25rem",
-                            fontWeight: "bold",
-                            color: "#2563EB",
-                            marginBottom: "0.5rem",
-                          }}>
-                          {formatPrice(
-                            order.finalAmount || order.totalAmount || 0
-                          )}
-                        </p>
-                        <button
-                          onClick={() =>
-                            handleViewOrderDetail(order.idOrder || order.id)
-                          }
-                          style={{
-                            ...styles.buttonSecondary,
-                            padding: "0.5rem 1rem",
-                            fontSize: "0.875rem",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                          }}>
-                          <Eye size={16} /> Xem chi tiết
-                        </button>
-                      </div>
-                    </div>
+                      borderRadius: "0.5rem",
+                      fontSize: "1rem",
+                    }}
+                  />
+                </div>
+              </div>
 
-                    {/* Order Items Preview */}
-                    {order.orderDetails && order.orderDetails.length > 0 && (
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                <Filter size={20} style={{ color: "#6c757d" }} />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setPageNo(1);
+                  }}
+                  style={{
+                    padding: "0.75rem",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "0.5rem",
+                    fontSize: "1rem",
+                    cursor: "pointer",
+                  }}>
+                  <option value="">Tất cả trạng thái</option>
+                  {Object.values(ORDER_STATUS).map((status) => (
+                    <option key={status} value={status}>
+                      {ORDER_STATUS_LABELS[status]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div
+                style={{
+                  padding: "1rem",
+                  marginBottom: "1.5rem",
+                  backgroundColor: "#f8d7da",
+                  color: "#721c24",
+                  borderRadius: "0.5rem",
+                }}>
+                {error}
+              </div>
+            )}
+
+            {/* Orders List */}
+            {orders.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "3rem",
+                  backgroundColor: "white",
+                  borderRadius: "0.5rem",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                }}>
+                <Package
+                  size={64}
+                  style={{ color: "#6c757d", margin: "0 auto 1rem" }}
+                />
+                <p
+                  style={{
+                    color: "#6c757d",
+                    fontSize: "1.125rem",
+                    marginBottom: "1.5rem",
+                  }}>
+                  Không tìm thấy đơn hàng nào
+                </p>
+                <button
+                  onClick={() => setCurrentPage("shop")}
+                  style={styles.buttonPrimary}>
+                  Bắt đầu mua sắm
+                </button>
+              </div>
+            ) : (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "1rem",
+                    marginBottom: "2rem",
+                  }}>
+                  {orders.map((order) => {
+                    const status = order.status || ORDER_STATUS.PENDING;
+                    const statusColor = ORDER_STATUS_COLORS[status] || "#6c757d";
+                    const statusLabel = ORDER_STATUS_LABELS[status] || status;
+
+                    return (
                       <div
+                        key={order.idOrder || order.id}
                         style={{
-                          marginTop: "1rem",
-                          paddingTop: "1rem",
-                          borderTop: "1px solid #E2E8F0",
+                          backgroundColor: "white",
+                          padding: "1.5rem",
+                          borderRadius: "0.5rem",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                          border: "1px solid #E2E8F0",
                         }}>
-                        <p
-                          style={{
-                            fontSize: "0.875rem",
-                            color: "#6c757d",
-                            marginBottom: "0.5rem",
-                          }}>
-                          Sản phẩm: {order.orderDetails.length} sản phẩm
-                        </p>
                         <div
                           style={{
                             display: "flex",
-                            flexWrap: "wrap",
-                            gap: "0.5rem",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                            marginBottom: "1rem",
                           }}>
-                          {order.orderDetails
-                            .slice(0, 3)
-                            .map((detail, index) => (
-                              <span
-                                key={index}
+                          <div>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "1rem",
+                                marginBottom: "0.5rem",
+                              }}>
+                              <h3
                                 style={{
-                                  padding: "0.25rem 0.5rem",
-                                  backgroundColor: "#F8FAFC",
+                                  fontSize: "1.25rem",
+                                  fontWeight: "bold",
+                                  color: "#212529",
+                                }}>
+                                Đơn hàng #{order.idOrder || order.id}
+                              </h3>
+                              <span
+                                style={{
+                                  padding: "0.25rem 0.75rem",
+                                  backgroundColor: statusColor + "20",
+                                  color: statusColor,
                                   borderRadius: "0.25rem",
                                   fontSize: "0.875rem",
-                                  color: "#495057",
+                                  fontWeight: "600",
                                 }}>
-                                {detail.productName || detail.productName} ×{" "}
-                                {detail.quantity || detail.qty || 0}
+                                {statusLabel}
                               </span>
-                            ))}
-                          {order.orderDetails.length > 3 && (
-                            <span
+                            </div>
+                            <p
+                              style={{
+                                color: "#6c757d",
+                                fontSize: "0.875rem",
+                                marginBottom: "0.25rem",
+                              }}>
+                              Ngày đặt:{" "}
+                              {formatDate(order.orderDate, "dd/MM/yyyy HH:mm")}
+                            </p>
+                            {order.deliveredAt && (
+                              <p style={{ color: "#6c757d", fontSize: "0.875rem" }}>
+                                Đã giao:{" "}
+                                {formatDate(order.deliveredAt, "dd/MM/yyyy HH:mm")}
+                              </p>
+                            )}
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <p
+                              style={{
+                                fontSize: "1.25rem",
+                                fontWeight: "bold",
+                                color: "#2563EB",
+                                marginBottom: "0.5rem",
+                              }}>
+                              {formatPrice(
+                                order.finalAmount || order.totalAmount || 0
+                              )}
+                            </p>
+                            <button
+                              onClick={() =>
+                                handleViewOrderDetail(order.idOrder || order.id)
+                              }
+                              style={{
+                                ...styles.buttonSecondary,
+                                padding: "0.5rem 1rem",
+                                fontSize: "0.875rem",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                              }}>
+                              <Eye size={16} /> Xem chi tiết
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Order Items Preview */}
+                        {order.orderDetails && order.orderDetails.length > 0 && (
+                          <div
+                            style={{
+                              marginTop: "1rem",
+                              paddingTop: "1rem",
+                              borderTop: "1px solid #E2E8F0",
+                            }}>
+                            <p
                               style={{
                                 fontSize: "0.875rem",
                                 color: "#6c757d",
+                                marginBottom: "0.5rem",
                               }}>
-                              +{order.orderDetails.length - 3} sản phẩm khác
-                            </span>
+                              Sản phẩm: {order.orderDetails.length} sản phẩm
+                            </p>
+                            <div
+                              style={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: "0.5rem",
+                              }}>
+                              {order.orderDetails
+                                .slice(0, 3)
+                                .map((detail, index) => (
+                                  <span
+                                    key={index}
+                                    style={{
+                                      padding: "0.25rem 0.5rem",
+                                      backgroundColor: "#F8FAFC",
+                                      borderRadius: "0.25rem",
+                                      fontSize: "0.875rem",
+                                      color: "#495057",
+                                    }}>
+                                    {detail.productName || detail.productName} ×{" "}
+                                    {detail.quantity || detail.qty || 0}
+                                  </span>
+                                ))}
+                              {order.orderDetails.length > 3 && (
+                                <span
+                                  style={{
+                                    fontSize: "0.875rem",
+                                    color: "#6c757d",
+                                  }}>
+                                  +{order.orderDetails.length - 3} sản phẩm khác
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "0.5rem",
+                            marginTop: "1rem",
+                            paddingTop: "1rem",
+                            borderTop: "1px solid #E2E8F0",
+                          }}>
+                          {status === ORDER_STATUS.PENDING && (
+                            <button
+                              onClick={() =>
+                                handleCancelOrder(order.idOrder || order.id)
+                              }
+                              style={{
+                                padding: "0.5rem 1rem",
+                                backgroundColor: "#fdecec",
+                                color: "#dc3545",
+                                border: "none",
+                                borderRadius: "0.25rem",
+                                cursor: "pointer",
+                                fontSize: "0.875rem",
+                                fontWeight: "600",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                              }}>
+                              <XCircle size={16} /> Hủy đơn hàng
+                            </button>
+                          )}
+                          {status === ORDER_STATUS.CONFIRMED && (
+                            <button
+                              onClick={() =>
+                                handleConfirmDelivery(order.idOrder || order.id)
+                              }
+                              style={{
+                                padding: "0.5rem 1rem",
+                                backgroundColor: "#d4edda",
+                                color: "#155724",
+                                border: "none",
+                                borderRadius: "0.25rem",
+                                cursor: "pointer",
+                                fontSize: "0.875rem",
+                                fontWeight: "600",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                              }}>
+                              <CheckCircle size={16} /> Xác nhận đã nhận hàng
+                            </button>
                           )}
                         </div>
                       </div>
-                    )}
+                    );
+                  })}
+                </div>
 
-                    {/* Actions */}
-                    <div
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      gap: "0.5rem",
+                    }}>
+                    <button
+                      onClick={() => setPageNo(pageNo - 1)}
+                      disabled={pageNo === 1}
                       style={{
-                        display: "flex",
-                        gap: "0.5rem",
-                        marginTop: "1rem",
-                        paddingTop: "1rem",
-                        borderTop: "1px solid #E2E8F0",
+                        padding: "0.5rem 1rem",
+                        border: "1px solid #E2E8F0",
+                        borderRadius: "0.25rem",
+                        backgroundColor: pageNo === 1 ? "#E2E8F0" : "#fff",
+                        cursor: pageNo === 1 ? "not-allowed" : "pointer",
+                        opacity: pageNo === 1 ? 0.5 : 1,
                       }}>
-                      {status === ORDER_STATUS.PENDING && (
-                        <button
-                          onClick={() =>
-                            handleCancelOrder(order.idOrder || order.id)
-                          }
-                          style={{
-                            padding: "0.5rem 1rem",
-                            backgroundColor: "#fdecec",
-                            color: "#dc3545",
-                            border: "none",
-                            borderRadius: "0.25rem",
-                            cursor: "pointer",
-                            fontSize: "0.875rem",
-                            fontWeight: "600",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                          }}>
-                          <XCircle size={16} /> Hủy đơn hàng
-                        </button>
-                      )}
-                      {status === ORDER_STATUS.CONFIRMED && (
-                        <button
-                          onClick={() =>
-                            handleConfirmDelivery(order.idOrder || order.id)
-                          }
-                          style={{
-                            padding: "0.5rem 1rem",
-                            backgroundColor: "#d4edda",
-                            color: "#155724",
-                            border: "none",
-                            borderRadius: "0.25rem",
-                            cursor: "pointer",
-                            fontSize: "0.875rem",
-                            fontWeight: "600",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                          }}>
-                          <CheckCircle size={16} /> Xác nhận đã nhận hàng
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                      Previous
+                    </button>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNumber;
+                      if (totalPages <= 5) {
+                        pageNumber = i + 1;
+                      } else if (pageNo <= 3) {
+                        pageNumber = i + 1;
+                      } else if (pageNo >= totalPages - 2) {
+                        pageNumber = totalPages - 4 + i;
+                      } else {
+                        pageNumber = pageNo - 2 + i;
+                      }
 
-            {/* Pagination */}
-            {totalPages > 1 && (
+                      return (
+                        <button
+                          key={pageNumber}
+                          onClick={() => setPageNo(pageNumber)}
+                          style={{
+                            padding: "0.5rem 1rem",
+                            border:
+                              pageNo === pageNumber
+                                ? "1px solid #2563EB"
+                                : "1px solid #E2E8F0",
+                            borderRadius: "0.25rem",
+                            backgroundColor:
+                              pageNo === pageNumber ? "#2563EB" : "#fff",
+                            color: pageNo === pageNumber ? "white" : "#495057",
+                            cursor: "pointer",
+                          }}>
+                          {pageNumber}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setPageNo(pageNo + 1)}
+                      disabled={pageNo === totalPages}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        border: "1px solid #E2E8F0",
+                        borderRadius: "0.25rem",
+                        backgroundColor: pageNo === totalPages ? "#E2E8F0" : "#fff",
+                        cursor: pageNo === totalPages ? "not-allowed" : "pointer",
+                        opacity: pageNo === totalPages ? 0.5 : 1,
+                      }}>
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {/* Returns Tab Content (Đổi/Trả) */}
+        {activeTab === "returns" && (
+          <>
+            {returnsLoading ? (
               <div
                 style={{
                   display: "flex",
                   justifyContent: "center",
-                  gap: "0.5rem",
+                  alignItems: "center",
+                  minHeight: "30vh",
                 }}>
-                <button
-                  onClick={() => setPageNo(pageNo - 1)}
-                  disabled={pageNo === 1}
+                <LoadingSpinner />
+              </div>
+            ) : returnsError ? (
+              <div
+                style={{
+                  padding: "1rem",
+                  marginBottom: "1.5rem",
+                  backgroundColor: "#f8d7da",
+                  color: "#721c24",
+                  borderRadius: "0.5rem",
+                }}>
+                {returnsError}
+              </div>
+            ) : returns.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "3rem",
+                  backgroundColor: "white",
+                  borderRadius: "0.5rem",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                }}>
+                <ArrowLeftRight
+                  size={64}
+                  style={{ color: "#6c757d", margin: "0 auto 1rem" }}
+                />
+                <p
                   style={{
-                    padding: "0.5rem 1rem",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: "0.25rem",
-                    backgroundColor: pageNo === 1 ? "#E2E8F0" : "#fff",
-                    cursor: pageNo === 1 ? "not-allowed" : "pointer",
-                    opacity: pageNo === 1 ? 0.5 : 1,
+                    color: "#6c757d",
+                    fontSize: "1.125rem",
+                    marginBottom: "1.5rem",
                   }}>
-                  Previous
-                </button>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNumber;
-                  if (totalPages <= 5) {
-                    pageNumber = i + 1;
-                  } else if (pageNo <= 3) {
-                    pageNumber = i + 1;
-                  } else if (pageNo >= totalPages - 2) {
-                    pageNumber = totalPages - 4 + i;
-                  } else {
-                    pageNumber = pageNo - 2 + i;
-                  }
+                  Bạn chưa có yêu cầu đổi/trả nào
+                </p>
+                <p style={{ color: "#9CA3AF", fontSize: "0.875rem" }}>
+                  Nếu có vấn đề với đơn hàng đã nhận, bạn có thể yêu cầu đổi/trả từ chi tiết đơn hàng.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Returns List */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "1rem",
+                    marginBottom: "2rem",
+                  }}>
+                  {returns.map((returnItem) => {
+                    const returnStatus = returnItem.status;
+                    const returnType = returnItem.returnType;
 
-                  return (
+                    // Status colors
+                    const statusColors = {
+                      REQUESTED: { bg: "#FEF3C7", text: "#92400E" },
+                      APPROVED: { bg: "#DBEAFE", text: "#1E40AF" },
+                      REJECTED: { bg: "#FEE2E2", text: "#DC2626" },
+                      COMPLETED: { bg: "#D1FAE5", text: "#065F46" },
+                      CANCELED: { bg: "#F3F4F6", text: "#6B7280" },
+                    };
+                    const colors = statusColors[returnStatus] || statusColors.CANCELED;
+
+                    // Status labels
+                    const statusLabels = {
+                      REQUESTED: "Đang chờ xử lý",
+                      APPROVED: "Đã được duyệt",
+                      REJECTED: "Đã bị từ chối",
+                      COMPLETED: "Đã hoàn thành",
+                      CANCELED: "Đã hủy",
+                    };
+
+                    // Return type labels
+                    const typeLabels = {
+                      RETURN: "Hoàn trả",
+                      EXCHANGE: "Đổi hàng",
+                    };
+
+                    return (
+                      <div
+                        key={returnItem.idReturn}
+                        style={{
+                          backgroundColor: "white",
+                          padding: "1.5rem",
+                          borderRadius: "0.5rem",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                          border: "1px solid #E2E8F0",
+                        }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                            marginBottom: "1rem",
+                          }}>
+                          <div>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.75rem",
+                                marginBottom: "0.5rem",
+                                flexWrap: "wrap",
+                              }}>
+                              <h3
+                                style={{
+                                  fontSize: "1.125rem",
+                                  fontWeight: "bold",
+                                  color: "#212529",
+                                }}>
+                                Yêu cầu #{returnItem.idReturn}
+                              </h3>
+                              <span
+                                style={{
+                                  padding: "0.25rem 0.5rem",
+                                  backgroundColor: returnType === "RETURN" ? "#f0f9ff" : "#fdf4ff",
+                                  color: returnType === "RETURN" ? "#0369a1" : "#a21caf",
+                                  borderRadius: "0.25rem",
+                                  fontSize: "0.75rem",
+                                  fontWeight: "600",
+                                }}>
+                                {typeLabels[returnType] || returnType}
+                              </span>
+                              <span
+                                style={{
+                                  padding: "0.25rem 0.5rem",
+                                  backgroundColor: colors.bg,
+                                  color: colors.text,
+                                  borderRadius: "0.25rem",
+                                  fontSize: "0.75rem",
+                                  fontWeight: "600",
+                                }}>
+                                {statusLabels[returnStatus] || returnStatus}
+                              </span>
+                            </div>
+                            <p
+                              style={{
+                                color: "#6c757d",
+                                fontSize: "0.875rem",
+                                marginBottom: "0.25rem",
+                              }}>
+                              Đơn hàng #{returnItem.orderId}
+                            </p>
+                            <p
+                              style={{
+                                color: "#6c757d",
+                                fontSize: "0.875rem",
+                              }}>
+                              Ngày tạo: {formatDate(returnItem.createdAt, "dd/MM/yyyy HH:mm")}
+                            </p>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            {returnItem.refundAmount && (
+                              <p
+                                style={{
+                                  fontSize: "1.125rem",
+                                  fontWeight: "bold",
+                                  color: "#059669",
+                                  marginBottom: "0.5rem",
+                                }}>
+                                Hoàn: {formatPrice(returnItem.refundAmount)}
+                              </p>
+                            )}
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const detail = await getReturnDetail(returnItem.idReturn);
+                                  setSelectedReturnDetail(detail);
+                                } catch (err) {
+                                  toast.error("Không thể tải chi tiết yêu cầu đổi/trả");
+                                }
+                              }}
+                              style={{
+                                ...styles.buttonSecondary,
+                                padding: "0.5rem 1rem",
+                                fontSize: "0.875rem",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                              }}>
+                              <Eye size={16} /> Xem chi tiết
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Reason */}
+                        {returnItem.reason && (
+                          <div
+                            style={{
+                              marginTop: "0.75rem",
+                              padding: "0.75rem",
+                              backgroundColor: "#F9FAFB",
+                              borderRadius: "0.375rem",
+                              border: "1px solid #E5E7EB",
+                            }}>
+                            <p style={{ fontSize: "0.75rem", color: "#6B7280", marginBottom: "0.25rem" }}>
+                              Lý do:
+                            </p>
+                            <p style={{ fontSize: "0.875rem", color: "#374151" }}>
+                              {returnItem.reason}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Admin Note */}
+                        {returnItem.noteAdmin && (
+                          <div
+                            style={{
+                              marginTop: "0.5rem",
+                              padding: "0.75rem",
+                              backgroundColor: returnStatus === "REJECTED" ? "#FEF2F2" : "#F0FDF4",
+                              borderRadius: "0.375rem",
+                              border: `1px solid ${returnStatus === "REJECTED" ? "#FEE2E2" : "#DCFCE7"}`,
+                            }}>
+                            <p style={{ fontSize: "0.75rem", color: "#6B7280", marginBottom: "0.25rem" }}>
+                              Phản hồi từ cửa hàng:
+                            </p>
+                            <p style={{ fontSize: "0.875rem", color: "#374151" }}>
+                              {returnItem.noteAdmin}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Returns Pagination */}
+                {returnsTotalPages > 1 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      gap: "0.5rem",
+                    }}>
                     <button
-                      key={pageNumber}
-                      onClick={() => setPageNo(pageNumber)}
+                      onClick={() => setReturnsPageNo(returnsPageNo - 1)}
+                      disabled={returnsPageNo === 1}
                       style={{
                         padding: "0.5rem 1rem",
-                        border:
-                          pageNo === pageNumber
-                            ? "1px solid #2563EB"
-                            : "1px solid #E2E8F0",
+                        border: "1px solid #E2E8F0",
                         borderRadius: "0.25rem",
-                        backgroundColor:
-                          pageNo === pageNumber ? "#2563EB" : "#fff",
-                        color: pageNo === pageNumber ? "white" : "#495057",
-                        cursor: "pointer",
+                        backgroundColor: returnsPageNo === 1 ? "#E2E8F0" : "#fff",
+                        cursor: returnsPageNo === 1 ? "not-allowed" : "pointer",
+                        opacity: returnsPageNo === 1 ? 0.5 : 1,
                       }}>
-                      {pageNumber}
+                      Trước
                     </button>
-                  );
-                })}
-                <button
-                  onClick={() => setPageNo(pageNo + 1)}
-                  disabled={pageNo === totalPages}
+                    <span
+                      style={{
+                        padding: "0.5rem 1rem",
+                        display: "flex",
+                        alignItems: "center",
+                      }}>
+                      Trang {returnsPageNo} / {returnsTotalPages}
+                    </span>
+                    <button
+                      onClick={() => setReturnsPageNo(returnsPageNo + 1)}
+                      disabled={returnsPageNo === returnsTotalPages}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        border: "1px solid #E2E8F0",
+                        borderRadius: "0.25rem",
+                        backgroundColor: returnsPageNo === returnsTotalPages ? "#E2E8F0" : "#fff",
+                        cursor: returnsPageNo === returnsTotalPages ? "not-allowed" : "pointer",
+                        opacity: returnsPageNo === returnsTotalPages ? 0.5 : 1,
+                      }}>
+                      Sau
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Return Detail Modal */}
+            {selectedReturnDetail && (
+              <div
+                style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: "rgba(0, 0, 0, 0.5)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 1000,
+                  padding: "2rem",
+                }}
+                onClick={() => setSelectedReturnDetail(null)}>
+                <div
                   style={{
-                    padding: "0.5rem 1rem",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: "0.25rem",
-                    backgroundColor: pageNo === totalPages ? "#E2E8F0" : "#fff",
-                    cursor: pageNo === totalPages ? "not-allowed" : "pointer",
-                    opacity: pageNo === totalPages ? 0.5 : 1,
-                  }}>
-                  Next
-                </button>
+                    backgroundColor: "white",
+                    borderRadius: "0.75rem",
+                    width: "100%",
+                    maxWidth: "600px",
+                    maxHeight: "80vh",
+                    overflow: "auto",
+                    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+                  }}
+                  onClick={(e) => e.stopPropagation()}>
+                  {/* Modal Header */}
+                  <div
+                    style={{
+                      padding: "1.5rem",
+                      borderBottom: "1px solid #E2E8F0",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}>
+                    <h3 style={{ fontSize: "1.25rem", fontWeight: "bold" }}>
+                      Chi tiết yêu cầu #{selectedReturnDetail.idReturn}
+                    </h3>
+                    <button
+                      onClick={() => setSelectedReturnDetail(null)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "0.5rem",
+                      }}>
+                      <X size={24} color="#6c757d" />
+                    </button>
+                  </div>
+
+                  {/* Modal Content */}
+                  <div style={{ padding: "1.5rem" }}>
+                    {/* Type & Status */}
+                    <div style={{ marginBottom: "1rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                      <span
+                        style={{
+                          padding: "0.25rem 0.75rem",
+                          backgroundColor: selectedReturnDetail.returnType === "RETURN" ? "#f0f9ff" : "#fdf4ff",
+                          color: selectedReturnDetail.returnType === "RETURN" ? "#0369a1" : "#a21caf",
+                          borderRadius: "0.25rem",
+                          fontSize: "0.875rem",
+                          fontWeight: "600",
+                        }}>
+                        {selectedReturnDetail.returnType === "RETURN" ? "Hoàn trả" : "Đổi hàng"}
+                      </span>
+                      <span
+                        style={{
+                          padding: "0.25rem 0.75rem",
+                          backgroundColor: getReturnStatusColor(selectedReturnDetail.status).bg,
+                          color: getReturnStatusColor(selectedReturnDetail.status).text,
+                          borderRadius: "0.25rem",
+                          fontSize: "0.875rem",
+                          fontWeight: "600",
+                        }}>
+                        {getReturnStatusLabel(selectedReturnDetail.status)}
+                      </span>
+                    </div>
+
+                    {/* Order Info */}
+                    <div style={{ marginBottom: "1rem", padding: "1rem", backgroundColor: "#F9FAFB", borderRadius: "0.5rem" }}>
+                      <p style={{ fontSize: "0.875rem", color: "#6B7280" }}>
+                        Đơn hàng: #{selectedReturnDetail.orderId}
+                      </p>
+                      <p style={{ fontSize: "0.875rem", color: "#6B7280" }}>
+                        Ngày tạo: {formatDate(selectedReturnDetail.createdAt, "dd/MM/yyyy HH:mm")}
+                      </p>
+                      {selectedReturnDetail.refundAmount && (
+                        <p style={{ fontSize: "1rem", fontWeight: "bold", color: "#059669", marginTop: "0.5rem" }}>
+                          Số tiền hoàn: {formatPrice(selectedReturnDetail.refundAmount)}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Reason */}
+                    {selectedReturnDetail.reason && (
+                      <div style={{ marginBottom: "1rem" }}>
+                        <p style={{ fontSize: "0.875rem", fontWeight: "600", color: "#374151", marginBottom: "0.25rem" }}>
+                          Lý do yêu cầu:
+                        </p>
+                        <p style={{ fontSize: "0.875rem", color: "#6B7280" }}>
+                          {selectedReturnDetail.reason}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Admin Note */}
+                    {selectedReturnDetail.noteAdmin && (
+                      <div style={{ marginBottom: "1rem", padding: "1rem", backgroundColor: "#F0FDF4", borderRadius: "0.5rem", border: "1px solid #DCFCE7" }}>
+                        <p style={{ fontSize: "0.875rem", fontWeight: "600", color: "#374151", marginBottom: "0.25rem" }}>
+                          Phản hồi từ cửa hàng:
+                        </p>
+                        <p style={{ fontSize: "0.875rem", color: "#6B7280" }}>
+                          {selectedReturnDetail.noteAdmin}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Return Items */}
+                    {selectedReturnDetail.items && selectedReturnDetail.items.length > 0 && (
+                      <div>
+                        <p style={{ fontSize: "0.875rem", fontWeight: "600", color: "#374151", marginBottom: "0.5rem" }}>
+                          Sản phẩm đổi/trả ({selectedReturnDetail.items.length}):
+                        </p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                          {selectedReturnDetail.items.map((item, index) => (
+                            <div
+                              key={index}
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                padding: "0.75rem",
+                                backgroundColor: "#F9FAFB",
+                                borderRadius: "0.375rem",
+                                fontSize: "0.875rem",
+                              }}>
+                              <span style={{ color: "#374151" }}>
+                                {item.productName || item.productNameSnapshot || `Sản phẩm #${item.productId}`}
+                              </span>
+                              <span style={{ color: "#6B7280" }}>
+                                x{item.quantity}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div
+                    style={{
+                      padding: "1rem 1.5rem",
+                      borderTop: "1px solid #E2E8F0",
+                      display: "flex",
+                      justifyContent: "flex-end",
+                    }}>
+                    <button
+                      onClick={() => setSelectedReturnDetail(null)}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        backgroundColor: "#E5E7EB",
+                        color: "#374151",
+                        border: "none",
+                        borderRadius: "0.375rem",
+                        cursor: "pointer",
+                        fontWeight: "500",
+                      }}>
+                      Đóng
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </>
@@ -1112,21 +1672,18 @@ const OrdersPage = ({
                       <strong>
                         Giảm giá
                         {selectedOrder.promotionCode ||
-                        selectedOrder.promotionName
-                          ? ` (${
-                              selectedOrder.promotionCode ||
-                              selectedOrder.promotionName
-                            }${
-                              selectedOrder.promotionScope === "SHIPPING"
-                                ? " - Phí ship"
-                                : ""
-                            }${
-                              selectedOrder.promotionDiscountType ===
-                                "PERCENTAGE" &&
-                              selectedOrder.promotionDiscountValue
-                                ? ` -${selectedOrder.promotionDiscountValue}%`
-                                : ""
-                            })`
+                          selectedOrder.promotionName
+                          ? ` (${selectedOrder.promotionCode ||
+                          selectedOrder.promotionName
+                          }${selectedOrder.promotionScope === "SHIPPING"
+                            ? " - Phí ship"
+                            : ""
+                          }${selectedOrder.promotionDiscountType ===
+                            "PERCENTAGE" &&
+                            selectedOrder.promotionDiscountValue
+                            ? ` -${selectedOrder.promotionDiscountValue}%`
+                            : ""
+                          })`
                           : ""}
                         :
                       </strong>{" "}
@@ -1138,7 +1695,7 @@ const OrdersPage = ({
                 <p style={{ marginBottom: "0.25rem" }}>
                   <strong>Phí giao hàng:</strong>{" "}
                   {selectedOrder.shippingFee != null &&
-                  Number(selectedOrder.shippingFee) > 0 ? (
+                    Number(selectedOrder.shippingFee) > 0 ? (
                     <>
                       {formatPrice(selectedOrder.shippingFee)}
                       {selectedOrder.paymentMethod === "CASH" && (
@@ -1165,39 +1722,17 @@ const OrdersPage = ({
                   )}
                 </p>
 
-                {/* Thành tiền (không bao gồm phí ship) */}
+                {/* Tổng thanh toán (finalAmount đã bao gồm: totalAmount + shippingFee - discount) */}
                 <p
                   style={{
                     marginTop: "0.5rem",
-                    marginBottom: "0.25rem",
-                  }}>
-                  <strong>Thành tiền sản phẩm:</strong>{" "}
-                  {formatPrice(
-                    selectedOrder.finalAmount ||
-                      (selectedOrder.totalAmount != null
-                        ? (selectedOrder.totalAmount || 0) -
-                          (selectedOrder.discount || 0)
-                        : 0)
-                  )}
-                </p>
-
-                {/* Tổng thanh toán (bao gồm phí ship) */}
-                <p
-                  style={{
-                    marginTop: "0.25rem",
                     marginBottom: "0.5rem",
                     fontWeight: "600",
                     fontSize: "1.1rem",
                     color: "#DC2626",
                   }}>
                   <strong>Tổng thanh toán:</strong>{" "}
-                  {formatPrice(
-                    (selectedOrder.finalAmount ||
-                      (selectedOrder.totalAmount != null
-                        ? (selectedOrder.totalAmount || 0) -
-                          (selectedOrder.discount || 0)
-                        : 0)) + (Number(selectedOrder.shippingFee) || 0)
-                  )}
+                  {formatPrice(selectedOrder.finalAmount || 0)}
                   {selectedOrder.paymentMethod === "CASH" && (
                     <span
                       style={{
@@ -1479,12 +2014,12 @@ const OrdersPage = ({
                                           cursor: "pointer",
                                         }}
                                         onMouseOver={(e) =>
-                                          (e.currentTarget.style.backgroundColor =
-                                            "#D97706")
+                                        (e.currentTarget.style.backgroundColor =
+                                          "#D97706")
                                         }
                                         onMouseOut={(e) =>
-                                          (e.currentTarget.style.backgroundColor =
-                                            "#F59E0B")
+                                        (e.currentTarget.style.backgroundColor =
+                                          "#F59E0B")
                                         }>
                                         <Star size={14} />
                                         Đánh giá
@@ -1549,7 +2084,7 @@ const OrdersPage = ({
                                 Tổng:{" "}
                                 {formatPrice(
                                   (detail.price || detail.productPrice || 0) *
-                                    (detail.quantity || detail.qty || 0)
+                                  (detail.quantity || detail.qty || 0)
                                 )}
                               </p>
                             </div>
@@ -1563,257 +2098,119 @@ const OrdersPage = ({
               {/* Return/Exchange Button and Buy Again Button */}
               {(selectedOrder.status === "COMPLETED" ||
                 selectedOrder.status === "CANCELED") && (
-                <div
-                  style={{
-                    marginTop: "2rem",
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: "1rem",
-                    flexWrap: "wrap",
-                  }}>
-                  {/* Buy Again Button - for COMPLETED and CANCELED orders */}
-                  <button
-                    onClick={() => handleBuyAgain(selectedOrder)}
-                    disabled={isAddingToCart}
+                  <div
                     style={{
+                      marginTop: "2rem",
                       display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      padding: "0.75rem 1.5rem",
-                      backgroundColor: isAddingToCart ? "#93C5FD" : "#2563EB",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "0.25rem",
-                      fontWeight: "600",
-                      cursor: isAddingToCart ? "not-allowed" : "pointer",
-                      transition: "background-color 0.2s",
-                    }}
-                    onMouseOver={(e) =>
-                      !isAddingToCart &&
-                      (e.currentTarget.style.backgroundColor = "#1D4ED8")
-                    }
-                    onMouseOut={(e) =>
-                      !isAddingToCart &&
-                      (e.currentTarget.style.backgroundColor = "#2563EB")
-                    }>
-                    <ShoppingCart size={18} />
-                    {isAddingToCart ? "Đang thêm..." : "Mua lại"}
-                  </button>
+                      justifyContent: "flex-end",
+                      gap: "1rem",
+                      flexWrap: "wrap",
+                    }}>
+                    {/* Buy Again Button - for COMPLETED and CANCELED orders */}
+                    <button
+                      onClick={() => handleBuyAgain(selectedOrder)}
+                      disabled={isAddingToCart}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        padding: "0.75rem 1.5rem",
+                        backgroundColor: isAddingToCart ? "#93C5FD" : "#2563EB",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "0.25rem",
+                        fontWeight: "600",
+                        cursor: isAddingToCart ? "not-allowed" : "pointer",
+                        transition: "background-color 0.2s",
+                      }}
+                      onMouseOver={(e) =>
+                        !isAddingToCart &&
+                        (e.currentTarget.style.backgroundColor = "#1D4ED8")
+                      }
+                      onMouseOut={(e) =>
+                        !isAddingToCart &&
+                        (e.currentTarget.style.backgroundColor = "#2563EB")
+                      }>
+                      <ShoppingCart size={18} />
+                      {isAddingToCart ? "Đang thêm..." : "Mua lại"}
+                    </button>
 
-                  {/* Review Button - only for COMPLETED orders and when there are unreviewed products
+                    {/* Review Button - only for COMPLETED orders and when there are unreviewed products
                       Ẩn nút này vì đã có bảng đánh giá từng sản phẩm trong danh sách sản phẩm */}
-                  {/* Đã chuyển sang đánh giá từng sản phẩm trong bảng, không cần nút này nữa */}
+                    {/* Đã chuyển sang đánh giá từng sản phẩm trong bảng, không cần nút này nữa */}
 
-                  {/* Return/Exchange Button - only for COMPLETED orders */}
-                  {selectedOrder.status === "COMPLETED" && (
-                    <>
-                      {checkingReturn ? (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            color: "#6c757d",
-                          }}>
-                          <LoadingSpinner size="small" /> Đang kiểm tra...
-                        </div>
-                      ) : returnRequestInfo?.hasReturn ? (
-                        // Show return request status based on its state
-                        (() => {
-                          const status =
-                            returnRequestInfo.returnRequest?.status;
-                          const statusColors = getReturnStatusColor(status);
-                          const returnType =
-                            returnRequestInfo.returnRequest?.returnType ===
-                            "EXCHANGE"
-                              ? "đổi"
-                              : "trả";
+                    {/* Return/Exchange Button - only for COMPLETED orders */}
+                    {selectedOrder.status === "COMPLETED" && (
+                      <>
+                        {checkingReturn ? (
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              color: "#6c757d",
+                            }}>
+                            <LoadingSpinner size="small" /> Đang kiểm tra...
+                          </div>
+                        ) : returnRequestInfo?.hasReturn ? (
+                          // Show return request status based on its state
+                          (() => {
+                            const status =
+                              returnRequestInfo.returnRequest?.status;
+                            const statusColors = getReturnStatusColor(status);
+                            const returnType =
+                              returnRequestInfo.returnRequest?.returnType ===
+                                "EXCHANGE"
+                                ? "đổi"
+                                : "trả";
 
-                          // Helper function to navigate to return detail
-                          const handleViewReturnDetail = () => {
-                            const returnId =
-                              returnRequestInfo.returnRequest?.idReturn;
-                            if (returnId && setSelectedReturnId) {
-                              setSelectedReturnId(returnId);
-                              setCurrentPage("return-detail");
-                              setSelectedOrder(null);
-                            }
-                          };
+                            // Helper function to navigate to return detail
+                            const handleViewReturnDetail = () => {
+                              const returnId =
+                                returnRequestInfo.returnRequest?.idReturn;
+                              if (returnId && setSelectedReturnId) {
+                                setSelectedReturnId(returnId);
+                                setCurrentPage("return-detail");
+                                setSelectedOrder(null);
+                              }
+                            };
 
-                          // Different UI for different statuses
-                          if (
-                            status === "REQUESTED" ||
-                            status === "PENDING" ||
-                            status === "PROCESSING"
-                          ) {
-                            return (
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  alignItems: "flex-end",
-                                  gap: "0.5rem",
-                                }}>
+                            // Different UI for different statuses
+                            if (
+                              status === "REQUESTED" ||
+                              status === "PENDING" ||
+                              status === "PROCESSING"
+                            ) {
+                              return (
                                 <div
                                   style={{
                                     display: "flex",
-                                    alignItems: "center",
+                                    flexDirection: "column",
+                                    alignItems: "flex-end",
                                     gap: "0.5rem",
-                                    padding: "0.75rem 1.5rem",
-                                    backgroundColor: statusColors.bg,
-                                    color: statusColors.text,
-                                    borderRadius: "0.25rem",
-                                    fontWeight: "600",
                                   }}>
-                                  <Clock size={18} />
-                                  Đơn đang xử lý {returnType} hàng
-                                </div>
-                                <button
-                                  onClick={handleViewReturnDetail}
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "0.5rem",
-                                    padding: "0.5rem 1rem",
-                                    backgroundColor: "#2563EB",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "0.25rem",
-                                    fontWeight: "600",
-                                    cursor: "pointer",
-                                    fontSize: "0.875rem",
-                                  }}>
-                                  <Eye size={16} />
-                                  Xem quá trình đổi/trả
-                                </button>
-                              </div>
-                            );
-                          } else if (status === "APPROVED") {
-                            return (
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  alignItems: "flex-end",
-                                  gap: "0.5rem",
-                                }}>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "0.5rem",
-                                    padding: "0.75rem 1.5rem",
-                                    backgroundColor: statusColors.bg,
-                                    color: statusColors.text,
-                                    borderRadius: "0.25rem",
-                                    fontWeight: "600",
-                                  }}>
-                                  <CheckCircle size={18} />
-                                  Yêu cầu {returnType} hàng đã được duyệt
-                                </div>
-                                <button
-                                  onClick={handleViewReturnDetail}
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "0.5rem",
-                                    padding: "0.5rem 1rem",
-                                    backgroundColor: "#2563EB",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "0.25rem",
-                                    fontWeight: "600",
-                                    cursor: "pointer",
-                                    fontSize: "0.875rem",
-                                  }}>
-                                  <Eye size={16} />
-                                  Xem quá trình đổi/trả
-                                </button>
-                              </div>
-                            );
-                          } else if (status === "COMPLETED") {
-                            return (
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  alignItems: "flex-end",
-                                  gap: "0.5rem",
-                                }}>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "0.5rem",
-                                    padding: "0.75rem 1.5rem",
-                                    backgroundColor: statusColors.bg,
-                                    color: statusColors.text,
-                                    borderRadius: "0.25rem",
-                                    fontWeight: "600",
-                                  }}>
-                                  <CheckCircle2 size={18} />
-                                  Đơn đã {returnType} hàng thành công
-                                </div>
-                                <button
-                                  onClick={handleViewReturnDetail}
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "0.5rem",
-                                    padding: "0.5rem 1rem",
-                                    backgroundColor: "#6B7280",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "0.25rem",
-                                    fontWeight: "600",
-                                    cursor: "pointer",
-                                    fontSize: "0.875rem",
-                                  }}>
-                                  <Eye size={16} />
-                                  Xem chi tiết đổi/trả
-                                </button>
-                              </div>
-                            );
-                          } else if (status === "REJECTED") {
-                            return (
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  alignItems: "flex-end",
-                                  gap: "0.5rem",
-                                }}>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "0.5rem",
-                                    padding: "0.75rem 1.5rem",
-                                    backgroundColor: statusColors.bg,
-                                    color: statusColors.text,
-                                    borderRadius: "0.25rem",
-                                    fontWeight: "600",
-                                  }}>
-                                  <XCircle size={18} />
-                                  Yêu cầu {returnType} hàng bị từ chối
-                                </div>
-                                {/* Allow new request if previous was rejected and still within period */}
-                                {isWithinReturnPeriod(selectedOrder) && (
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "0.5rem",
+                                      padding: "0.75rem 1.5rem",
+                                      backgroundColor: statusColors.bg,
+                                      color: statusColors.text,
+                                      borderRadius: "0.25rem",
+                                      fontWeight: "600",
+                                    }}>
+                                    <Clock size={18} />
+                                    Đơn đang xử lý {returnType} hàng
+                                  </div>
                                   <button
-                                    onClick={() => {
-                                      setSelectedOrderId(
-                                        selectedOrder.idOrder ||
-                                          selectedOrder.id
-                                      );
-                                      setCurrentPage("return-request");
-                                      setSelectedOrder(null);
-                                    }}
+                                    onClick={handleViewReturnDetail}
                                     style={{
                                       display: "flex",
                                       alignItems: "center",
                                       gap: "0.5rem",
                                       padding: "0.5rem 1rem",
-                                      backgroundColor: "#F59E0B",
+                                      backgroundColor: "#2563EB",
                                       color: "white",
                                       border: "none",
                                       borderRadius: "0.25rem",
@@ -1821,103 +2218,241 @@ const OrdersPage = ({
                                       cursor: "pointer",
                                       fontSize: "0.875rem",
                                     }}>
-                                    <RotateCcw size={16} />
-                                    Tạo yêu cầu mới
+                                    <Eye size={16} />
+                                    Xem quá trình đổi/trả
                                   </button>
-                                )}
-                              </div>
-                            );
-                          } else {
-                            // Fallback for unknown status
-                            return (
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "0.5rem",
-                                  padding: "0.75rem 1.5rem",
-                                  backgroundColor: "#FEF3C7",
-                                  color: "#92400E",
-                                  borderRadius: "0.25rem",
-                                  fontWeight: "600",
-                                }}>
-                                <AlertCircle size={18} />
-                                Đơn đang có yêu cầu đổi/trả
-                              </div>
-                            );
-                          }
-                        })()
-                      ) : !isWithinReturnPeriod(selectedOrder) ? (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            padding: "0.75rem 1.5rem",
-                            backgroundColor: "#FEE2E2",
-                            color: "#DC2626",
-                            borderRadius: "0.25rem",
-                            fontWeight: "600",
-                          }}>
-                          <AlertCircle size={18} />
-                          Đã hết thời gian đổi/trả (
-                          {selectedOrder?.returnWindowDays ??
-                            returnPeriodDays}{" "}
-                          ngày)
-                        </div>
-                      ) : (
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "flex-end",
-                            gap: "0.5rem",
-                          }}>
-                          <button
-                            onClick={() => {
-                              setSelectedOrderId(
-                                selectedOrder.idOrder || selectedOrder.id
+                                </div>
                               );
-                              setCurrentPage("return-request");
-                              setSelectedOrder(null);
-                            }}
+                            } else if (status === "APPROVED") {
+                              return (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-end",
+                                    gap: "0.5rem",
+                                  }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "0.5rem",
+                                      padding: "0.75rem 1.5rem",
+                                      backgroundColor: statusColors.bg,
+                                      color: statusColors.text,
+                                      borderRadius: "0.25rem",
+                                      fontWeight: "600",
+                                    }}>
+                                    <CheckCircle size={18} />
+                                    Yêu cầu {returnType} hàng đã được duyệt
+                                  </div>
+                                  <button
+                                    onClick={handleViewReturnDetail}
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "0.5rem",
+                                      padding: "0.5rem 1rem",
+                                      backgroundColor: "#2563EB",
+                                      color: "white",
+                                      border: "none",
+                                      borderRadius: "0.25rem",
+                                      fontWeight: "600",
+                                      cursor: "pointer",
+                                      fontSize: "0.875rem",
+                                    }}>
+                                    <Eye size={16} />
+                                    Xem quá trình đổi/trả
+                                  </button>
+                                </div>
+                              );
+                            } else if (status === "COMPLETED") {
+                              return (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-end",
+                                    gap: "0.5rem",
+                                  }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "0.5rem",
+                                      padding: "0.75rem 1.5rem",
+                                      backgroundColor: statusColors.bg,
+                                      color: statusColors.text,
+                                      borderRadius: "0.25rem",
+                                      fontWeight: "600",
+                                    }}>
+                                    <CheckCircle2 size={18} />
+                                    Đơn đã {returnType} hàng thành công
+                                  </div>
+                                  <button
+                                    onClick={handleViewReturnDetail}
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "0.5rem",
+                                      padding: "0.5rem 1rem",
+                                      backgroundColor: "#6B7280",
+                                      color: "white",
+                                      border: "none",
+                                      borderRadius: "0.25rem",
+                                      fontWeight: "600",
+                                      cursor: "pointer",
+                                      fontSize: "0.875rem",
+                                    }}>
+                                    <Eye size={16} />
+                                    Xem chi tiết đổi/trả
+                                  </button>
+                                </div>
+                              );
+                            } else if (status === "REJECTED") {
+                              return (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-end",
+                                    gap: "0.5rem",
+                                  }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "0.5rem",
+                                      padding: "0.75rem 1.5rem",
+                                      backgroundColor: statusColors.bg,
+                                      color: statusColors.text,
+                                      borderRadius: "0.25rem",
+                                      fontWeight: "600",
+                                    }}>
+                                    <XCircle size={18} />
+                                    Yêu cầu {returnType} hàng bị từ chối
+                                  </div>
+                                  {/* Allow new request if previous was rejected and still within period */}
+                                  {isWithinReturnPeriod(selectedOrder) && (
+                                    <button
+                                      onClick={() => {
+                                        setSelectedOrderId(
+                                          selectedOrder.idOrder ||
+                                          selectedOrder.id
+                                        );
+                                        setCurrentPage("return-request");
+                                        setSelectedOrder(null);
+                                      }}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.5rem",
+                                        padding: "0.5rem 1rem",
+                                        backgroundColor: "#F59E0B",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "0.25rem",
+                                        fontWeight: "600",
+                                        cursor: "pointer",
+                                        fontSize: "0.875rem",
+                                      }}>
+                                      <RotateCcw size={16} />
+                                      Tạo yêu cầu mới
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            } else {
+                              // Fallback for unknown status
+                              return (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.5rem",
+                                    padding: "0.75rem 1.5rem",
+                                    backgroundColor: "#FEF3C7",
+                                    color: "#92400E",
+                                    borderRadius: "0.25rem",
+                                    fontWeight: "600",
+                                  }}>
+                                  <AlertCircle size={18} />
+                                  Đơn đang có yêu cầu đổi/trả
+                                </div>
+                              );
+                            }
+                          })()
+                        ) : !isWithinReturnPeriod(selectedOrder) ? (
+                          <div
                             style={{
                               display: "flex",
                               alignItems: "center",
                               gap: "0.5rem",
                               padding: "0.75rem 1.5rem",
-                              backgroundColor: "#F59E0B",
-                              color: "white",
-                              border: "none",
+                              backgroundColor: "#FEE2E2",
+                              color: "#DC2626",
                               borderRadius: "0.25rem",
                               fontWeight: "600",
-                              cursor: "pointer",
-                              transition: "background-color 0.2s",
-                            }}
-                            onMouseOver={(e) =>
+                            }}>
+                            <AlertCircle size={18} />
+                            Đã hết thời gian đổi/trả (
+                            {selectedOrder?.returnWindowDays ??
+                              returnPeriodDays}{" "}
+                            ngày)
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "flex-end",
+                              gap: "0.5rem",
+                            }}>
+                            <button
+                              onClick={() => {
+                                setSelectedOrderId(
+                                  selectedOrder.idOrder || selectedOrder.id
+                                );
+                                setCurrentPage("return-request");
+                                setSelectedOrder(null);
+                              }}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                                padding: "0.75rem 1.5rem",
+                                backgroundColor: "#F59E0B",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "0.25rem",
+                                fontWeight: "600",
+                                cursor: "pointer",
+                                transition: "background-color 0.2s",
+                              }}
+                              onMouseOver={(e) =>
                               (e.currentTarget.style.backgroundColor =
                                 "#D97706")
-                            }
-                            onMouseOut={(e) =>
+                              }
+                              onMouseOut={(e) =>
                               (e.currentTarget.style.backgroundColor =
                                 "#F59E0B")
-                            }>
-                            <RotateCcw size={18} />
-                            Yêu cầu Đổi/Trả
-                          </button>
-                          {getRemainingDays(selectedOrder) > 0 && (
-                            <span
-                              style={{ fontSize: "0.75rem", color: "#6c757d" }}>
-                              Còn {getRemainingDays(selectedOrder)} ngày để yêu
-                              cầu
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
+                              }>
+                              <RotateCcw size={18} />
+                              Yêu cầu Đổi/Trả
+                            </button>
+                            {getRemainingDays(selectedOrder) > 0 && (
+                              <span
+                                style={{ fontSize: "0.75rem", color: "#6c757d" }}>
+                                Còn {getRemainingDays(selectedOrder)} ngày để yêu
+                                cầu
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
             </div>
           </div>
         )}

@@ -566,11 +566,12 @@ const CheckoutPage = ({ setCurrentPage }) => {
       ? (buyNowProduct.price || 0) * buyNowItem.quantity
       : cart?.totalAmount || cart?.total || 0;
 
-  // Logic: Ưu tiên coupon code, nếu không có thì dùng automatic discount
-  const totalDiscount =
-    promotionValid && promotionDiscount > 0
-      ? promotionDiscount
-      : automaticDiscount;
+  // NEW LOGIC: Allow BOTH auto promotion and manual code simultaneously
+  // Both discounts are applied together for maximum customer benefit
+  const manualCodeDiscount =
+    promotionValid && promotionDiscount > 0 ? promotionDiscount : 0;
+  const autoPromoDiscount = automaticDiscount > 0 ? automaticDiscount : 0;
+  const totalDiscount = manualCodeDiscount + autoPromoDiscount;
   const finalTotal = Math.max(0, orderSubtotal + shippingFee - totalDiscount);
 
   return (
@@ -1097,26 +1098,33 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   Mã giảm giá
                 </h4>
 
-                {/* Show automatic discount info if available and no coupon applied */}
-                {automaticDiscount > 0 &&
-                  automaticDiscountInfo &&
-                  !promotionValid && (
-                    <div
-                      style={{
-                        backgroundColor: "#d1ecf1",
-                        border: "1px solid #bee5eb",
-                        borderRadius: "0.25rem",
-                        padding: "0.75rem",
-                        marginBottom: "1rem",
-                        fontSize: "0.875rem",
-                        color: "#0c5460",
-                      }}>
-                      <strong>Giảm giá tự động:</strong>{" "}
-                      {automaticDiscountInfo.ruleName ||
-                        "Đang áp dụng giảm giá tự động"}{" "}
-                      - Giảm {formatPrice(automaticDiscount)}
-                    </div>
-                  )}
+                {/* Show automatic discount info - now shows even if coupon applied */}
+                {automaticDiscount > 0 && automaticDiscountInfo && (
+                  <div
+                    style={{
+                      backgroundColor: "#d4edda",
+                      border: "1px solid #c3e6cb",
+                      borderRadius: "0.25rem",
+                      padding: "0.75rem",
+                      marginBottom: "1rem",
+                      fontSize: "0.875rem",
+                      color: "#155724",
+                    }}>
+                    <strong>🎁 Giảm giá tự động đang áp dụng:</strong>{" "}
+                    {automaticDiscountInfo.ruleName || "Khuyến mãi tự động"} -
+                    Giảm {formatPrice(automaticDiscount)}
+                    {!promotionValid && (
+                      <div
+                        style={{
+                          marginTop: "0.5rem",
+                          fontSize: "0.8rem",
+                          color: "#6c757d",
+                        }}>
+                        💡 Bạn có thể nhập thêm mã giảm giá để được giảm thêm!
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div
                   style={{
@@ -1331,19 +1339,9 @@ const CheckoutPage = ({ setCurrentPage }) => {
                     {shippingFeeError}
                   </div>
                 )}
-                {/* Display active discount: prioritize coupon code over automatic discount */}
-                {promotionDiscount > 0 && promotionValid ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginBottom: "0.5rem",
-                      color: "#28a745",
-                    }}>
-                    <span>Mã giảm giá ({promotionCode})</span>
-                    <span>-{formatPrice(promotionDiscount)}</span>
-                  </div>
-                ) : automaticDiscount > 0 && automaticDiscountInfo ? (
+
+                {/* Display BOTH discounts - auto promotion AND manual code can stack */}
+                {autoPromoDiscount > 0 && automaticDiscountInfo && (
                   <div
                     style={{
                       display: "flex",
@@ -1352,29 +1350,46 @@ const CheckoutPage = ({ setCurrentPage }) => {
                       color: "#28a745",
                     }}>
                     <span>
-                      Giảm giá tự động{" "}
+                      🎁 Giảm giá tự động{" "}
                       {automaticDiscountInfo.ruleName
                         ? `(${automaticDiscountInfo.ruleName})`
                         : ""}
                     </span>
-                    <span>-{formatPrice(automaticDiscount)}</span>
+                    <span>-{formatPrice(autoPromoDiscount)}</span>
                   </div>
-                ) : null}
-                {totalDiscount > 0 && (
+                )}
+
+                {manualCodeDiscount > 0 && promotionValid && (
                   <div
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
-                      marginTop: "0.5rem",
-                      paddingTop: "0.5rem",
-                      borderTop: "1px solid #dee2e6",
+                      marginBottom: "0.5rem",
                       color: "#28a745",
-                      fontWeight: "600",
                     }}>
-                    <span>Tổng giảm giá</span>
-                    <span>-{formatPrice(totalDiscount)}</span>
+                    <span>🏷️ Mã giảm giá ({promotionCode})</span>
+                    <span>-{formatPrice(manualCodeDiscount)}</span>
                   </div>
                 )}
+
+                {/* Show total discount when both are applied */}
+                {totalDiscount > 0 &&
+                  autoPromoDiscount > 0 &&
+                  manualCodeDiscount > 0 && (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginTop: "0.5rem",
+                        paddingTop: "0.5rem",
+                        borderTop: "1px dashed #28a745",
+                        color: "#28a745",
+                        fontWeight: "600",
+                      }}>
+                      <span>✨ Tổng giảm giá</span>
+                      <span>-{formatPrice(totalDiscount)}</span>
+                    </div>
+                  )}
               </div>
 
               <div
