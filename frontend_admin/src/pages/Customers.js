@@ -83,10 +83,15 @@ const Customers = () => {
     customerTypeFilter,
   ]);
 
-  // Reset page when keyword changes
+  // Reset page when keyword changes (only when keyword actually changes, not on mount)
+  const prevKeywordRef = React.useRef(debouncedKeyword);
   useEffect(() => {
-    dispatch(setPagination({ current: 1, pageSize: pagination.pageSize }));
-  }, [debouncedKeyword, dispatch, pagination.pageSize]);
+    // Only reset if keyword actually changed (not on initial render)
+    if (prevKeywordRef.current !== debouncedKeyword) {
+      prevKeywordRef.current = debouncedKeyword;
+      dispatch(setPagination({ current: 1 }));
+    }
+  }, [debouncedKeyword, dispatch]);
 
   const handleTableChange = (newPagination, filters, sorter) => {
     dispatch(
