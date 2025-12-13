@@ -37,6 +37,8 @@ import {
   ORDER_STATUS_COLORS,
 } from "../../constants/orderStatus";
 
+const DEFAULT_PAGE_SIZE = 5;
+
 const OrdersPage = ({
   setCurrentPage,
   setSelectedOrderId,
@@ -47,7 +49,7 @@ const OrdersPage = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pageNo, setPageNo] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [statusFilter, setStatusFilter] = useState("");
@@ -1098,16 +1100,37 @@ const OrdersPage = ({
                 {/* Tóm tắt tiền */}
                 {selectedOrder.totalAmount != null && (
                   <p style={{ marginBottom: "0.25rem" }}>
-                    <strong>Tổng tiền hàng:</strong>{" "}
+                    <strong>Tổng tiền sản phẩm:</strong>{" "}
                     {formatPrice(selectedOrder.totalAmount)}
                   </p>
                 )}
 
+                {/* Promotion/Discount Info with details */}
                 {selectedOrder.discount != null &&
                   Number(selectedOrder.discount) > 0 && (
                     <p style={{ marginBottom: "0.25rem", color: "#28a745" }}>
-                      <strong>Giảm giá:</strong> -
-                      {formatPrice(selectedOrder.discount)}
+                      <strong>
+                        Giảm giá
+                        {selectedOrder.promotionCode ||
+                        selectedOrder.promotionName
+                          ? ` (${
+                              selectedOrder.promotionCode ||
+                              selectedOrder.promotionName
+                            }${
+                              selectedOrder.promotionScope === "SHIPPING"
+                                ? " - Phí ship"
+                                : ""
+                            }${
+                              selectedOrder.promotionDiscountType ===
+                                "PERCENTAGE" &&
+                              selectedOrder.promotionDiscountValue
+                                ? ` -${selectedOrder.promotionDiscountValue}%`
+                                : ""
+                            })`
+                          : ""}
+                        :
+                      </strong>{" "}
+                      -{formatPrice(selectedOrder.discount)}
                     </p>
                   )}
 
@@ -1142,20 +1165,38 @@ const OrdersPage = ({
                   )}
                 </p>
 
+                {/* Thành tiền (không bao gồm phí ship) */}
                 <p
                   style={{
                     marginTop: "0.5rem",
-                    marginBottom: "0.5rem",
-                    fontWeight: "600",
+                    marginBottom: "0.25rem",
                   }}>
-                  <strong>Tổng thanh toán:</strong>{" "}
+                  <strong>Thành tiền sản phẩm:</strong>{" "}
                   {formatPrice(
                     selectedOrder.finalAmount ||
                       (selectedOrder.totalAmount != null
-                        ? (selectedOrder.totalAmount || 0) +
-                          (Number(selectedOrder.shippingFee) || 0) -
+                        ? (selectedOrder.totalAmount || 0) -
                           (selectedOrder.discount || 0)
                         : 0)
+                  )}
+                </p>
+
+                {/* Tổng thanh toán (bao gồm phí ship) */}
+                <p
+                  style={{
+                    marginTop: "0.25rem",
+                    marginBottom: "0.5rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                    color: "#DC2626",
+                  }}>
+                  <strong>Tổng thanh toán:</strong>{" "}
+                  {formatPrice(
+                    (selectedOrder.finalAmount ||
+                      (selectedOrder.totalAmount != null
+                        ? (selectedOrder.totalAmount || 0) -
+                          (selectedOrder.discount || 0)
+                        : 0)) + (Number(selectedOrder.shippingFee) || 0)
                   )}
                   {selectedOrder.paymentMethod === "CASH" && (
                     <span
@@ -1169,17 +1210,6 @@ const OrdersPage = ({
                     </span>
                   )}
                 </p>
-
-                {selectedOrder.promotionCode && (
-                  <p
-                    style={{
-                      marginBottom: "0.25rem",
-                      fontSize: "0.875rem",
-                      color: "#6c757d",
-                    }}>
-                    <strong>Mã giảm giá:</strong> {selectedOrder.promotionCode}
-                  </p>
-                )}
 
                 {selectedOrder.notes && (
                   <p

@@ -77,4 +77,24 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
            "INNER JOIN order_details od ON o.id_order = od.id_order " +
            "WHERE o.id_customer = :customerId", nativeQuery = true)
     List<Integer> findPurchasedProductIdsByCustomerId(@Param("customerId") Integer customerId);
+
+    // ======= EMPLOYEE STATISTICS QUERIES =======
+    
+    /**
+     * Count total orders handled by an employee
+     */
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.employee.idEmployee = :employeeId")
+    Long countOrdersByEmployeeId(@Param("employeeId") Integer employeeId);
+    
+    /**
+     * Sum total amount of orders handled by an employee
+     */
+    @Query("SELECT COALESCE(SUM(o.finalAmount), 0) FROM Order o WHERE o.employee.idEmployee = :employeeId")
+    java.math.BigDecimal sumOrderAmountByEmployeeId(@Param("employeeId") Integer employeeId);
+    
+    /**
+     * Count orders by employee and status
+     */
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.employee.idEmployee = :employeeId AND o.status = :status")
+    Long countOrdersByEmployeeIdAndStatus(@Param("employeeId") Integer employeeId, @Param("status") Order.OrderStatus status);
 }

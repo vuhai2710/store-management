@@ -78,7 +78,7 @@ const Orders = () => {
     handlePageChange,
     resetPagination,
     pagination: tablePagination,
-  } = usePagination(1, 10);
+  } = usePagination();
 
   // Fetch orders when pagination, filters or keyword change
   const fetchOrdersList = useCallback(() => {

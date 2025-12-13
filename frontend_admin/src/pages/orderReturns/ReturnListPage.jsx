@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   Table,
   Tag,
@@ -30,6 +36,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAdminReturnService } from "../../hooks/useAdminReturnService";
 import { systemSettingService } from "../../services/systemSettingService";
+import { APP_CONFIG } from "../../constants";
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -72,15 +79,15 @@ const ReturnListPage = () => {
   const { getReturns, updateReturnStatus, loading } = useAdminReturnService();
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(APP_CONFIG.PAGE_SIZE);
   const [totalElements, setTotalElements] = useState(0);
-  
+
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [customerKeyword, setCustomerKeyword] = useState("");
   const navigate = useNavigate();
-  
+
   // Use refs to store current filter values for fetchData
   const filtersRef = useRef({
     status: "ALL",
@@ -127,51 +134,59 @@ const ReturnListPage = () => {
   };
 
   // Fetch data function - uses refs for filters to avoid stale closures
-  const fetchData = useCallback(async (page, size) => {
-    try {
-      const { status, type, keyword, customerKeyword: custKeyword } = filtersRef.current;
-      
-      const params = {
-        pageNo: page,
-        pageSize: size,
-      };
+  const fetchData = useCallback(
+    async (page, size) => {
+      try {
+        const {
+          status,
+          type,
+          keyword,
+          customerKeyword: custKeyword,
+        } = filtersRef.current;
 
-      // Only add status if not "ALL"
-      if (status && status !== "ALL") {
-        params.status = status;
+        const params = {
+          pageNo: page,
+          pageSize: size,
+        };
+
+        // Only add status if not "ALL"
+        if (status && status !== "ALL") {
+          params.status = status;
+        }
+
+        // Only add returnType if not "ALL"
+        if (type && type !== "ALL") {
+          params.returnType = type;
+        }
+
+        // Add keyword for search (mã phiếu, mã đơn)
+        if (keyword && keyword.trim()) {
+          params.keyword = keyword.trim();
+        }
+
+        // Add customerKeyword for customer search (tên/id khách)
+        if (custKeyword && custKeyword.trim()) {
+          params.customerKeyword = custKeyword.trim();
+        }
+
+        console.log("Fetching returns with params:", params);
+        const response = await getReturns(params);
+        console.log("Admin returns response:", response);
+
+        // Always set data from response, even if empty
+        setData(response.content || []);
+        setCurrentPage(response.pageNo || 1);
+        setPageSize(response.pageSize || 10);
+        setTotalElements(response.totalElements || 0);
+      } catch (error) {
+        console.error("Error fetching returns:", error);
+        // On error, show empty data
+        setData([]);
+        setTotalElements(0);
       }
-
-      // Only add returnType if not "ALL"
-      if (type && type !== "ALL") {
-        params.returnType = type;
-      }
-
-      // Add keyword for search (mã phiếu, mã đơn)
-      if (keyword && keyword.trim()) {
-        params.keyword = keyword.trim();
-      }
-
-      // Add customerKeyword for customer search (tên/id khách)
-      if (custKeyword && custKeyword.trim()) {
-        params.customerKeyword = custKeyword.trim();
-      }
-
-      console.log("Fetching returns with params:", params);
-      const response = await getReturns(params);
-      console.log("Admin returns response:", response);
-      
-      // Always set data from response, even if empty
-      setData(response.content || []);
-      setCurrentPage(response.pageNo || 1);
-      setPageSize(response.pageSize || 10);
-      setTotalElements(response.totalElements || 0);
-    } catch (error) {
-      console.error("Error fetching returns:", error);
-      // On error, show empty data
-      setData([]);
-      setTotalElements(0);
-    }
-  }, [getReturns]);
+    },
+    [getReturns]
+  );
 
   // Update refs when filters change
   useEffect(() => {
@@ -187,22 +202,25 @@ const ReturnListPage = () => {
   }, [statusFilter, typeFilter, debouncedKeyword, debouncedCustomerKeyword]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle table pagination change
-  const handleTableChange = useCallback((paginationConfig) => {
-    const newPage = paginationConfig.current;
-    const newPageSize = paginationConfig.pageSize;
-    
-    // If pageSize changed, update and fetch page 1
-    if (newPageSize !== pageSize) {
-      setPageSize(newPageSize);
-      setCurrentPage(1);
-      fetchData(1, newPageSize);
-      return;
-    }
-    
-    // Just page change - fetch directly
-    setCurrentPage(newPage);
-    fetchData(newPage, newPageSize);
-  }, [fetchData, pageSize]);
+  const handleTableChange = useCallback(
+    (paginationConfig) => {
+      const newPage = paginationConfig.current;
+      const newPageSize = paginationConfig.pageSize;
+
+      // If pageSize changed, update and fetch page 1
+      if (newPageSize !== pageSize) {
+        setPageSize(newPageSize);
+        setCurrentPage(1);
+        fetchData(1, newPageSize);
+        return;
+      }
+
+      // Just page change - fetch directly
+      setCurrentPage(newPage);
+      fetchData(newPage, newPageSize);
+    },
+    [fetchData, pageSize]
+  );
 
   // Handle filter changes
   const handleStatusChange = useCallback((value) => {
@@ -308,124 +326,139 @@ const ReturnListPage = () => {
     return statusMap[status] || { color: "default", label: status };
   };
 
-  const columns = useMemo(() => [
-    {
-      title: "Mã phiếu",
-      dataIndex: "idReturn",
-      key: "idReturn",
-      render: (id) => <Text strong>#{id}</Text>,
-    },
-    {
-      title: "Mã đơn hàng",
-      dataIndex: "orderId",
-      key: "orderId",
-      render: (id) => <a onClick={() => navigate(`/orders/${id}`)}>#{id}</a>,
-    },
-    {
-      title: "Khách hàng",
-      dataIndex: "customerName",
-      key: "customerName",
-      render: (name, record) => (
-        <span>
-          {name || "N/A"}
-          {record.customerId && (
-            <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
-              ID: {record.customerId}
-            </Text>
-          )}
-        </span>
-      ),
-    },
-    {
-      title: "Loại",
-      dataIndex: "returnType",
-      key: "returnType",
-      render: (type) => (
-        <Tag color={type === "RETURN" ? "blue" : "purple"}>
-          {type === "RETURN" ? "Trả hàng" : "Đổi hàng"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => {
-        const { color, label } = getStatusDisplay(status);
-        return <Tag color={color}>{label}</Tag>;
+  const columns = useMemo(
+    () => [
+      {
+        title: "Mã phiếu",
+        dataIndex: "idReturn",
+        key: "idReturn",
+        render: (id) => <Text strong>#{id}</Text>,
       },
-    },
-    {
-      title: "Hoàn tiền",
-      dataIndex: "refundAmount",
-      key: "refundAmount",
-      render: (amount) =>
-        amount ? `${Number(amount).toLocaleString("vi-VN")} VNĐ` : "-",
-    },
-    {
-      title: "Ngày tạo",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date) => new Date(date).toLocaleString("vi-VN"),
-    },
-    {
-      title: "Hành động",
-      key: "action",
-      width: 280,
-      render: (_, record) => (
-        <Space size="small" wrap>
-          <Button
-            type="default"
-            icon={<EyeOutlined />}
-            onClick={() => navigate(`/order-returns/${record.idReturn}`)}>
-            Xem
-          </Button>
-          {record.status === "REQUESTED" && (
-            <>
+      {
+        title: "Mã đơn hàng",
+        dataIndex: "orderId",
+        key: "orderId",
+        render: (id) => <a onClick={() => navigate(`/orders/${id}`)}>#{id}</a>,
+      },
+      {
+        title: "Khách hàng",
+        dataIndex: "customerName",
+        key: "customerName",
+        render: (name, record) => (
+          <span>
+            {name || "N/A"}
+            {record.customerId && (
+              <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
+                ID: {record.customerId}
+              </Text>
+            )}
+          </span>
+        ),
+      },
+      {
+        title: "Loại",
+        dataIndex: "returnType",
+        key: "returnType",
+        render: (type) => (
+          <Tag color={type === "RETURN" ? "blue" : "purple"}>
+            {type === "RETURN" ? "Trả hàng" : "Đổi hàng"}
+          </Tag>
+        ),
+      },
+      {
+        title: "Trạng thái",
+        dataIndex: "status",
+        key: "status",
+        render: (status) => {
+          const { color, label } = getStatusDisplay(status);
+          return <Tag color={color}>{label}</Tag>;
+        },
+      },
+      {
+        title: "Hoàn tiền",
+        dataIndex: "refundAmount",
+        key: "refundAmount",
+        render: (amount) =>
+          amount ? `${Number(amount).toLocaleString("vi-VN")} VNĐ` : "-",
+      },
+      {
+        title: "Ngày tạo",
+        dataIndex: "createdAt",
+        key: "createdAt",
+        render: (date) => new Date(date).toLocaleString("vi-VN"),
+      },
+      {
+        title: "Hành động",
+        key: "action",
+        width: 280,
+        render: (_, record) => (
+          <Space size="small" wrap>
+            <Button
+              type="default"
+              icon={<EyeOutlined />}
+              onClick={() => navigate(`/order-returns/${record.idReturn}`)}>
+              Xem
+            </Button>
+            {record.status === "REQUESTED" && (
+              <>
+                <Button
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  onClick={() => handleApprove(record)}>
+                  Duyệt
+                </Button>
+                <Button
+                  danger
+                  icon={<CloseCircleOutlined />}
+                  onClick={() => handleReject(record)}>
+                  Từ chối
+                </Button>
+              </>
+            )}
+            {record.status === "APPROVED" && (
               <Button
                 type="primary"
+                style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
                 icon={<CheckCircleOutlined />}
-                onClick={() => handleApprove(record)}>
-                Duyệt
+                onClick={() => handleComplete(record)}>
+                Hoàn thành
               </Button>
-              <Button
-                danger
-                icon={<CloseCircleOutlined />}
-                onClick={() => handleReject(record)}>
-                Từ chối
-              </Button>
-            </>
-          )}
-          {record.status === "APPROVED" && (
-            <Button
-              type="primary"
-              style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
-              icon={<CheckCircleOutlined />}
-              onClick={() => handleComplete(record)}>
-              Hoàn thành
-            </Button>
-          )}
-        </Space>
-      ),
-    },
-  ], [navigate]);
+            )}
+          </Space>
+        ),
+      },
+    ],
+    [navigate]
+  );
 
   // Custom empty component
-  const emptyComponent = useMemo(() => (
-    <Empty
-      image={Empty.PRESENTED_IMAGE_SIMPLE}
-      description={
-        <span>
-          Không có yêu cầu đổi trả phù hợp
-          {(statusFilter !== "ALL" || typeFilter !== "ALL" || searchKeyword || customerKeyword) && (
-            <Button type="link" onClick={handleResetFilters}>
-              Xóa bộ lọc
-            </Button>
-          )}
-        </span>
-      }
-    />
-  ), [statusFilter, typeFilter, searchKeyword, customerKeyword, handleResetFilters]);
+  const emptyComponent = useMemo(
+    () => (
+      <Empty
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+        description={
+          <span>
+            Không có yêu cầu đổi trả phù hợp
+            {(statusFilter !== "ALL" ||
+              typeFilter !== "ALL" ||
+              searchKeyword ||
+              customerKeyword) && (
+              <Button type="link" onClick={handleResetFilters}>
+                Xóa bộ lọc
+              </Button>
+            )}
+          </span>
+        }
+      />
+    ),
+    [
+      statusFilter,
+      typeFilter,
+      searchKeyword,
+      customerKeyword,
+      handleResetFilters,
+    ]
+  );
 
   return (
     <Card title="Quản lý Đơn Đổi/Trả hàng">
@@ -520,7 +553,9 @@ const ReturnListPage = () => {
           total: totalElements,
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total, range) => `${range[0]}-${range[1]} / ${total} yêu cầu`,
+          pageSizeOptions: APP_CONFIG.PAGE_SIZE_OPTIONS,
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} / ${total} yêu cầu`,
         }}
         loading={loading}
         onChange={handleTableChange}

@@ -177,7 +177,119 @@ const ReturnDetailPage = () => {
           )}
         </Descriptions>
 
-        <Divider orientation="left">Sản phẩm</Divider>
+        {/* Order Price Breakdown Section */}
+        <Divider orientation="left">Chi tiết đơn hàng gốc</Divider>
+        <div
+          style={{
+            padding: 16,
+            background: "#fafafa",
+            borderRadius: 8,
+            marginBottom: 16,
+          }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {/* Original Order Amount */}
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>Tổng tiền sản phẩm:</span>
+              <span>
+                {returnData.orderTotalAmount
+                  ? `${Number(returnData.orderTotalAmount).toLocaleString(
+                      "vi-VN"
+                    )} VNĐ`
+                  : "0 VNĐ"}
+              </span>
+            </div>
+
+            {/* Promotion Info */}
+            {(returnData.orderPromotionCode ||
+              returnData.orderPromotionName) && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  color: "#52c41a",
+                }}>
+                <span style={{ color: "#52c41a" }}>
+                  Mã giảm giá:{" "}
+                  {returnData.orderPromotionCode ||
+                    returnData.orderPromotionName}
+                  {returnData.orderPromotionScope === "SHIPPING"
+                    ? " (Phí ship)"
+                    : ""}
+                  {returnData.orderPromotionDiscountType === "PERCENTAGE" &&
+                  returnData.orderPromotionDiscountValue
+                    ? ` (-${returnData.orderPromotionDiscountValue}%)`
+                    : ""}
+                </span>
+                <span style={{ color: "#52c41a" }}>
+                  -
+                  {Number(returnData.orderDiscount || 0).toLocaleString(
+                    "vi-VN"
+                  )}{" "}
+                  VNĐ
+                </span>
+              </div>
+            )}
+
+            {/* Discount without promotion code */}
+            {!returnData.orderPromotionCode &&
+              !returnData.orderPromotionName &&
+              returnData.orderDiscount &&
+              Number(returnData.orderDiscount) > 0 && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    color: "#52c41a",
+                  }}>
+                  <span style={{ color: "#52c41a" }}>Giảm giá:</span>
+                  <span style={{ color: "#52c41a" }}>
+                    -{Number(returnData.orderDiscount).toLocaleString("vi-VN")}{" "}
+                    VNĐ
+                  </span>
+                </div>
+              )}
+
+            {/* Shipping Fee */}
+            {returnData.orderShippingFee &&
+              Number(returnData.orderShippingFee) > 0 && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    color: "#8c8c8c",
+                  }}>
+                  <span>Phí vận chuyển (không tính vào hoàn tiền):</span>
+                  <span>
+                    {Number(returnData.orderShippingFee).toLocaleString(
+                      "vi-VN"
+                    )}{" "}
+                    VNĐ
+                  </span>
+                </div>
+              )}
+
+            {/* Final Amount */}
+            <div
+              style={{
+                borderTop: "1px solid #d9d9d9",
+                marginTop: 8,
+                paddingTop: 8,
+                display: "flex",
+                justifyContent: "space-between",
+              }}>
+              <strong>Thành tiền đơn hàng:</strong>
+              <strong style={{ color: "#1890ff" }}>
+                {returnData.orderFinalAmount
+                  ? `${Number(returnData.orderFinalAmount).toLocaleString(
+                      "vi-VN"
+                    )} VNĐ`
+                  : "0 VNĐ"}
+              </strong>
+            </div>
+          </div>
+        </div>
+
+        <Divider orientation="left">Sản phẩm yêu cầu trả</Divider>
         <ReturnItemTable items={returnData.items} />
       </Card>
 

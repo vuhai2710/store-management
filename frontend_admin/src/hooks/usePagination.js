@@ -1,7 +1,7 @@
 /**
  * Custom Hook - usePagination
  * Hook để quản lý pagination state
- * 
+ *
  * QUAN TRỌNG: Các functions được memoize bằng useCallback để tránh
  * gây re-render không cần thiết khi được sử dụng làm dependency của useEffect
  */
@@ -37,16 +37,19 @@ export const usePagination = (
   }, []);
 
   // Memoize pagination object để tránh tạo object mới mỗi render
-  const pagination = useMemo(() => ({
-    current: currentPage,
-    pageSize,
-    total,
-    showSizeChanger: true,
-    showTotal: (total) => `Tổng ${total} bản ghi`,
-    pageSizeOptions: APP_CONFIG.PAGE_SIZE_OPTIONS,
-    onChange: handlePageChange,
-    onShowSizeChange: handlePageSizeChange,
-  }), [currentPage, pageSize, total, handlePageChange, handlePageSizeChange]);
+  const pagination = useMemo(
+    () => ({
+      current: currentPage,
+      pageSize,
+      total,
+      showSizeChanger: true,
+      showTotal: (total) => `Tổng ${total} bản ghi`,
+      pageSizeOptions: APP_CONFIG.PAGE_SIZE_OPTIONS,
+      onChange: handlePageChange,
+      onShowSizeChange: handlePageSizeChange,
+    }),
+    [currentPage, pageSize, total, handlePageChange, handlePageSizeChange]
+  );
 
   return {
     currentPage,

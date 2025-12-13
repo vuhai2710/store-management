@@ -2,6 +2,7 @@ package com.storemanagement.controller;
 
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.employee.EmployeeDTO;
+import com.storemanagement.dto.employee.EmployeeDetailDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.service.EmployeeService;
 import jakarta.validation.Valid;
@@ -42,13 +43,17 @@ public class EmployeeController {
     @GetMapping("/paginated")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PageResponse<EmployeeDTO>>> getAllEmployeesPaginated(
-            @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(required = false, defaultValue = "0") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "idEmployee") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDirection,
             @RequestParam(required = false) String keyword) {
+        // Validate and normalize parameters
+        int validPageNo = Math.max(0, pageNo != null ? pageNo : 0);
+        int validPageSize = Math.max(1, Math.min(100, pageSize != null ? pageSize : 10));
+        
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
+        Pageable pageable = PageRequest.of(validPageNo, validPageSize, Sort.by(direction, sortBy));
         PageResponse<EmployeeDTO> employees = employeeService.getAllEmployeesPaginated(keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách nhân viên thành công", employees));
     }
@@ -58,6 +63,13 @@ public class EmployeeController {
     public ResponseEntity<ApiResponse<EmployeeDTO>> getEmployeeById(@PathVariable Integer id) {
         EmployeeDTO employee = employeeService.getEmployeeById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin nhân viên thành công", employee));
+    }
+
+    @GetMapping("/{id}/detail")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<EmployeeDetailDTO>> getEmployeeDetailById(@PathVariable Integer id) {
+        EmployeeDetailDTO employee = employeeService.getEmployeeDetailById(id);
+        return ResponseEntity.ok(ApiResponse.success("Lấy thông tin chi tiết nhân viên thành công", employee));
     }
 
     @GetMapping("/user/{userId}")

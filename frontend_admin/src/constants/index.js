@@ -12,7 +12,7 @@ export const APP_CONFIG = {
   APP_NAME: "Store Management System",
   APP_VERSION: "1.0.0",
   PAGE_SIZE: 5, // Default page size: 5 records
-  PAGE_SIZE_OPTIONS: ["5", "10", "20", "50", "100"], // Added 5 as first option
+  PAGE_SIZE_OPTIONS: ["5", "10", "20", "50"], // Page size options as requested
   DATE_FORMAT: "DD/MM/YYYY",
   DATETIME_FORMAT: "DD/MM/YYYY HH:mm:ss",
   CURRENCY: "VND",

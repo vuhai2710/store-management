@@ -1,6 +1,7 @@
 package com.storemanagement.mapper;
 
 import com.storemanagement.dto.employee.EmployeeDTO;
+import com.storemanagement.dto.employee.EmployeeDetailDTO;
 import com.storemanagement.model.Employee;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -21,6 +22,22 @@ public interface EmployeeMapper {
     EmployeeDTO toDTO(Employee entity);
 
     List<EmployeeDTO> toDTOList(List<Employee> entities);
+
+    // Employee → EmployeeDetailDTO (without statistics - stats added in service)
+    @Mapping(target = "idEmployee", source = "idEmployee")
+    @Mapping(source = "user.idUser", target = "idUser")
+    @Mapping(source = "user.username", target = "username")
+    @Mapping(source = "user.email", target = "email")
+    @Mapping(source = "user.isActive", target = "isActive")
+    @Mapping(source = "user.avatarUrl", target = "avatarUrl")
+    @Mapping(target = "totalOrdersHandled", ignore = true)
+    @Mapping(target = "totalOrderAmount", ignore = true)
+    @Mapping(target = "totalReturnOrders", ignore = true)
+    @Mapping(target = "totalExchangeOrders", ignore = true)
+    @Mapping(target = "pendingOrders", ignore = true)
+    @Mapping(target = "completedOrders", ignore = true)
+    @Mapping(target = "cancelledOrders", ignore = true)
+    EmployeeDetailDTO toDetailDTO(Employee entity);
 
     // EmployeeDTO → Employee (for create/update)
     @Mapping(target = "idEmployee", ignore = true)

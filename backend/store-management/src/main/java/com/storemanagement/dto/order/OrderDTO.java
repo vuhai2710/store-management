@@ -58,9 +58,13 @@ public class OrderDTO {
     private Integer shippingAddressId;
     private String promotionCode;
 
-
+    // Promotion info for price breakdown
     private Integer idPromotion;
     private Integer idPromotionRule;
+    private String promotionName;           // Name of promotion or rule applied
+    private String promotionDiscountType;   // PERCENTAGE or FIXED_AMOUNT
+    private java.math.BigDecimal promotionDiscountValue; // The discount percentage or fixed amount
+    private String promotionScope;          // ORDER or SHIPPING
 
     private Integer customerId;
 

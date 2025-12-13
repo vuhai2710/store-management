@@ -60,5 +60,25 @@ public interface OrderReturnRepository extends JpaRepository<OrderReturn, Intege
             @Param("customerKeyword") String customerKeyword,
             Pageable pageable);
 
+    // ======= EMPLOYEE STATISTICS QUERIES =======
+    
+    /**
+     * Count return/exchange orders processed by an employee
+     */
+    @Query("SELECT COUNT(r) FROM OrderReturn r WHERE r.processedByEmployee.idEmployee = :employeeId")
+    Long countReturnsByEmployeeId(@Param("employeeId") Integer employeeId);
+    
+    /**
+     * Count return orders processed by an employee (RETURN type only)
+     */
+    @Query("SELECT COUNT(r) FROM OrderReturn r WHERE r.processedByEmployee.idEmployee = :employeeId AND r.returnType = 'RETURN'")
+    Long countReturnOrdersByEmployeeId(@Param("employeeId") Integer employeeId);
+    
+    /**
+     * Count exchange orders processed by an employee (EXCHANGE type only)
+     */
+    @Query("SELECT COUNT(r) FROM OrderReturn r WHERE r.processedByEmployee.idEmployee = :employeeId AND r.returnType = 'EXCHANGE'")
+    Long countExchangeOrdersByEmployeeId(@Param("employeeId") Integer employeeId);
+
 }
 

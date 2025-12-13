@@ -76,6 +76,13 @@ export const employeesService = {
     return response.data;
   },
 
+  getEmployeeDetailById: async (id) => {
+    console.log("Calling getEmployeeDetailById with id:", id);
+    const response = await api.get(`/employees/${id}/detail`);
+    console.log("API Response getEmployeeDetailById:", response.data);
+    return response.data;
+  },
+
   createEmployee: async (employeeData) => {
     const body = normalizeEmployeePayload(employeeData);
     console.log("Calling createEmployee with data:", body);

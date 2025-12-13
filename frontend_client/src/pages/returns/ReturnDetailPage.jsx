@@ -159,6 +159,90 @@ const ReturnDetailPage = ({ returnId, setCurrentPage }) => {
             </div>
           </div>
 
+          {/* Order Price Breakdown */}
+          <div className="bg-white p-6 rounded shadow">
+            <h3 className="font-semibold text-gray-900 mb-4">
+              Chi tiết đơn hàng gốc
+            </h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Tổng tiền sản phẩm:</span>
+                <span>
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(returnData.orderTotalAmount || 0)}
+                </span>
+              </div>
+
+              {/* Promotion Info */}
+              {(returnData.orderPromotionCode ||
+                returnData.orderPromotionName) && (
+                <div className="flex justify-between text-green-600">
+                  <span>
+                    Giảm giá (
+                    {returnData.orderPromotionCode ||
+                      returnData.orderPromotionName}
+                    {returnData.orderPromotionScope === "SHIPPING"
+                      ? " - Phí ship"
+                      : ""}
+                    {returnData.orderPromotionDiscountType === "PERCENTAGE" &&
+                    returnData.orderPromotionDiscountValue
+                      ? ` -${returnData.orderPromotionDiscountValue}%`
+                      : ""}
+                    ):
+                  </span>
+                  <span>
+                    -
+                    {new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(returnData.orderDiscount || 0)}
+                  </span>
+                </div>
+              )}
+
+              {/* Discount without code */}
+              {!returnData.orderPromotionCode &&
+                !returnData.orderPromotionName &&
+                returnData.orderDiscount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Giảm giá:</span>
+                    <span>
+                      -
+                      {new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                      }).format(returnData.orderDiscount || 0)}
+                    </span>
+                  </div>
+                )}
+
+              {/* Shipping fee */}
+              {returnData.orderShippingFee > 0 && (
+                <div className="flex justify-between text-gray-400">
+                  <span>Phí vận chuyển (không hoàn):</span>
+                  <span>
+                    {new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(returnData.orderShippingFee || 0)}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex justify-between font-medium pt-2 border-t">
+                <span>Thành tiền đơn hàng:</span>
+                <span className="text-blue-600">
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(returnData.orderFinalAmount || 0)}
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white p-6 rounded shadow">
             <h3 className="font-semibold text-gray-900 mb-2">
               Tổng tiền hoàn lại

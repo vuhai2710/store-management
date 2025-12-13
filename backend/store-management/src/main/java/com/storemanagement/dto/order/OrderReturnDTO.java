@@ -34,6 +34,13 @@ public class OrderReturnDTO {
     private BigDecimal orderDiscount;    // Số tiền giảm giá
     private BigDecimal orderShippingFee; // Phí ship
 
+    // Promotion info for price breakdown
+    private String orderPromotionCode;      // Mã giảm giá đã dùng
+    private String orderPromotionName;      // Tên chương trình giảm giá
+    private String orderPromotionDiscountType; // PERCENTAGE or FIXED_AMOUNT
+    private BigDecimal orderPromotionDiscountValue; // Giá trị giảm (% hoặc số tiền)
+    private String orderPromotionScope;     // ORDER or SHIPPING
+
     private Integer createdByCustomerId;
     private Integer processedByEmployeeId;
 

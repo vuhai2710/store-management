@@ -51,8 +51,18 @@ public class PromotionRule extends BaseEntity {
     @Builder.Default
     private Integer priority = 0; // Số càng cao càng ưu tiên
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "scope", nullable = false)
+    @Builder.Default
+    private PromotionScope scope = PromotionScope.ORDER;
+
     public enum DiscountType {
         PERCENTAGE, FIXED_AMOUNT
+    }
+
+    public enum PromotionScope {
+        ORDER,    // Giảm giá đơn hàng (default)
+        SHIPPING  // Giảm giá phí vận chuyển
     }
 }
 

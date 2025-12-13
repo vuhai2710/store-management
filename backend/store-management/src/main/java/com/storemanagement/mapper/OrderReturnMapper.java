@@ -19,6 +19,11 @@ public interface OrderReturnMapper {
     @Mapping(target = "orderTotalAmount", source = "order.totalAmount")
     @Mapping(target = "orderDiscount", source = "order.discount")
     @Mapping(target = "orderShippingFee", source = "order.shippingFee")
+    @Mapping(target = "orderPromotionCode", source = "order.promotionCode")
+    @Mapping(target = "orderPromotionName", expression = "java(getPromotionName(entity))")
+    @Mapping(target = "orderPromotionDiscountType", expression = "java(getPromotionDiscountType(entity))")
+    @Mapping(target = "orderPromotionDiscountValue", expression = "java(getPromotionDiscountValue(entity))")
+    @Mapping(target = "orderPromotionScope", expression = "java(getPromotionScope(entity))")
     @Mapping(target = "createdByCustomerId",
             expression = "java(entity.getCreatedByCustomer() != null ? entity.getCreatedByCustomer().getIdCustomer() : null)")
     @Mapping(target = "processedByEmployeeId",
@@ -39,4 +44,49 @@ public interface OrderReturnMapper {
     }
 
     List<OrderReturnDTO> toDTOList(List<OrderReturn> list);
+
+    // Helper methods for promotion info from order
+    default String getPromotionName(OrderReturn entity) {
+        if (entity.getOrder() == null) return null;
+        if (entity.getOrder().getPromotion() != null) {
+            return entity.getOrder().getPromotion().getCode();
+        }
+        if (entity.getOrder().getPromotionRule() != null) {
+            return entity.getOrder().getPromotionRule().getRuleName();
+        }
+        return null;
+    }
+
+    default String getPromotionDiscountType(OrderReturn entity) {
+        if (entity.getOrder() == null) return null;
+        if (entity.getOrder().getPromotion() != null) {
+            return entity.getOrder().getPromotion().getDiscountType().name();
+        }
+        if (entity.getOrder().getPromotionRule() != null) {
+            return entity.getOrder().getPromotionRule().getDiscountType().name();
+        }
+        return null;
+    }
+
+    default java.math.BigDecimal getPromotionDiscountValue(OrderReturn entity) {
+        if (entity.getOrder() == null) return null;
+        if (entity.getOrder().getPromotion() != null) {
+            return entity.getOrder().getPromotion().getDiscountValue();
+        }
+        if (entity.getOrder().getPromotionRule() != null) {
+            return entity.getOrder().getPromotionRule().getDiscountValue();
+        }
+        return null;
+    }
+
+    default String getPromotionScope(OrderReturn entity) {
+        if (entity.getOrder() == null) return null;
+        if (entity.getOrder().getPromotion() != null && entity.getOrder().getPromotion().getScope() != null) {
+            return entity.getOrder().getPromotion().getScope().name();
+        }
+        if (entity.getOrder().getPromotionRule() != null && entity.getOrder().getPromotionRule().getScope() != null) {
+            return entity.getOrder().getPromotionRule().getScope().name();
+        }
+        return null;
+    }
 }

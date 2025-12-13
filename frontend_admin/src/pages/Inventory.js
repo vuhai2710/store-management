@@ -90,7 +90,10 @@ const Inventory = () => {
   });
 
   // Debounce cho tab Tồn kho
-  const debouncedInventoryProductSearch = useDebounce(inventoryProductSearch, 400);
+  const debouncedInventoryProductSearch = useDebounce(
+    inventoryProductSearch,
+    400
+  );
 
   // ==================== TAB LỊCH SỬ - STATES ====================
   // Product history modal states
@@ -151,9 +154,14 @@ const Inventory = () => {
     const loadBrands = async () => {
       try {
         // Lấy tất cả products để extract unique brands
-        const res = await productsService.getProductsPaginated({ pageNo: 1, pageSize: 1000 });
+        const res = await productsService.getProductsPaginated({
+          pageNo: 1,
+          pageSize: 1000,
+        });
         const allProducts = res?.content || [];
-        const uniqueBrands = [...new Set(allProducts.map(p => p.brand).filter(Boolean))].sort();
+        const uniqueBrands = [
+          ...new Set(allProducts.map((p) => p.brand).filter(Boolean)),
+        ].sort();
         setBrands(uniqueBrands);
       } catch (error) {
         console.error("Error loading brands:", error);
@@ -168,14 +176,26 @@ const Inventory = () => {
     const loadInventoryStats = async () => {
       try {
         // Lấy tất cả products để tính thống kê tổng
-        const res = await productsService.getProductsPaginated({ pageNo: 1, pageSize: 10000 });
+        const res = await productsService.getProductsPaginated({
+          pageNo: 1,
+          pageSize: 10000,
+        });
         const allProducts = res?.content || [];
         const total = res?.totalElements || allProducts.length;
-        
-        const lowStock = allProducts.filter(p => (p.stockQuantity || 0) > 0 && (p.stockQuantity || 0) < 10).length;
-        const outOfStock = allProducts.filter(p => (p.stockQuantity || 0) === 0).length;
-        const inStock = allProducts.filter(p => (p.stockQuantity || 0) >= 10).length;
-        const totalValue = allProducts.reduce((sum, p) => sum + ((p.stockQuantity || 0) * (p.price || 0)), 0);
+
+        const lowStock = allProducts.filter(
+          (p) => (p.stockQuantity || 0) > 0 && (p.stockQuantity || 0) < 10
+        ).length;
+        const outOfStock = allProducts.filter(
+          (p) => (p.stockQuantity || 0) === 0
+        ).length;
+        const inStock = allProducts.filter(
+          (p) => (p.stockQuantity || 0) >= 10
+        ).length;
+        const totalValue = allProducts.reduce(
+          (sum, p) => sum + (p.stockQuantity || 0) * (p.price || 0),
+          0
+        );
 
         setInventoryStats({
           totalProducts: total,
@@ -221,10 +241,7 @@ const Inventory = () => {
       // Reset về page 1 khi filter thay đổi (trừ pagination change)
       fetchInventoryProducts();
     }
-  }, [
-    activeTab,
-    fetchInventoryProducts,
-  ]);
+  }, [activeTab, fetchInventoryProducts]);
 
   // Sync total từ redux
   useEffect(() => {
@@ -326,7 +343,13 @@ const Inventory = () => {
       fetchAllTransactions({ pageNo: 1 });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, debouncedProductName, historyBrandFilter, historyTransactionType, historyReferenceType]);
+  }, [
+    activeTab,
+    debouncedProductName,
+    historyBrandFilter,
+    historyTransactionType,
+    historyReferenceType,
+  ]);
 
   // Fetch transactions for selected product modal
   const fetchModalTransactions = useCallback(
@@ -938,7 +961,9 @@ const Inventory = () => {
               {/* Tên sản phẩm - auto search */}
               <Col xs={24} sm={12} md={5}>
                 <div style={{ marginBottom: 4 }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>Tên sản phẩm</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    Tên sản phẩm
+                  </Text>
                 </div>
                 <Input
                   placeholder="Tìm theo tên sản phẩm..."
@@ -951,7 +976,9 @@ const Inventory = () => {
               {/* Thương hiệu - auto search khi chọn */}
               <Col xs={24} sm={12} md={4}>
                 <div style={{ marginBottom: 4 }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>Thương hiệu</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    Thương hiệu
+                  </Text>
                 </div>
                 <Select
                   placeholder="Tất cả"
@@ -973,7 +1000,9 @@ const Inventory = () => {
               {/* Loại giao dịch - auto search khi chọn */}
               <Col xs={24} sm={12} md={4}>
                 <div style={{ marginBottom: 4 }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>Loại giao dịch</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    Loại giao dịch
+                  </Text>
                 </div>
                 <Select
                   placeholder="Tất cả"
@@ -993,7 +1022,9 @@ const Inventory = () => {
               {/* Loại tham chiếu - auto search khi chọn */}
               <Col xs={24} sm={12} md={4}>
                 <div style={{ marginBottom: 4 }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>Loại tham chiếu</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    Loại tham chiếu
+                  </Text>
                 </div>
                 <Select
                   placeholder="Tất cả"
@@ -1022,7 +1053,9 @@ const Inventory = () => {
               {/* Khoảng thời gian - cần bấm nút Tìm kiếm */}
               <Col xs={24} sm={12} md={5}>
                 <div style={{ marginBottom: 4 }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>Khoảng thời gian</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    Khoảng thời gian
+                  </Text>
                 </div>
                 <RangePicker
                   placeholder={["Từ ngày", "Đến ngày"]}
@@ -1035,7 +1068,9 @@ const Inventory = () => {
               {/* Buttons */}
               <Col xs={24} sm={12} md={2}>
                 <div style={{ marginBottom: 4 }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>&nbsp;</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    &nbsp;
+                  </Text>
                 </div>
                 <Space>
                   <Tooltip title="Tìm theo ngày">

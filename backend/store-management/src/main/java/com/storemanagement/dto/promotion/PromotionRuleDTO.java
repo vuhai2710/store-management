@@ -27,6 +27,7 @@ public class PromotionRuleDTO extends BaseDTO {
     private LocalDateTime endDate;
     private Boolean isActive;
     private Integer priority;
+    private PromotionRule.PromotionScope scope;
 }
 
 

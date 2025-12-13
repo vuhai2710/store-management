@@ -1,11 +1,15 @@
 package com.storemanagement.service.impl;
 
 import com.storemanagement.dto.employee.EmployeeDTO;
+import com.storemanagement.dto.employee.EmployeeDetailDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.EmployeeMapper;
 import com.storemanagement.model.Employee;
+import com.storemanagement.model.Order;
 import com.storemanagement.model.User;
 import com.storemanagement.repository.EmployeeRepository;
+import com.storemanagement.repository.OrderRepository;
+import com.storemanagement.repository.OrderReturnRepository;
 import com.storemanagement.repository.UserRepository;
 import com.storemanagement.service.EmployeeService;
 import com.storemanagement.utils.PageUtils;
@@ -17,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -25,6 +30,8 @@ import java.util.List;
 public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
+    private final OrderReturnRepository orderReturnRepository;
     private final EmployeeMapper employeeMapper;
     private final PasswordEncoder passwordEncoder;
 
@@ -91,6 +98,36 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Nhân viên không tồn tại với ID: " + id));
         return employeeMapper.toDTO(employee);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EmployeeDetailDTO getEmployeeDetailById(Integer id) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Nhân viên không tồn tại với ID: " + id));
+        
+        EmployeeDetailDTO detailDTO = employeeMapper.toDetailDTO(employee);
+        
+        // Get order statistics
+        Long totalOrders = orderRepository.countOrdersByEmployeeId(id);
+        BigDecimal totalAmount = orderRepository.sumOrderAmountByEmployeeId(id);
+        Long pendingOrders = orderRepository.countOrdersByEmployeeIdAndStatus(id, Order.OrderStatus.PENDING);
+        Long completedOrders = orderRepository.countOrdersByEmployeeIdAndStatus(id, Order.OrderStatus.COMPLETED);
+        Long cancelledOrders = orderRepository.countOrdersByEmployeeIdAndStatus(id, Order.OrderStatus.CANCELED);
+        
+        // Get return/exchange statistics
+        Long totalReturnOrders = orderReturnRepository.countReturnOrdersByEmployeeId(id);
+        Long totalExchangeOrders = orderReturnRepository.countExchangeOrdersByEmployeeId(id);
+        
+        detailDTO.setTotalOrdersHandled(totalOrders != null ? totalOrders : 0L);
+        detailDTO.setTotalOrderAmount(totalAmount != null ? totalAmount : BigDecimal.ZERO);
+        detailDTO.setPendingOrders(pendingOrders != null ? pendingOrders : 0L);
+        detailDTO.setCompletedOrders(completedOrders != null ? completedOrders : 0L);
+        detailDTO.setCancelledOrders(cancelledOrders != null ? cancelledOrders : 0L);
+        detailDTO.setTotalReturnOrders(totalReturnOrders != null ? totalReturnOrders : 0L);
+        detailDTO.setTotalExchangeOrders(totalExchangeOrders != null ? totalExchangeOrders : 0L);
+        
+        return detailDTO;
     }
 
     @Override

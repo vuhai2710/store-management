@@ -1,6 +1,7 @@
 package com.storemanagement.service;
 
 import com.storemanagement.dto.employee.EmployeeDTO;
+import com.storemanagement.dto.employee.EmployeeDetailDTO;
 import com.storemanagement.dto.PageResponse;
 import org.springframework.data.domain.Pageable;
 
@@ -11,6 +12,7 @@ public interface EmployeeService {
     List<EmployeeDTO> getAllEmployees();
     PageResponse<EmployeeDTO> getAllEmployeesPaginated(String keyword, Pageable pageable);
     EmployeeDTO getEmployeeById(Integer id);
+    EmployeeDetailDTO getEmployeeDetailById(Integer id);  // New: with order statistics
     EmployeeDTO getEmployeeByUserId(Integer userId);
     EmployeeDTO updateEmployeeByAdmin(Integer id, EmployeeDTO request);
     void deleteEmployee(Integer id);

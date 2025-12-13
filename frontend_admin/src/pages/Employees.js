@@ -128,17 +128,22 @@ const Employees = () => {
   };
 
   const handleSubmit = async (values) => {
+    // Build payload - email only for create, not for update
     const payload = {
       employeeName: values.employeeName,
-      email: values.email,
       phoneNumber: values.phoneNumber,
       username: values.username,
-      password: values.password, // optional khi edit
+      password: values.password || undefined, // optional when edit
       // BE yêu cầu dd/MM/yyyy
       hireDate: values.hireDate ? values.hireDate.format("DD/MM/YYYY") : null,
       address: values.address,
       baseSalary: values.baseSalary ?? null,
     };
+
+    // Only include email for new employee creation
+    if (!editingEmployee) {
+      payload.email = values.email;
+    }
 
     try {
       if (editingEmployee) {
@@ -388,10 +393,13 @@ const Employees = () => {
             name="email"
             label="Email"
             rules={[
-              { required: true, message: "Vui lòng nhập email" },
+              { required: !editingEmployee, message: "Vui lòng nhập email" },
               { type: "email", message: "Email không hợp lệ" },
-            ]}>
-            <Input placeholder="Nhập email" />
+            ]}
+            extra={
+              editingEmployee ? "Email không thể thay đổi sau khi tạo" : null
+            }>
+            <Input placeholder="Nhập email" disabled={!!editingEmployee} />
           </Form.Item>
 
           <Form.Item
@@ -414,11 +422,19 @@ const Employees = () => {
 
           <Form.Item
             name="password"
-            label="Mật khẩu"
+            label={
+              editingEmployee
+                ? "Mật khẩu mới (để trống nếu không đổi)"
+                : "Mật khẩu"
+            }
             rules={[
               { required: !editingEmployee, message: "Vui lòng nhập mật khẩu" },
             ]}>
-            <Input.Password placeholder="Nhập mật khẩu" />
+            <Input.Password
+              placeholder={
+                editingEmployee ? "Nhập mật khẩu mới" : "Nhập mật khẩu"
+              }
+            />
           </Form.Item>
 
           <Form.Item name="hireDate" label="Ngày vào làm">

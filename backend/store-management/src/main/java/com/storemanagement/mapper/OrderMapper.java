@@ -27,6 +27,10 @@ public interface OrderMapper {
     @Mapping(target = "promotionCode", source = "promotionCode")
     @Mapping(target = "idPromotion", expression = "java(entity.getPromotion() != null ? entity.getPromotion().getIdPromotion() : null)")
     @Mapping(target = "idPromotionRule", expression = "java(entity.getPromotionRule() != null ? entity.getPromotionRule().getIdRule() : null)")
+    @Mapping(target = "promotionName", expression = "java(getPromotionName(entity))")
+    @Mapping(target = "promotionDiscountType", expression = "java(getPromotionDiscountType(entity))")
+    @Mapping(target = "promotionDiscountValue", expression = "java(getPromotionDiscountValue(entity))")
+    @Mapping(target = "promotionScope", expression = "java(getPromotionScope(entity))")
     @Mapping(target = "shippingFee", source = "shippingFee")
     @Mapping(target = "orderItems", ignore = true)
     @Mapping(target = "productId", ignore = true)
@@ -78,4 +82,45 @@ public interface OrderMapper {
     List<OrderDetailDTO> detailListToDTO(List<OrderDetail> details);
 
     List<OrderDTO> toDTOList(List<Order> orders);
+
+    // Helper methods for promotion info
+    default String getPromotionName(Order entity) {
+        if (entity.getPromotion() != null) {
+            return entity.getPromotion().getCode();
+        }
+        if (entity.getPromotionRule() != null) {
+            return entity.getPromotionRule().getRuleName();
+        }
+        return null;
+    }
+
+    default String getPromotionDiscountType(Order entity) {
+        if (entity.getPromotion() != null) {
+            return entity.getPromotion().getDiscountType().name();
+        }
+        if (entity.getPromotionRule() != null) {
+            return entity.getPromotionRule().getDiscountType().name();
+        }
+        return null;
+    }
+
+    default java.math.BigDecimal getPromotionDiscountValue(Order entity) {
+        if (entity.getPromotion() != null) {
+            return entity.getPromotion().getDiscountValue();
+        }
+        if (entity.getPromotionRule() != null) {
+            return entity.getPromotionRule().getDiscountValue();
+        }
+        return null;
+    }
+
+    default String getPromotionScope(Order entity) {
+        if (entity.getPromotion() != null && entity.getPromotion().getScope() != null) {
+            return entity.getPromotion().getScope().name();
+        }
+        if (entity.getPromotionRule() != null && entity.getPromotionRule().getScope() != null) {
+            return entity.getPromotionRule().getScope().name();
+        }
+        return null;
+    }
 }

@@ -50,8 +50,18 @@ public class Promotion extends BaseEntity {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "scope", nullable = false)
+    @Builder.Default
+    private PromotionScope scope = PromotionScope.ORDER;
+
     public enum DiscountType {
         PERCENTAGE, FIXED_AMOUNT
+    }
+
+    public enum PromotionScope {
+        ORDER,    // Giảm giá đơn hàng (default)
+        SHIPPING  // Giảm giá phí vận chuyển
     }
 }
 
