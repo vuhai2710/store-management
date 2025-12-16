@@ -46,6 +46,7 @@ export const API_ENDPOINTS = {
     BY_PRICE: "/products/price",
     BEST_SELLERS: "/products/best-sellers",
     TOP_5_BEST_SELLERS: "/products/best-sellers/top-5",
+    BRANDS: "/products/brands",
     // PUBLIC: "/products/public" // nếu có dùng listing public
   },
 

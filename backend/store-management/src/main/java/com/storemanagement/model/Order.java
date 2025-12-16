@@ -92,6 +92,29 @@ public class Order {
     @JoinColumn(name = "id_promotion_rule")
     private PromotionRule promotionRule;
 
+    // Shipping-specific discount fields
+    @Column(name = "shipping_discount", precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal shippingDiscount = BigDecimal.ZERO;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_shipping_promotion")
+    private Promotion shippingPromotion;
+
+    @Column(name = "shipping_promotion_code", length = 50)
+    private String shippingPromotionCode;
+
+    // Invoice print tracking fields
+    @Column(name = "invoice_printed")
+    @Builder.Default
+    private Boolean invoicePrinted = false;
+
+    @Column(name = "invoice_printed_at")
+    private LocalDateTime invoicePrintedAt;
+
+    @Column(name = "invoice_printed_by")
+    private Integer invoicePrintedBy;
+
     @PrePersist
     protected void onCreate() {
         if (orderDate == null) {

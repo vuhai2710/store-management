@@ -89,6 +89,9 @@ const Promotions = () => {
   const [ruleSearchKeyword, setRuleSearchKeyword] = useState("");
   const debouncedRuleKeyword = useDebounce(ruleSearchKeyword, 300);
 
+  // Scope filter for promotions
+  const [promoScopeFilter, setPromoScopeFilter] = useState(null);
+
   const [isPromoModalVisible, setIsPromoModalVisible] = useState(false);
   const [editingPromotion, setEditingPromotion] = useState(null);
   const [promoSubmitting, setPromoSubmitting] = useState(false);
@@ -127,9 +130,10 @@ const Promotions = () => {
         sortBy: "createdAt",
         sortDirection: "DESC",
         keyword: debouncedPromoKeyword?.trim() || undefined,
+        scope: promoScopeFilter || undefined,
       })
     );
-  }, [dispatch, promoPage, promoPageSize, debouncedPromoKeyword]);
+  }, [dispatch, promoPage, promoPageSize, debouncedPromoKeyword, promoScopeFilter]);
 
   const fetchRulesList = useCallback(() => {
     dispatch(
@@ -204,6 +208,7 @@ const Promotions = () => {
     promoForm.setFieldsValue({
       discountType: "PERCENTAGE",
       isActive: true,
+      scope: "ORDER",
     });
     setIsPromoModalVisible(true);
   };
@@ -224,6 +229,7 @@ const Promotions = () => {
       usageLimit: record.usageLimit != null ? Number(record.usageLimit) : null,
       dateRange: startDate && endDate ? [startDate, endDate] : null,
       isActive: record.isActive !== undefined ? record.isActive : true,
+      scope: record.scope || "ORDER",
     });
     setIsPromoModalVisible(true);
   };
@@ -248,6 +254,7 @@ const Promotions = () => {
         .format("DD/MM/YYYY HH:mm:ss"),
       endDate: values.dateRange[1].endOf("day").format("DD/MM/YYYY HH:mm:ss"),
       isActive: values.isActive ?? true,
+      scope: values.scope || "ORDER",
     };
 
     setPromoSubmitting(true);
@@ -408,6 +415,16 @@ const Promotions = () => {
           <div>Từ: {formatDate(record.startDate)}</div>
           <div>Đến: {formatDate(record.endDate)}</div>
         </div>
+      ),
+    },
+    {
+      title: "Phạm vi",
+      dataIndex: "scope",
+      key: "scope",
+      render: (scope) => (
+        <Tag color={scope === "SHIPPING" ? "cyan" : "purple"}>
+          {scope === "SHIPPING" ? "Phí vận chuyển" : "Đơn hàng"}
+        </Tag>
       ),
     },
     {
@@ -583,14 +600,25 @@ const Promotions = () => {
                 flexWrap: "wrap",
                 gap: 12,
               }}>
-              <Input
-                placeholder="Tìm kiếm mã giảm giá..."
-                prefix={<SearchOutlined style={{ color: "#94A3B8" }} />}
-                value={promoSearchKeyword}
-                onChange={(e) => setPromoSearchKeyword(e.target.value)}
-                allowClear
-                style={{ maxWidth: 300 }}
-              />
+              <Space>
+                <Input
+                  placeholder="Tìm kiếm mã giảm giá..."
+                  prefix={<SearchOutlined style={{ color: "#94A3B8" }} />}
+                  value={promoSearchKeyword}
+                  onChange={(e) => setPromoSearchKeyword(e.target.value)}
+                  allowClear
+                  style={{ width: 200 }}
+                />
+                <Select
+                  placeholder="Phạm vi"
+                  value={promoScopeFilter}
+                  onChange={(value) => setPromoScopeFilter(value)}
+                  allowClear
+                  style={{ width: 150 }}>
+                  <Option value="ORDER">Đơn hàng</Option>
+                  <Option value="SHIPPING">Phí vận chuyển</Option>
+                </Select>
+              </Space>
               <Space>
                 <Button
                   type="primary"
@@ -602,6 +630,7 @@ const Promotions = () => {
                   icon={<ReloadOutlined />}
                   onClick={() => {
                     setPromoSearchKeyword("");
+                    setPromoScopeFilter(null);
                     fetchPromotionsList();
                   }}>
                   Làm mới
@@ -610,7 +639,7 @@ const Promotions = () => {
             </div>
 
             {promotions.loading &&
-            (!promotions.list || promotions.list.length === 0) ? (
+              (!promotions.list || promotions.list.length === 0) ? (
               <LoadingSkeleton type="table" rows={5} />
             ) : promotions.list.length === 0 ? (
               <EmptyState description="Chưa có mã giảm giá nào" />
@@ -791,9 +820,26 @@ const Promotions = () => {
             </Col>
           </Row>
 
-          <Form.Item name="isActive" label="Trạng thái" valuePropName="checked">
-            <Switch checkedChildren="Hoạt động" unCheckedChildren="Tạm dừng" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="scope"
+                label="Phạm vi áp dụng"
+                rules={[
+                  { required: true, message: "Vui lòng chọn phạm vi áp dụng" },
+                ]}>
+                <Select placeholder="Chọn phạm vi áp dụng">
+                  <Option value="ORDER">Đơn hàng (giảm giá sản phẩm)</Option>
+                  <Option value="SHIPPING">Phí vận chuyển</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="isActive" label="Trạng thái" valuePropName="checked">
+                <Switch checkedChildren="Hoạt động" unCheckedChildren="Tạm dừng" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <div style={{ textAlign: "right" }}>
             <Space>

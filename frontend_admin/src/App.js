@@ -50,6 +50,8 @@ import ProductReviews from "./pages/ProductReviews";
 import ReturnListPage from "./pages/orderReturns/ReturnListPage";
 import ReturnDetailPage from "./pages/orderReturns/ReturnDetailPage";
 import ReturnSettingPage from "./pages/system/ReturnSettingPage";
+import ExportInvoices from "./pages/ExportInvoices";
+import ImportInvoices from "./pages/ImportInvoices";
 
 const { Content } = Layout;
 
@@ -397,6 +399,24 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
                   <ReturnSettingPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Invoices - ADMIN only */}
+            <Route
+              path="/invoices/export"
+              element={
+                <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                  <ExportInvoices />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/invoices/import"
+              element={
+                <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                  <ImportInvoices />
                 </ProtectedRoute>
               }
             />

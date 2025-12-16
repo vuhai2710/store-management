@@ -4,9 +4,9 @@ import { promotionsService } from "../../services/promotionsService";
 // Async thunks cho Promotions
 export const fetchPromotions = createAsyncThunk(
   "promotions/fetchPromotions",
-  async ({ pageNo = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "DESC" }, { rejectWithValue }) => {
+  async ({ pageNo = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "DESC", keyword, scope }, { rejectWithValue }) => {
     try {
-      const response = await promotionsService.getAllPromotions({ pageNo, pageSize, sortBy, sortDirection });
+      const response = await promotionsService.getAllPromotions({ pageNo, pageSize, sortBy, sortDirection, keyword, scope });
       return response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message || "Lấy danh sách mã giảm giá thất bại");

@@ -61,10 +61,15 @@ public class OrderDTO {
     // Promotion info for price breakdown
     private Integer idPromotion;
     private Integer idPromotionRule;
-    private String promotionName;           // Name of promotion or rule applied
-    private String promotionDiscountType;   // PERCENTAGE or FIXED_AMOUNT
+    private String promotionName; // Name of promotion or rule applied
+    private String promotionDiscountType; // PERCENTAGE or FIXED_AMOUNT
     private java.math.BigDecimal promotionDiscountValue; // The discount percentage or fixed amount
-    private String promotionScope;          // ORDER or SHIPPING
+    private String promotionScope; // ORDER or SHIPPING
+
+    // Shipping promotion fields
+    private BigDecimal shippingDiscount; // Giảm giá phí vận chuyển
+    private String shippingPromotionCode; // Mã giảm giá phí vận chuyển đã sử dụng
+    private Integer idShippingPromotion; // ID của promotion áp dụng cho shipping
 
     private Integer customerId;
 

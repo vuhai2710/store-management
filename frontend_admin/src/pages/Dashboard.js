@@ -1,322 +1,581 @@
-import React, { useEffect, useState } from "react";
-import { Row, Col, Card, Statistic, Typography, Spin } from "antd";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  Row,
+  Col,
+  Card,
+  Statistic,
+  Typography,
+  Spin,
+  Table,
+  Tag,
+  Button,
+  Space,
+  Tooltip,
+  Skeleton,
+  message,
+  Empty,
+} from "antd";
 import {
   ShoppingCartOutlined,
-  AppstoreOutlined,
-  UserOutlined,
   DollarOutlined,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
+  CheckCircleOutlined,
+  SwapOutlined,
+  ReloadOutlined,
+  TrophyOutlined,
+  QuestionCircleOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchOrders } from "../store/slices/ordersSlice";
-import { fetchProducts } from "../store/slices/productsSlice";
-import { fetchCustomers } from "../store/slices/customersSlice";
-import { ordersService } from "../services/ordersService";
-import { productsService } from "../services/productsService";
-import { customersService } from "../services/customersService";
-import RevenueChart from "../components/dashboard/RevenueChart";
-import OrderStatusChart from "../components/dashboard/OrderStatusChart";
-import TopProductsChart from "../components/dashboard/TopProductsChart";
-import RecentOrders from "../components/dashboard/RecentOrders";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { dashboardService } from "../services/dashboardService";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
+/**
+ * Admin Dashboard - Business Overview
+ *
+ * IMPORTANT: Revenue = Products only (EXCLUDES shipping fee)
+ */
 const Dashboard = () => {
-  const dispatch = useDispatch();
-  const { orders, pagination: ordersPagination, loading: ordersLoading } = useSelector(
-    (state) => state.orders || {}
-  );
-  const { list: products, pagination: productsPagination, loading: productsLoading } = useSelector(
-    (state) => state.products || {}
-  );
-  const { list: customers, pagination: customersPagination, loading: customersLoading } = useSelector(
-    (state) => state.customers || {}
-  );
-  
-  const [dashboardStats, setDashboardStats] = useState({
-    totalOrders: 0,
-    totalProducts: 0,
-    totalCustomers: 0,
-    totalRevenue: 0,
-    recentOrders: [],
-    allOrdersForRevenue: [],
-    ordersByStatus: {},
-  });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [data, setData] = useState(null);
 
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
+  // Format currency
+  const formatCurrency = (value) => {
+    if (value === null || value === undefined) return "0";
+    const num = Number(value);
+    if (num >= 1000000000) {
+      return `${(num / 1000000000).toFixed(1)}B`;
+    }
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}M`;
+    }
+    if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}K`;
+    }
+    return num.toLocaleString("vi-VN");
+  };
+
+  const formatFullCurrency = (value) => {
+    if (value === null || value === undefined) return "0 VNĐ";
+    return `${Number(value).toLocaleString("vi-VN")} VNĐ`;
+  };
+
+  // Load dashboard data
+  const loadDashboard = useCallback(async (showRefreshing = false) => {
+    try {
+      if (showRefreshing) {
+        setRefreshing(true);
+      } else {
         setLoading(true);
-
-        // Fetch orders - get total count and recent orders for dashboard
-        const ordersResponse = await ordersService.getOrders({
-          pageNo: 1,
-          pageSize: 100, // Get more orders for revenue calculation
-          sortBy: "orderDate",
-          sortDirection: "DESC",
-        });
-        const ordersData = ordersResponse?.content || [];
-        const totalOrdersCount = ordersResponse?.totalElements || 0;
-
-        // Calculate revenue from all completed orders (for dashboard stats)
-        // Note: This is just from the first 100 orders. For accurate revenue, 
-        // we'd need to fetch all completed orders or use a backend aggregation endpoint
-        const completedOrders = ordersData.filter(
-          (order) => order.status === "COMPLETED"
-        );
-        const revenue = completedOrders.reduce(
-          (sum, order) => {
-            const amount = Number(order.totalAmount) || 0;
-            const discount = Number(order.discount) || 0;
-            const finalAmount = Number(order.finalAmount) || (amount - discount);
-            return sum + finalAmount;
-          },
-          0
-        );
-
-        // Count orders by status (from fetched orders)
-        const ordersByStatus = ordersData.reduce((acc, order) => {
-          const status = order.status || "UNKNOWN";
-          acc[status] = (acc[status] || 0) + 1;
-          return acc;
-        }, {});
-
-        // Fetch products - get total count
-        const productsResponse = await productsService.getProductsPaginated({
-          pageNo: 1,
-          pageSize: 1,
-          sortBy: "idProduct",
-          sortDirection: "ASC",
-        });
-        const totalProductsCount = productsResponse?.totalElements || 0;
-
-        // Fetch customers - get total count (use getAllCustomers -> has 'total')
-        const customersResponse = await customersService.getAllCustomers({
-          pageNo: 1,
-          pageSize: 1,
-          sortBy: "idCustomer",
-          sortDirection: "ASC",
-        });
-
-        const totalCustomersCount =
-          customersResponse?.total ??
-          customersResponse?.totalElements ??
-          customersResponse?.page?.totalElements ??
-          (Array.isArray(customersResponse?.data)
-            ? customersResponse.data.length
-            : 0);
-
-        setDashboardStats({
-          totalOrders: totalOrdersCount,
-          totalProducts: totalProductsCount,
-          totalCustomers: totalCustomersCount,
-          totalRevenue: revenue,
-          recentOrders: ordersData.slice(0, 5),
-          allOrdersForRevenue: completedOrders,
-          ordersByStatus,
-        });
-      } catch (error) {
-        console.error("Error loading dashboard data:", error);
-      } finally {
-        setLoading(false);
       }
-    };
 
-    loadDashboardData();
+      const response = await dashboardService.getOverview(5, 10, 7);
+      setData(response);
+    } catch (error) {
+      console.error("Error loading dashboard:", error);
+      message.error("Lỗi khi tải dữ liệu dashboard");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
-  const isLoading = loading || ordersLoading || productsLoading || customersLoading;
+  // Initial load
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
-  // Statistics
-  const { totalOrders, totalProducts, totalCustomers, totalRevenue, recentOrders, allOrdersForRevenue, ordersByStatus } = dashboardStats;
+  // Handle refresh
+  const handleRefresh = () => {
+    loadDashboard(true);
+  };
 
-  const statsCards = [
+  // Custom chart tooltip
+  const CustomChartTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div
+          style={{
+            backgroundColor: "white",
+            padding: "10px",
+            border: "1px solid #E2E8F0",
+            borderRadius: "8px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          }}
+        >
+          <p style={{ margin: 0, fontWeight: 600 }}>{label}</p>
+          <p style={{ margin: "4px 0 0", color: "#2563EB" }}>
+            Doanh thu thuần: {formatFullCurrency(payload[0].value)}
+          </p>
+          {payload[0].payload.orderCount && (
+            <p style={{ margin: "4px 0 0", color: "#64748B" }}>
+              Đơn hàng: {payload[0].payload.orderCount}
+            </p>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Top products columns
+  const topProductsColumns = [
     {
-      title: "Tổng đơn hàng",
-      value: totalOrders,
-      icon: <ShoppingCartOutlined />,
-      color: "#1890ff",
-      trendUp: true,
+      title: "#",
+      key: "rank",
+      width: 40,
+      render: (_, __, index) => (
+        <span
+          style={{
+            fontWeight: 600,
+            color: index < 3 ? "#f59e0b" : "#64748B",
+          }}
+        >
+          {index + 1}
+        </span>
+      ),
     },
     {
       title: "Sản phẩm",
-      value: totalProducts,
-      icon: <AppstoreOutlined />,
-      color: "#52c41a",
-      trendUp: true,
+      dataIndex: "productName",
+      key: "productName",
+      ellipsis: true,
+      render: (text) => (
+        <Text ellipsis style={{ maxWidth: 180 }}>
+          {text}
+        </Text>
+      ),
     },
     {
-      title: "Khách hàng",
-      value: totalCustomers,
-      icon: <UserOutlined />,
-      color: "#fa8c16",
-      trendUp: true,
+      title: "SL bán",
+      dataIndex: "quantitySold",
+      key: "quantitySold",
+      align: "right",
+      width: 80,
+      render: (val) => (
+        <Text strong>{Number(val).toLocaleString("vi-VN")}</Text>
+      ),
     },
     {
-      title: "Doanh thu (VNĐ)",
-      value: totalRevenue.toLocaleString("vi-VN"),
-      icon: <DollarOutlined />,
-      color: "#eb2f96",
-      trendUp: true,
+      title: "Doanh thu",
+      dataIndex: "netRevenue",
+      key: "netRevenue",
+      align: "right",
+      width: 120,
+      render: (val) => (
+        <Text style={{ color: "#16a34a", fontWeight: 500 }}>
+          {formatCurrency(val)}
+        </Text>
+      ),
     },
   ];
 
-  if (isLoading) {
+  // Recent orders columns
+  const recentOrdersColumns = [
+    {
+      title: "Mã ĐH",
+      dataIndex: "orderId",
+      key: "orderId",
+      width: 70,
+      render: (id) => <Text strong>#{id}</Text>,
+    },
+    {
+      title: "Khách hàng",
+      dataIndex: "customerName",
+      key: "customerName",
+      ellipsis: true,
+      render: (name) => name || "Khách vãng lai",
+    },
+    {
+      title: "Ngày đặt",
+      dataIndex: "orderDate",
+      key: "orderDate",
+      width: 120,
+      render: (date) => <Text type="secondary">{date}</Text>,
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      width: 110,
+      render: (status) => {
+        const statusMap = {
+          PENDING: { color: "warning", text: "Chờ xác nhận" },
+          CONFIRMED: { color: "processing", text: "Đã xác nhận" },
+          SHIPPING: { color: "cyan", text: "Đang giao" },
+          COMPLETED: { color: "success", text: "Hoàn thành" },
+          CANCELED: { color: "error", text: "Đã hủy" },
+        };
+        const config = statusMap[status] || { color: "default", text: status };
+        return <Tag color={config.color}>{config.text}</Tag>;
+      },
+    },
+    {
+      title: "Thanh toán",
+      dataIndex: "finalAmount",
+      key: "finalAmount",
+      align: "right",
+      width: 110,
+      render: (val) => (
+        <Text strong style={{ color: "#0f172a" }}>
+          {formatCurrency(val)}
+        </Text>
+      ),
+    },
+  ];
+
+  // Render loading skeleton
+  if (loading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "240px",
-        }}
-      >
-        <Spin size="large" />
+      <div style={{ padding: "8px 0" }}>
+        <Skeleton active paragraph={{ rows: 1 }} />
+        <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Col xs={24} sm={12} lg={8} xl={4} key={i}>
+              <Card>
+                <Skeleton active paragraph={{ rows: 2 }} />
+              </Card>
+            </Col>
+          ))}
+        </Row>
+        <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+          <Col xs={24} lg={16}>
+            <Card>
+              <Skeleton active paragraph={{ rows: 8 }} />
+            </Card>
+          </Col>
+          <Col xs={24} lg={8}>
+            <Card>
+              <Skeleton active paragraph={{ rows: 8 }} />
+            </Card>
+          </Col>
+        </Row>
       </div>
     );
   }
 
+  // Transform chart data
+  const chartData = (data?.revenueChart || []).map((item) => ({
+    date: item.date,
+    netRevenue: Number(item.netRevenue) || 0,
+    orderCount: item.orderCount || 0,
+  }));
+
   return (
     <div style={{ padding: "8px 0" }}>
+      {/* Page Header */}
       <div
-        className="page-header"
         style={{
           marginBottom: 24,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 12,
         }}
       >
-        <Title
-          level={2}
-          style={{
-            marginBottom: 4,
-            fontWeight: 700,
-            color: "#0F172A",
-          }}
+        <div>
+          <Title
+            level={2}
+            style={{
+              marginBottom: 4,
+              fontWeight: 700,
+              color: "#0F172A",
+            }}
+          >
+            <CalendarOutlined style={{ marginRight: 12 }} />
+            Bảng điều khiển
+          </Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>
+            Tổng quan nhanh về hiệu suất cửa hàng điện tử ElectronicStore
+          </Text>
+        </div>
+        <Button
+          icon={<ReloadOutlined spin={refreshing} />}
+          onClick={handleRefresh}
+          loading={refreshing}
         >
-          Bảng điều khiển
-        </Title>
-        <p
-          style={{
-            margin: 0,
-            color: "#64748B",
-            fontSize: 14,
-          }}
-        >
-          Tổng quan nhanh về hiệu suất cửa hàng điện tử TechStore
-        </p>
+          Làm mới
+        </Button>
       </div>
 
-      {/* Statistics Cards */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        {statsCards.map((stat, index) => (
-          <Col xs={24} sm={12} lg={6} key={index}>
-            <Card
-              className="stats-card"
-              style={{
-                background: "#FFFFFF",
-                borderRadius: 12,
-                boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
-                border: "1px solid #E2E8F0",
+      {/* KPI Cards Row 1 - Today */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        {/* Today Revenue */}
+        <Col xs={24} sm={12} lg={8} xl={4}>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: "1px solid #10b981",
+              boxShadow: "0 8px 24px rgba(16, 185, 129, 0.15)",
+              background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
+            }}
+          >
+            <Statistic
+              title={
+                <Space>
+                  <DollarOutlined />
+                  <span>Doanh thu hôm nay</span>
+                  <Tooltip title="Doanh thu thuần (KHÔNG bao gồm ship)">
+                    <QuestionCircleOutlined style={{ color: "#8c8c8c" }} />
+                  </Tooltip>
+                </Space>
+              }
+              value={data?.todayRevenue || 0}
+              formatter={(val) => formatCurrency(val)}
+              valueStyle={{ color: "#059669", fontSize: 24, fontWeight: 700 }}
+            />
+          </Card>
+        </Col>
+
+        {/* Month Revenue */}
+        <Col xs={24} sm={12} lg={8} xl={4}>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: "1px solid #2563EB",
+              boxShadow: "0 8px 24px rgba(37, 99, 235, 0.12)",
+              background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
+            }}
+          >
+            <Statistic
+              title={
+                <Space>
+                  <DollarOutlined />
+                  <span>Doanh thu tháng</span>
+                </Space>
+              }
+              value={data?.monthRevenue || 0}
+              formatter={(val) => formatCurrency(val)}
+              valueStyle={{ color: "#2563EB", fontSize: 24, fontWeight: 700 }}
+            />
+          </Card>
+        </Col>
+
+        {/* Orders Today */}
+        <Col xs={24} sm={12} lg={8} xl={4}>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: "1px solid #E2E8F0",
+              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+            }}
+          >
+            <Statistic
+              title={
+                <Space>
+                  <ShoppingCartOutlined />
+                  <span>Đơn hàng hôm nay</span>
+                </Space>
+              }
+              value={data?.ordersToday || 0}
+              valueStyle={{ fontSize: 24, fontWeight: 600 }}
+            />
+          </Card>
+        </Col>
+
+        {/* Completed Today */}
+        <Col xs={24} sm={12} lg={8} xl={4}>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: "1px solid #E2E8F0",
+              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+            }}
+          >
+            <Statistic
+              title={
+                <Space>
+                  <CheckCircleOutlined />
+                  <span>Hoàn thành hôm nay</span>
+                </Space>
+              }
+              value={data?.completedOrdersToday || 0}
+              valueStyle={{ fontSize: 24, fontWeight: 600, color: "#16a34a" }}
+            />
+          </Card>
+        </Col>
+
+        {/* Orders This Month */}
+        <Col xs={24} sm={12} lg={8} xl={4}>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: "1px solid #E2E8F0",
+              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+            }}
+          >
+            <Statistic
+              title={
+                <Space>
+                  <ShoppingCartOutlined />
+                  <span>Đơn hàng tháng</span>
+                </Space>
+              }
+              value={data?.ordersThisMonth || 0}
+              valueStyle={{ fontSize: 24, fontWeight: 600 }}
+            />
+          </Card>
+        </Col>
+
+        {/* Active Returns */}
+        <Col xs={24} sm={12} lg={8} xl={4}>
+          <Card
+            style={{
+              borderRadius: 12,
+              border:
+                data?.activeReturnRequests > 0
+                  ? "1px solid #f59e0b"
+                  : "1px solid #E2E8F0",
+              boxShadow:
+                data?.activeReturnRequests > 0
+                  ? "0 8px 24px rgba(245, 158, 11, 0.15)"
+                  : "0 8px 24px rgba(15, 23, 42, 0.06)",
+              background:
+                data?.activeReturnRequests > 0
+                  ? "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)"
+                  : undefined,
+            }}
+          >
+            <Statistic
+              title={
+                <Space>
+                  <SwapOutlined />
+                  <span>Yêu cầu đổi/trả</span>
+                </Space>
+              }
+              value={data?.activeReturnRequests || 0}
+              valueStyle={{
+                fontSize: 24,
+                fontWeight: 600,
+                color: data?.activeReturnRequests > 0 ? "#d97706" : undefined,
               }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 12,
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      textTransform: "uppercase",
-                      letterSpacing: 0.6,
-                      color: "#94A3B8",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {stat.title}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 24,
-                      fontWeight: 700,
-                      color: "#0F172A",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {stat.value}
-                  </div>
-                  {typeof stat.trend !== "undefined" && (
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: stat.trendUp ? "#16A34A" : "#DC2626",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
-                    >
-                      {stat.trendUp ? (
-                        <ArrowUpOutlined />
-                      ) : (
-                        <ArrowDownOutlined />
-                      )}
-                      {stat.trend}
-                    </div>
-                  )}
-                </div>
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 9999,
-                    background: stat.color,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "white",
-                    boxShadow: "0 8px 20px rgba(15, 23, 42, 0.25)",
-                  }}
-                >
-                  {stat.icon}
-                </div>
-              </div>
-            </Card>
-          </Col>
-        ))}
+            />
+          </Card>
+        </Col>
       </Row>
 
       {/* Charts Row */}
-      <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        {/* Revenue Chart */}
         <Col xs={24} lg={16}>
-          <Card title="Biểu đồ doanh thu" className="chart-container">
-            <RevenueChart orders={allOrdersForRevenue || []} />
+          <Card
+            title={
+              <Space>
+                <DollarOutlined />
+                <span>Doanh thu 7 ngày gần nhất</span>
+              </Space>
+            }
+            style={{
+              borderRadius: 12,
+              border: "1px solid #E2E8F0",
+              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+            }}
+            bodyStyle={{ padding: 16 }}
+          >
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 12, fill: "#64748B" }}
+                    tickLine={{ stroke: "#E2E8F0" }}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12, fill: "#64748B" }}
+                    tickLine={{ stroke: "#E2E8F0" }}
+                    tickFormatter={(v) =>
+                      `${(Number(v) / 1000000).toFixed(1)}M`
+                    }
+                  />
+                  <RechartsTooltip content={<CustomChartTooltip />} />
+                  <Line
+                    type="monotone"
+                    dataKey="netRevenue"
+                    stroke="#2563EB"
+                    strokeWidth={3}
+                    dot={{ fill: "#2563EB", strokeWidth: 2, r: 5 }}
+                    activeDot={{ r: 7, fill: "#2563EB" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <Empty description="Chưa có dữ liệu doanh thu" />
+            )}
           </Card>
         </Col>
+
+        {/* Top Products */}
         <Col xs={24} lg={8}>
-          <Card title="Trạng thái đơn hàng" className="chart-container">
-            <OrderStatusChart ordersByStatus={ordersByStatus} />
+          <Card
+            title={
+              <Space>
+                <TrophyOutlined style={{ color: "#f59e0b" }} />
+                <span>Sản phẩm bán chạy tháng này</span>
+              </Space>
+            }
+            style={{
+              borderRadius: 12,
+              border: "1px solid #E2E8F0",
+              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+            }}
+            bodyStyle={{ padding: 0 }}
+          >
+            <Table
+              columns={topProductsColumns}
+              dataSource={data?.topProducts || []}
+              rowKey="productId"
+              pagination={false}
+              size="small"
+              locale={{ emptyText: <Empty description="Chưa có dữ liệu" /> }}
+            />
           </Card>
         </Col>
       </Row>
 
-      {/* Bottom Row */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={12}>
-          <Card title="Sản phẩm bán chạy" className="chart-container">
-            <TopProductsChart />
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card title="Đơn hàng gần đây" className="chart-container">
-            <RecentOrders orders={recentOrders} />
-          </Card>
-        </Col>
-      </Row>
+      {/* Recent Orders */}
+      <Card
+        title={
+          <Space>
+            <ShoppingCartOutlined />
+            <span>Đơn hàng gần đây</span>
+          </Space>
+        }
+        style={{
+          borderRadius: 12,
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+        }}
+        bodyStyle={{ padding: 0 }}
+      >
+        <Table
+          columns={recentOrdersColumns}
+          dataSource={data?.recentOrders || []}
+          rowKey="orderId"
+          pagination={false}
+          size="middle"
+          scroll={{ x: 600 }}
+          locale={{ emptyText: <Empty description="Chưa có đơn hàng" /> }}
+        />
+      </Card>
+
+      {/* Footer Note */}
+      <div style={{ marginTop: 16, textAlign: "center" }}>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          💡 Doanh thu được tính từ đơn hàng HOÀN THÀNH và{" "}
+          <strong>KHÔNG bao gồm phí vận chuyển</strong>
+        </Text>
+      </div>
     </div>
   );
 };

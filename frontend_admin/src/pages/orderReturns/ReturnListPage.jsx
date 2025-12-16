@@ -1,3 +1,4 @@
+import { formatDate } from "../../utils/formatUtils";
 import React, {
   useEffect,
   useState,
@@ -385,7 +386,7 @@ const ReturnListPage = () => {
         title: "Ngày tạo",
         dataIndex: "createdAt",
         key: "createdAt",
-        render: (date) => new Date(date).toLocaleString("vi-VN"),
+        render: (date) => formatDate(date, "DD/MM/YYYY HH:mm:ss"),
       },
       {
         title: "Hành động",

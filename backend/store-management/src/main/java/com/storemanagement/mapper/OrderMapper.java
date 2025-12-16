@@ -32,6 +32,9 @@ public interface OrderMapper {
     @Mapping(target = "promotionDiscountValue", expression = "java(getPromotionDiscountValue(entity))")
     @Mapping(target = "promotionScope", expression = "java(getPromotionScope(entity))")
     @Mapping(target = "shippingFee", source = "shippingFee")
+    @Mapping(target = "shippingDiscount", source = "shippingDiscount")
+    @Mapping(target = "shippingPromotionCode", source = "shippingPromotionCode")
+    @Mapping(target = "idShippingPromotion", expression = "java(entity.getShippingPromotion() != null ? entity.getShippingPromotion().getIdPromotion() : null)")
     @Mapping(target = "orderItems", ignore = true)
     @Mapping(target = "productId", ignore = true)
     @Mapping(target = "quantity", ignore = true)
@@ -53,6 +56,7 @@ public interface OrderMapper {
     @Mapping(target = "finalAmount", ignore = true)
     @Mapping(target = "promotion", ignore = true)
     @Mapping(target = "promotionRule", ignore = true)
+    @Mapping(target = "shippingPromotion", ignore = true)
     Order toEntity(OrderDTO dto);
 
     @Mapping(target = "idOrderDetail", source = "idOrderDetail")

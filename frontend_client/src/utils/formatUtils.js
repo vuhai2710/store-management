@@ -72,11 +72,11 @@ export const formatPrice = (price, currency = "₫") => {
  * @returns {string}
  */
 export const formatDate = (date, format = "dd/MM/yyyy") => {
-  if (!date) return "";
+  if (!date) return "-";
 
   // Use parseBackendDate to handle dd/MM/yyyy format from backend
   const d = parseBackendDate(date);
-  if (!d || isNaN(d.getTime())) return "";
+  if (!d || isNaN(d.getTime())) return "-";
 
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");

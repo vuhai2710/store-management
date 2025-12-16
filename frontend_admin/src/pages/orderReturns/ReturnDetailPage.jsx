@@ -1,3 +1,4 @@
+import { formatDate } from "../../utils/formatUtils";
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, Descriptions, Button, Space, Tag, message, Divider } from "antd";
@@ -156,7 +157,7 @@ const ReturnDetailPage = () => {
             <Tag>{returnData.status}</Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Ngày tạo">
-            {new Date(returnData.createdAt).toLocaleString("vi-VN")}
+            {formatDate(returnData.createdAt, "DD/MM/YYYY HH:mm:ss")}
           </Descriptions.Item>
           <Descriptions.Item label="Mã khách hàng">
             {returnData.createdByCustomerId}

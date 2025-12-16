@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useReturnService } from "../../hooks/useReturnService";
 import ReturnTimeline from "../../components/returns/ReturnTimeline";
+import { formatDate } from "../../utils/formatUtils";
 
 const ReturnDetailPage = ({ returnId, setCurrentPage }) => {
   const { getReturnDetail, loading } = useReturnService();
@@ -145,7 +146,7 @@ const ReturnDetailPage = ({ returnId, setCurrentPage }) => {
               <div className="flex justify-between">
                 <span className="text-gray-500">Ngày tạo</span>
                 <span className="text-sm">
-                  {new Date(returnData.createdAt).toLocaleDateString("vi-VN")}
+                  {formatDate(returnData.createdAt, "dd/MM/yyyy")}
                 </span>
               </div>
               {returnData.orderId && (

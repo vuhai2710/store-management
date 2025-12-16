@@ -158,20 +158,64 @@ const Orders = () => {
 
   const handlePrintInvoice = async (orderId, e) => {
     e?.stopPropagation();
+
+    // Check order status and print status in current data
+    const order = orders.find(o => (o.idOrder || o.id) === orderId);
+
+    // Only allow printing for COMPLETED orders
+    const status = order?.status?.toUpperCase?.() || order?.status;
+    if (status !== "COMPLETED") {
+      message.warning("Chỉ có thể in hóa đơn cho đơn hàng đã hoàn thành");
+      return;
+    }
+
+    if (order?.invoicePrinted) {
+      message.warning("Hóa đơn đã được in trước đó. Vui lòng vào trang Quản lý Hóa đơn để xem chi tiết.");
+      return;
+    }
+
     try {
-      const { ordersService } = await import("../services/ordersService");
-      const blob = await ordersService.exportOrderToPdf(orderId);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `hoa-don-${orderId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      message.success("Xuất hóa đơn thành công!");
+      const { invoiceService } = await import("../services/invoiceService");
+      const printData = await invoiceService.printExportInvoice(orderId);
+      message.success("In hóa đơn thành công!");
+
+      // Refresh order list to update printed status
+      fetchOrdersList();
+
+      // Open print window with invoice data
+      const printWindow = window.open("", "_blank", "width=800,height=600");
+      if (printWindow) {
+        const formatCurrency = (amount) => (amount || 0).toLocaleString("vi-VN") + " VNĐ";
+        const itemsHtml = (printData.items || []).map((item, idx) => `
+          <tr>
+            <td style="padding:8px;border:1px solid #ddd;text-align:center">${idx + 1}</td>
+            <td style="padding:8px;border:1px solid #ddd">${item.productName || ""}</td>
+            <td style="padding:8px;border:1px solid #ddd;text-align:center">${item.quantity}</td>
+            <td style="padding:8px;border:1px solid #ddd;text-align:right">${formatCurrency(item.unitPrice)}</td>
+            <td style="padding:8px;border:1px solid #ddd;text-align:right">${formatCurrency(item.subtotal)}</td>
+          </tr>
+        `).join("");
+
+        printWindow.document.write(`
+          <!DOCTYPE html><html><head><title>Hóa đơn #${orderId}</title>
+          <style>body{font-family:Arial,sans-serif;padding:20px}.header{text-align:center;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#f5f5f5;padding:10px;border:1px solid #ddd}.summary{text-align:right}.total{font-weight:bold;font-size:18px;color:#1890ff}@media print{.no-print{display:none}}</style>
+          </head><body>
+          <div class="header"><h1>HÓA ĐƠN XUẤT HÀNG</h1><p>Mã đơn hàng: #${orderId}</p></div>
+          <div><p><strong>Khách hàng:</strong> ${printData.customerName || "N/A"}</p><p><strong>Điện thoại:</strong> ${printData.customerPhone || "N/A"}</p></div>
+          <table><thead><tr><th>STT</th><th>Tên sản phẩm</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead><tbody>${itemsHtml}</tbody></table>
+          <div class="summary"><p><strong>Thành tiền:</strong> ${formatCurrency(printData.productSubtotal)}</p><p><strong>Phí vận chuyển:</strong> ${formatCurrency(printData.shippingFee)}</p>${printData.discount > 0 ? `<p><strong>Giảm giá:</strong> -${formatCurrency(printData.discount)}</p>` : ""}<p class="total"><strong>TỔNG:</strong> ${formatCurrency(printData.finalPayable)}</p></div>
+          <div class="no-print" style="margin-top:30px;text-align:center"><button onclick="window.print()" style="padding:10px 30px;font-size:16px;cursor:pointer">In hóa đơn</button></div>
+          </body></html>
+        `);
+        printWindow.document.close();
+      }
     } catch (error) {
-      message.error("Xuất hóa đơn thất bại!");
+      if (error.status === 409) {
+        message.error("Hóa đơn đã được in trước đó");
+        fetchOrdersList(); // Refresh to sync state
+      } else {
+        message.error("Xuất hóa đơn thất bại!");
+      }
     }
   };
 
@@ -277,6 +321,10 @@ const Orders = () => {
       fixed: "right",
       render: (_, record) => {
         const orderId = record.idOrder || record.id;
+        const status = record.status?.toUpperCase?.() || record.status;
+        const isCompleted = status === "COMPLETED";
+        const isPrinted = record.invoicePrinted;
+
         return (
           <Space>
             <Tooltip title="Xem chi tiết">
@@ -286,11 +334,20 @@ const Orders = () => {
                 onClick={() => handleViewOrder(orderId)}
               />
             </Tooltip>
-            <Tooltip title="In hóa đơn">
+            <Tooltip
+              title={
+                !isCompleted
+                  ? "Chỉ in được đơn đã hoàn thành"
+                  : isPrinted
+                    ? "Hóa đơn đã được in"
+                    : "In hóa đơn"
+              }
+            >
               <Button
                 type="text"
                 icon={<PrinterOutlined />}
                 onClick={(e) => handlePrintInvoice(orderId, e)}
+                disabled={!isCompleted || isPrinted}
               />
             </Tooltip>
           </Space>

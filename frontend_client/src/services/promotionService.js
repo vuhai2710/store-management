@@ -10,13 +10,40 @@ export const promotionService = {
    * @param {Object} request - Validate request
    * @param {string} request.code - Promotion code
    * @param {number} request.totalAmount - Order total amount
-   * @returns {Promise<{valid: boolean, message: string, discount: number, discountType: string, code: string}>}
+   * @param {number} request.shippingFee - Shipping fee (optional, for SHIPPING scope)
+   * @param {string} request.expectedScope - Expected scope: 'ORDER' or 'SHIPPING' (optional)
+   * @returns {Promise<{valid: boolean, message: string, discount: number, discountType: string, code: string, scope: string}>}
    */
   validatePromotion: async (request) => {
-    const resp = await api.post(API_ENDPOINTS.PROMOTIONS.VALIDATE, {
+    const payload = {
       code: request.code,
       totalAmount: request.totalAmount,
-    });
+    };
+    if (request.shippingFee !== undefined) {
+      payload.shippingFee = request.shippingFee;
+    }
+    if (request.expectedScope) {
+      payload.expectedScope = request.expectedScope;
+    }
+    const resp = await api.post(API_ENDPOINTS.PROMOTIONS.VALIDATE, payload);
+    return unwrap(resp);
+  },
+
+  /**
+   * Validate shipping promotion code (convenience method)
+   * @param {Object} request - Validate request
+   * @param {string} request.code - Shipping promotion code
+   * @param {number} request.shippingFee - Shipping fee amount
+   * @returns {Promise<{valid: boolean, message: string, discount: number, discountType: string, code: string, scope: string}>}
+   */
+  validateShippingPromotion: async (request) => {
+    const payload = {
+      code: request.code,
+      totalAmount: request.shippingFee, // Use shippingFee as totalAmount for min order check
+      shippingFee: request.shippingFee,
+      expectedScope: 'SHIPPING',
+    };
+    const resp = await api.post(API_ENDPOINTS.PROMOTIONS.VALIDATE, payload);
     return unwrap(resp);
   },
 

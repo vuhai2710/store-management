@@ -228,4 +228,14 @@ export const productsService = {
     const resp = await api.put(`/products/images/${imageId}/primary`);
     return unwrap(resp);
   },
+
+  /**
+   * Get all unique brands
+   * GET /api/v1/products/brands
+   * @returns {Promise<string[]>}
+   */
+  getAllBrands: async () => {
+    const resp = await api.get(API_ENDPOINTS.PRODUCTS.BRANDS);
+    return unwrap(resp);
+  },
 };

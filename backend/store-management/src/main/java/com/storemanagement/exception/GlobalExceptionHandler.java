@@ -44,15 +44,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
-        );
+        ex.getBindingResult().getFieldErrors()
+                .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
 
         ApiResponse<Void> response = ApiResponse.error(
                 400,
                 "Dữ liệu không hợp lệ",
-                errors
-        );
+                errors);
         return ResponseEntity.badRequest().body(response);
     }
 
@@ -68,6 +66,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException ex) {
         ApiResponse<Void> response = ApiResponse.error(403, "Bạn không có quyền truy cập tài nguyên này");
         return ResponseEntity.status(403).body(response);
+    }
+
+    // 409 CONFLICT - Invoice already printed
+    @ExceptionHandler(InvoiceAlreadyPrintedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvoiceAlreadyPrinted(InvoiceAlreadyPrintedException ex) {
+        ApiResponse<Void> response = ApiResponse.error(409, ex.getMessage());
+        return ResponseEntity.status(409).body(response);
     }
 
     // NOT FOUND

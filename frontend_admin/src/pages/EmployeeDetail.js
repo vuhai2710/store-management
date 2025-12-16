@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -18,6 +18,8 @@ import {
   Space,
   message,
   Spin,
+  Table,
+  Select,
 } from "antd";
 import {
   EditOutlined,
@@ -30,6 +32,7 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -37,16 +40,37 @@ import {
   updateEmployee,
   clearEmployeeDetail,
 } from "../store/slices/employeesSlice";
+import { employeesService } from "../services/employeesService";
 import { formatDate } from "../utils/formatUtils";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 dayjs.extend(customParseFormat);
 
 const { Title } = Typography;
+const { RangePicker } = DatePicker;
 
 const fmtDate = (v) => formatDate(v, "DD/MM/YYYY");
 const fmtDateTime = (v) => formatDate(v, "DD/MM/YYYY HH:mm");
 const fmtMoney = (v) => (v != null ? Number(v).toLocaleString("vi-VN") : "-");
+
+const ORDER_STATUS_OPTIONS = [
+  { value: null, label: "Tất cả trạng thái" },
+  { value: "PENDING", label: "Chờ xử lý" },
+  { value: "CONFIRMED", label: "Đã xác nhận" },
+  { value: "COMPLETED", label: "Hoàn thành" },
+  { value: "CANCELED", label: "Đã hủy" },
+];
+
+const getStatusTag = (status) => {
+  const statusMap = {
+    PENDING: { color: "gold", text: "Chờ xử lý" },
+    CONFIRMED: { color: "blue", text: "Đã xác nhận" },
+    COMPLETED: { color: "green", text: "Hoàn thành" },
+    CANCELED: { color: "red", text: "Đã hủy" },
+  };
+  const config = statusMap[status] || { color: "default", text: status };
+  return <Tag color={config.color}>{config.text}</Tag>;
+};
 
 const EmployeeDetail = () => {
   const { id } = useParams();
@@ -55,6 +79,44 @@ const EmployeeDetail = () => {
   const { employeeDetail, loading } = useSelector((state) => state.employees);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
+
+  // Orders state
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersPagination, setOrdersPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  const [ordersFilters, setOrdersFilters] = useState({
+    status: null,
+    dateRange: null,
+  });
+
+  const fetchOrders = useCallback(async () => {
+    if (!id) return;
+    setOrdersLoading(true);
+    try {
+      const params = {
+        page: ordersPagination.current,
+        pageSize: ordersPagination.pageSize,
+        status: ordersFilters.status,
+        dateFrom: ordersFilters.dateRange?.[0],
+        dateTo: ordersFilters.dateRange?.[1],
+      };
+      const result = await employeesService.getEmployeeOrders(id, params);
+      setOrders(result.data || []);
+      setOrdersPagination((prev) => ({
+        ...prev,
+        total: result.total || 0,
+      }));
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      message.error("Không thể tải danh sách đơn hàng");
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, [id, ordersPagination.current, ordersPagination.pageSize, ordersFilters]);
 
   useEffect(() => {
     if (id) {
@@ -65,6 +127,98 @@ const EmployeeDetail = () => {
     };
   }, [dispatch, id]);
 
+  useEffect(() => {
+    if (id) {
+      fetchOrders();
+    }
+  }, [fetchOrders, id]);
+
+  const handleOrdersTableChange = (pagination) => {
+    setOrdersPagination({
+      ...ordersPagination,
+      current: pagination.current,
+      pageSize: pagination.pageSize,
+    });
+  };
+
+  const handleStatusFilterChange = (value) => {
+    setOrdersFilters((prev) => ({ ...prev, status: value }));
+    setOrdersPagination((prev) => ({ ...prev, current: 1 }));
+  };
+
+  const handleDateRangeChange = (dates) => {
+    setOrdersFilters((prev) => ({ ...prev, dateRange: dates }));
+    setOrdersPagination((prev) => ({ ...prev, current: 1 }));
+  };
+
+  const ordersColumns = [
+    {
+      title: "Mã đơn",
+      dataIndex: "idOrder",
+      key: "idOrder",
+      width: 100,
+      render: (id) => <strong>#{id}</strong>,
+    },
+    {
+      title: "Khách hàng",
+      dataIndex: "customerName",
+      key: "customerName",
+      ellipsis: true,
+    },
+    {
+      title: "Tổng tiền",
+      dataIndex: "totalAmount",
+      key: "totalAmount",
+      width: 140,
+      align: "right",
+      render: (val) => `${fmtMoney(val)} ₫`,
+    },
+    {
+      title: "Giảm giá",
+      dataIndex: "discount",
+      key: "discount",
+      width: 120,
+      align: "right",
+      render: (val) => (val ? `${fmtMoney(val)} ₫` : "-"),
+    },
+    {
+      title: "Thanh toán",
+      dataIndex: "finalAmount",
+      key: "finalAmount",
+      width: 140,
+      align: "right",
+      render: (val) => <strong>{fmtMoney(val)} ₫</strong>,
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      width: 120,
+      render: (status) => getStatusTag(status),
+    },
+    {
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      width: 150,
+      render: (val) => fmtDateTime(val),
+    },
+    {
+      title: "Thao tác",
+      key: "action",
+      width: 100,
+      align: "center",
+      render: (_, record) => (
+        <Button
+          type="link"
+          icon={<EyeOutlined />}
+          onClick={() => navigate(`/orders/${record.idOrder}`)}>
+          Xem
+        </Button>
+      ),
+    },
+  ];
+
   const openEditModal = () => {
     if (employeeDetail) {
       form.setFieldsValue({
@@ -73,10 +227,10 @@ const EmployeeDetail = () => {
         username: employeeDetail.username,
         hireDate: employeeDetail.hireDate
           ? dayjs(
-              employeeDetail.hireDate,
-              ["DD/MM/YYYY", "DD/MM/YYYY HH:mm:ss"],
-              true
-            )
+            employeeDetail.hireDate,
+            ["DD/MM/YYYY", "DD/MM/YYYY HH:mm:ss"],
+            true
+          )
           : null,
         address: employeeDetail.address,
         baseSalary: employeeDetail.baseSalary,
@@ -291,6 +445,46 @@ const EmployeeDetail = () => {
             {address || "-"}
           </Descriptions.Item>
         </Descriptions>
+      </Card>
+
+      {/* Orders Table */}
+      <Card
+        title="Đơn hàng đã xử lý"
+        style={{ marginBottom: "16px" }}
+        extra={
+          <Space wrap>
+            <Select
+              style={{ width: 180 }}
+              placeholder="Lọc theo trạng thái"
+              allowClear
+              options={ORDER_STATUS_OPTIONS}
+              onChange={handleStatusFilterChange}
+              value={ordersFilters.status}
+            />
+            <RangePicker
+              placeholder={["Từ ngày", "Đến ngày"]}
+              onChange={handleDateRangeChange}
+              value={ordersFilters.dateRange}
+            />
+          </Space>
+        }>
+        <Table
+          columns={ordersColumns}
+          dataSource={orders}
+          rowKey="idOrder"
+          loading={ordersLoading}
+          pagination={{
+            current: ordersPagination.current,
+            pageSize: ordersPagination.pageSize,
+            total: ordersPagination.total,
+            showSizeChanger: true,
+            pageSizeOptions: ["5", "10", "20", "50"],
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} của ${total} đơn hàng`,
+          }}
+          onChange={handleOrdersTableChange}
+          scroll={{ x: 1000 }}
+        />
       </Card>
 
       {/* Edit Modal */}

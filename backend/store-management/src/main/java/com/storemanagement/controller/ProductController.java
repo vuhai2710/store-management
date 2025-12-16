@@ -40,8 +40,6 @@ public class ProductController {
             @RequestParam(defaultValue = "idProduct") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDirection,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String code,
-            @RequestParam(required = false) String name,
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) String brand,
             @RequestParam(required = false) Double minPrice,
@@ -53,13 +51,15 @@ public class ProductController {
 
         PageResponse<ProductDTO> productPage;
 
-        // Use keyword for search if provided, otherwise use individual params
-        String searchName = (keyword != null && !keyword.trim().isEmpty()) ? keyword : name;
-        String searchCode = (keyword != null && !keyword.trim().isEmpty()) ? keyword : code;
+        // Normalize keyword: trim and treat empty string as null
+        String normalizedKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
+        String normalizedBrand = (brand != null && !brand.trim().isEmpty()) ? brand.trim() : null;
 
-        // Nếu có bất kỳ tham số tìm kiếm/lọc nào, dùng searchProducts
-        if (searchCode != null || searchName != null || categoryId != null || brand != null || minPrice != null || maxPrice != null || inventoryStatus != null) {
-            productPage = productService.searchProducts(searchCode, searchName, categoryId, brand, minPrice, maxPrice, inventoryStatus, pageable);
+        // If any search/filter params exist, use searchProducts
+        if (normalizedKeyword != null || categoryId != null || normalizedBrand != null || minPrice != null
+                || maxPrice != null || inventoryStatus != null) {
+            productPage = productService.searchProducts(normalizedKeyword, categoryId, normalizedBrand, minPrice,
+                    maxPrice, inventoryStatus, pageable);
         } else {
             productPage = productService.getAllProductsPaginated(pageable);
         }
@@ -73,7 +73,7 @@ public class ProductController {
             @PathVariable Integer id,
             HttpServletRequest request) {
         ProductDTO product = productService.getProductById(id);
-        
+
         // Log the view - don't block response if it fails
         try {
             Integer userId = SecurityUtils.getCurrentUserId().orElse(null);
@@ -82,10 +82,10 @@ public class ProductController {
             productViewService.logView(userId, sessionId, id);
         } catch (Exception e) {
             // Log error but don't fail the request
-            log.error("Failed to log product view for productId: {}, userId: {}, error: {}", 
+            log.error("Failed to log product view for productId: {}, userId: {}, error: {}",
                     id, SecurityUtils.getCurrentUserId().orElse(null), e.getMessage(), e);
         }
-        
+
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin sản phẩm thành công", product));
     }
 
@@ -141,7 +141,8 @@ public class ProductController {
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
         PageResponse<ProductDTO> productPage = productService.getProductsByBrand(brand, pageable);
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách sản phẩm theo thương hiệu thành công", productPage));
+        return ResponseEntity
+                .ok(ApiResponse.success("Lấy danh sách sản phẩm theo thương hiệu thành công", productPage));
     }
 
     @GetMapping("/supplier/{supplierId}")
@@ -157,7 +158,8 @@ public class ProductController {
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
         PageResponse<ProductDTO> productPage = productService.getProductsBySupplier(supplierId, pageable);
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách sản phẩm theo nhà cung cấp thành công", productPage));
+        return ResponseEntity
+                .ok(ApiResponse.success("Lấy danh sách sản phẩm theo nhà cung cấp thành công", productPage));
     }
 
     @GetMapping("/price")
@@ -229,14 +231,14 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách thương hiệu thành công", brands));
     }
 
-    @PostMapping(consumes = {"application/json"})
+    @PostMapping(consumes = { "application/json" })
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<ProductDTO>> createProductJson(@RequestBody @Valid ProductDTO productDto) {
         ProductDTO createdProduct = productService.createProduct(productDto);
         return ResponseEntity.ok(ApiResponse.success("Thêm sản phẩm thành công", createdProduct));
     }
 
-    @PutMapping(value = "/{id}", consumes = {"application/json"})
+    @PutMapping(value = "/{id}", consumes = { "application/json" })
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<ProductDTO>> updateProduct(
             @PathVariable Integer id,
@@ -252,7 +254,7 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success("Xóa sản phẩm thành công", null));
     }
 
-    @PostMapping(value = "/{id}/images", consumes = {"multipart/form-data"})
+    @PostMapping(value = "/{id}/images", consumes = { "multipart/form-data" })
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<List<ProductImageDTO>>> uploadProductImages(
             @PathVariable Integer id,
@@ -261,7 +263,7 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success("Upload ảnh thành công", uploadedImages));
     }
 
-    @PostMapping(value = "/{id}/images/single", consumes = {"multipart/form-data"})
+    @PostMapping(value = "/{id}/images/single", consumes = { "multipart/form-data" })
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<ProductImageDTO>> addProductImage(
             @PathVariable Integer id,

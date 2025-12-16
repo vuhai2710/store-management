@@ -4,7 +4,7 @@ import { API_ENDPOINTS } from "../constants/apiEndpoints";
 const promotionsService = {
   /**
    * Lấy danh sách promotions
-   * @param {object} params - { pageNo, pageSize, sortBy, sortDirection, keyword }
+   * @param {object} params - { pageNo, pageSize, sortBy, sortDirection, keyword, scope }
    */
   getAllPromotions: async (params = {}) => {
     const {
@@ -13,10 +13,14 @@ const promotionsService = {
       sortBy = "createdAt",
       sortDirection = "DESC",
       keyword,
+      scope,
     } = params;
     const queryParams = { pageNo, pageSize, sortBy, sortDirection };
     if (keyword && keyword.trim()) {
       queryParams.keyword = keyword.trim();
+    }
+    if (scope) {
+      queryParams.scope = scope;
     }
     const response = await api.get(API_ENDPOINTS.PROMOTIONS.BASE, {
       params: queryParams,

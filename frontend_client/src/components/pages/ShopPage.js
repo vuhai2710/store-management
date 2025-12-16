@@ -13,12 +13,15 @@ import { useDebounce } from "../../hooks/useDebounce";
 const ShopPage = ({
   selectedCategory,
   setSelectedCategory,
+  selectedCategoryId,
+  setSelectedCategoryId,
   handleAddToCart,
   handleViewProductDetail,
   sortOption,
   setSortOption,
   setCurrentPage,
   searchTerm,
+  handleClearCategoryFilter,
 }) => {
   const { isAuthenticated } = useAuth();
   const [categories, setCategories] = useState([]);
@@ -89,6 +92,21 @@ const ShopPage = ({
 
     fetchCategories();
   }, [isAuthenticated]);
+
+  // Sync category name when categoryId is set from URL (after categories are loaded)
+  useEffect(() => {
+    if (selectedCategoryId && categories.length > 0) {
+      const categoryFromId = categories.find(
+        (cat) => (cat.idCategory || cat.id) === selectedCategoryId
+      );
+      if (categoryFromId) {
+        const categoryName = categoryFromId.categoryName || categoryFromId.name;
+        if (selectedCategory !== categoryName) {
+          setSelectedCategory(categoryName);
+        }
+      }
+    }
+  }, [selectedCategoryId, categories, selectedCategory, setSelectedCategory]);
 
   // Fetch brands (only when authenticated)
   useEffect(() => {
@@ -164,12 +182,13 @@ const ShopPage = ({
 
         // Determine which API to call
         let productsData;
-        const categoryId =
-          selectedCategory && selectedCategory !== "All"
-            ? categories.find(
-                (cat) => (cat.categoryName || cat.name) === selectedCategory
-              )?.idCategory
-            : null;
+        // Use selectedCategoryId directly if provided (from URL), otherwise lookup from category name
+        let categoryId = selectedCategoryId;
+        if (!categoryId && selectedCategory && selectedCategory !== "All" && selectedCategory !== "Tất cả") {
+          categoryId = categories.find(
+            (cat) => (cat.categoryName || cat.name) === selectedCategory
+          )?.idCategory;
+        }
 
         if (searchTerm) {
           // Search by name
@@ -288,6 +307,7 @@ const ShopPage = ({
     pageNo,
     sortOption,
     selectedCategory,
+    selectedCategoryId,
     searchTerm,
     selectedBrand,
     debouncedMinPrice,
@@ -338,8 +358,29 @@ const ShopPage = ({
     setPageNo(1);
   };
 
-  const handleCategoryChange = (category) => {
+  const handleCategoryChange = (category, categoryId = null) => {
     setSelectedCategory(category);
+
+    // Update categoryId state and URL
+    if (category === "All" || category === "Tất cả") {
+      // Clear category filter
+      if (setSelectedCategoryId) {
+        setSelectedCategoryId(null);
+      }
+      // Remove categoryId from URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('categoryId');
+      window.history.pushState({}, '', url.pathname + url.search);
+    } else if (categoryId) {
+      // Set category ID and update URL
+      if (setSelectedCategoryId) {
+        setSelectedCategoryId(categoryId);
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.set('categoryId', categoryId);
+      window.history.pushState({}, '', url.toString());
+    }
+
     setPageNo(1); // Reset to first page when filter changes
   };
 
@@ -476,10 +517,11 @@ const ShopPage = ({
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 <li>
                   <button
-                    onClick={() => handleCategoryChange("Tất cả")}
+                    onClick={() => handleCategoryChange("All", null)}
                     style={filterButtonStyle(
                       selectedCategory === "Tất cả" ||
-                        selectedCategory === "All"
+                      selectedCategory === "All" ||
+                      (!selectedCategory)
                     )}>
                     Tất cả
                   </button>
@@ -488,10 +530,11 @@ const ShopPage = ({
                   <li key={cat.idCategory || cat.id}>
                     <button
                       onClick={() =>
-                        handleCategoryChange(cat.categoryName || cat.name)
+                        handleCategoryChange(cat.categoryName || cat.name, cat.idCategory || cat.id)
                       }
                       style={filterButtonStyle(
-                        selectedCategory === (cat.categoryName || cat.name)
+                        selectedCategory === (cat.categoryName || cat.name) ||
+                        selectedCategoryId === (cat.idCategory || cat.id)
                       )}>
                       {cat.categoryName || cat.name}
                     </button>
@@ -518,8 +561,8 @@ const ShopPage = ({
                       onClick={() => handleBrandChange("Tất cả")}
                       style={filterButtonStyle(
                         selectedBrand === "" ||
-                          selectedBrand === "All" ||
-                          selectedBrand === "Tất cả"
+                        selectedBrand === "All" ||
+                        selectedBrand === "Tất cả"
                       )}>
                       Tất cả
                     </button>

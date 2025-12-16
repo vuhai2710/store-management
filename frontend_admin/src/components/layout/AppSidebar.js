@@ -17,6 +17,7 @@ import {
   GiftOutlined,
   RollbackOutlined,
   SettingOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { USER_ROLES } from "../../constants/roles";
 
@@ -106,16 +107,26 @@ const AppSidebar = () => {
         roles: [USER_ROLES.ADMIN],
       },
       {
-        key: "/reports",
-        icon: <BarChartOutlined />,
-        label: "Báo cáo",
-        roles: [USER_ROLES.ADMIN],
-      },
-      {
         key: "/promotions",
         icon: <GiftOutlined />,
         label: "Khuyến mãi & Giảm giá",
         roles: [USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE],
+      },
+      {
+        key: "invoices",
+        icon: <FileTextOutlined />,
+        label: "Quản lý Hóa đơn",
+        roles: [USER_ROLES.ADMIN],
+        children: [
+          {
+            key: "/invoices/export",
+            label: "Hóa đơn xuất",
+          },
+          {
+            key: "/invoices/import",
+            label: "Hóa đơn nhập",
+          },
+        ],
       },
     ];
 

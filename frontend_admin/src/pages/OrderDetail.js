@@ -84,9 +84,8 @@ const OrderDetail = () => {
 
     Modal.confirm({
       title: "Xác nhận thay đổi trạng thái",
-      content: `Bạn có chắc chắn muốn thay đổi trạng thái đơn hàng từ "${
-        getStatusInfo(currentOrder.status).text
-      }" sang "${getStatusInfo(newStatus).text}"?`,
+      content: `Bạn có chắc chắn muốn thay đổi trạng thái đơn hàng từ "${getStatusInfo(currentOrder.status).text
+        }" sang "${getStatusInfo(newStatus).text}"?`,
       okText: "Xác nhận",
       cancelText: "Hủy",
       onOk: async () => {
@@ -354,12 +353,12 @@ const OrderDetail = () => {
               ? currentOrder.paymentMethod === "CASH"
                 ? "Tiền mặt"
                 : currentOrder.paymentMethod === "PAYOS"
-                ? "PayOS"
-                : currentOrder.paymentMethod === "TRANSFER"
-                ? "Chuyển khoản"
-                : currentOrder.paymentMethod === "ZALOPAY"
-                ? "ZaloPay"
-                : currentOrder.paymentMethod
+                  ? "PayOS"
+                  : currentOrder.paymentMethod === "TRANSFER"
+                    ? "Chuyển khoản"
+                    : currentOrder.paymentMethod === "ZALOPAY"
+                      ? "ZaloPay"
+                      : currentOrder.paymentMethod
               : "N/A"}
           </Descriptions.Item>
           <Descriptions.Item label="Ghi chú">
@@ -385,8 +384,8 @@ const OrderDetail = () => {
               <Text>
                 {currentOrder.totalAmount
                   ? `${Number(currentOrder.totalAmount).toLocaleString(
-                      "vi-VN"
-                    )} VNĐ`
+                    "vi-VN"
+                  )} VNĐ`
                   : "0 VNĐ"}
               </Text>
             </div>
@@ -406,7 +405,7 @@ const OrderDetail = () => {
                     ? " (Phí ship)"
                     : ""}
                   {currentOrder.promotionDiscountType === "PERCENTAGE" &&
-                  currentOrder.promotionDiscountValue
+                    currentOrder.promotionDiscountValue
                     ? ` (-${currentOrder.promotionDiscountValue}%)`
                     : ""}
                 </Text>
@@ -457,46 +456,53 @@ const OrderDetail = () => {
                 marginTop: 8,
                 paddingTop: 8,
               }}>
-              {/* Final Amount (excluding shipping) */}
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Text strong>Thành tiền (doanh thu cửa hàng):</Text>
-                <Text strong style={{ fontSize: "16px", color: "#1890ff" }}>
-                  {currentOrder.finalAmount
-                    ? `${Number(currentOrder.finalAmount).toLocaleString(
-                        "vi-VN"
-                      )} VNĐ`
-                    : currentOrder.totalAmount
-                    ? `${(
-                        Number(currentOrder.totalAmount) -
-                        Number(currentOrder.discount || 0)
-                      ).toLocaleString("vi-VN")} VNĐ`
-                    : "0 VNĐ"}
-                </Text>
-              </div>
-
-              {/* Total Payable (including shipping) */}
+              {/* Store Revenue (excluding shipping) */}
               {currentOrder.shippingFee &&
                 Number(currentOrder.shippingFee) > 0 && (
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginTop: 8,
-                    }}>
-                    <Text strong style={{ fontSize: "16px" }}>
-                      Khách thanh toán (bao gồm ship):
-                    </Text>
-                    <Text strong style={{ fontSize: "18px", color: "#fa541c" }}>
-                      {`${(
-                        Number(
-                          currentOrder.finalAmount ||
-                            currentOrder.totalAmount ||
-                            0
-                        ) + Number(currentOrder.shippingFee)
-                      ).toLocaleString("vi-VN")} VNĐ`}
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <Text strong>Thành tiền (doanh thu cửa hàng):</Text>
+                    <Text strong style={{ fontSize: "16px", color: "#1890ff" }}>
+                      {currentOrder.finalAmount
+                        ? `${(
+                          Number(currentOrder.finalAmount) -
+                          Number(currentOrder.shippingFee || 0)
+                        ).toLocaleString("vi-VN")} VNĐ`
+                        : currentOrder.totalAmount
+                          ? `${(
+                            Number(currentOrder.totalAmount) -
+                            Number(currentOrder.discount || 0)
+                          ).toLocaleString("vi-VN")} VNĐ`
+                          : "0 VNĐ"}
                     </Text>
                   </div>
                 )}
+
+              {/* Final Amount (Total Payable) - finalAmount already includes shipping fee */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: 8,
+                }}>
+                <Text strong style={{ fontSize: "16px" }}>
+                  {currentOrder.shippingFee && Number(currentOrder.shippingFee) > 0
+                    ? "Khách thanh toán (bao gồm ship):"
+                    : "Tổng thanh toán:"}
+                </Text>
+                <Text strong style={{ fontSize: "18px", color: "#fa541c" }}>
+                  {currentOrder.finalAmount
+                    ? `${Number(currentOrder.finalAmount).toLocaleString(
+                      "vi-VN"
+                    )} VNĐ`
+                    : currentOrder.totalAmount
+                      ? `${(
+                        Number(currentOrder.totalAmount) -
+                        Number(currentOrder.discount || 0) +
+                        Number(currentOrder.shippingFee || 0)
+                      ).toLocaleString("vi-VN")} VNĐ`
+                      : "0 VNĐ"}
+                </Text>
+              </div>
             </div>
           </div>
         </div>

@@ -39,7 +39,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
   const [loadingShippingFee, setLoadingShippingFee] = useState(false);
   const [shippingFeeError, setShippingFeeError] = useState(null);
 
-  // Promotion/Discount
+  // Promotion/Discount (Order)
   const [promotionCode, setPromotionCode] = useState("");
   const [promotionDiscount, setPromotionDiscount] = useState(0);
   const [promotionValid, setPromotionValid] = useState(false);
@@ -47,6 +47,13 @@ const CheckoutPage = ({ setCurrentPage }) => {
   const [loadingPromotion, setLoadingPromotion] = useState(false);
   const [automaticDiscount, setAutomaticDiscount] = useState(0);
   const [automaticDiscountInfo, setAutomaticDiscountInfo] = useState(null);
+
+  // Shipping Promotion/Discount
+  const [shippingPromotionCode, setShippingPromotionCode] = useState("");
+  const [shippingPromotionDiscount, setShippingPromotionDiscount] = useState(0);
+  const [shippingPromotionValid, setShippingPromotionValid] = useState(false);
+  const [shippingPromotionError, setShippingPromotionError] = useState(null);
+  const [loadingShippingPromotion, setLoadingShippingPromotion] = useState(false);
 
   // Buy Now product (loaded from API if needed)
   const [buyNowProduct, setBuyNowProduct] = useState(null);
@@ -58,13 +65,13 @@ const CheckoutPage = ({ setCurrentPage }) => {
   const checkoutItems =
     isBuyNowMode && buyNowItem
       ? [
-          {
-            productId: buyNowItem.productId,
-            quantity: buyNowItem.quantity,
-            product: buyNowProduct || buyNowItem.product,
-            price: (buyNowProduct || buyNowItem.product)?.price || 0,
-          },
-        ]
+        {
+          productId: buyNowItem.productId,
+          quantity: buyNowItem.quantity,
+          product: buyNowProduct || buyNowItem.product,
+          price: (buyNowProduct || buyNowItem.product)?.price || 0,
+        },
+      ]
       : cart?.cartItems || cart?.items || [];
 
   // Default shop district ID (should be configured in backend, using placeholder for now)
@@ -571,8 +578,18 @@ const CheckoutPage = ({ setCurrentPage }) => {
   const manualCodeDiscount =
     promotionValid && promotionDiscount > 0 ? promotionDiscount : 0;
   const autoPromoDiscount = automaticDiscount > 0 ? automaticDiscount : 0;
-  const totalDiscount = manualCodeDiscount + autoPromoDiscount;
-  const finalTotal = Math.max(0, orderSubtotal + shippingFee - totalDiscount);
+  const totalOrderDiscount = manualCodeDiscount + autoPromoDiscount;
+
+  // Shipping discount (applied separately to shipping fee only)
+  const shippingDiscountAmount =
+    shippingPromotionValid && shippingPromotionDiscount > 0
+      ? Math.min(shippingPromotionDiscount, shippingFee) // Cap at shippingFee
+      : 0;
+  const effectiveShippingFee = Math.max(0, shippingFee - shippingDiscountAmount);
+
+  // Combined totals for display
+  const totalDiscount = totalOrderDiscount; // For backward compatibility
+  const finalTotal = Math.max(0, orderSubtotal - totalOrderDiscount + effectiveShippingFee);
 
   return (
     <section style={{ padding: "4rem 0", backgroundColor: "#f8f8f8" }}>
@@ -645,14 +662,14 @@ const CheckoutPage = ({ setCurrentPage }) => {
                         marginBottom: "0.5rem",
                         border:
                           selectedAddressId ===
-                          (address.idShippingAddress || address.id)
+                            (address.idShippingAddress || address.id)
                             ? "2px solid #007bff"
                             : "1px solid #dee2e6",
                         borderRadius: "0.5rem",
                         cursor: "pointer",
                         backgroundColor:
                           selectedAddressId ===
-                          (address.idShippingAddress || address.id)
+                            (address.idShippingAddress || address.id)
                             ? "#e0f7ff"
                             : "white",
                         transition: "all 0.3s",
@@ -1166,6 +1183,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                             await promotionService.validatePromotion({
                               code: promotionCode.trim(),
                               totalAmount: orderSubtotal,
+                              expectedScope: 'ORDER',
                             });
 
                           if (validateResponse && validateResponse.valid) {
@@ -1179,7 +1197,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                             setPromotionDiscount(0);
                             setPromotionError(
                               validateResponse?.message ||
-                                "Mã giảm giá không hợp lệ"
+                              "Mã giảm giá không hợp lệ"
                             );
                           }
                         } catch (error) {
@@ -1188,7 +1206,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                           setPromotionDiscount(0);
                           setPromotionError(
                             error?.message ||
-                              "Không thể xác thực mã giảm giá. Vui lòng thử lại."
+                            "Không thể xác thực mã giảm giá. Vui lòng thử lại."
                           );
                         } finally {
                           setLoadingPromotion(false);
@@ -1205,16 +1223,16 @@ const CheckoutPage = ({ setCurrentPage }) => {
                         padding: "0.75rem 1.5rem",
                         opacity:
                           loadingPromotion ||
-                          !promotionCode ||
-                          promotionCode.trim() === "" ||
-                          promotionValid
+                            !promotionCode ||
+                            promotionCode.trim() === "" ||
+                            promotionValid
                             ? 0.6
                             : 1,
                         cursor:
                           loadingPromotion ||
-                          !promotionCode ||
-                          promotionCode.trim() === "" ||
-                          promotionValid
+                            !promotionCode ||
+                            promotionCode.trim() === "" ||
+                            promotionValid
                             ? "not-allowed"
                             : "pointer",
                       }}>
@@ -1258,6 +1276,149 @@ const CheckoutPage = ({ setCurrentPage }) => {
                     Mã giảm giá "{promotionCode}" đã được áp dụng: -
                     {formatPrice(promotionDiscount)}
                   </div>
+                )}
+
+                {/* Shipping Promotion Code Input */}
+                {shippingFee > 0 && (
+                  <>
+                    <div style={{ marginTop: "1rem" }}>
+                      <strong>Mã giảm phí vận chuyển</strong>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "0.5rem",
+                        marginTop: "0.5rem",
+                        marginBottom: "0.5rem",
+                      }}>
+                      <input
+                        type="text"
+                        value={shippingPromotionCode}
+                        onChange={(e) =>
+                          setShippingPromotionCode(e.target.value.toUpperCase())
+                        }
+                        placeholder="Nhập mã giảm phí vận chuyển"
+                        disabled={loadingShippingPromotion || shippingPromotionValid}
+                        style={{
+                          flex: 1,
+                          padding: "0.75rem",
+                          border: "1px solid #dee2e6",
+                          borderRadius: "0.25rem",
+                          fontSize: "1rem",
+                          opacity: loadingShippingPromotion || shippingPromotionValid ? 0.6 : 1,
+                        }}
+                      />
+                      {!shippingPromotionValid ? (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!shippingPromotionCode || shippingPromotionCode.trim() === "") {
+                              setShippingPromotionError("Vui lòng nhập mã giảm phí vận chuyển");
+                              return;
+                            }
+
+                            try {
+                              setLoadingShippingPromotion(true);
+                              setShippingPromotionError(null);
+
+                              const validateResponse =
+                                await promotionService.validateShippingPromotion({
+                                  code: shippingPromotionCode.trim(),
+                                  shippingFee: shippingFee,
+                                });
+
+                              if (validateResponse && validateResponse.valid) {
+                                setShippingPromotionValid(true);
+                                setShippingPromotionDiscount(
+                                  Number(validateResponse.discount || 0)
+                                );
+                                setShippingPromotionError(null);
+                              } else {
+                                setShippingPromotionValid(false);
+                                setShippingPromotionDiscount(0);
+                                setShippingPromotionError(
+                                  validateResponse?.message ||
+                                  "Mã giảm phí vận chuyển không hợp lệ"
+                                );
+                              }
+                            } catch (error) {
+                              console.error("Error validating shipping promotion:", error);
+                              setShippingPromotionValid(false);
+                              setShippingPromotionDiscount(0);
+                              setShippingPromotionError(
+                                error?.message ||
+                                "Không thể xác thực mã. Vui lòng thử lại."
+                              );
+                            } finally {
+                              setLoadingShippingPromotion(false);
+                            }
+                          }}
+                          disabled={
+                            loadingShippingPromotion ||
+                            !shippingPromotionCode ||
+                            shippingPromotionCode.trim() === "" ||
+                            shippingPromotionValid
+                          }
+                          style={{
+                            ...styles.buttonPrimary,
+                            padding: "0.75rem 1.5rem",
+                            opacity:
+                              loadingShippingPromotion ||
+                                !shippingPromotionCode ||
+                                shippingPromotionCode.trim() === "" ||
+                                shippingPromotionValid
+                                ? 0.6
+                                : 1,
+                            cursor:
+                              loadingShippingPromotion ||
+                                !shippingPromotionCode ||
+                                shippingPromotionCode.trim() === "" ||
+                                shippingPromotionValid
+                                ? "not-allowed"
+                                : "pointer",
+                          }}>
+                          {loadingShippingPromotion ? "Đang kiểm tra..." : "Áp dụng"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShippingPromotionCode("");
+                            setShippingPromotionValid(false);
+                            setShippingPromotionDiscount(0);
+                            setShippingPromotionError(null);
+                          }}
+                          style={{
+                            ...styles.buttonSecondary,
+                            padding: "0.75rem 1.5rem",
+                          }}>
+                          Xóa
+                        </button>
+                      )}
+                    </div>
+                    {shippingPromotionError && (
+                      <div
+                        style={{
+                          marginTop: "0.5rem",
+                          fontSize: "0.875rem",
+                          color: "#dc3545",
+                        }}>
+                        {shippingPromotionError}
+                      </div>
+                    )}
+                    {shippingPromotionValid && shippingPromotionDiscount > 0 && (
+                      <div
+                        style={{
+                          marginTop: "0.5rem",
+                          fontSize: "0.875rem",
+                          color: "#28a745",
+                          fontWeight: "600",
+                        }}>
+                        🚚 Mã "{shippingPromotionCode}" đã được áp dụng: -
+                        {formatPrice(shippingPromotionDiscount)}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -1337,6 +1498,20 @@ const CheckoutPage = ({ setCurrentPage }) => {
                       color: "#dc3545",
                     }}>
                     {shippingFeeError}
+                  </div>
+                )}
+
+                {/* Shipping Discount Line */}
+                {shippingDiscountAmount > 0 && shippingPromotionValid && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "0.5rem",
+                      color: "#17a2b8",
+                    }}>
+                    <span>🚚 Giảm phí vận chuyển ({shippingPromotionCode})</span>
+                    <span>-{formatPrice(shippingDiscountAmount)}</span>
                   </div>
                 )}
 

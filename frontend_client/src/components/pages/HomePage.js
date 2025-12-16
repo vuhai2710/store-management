@@ -9,8 +9,8 @@ import { categoriesService } from '../../services/categoriesService';
 import { formatPrice } from '../../utils/formatUtils';
 import { useAuth } from '../../hooks/useAuth';
 
-// Component NHẬN handleViewProductDetail
-const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) => {
+// Component NHẬN handleViewProductDetail + setSelectedCategory + handleCategoryNavigation
+const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, setSelectedCategory, handleCategoryNavigation }) => {
   const { isAuthenticated } = useAuth();
   const [categories, setCategories] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
@@ -19,7 +19,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   // Fetch data from API only when authenticated
   useEffect(() => {
     const fetchData = async () => {
@@ -108,20 +108,20 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
 
     timerComponents.push(
       <span key={interval} style={{ backgroundColor: '#fff', color: '#dc3545', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', fontWeight: 'bold', minWidth: '60px', textAlign: 'center' }}>
-        {timeLeft[interval] !== undefined ? timeLeft[interval] : 0} 
+        {timeLeft[interval] !== undefined ? timeLeft[interval] : 0}
         <div style={{ fontSize: '0.75rem', fontWeight: 'normal', color: '#6c757d' }}>{interval.toUpperCase()}</div>
       </span>
     );
   });
   // --- END Đồng hồ đếm ngược ---
-  
+
   const dealProduct = bestSellers[0] || newProducts[0]; // Get first product from best sellers or new products
 
   // Style cho Service Icons
   const serviceIconStyle = {
-    display: 'flex', 
-    flexDirection: 'column', 
-    alignItems: 'center', 
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
     textAlign: 'center',
     padding: '1.5rem',
     borderRadius: '0.75rem',
@@ -164,7 +164,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
               <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#bfdbfe' }}>
                 Khám phá mới, mạnh mẽ, tinh tế. Khám phá các thiết bị điện tử hàng đầu.
               </p>
-              <button 
+              <button
                 onClick={() => setCurrentPage('shop')}
                 style={{ ...styles.buttonPrimary, padding: '1rem 2.5rem', fontSize: '1.125rem' }}
               >
@@ -185,8 +185,8 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
             <div style={serviceIconStyle}>
               <Truck size={36} style={{ color: '#2563EB', marginBottom: '0.75rem' }} />
               <h4 style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>MIỄN PHÍ VẬN CHUYỂN</h4>
-              <p style={{ color: '#6c757d', fontSize: '0.875rem' }}>Trên mọi đơn hàng 
-                 500.000đ</p>
+              <p style={{ color: '#6c757d', fontSize: '0.875rem' }}>Trên mọi đơn hàng
+                500.000đ</p>
             </div>
             <div style={serviceIconStyle}>
               <RefreshCw size={36} style={{ color: '#2563EB', marginBottom: '0.75rem' }} />
@@ -209,24 +209,32 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '3rem', textAlign: 'center' }}>Mua sắm theo danh mục</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1.5rem' }}>
               {categories.slice(0, 6).map(cat => (
-                <div 
-                  key={cat.idCategory || cat.id} 
-                  onClick={() => { setCurrentPage('shop'); }} 
-                  style={{ 
-                    textAlign: 'center', 
-                    padding: '1.5rem 1rem', 
-                    backgroundColor: '#fff', 
-                    borderRadius: '0.5rem', 
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)', 
+                <div
+                  key={cat.idCategory || cat.id}
+                  onClick={() => {
+                    // Use handleCategoryNavigation to set category and update URL
+                    if (handleCategoryNavigation) {
+                      handleCategoryNavigation(cat.idCategory || cat.id, cat.categoryName || cat.name);
+                    } else {
+                      // Fallback to old behavior if handleCategoryNavigation is not provided
+                      if (setSelectedCategory) {
+                        setSelectedCategory(cat.categoryName || cat.name);
+                      }
+                      setCurrentPage('shop');
+                    }
+                  }}
+                  style={{
+                    textAlign: 'center',
+                    padding: '1.5rem 1rem',
+                    backgroundColor: '#fff',
+                    borderRadius: '0.5rem',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
                     cursor: 'pointer',
                     transition: 'transform 0.2s, box-shadow 0.2s',
                     border: '1px solid #e9ecef'
                   }}
                 >
-                  <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>
-                    📦
-                  </div>
-                  <h3 style={{ fontWeight: '600', fontSize: '1rem', color: '#212529' }}>
+                  <h3 style={{ fontWeight: '600', fontSize: '1rem', color: '#212529', margin: 0 }}>
                     {cat.categoryName || cat.name}
                   </h3>
                 </div>
@@ -248,13 +256,13 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
                 Đăng nhập để xem sản phẩm và mua sắm ngay hôm nay!
               </p>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                <button 
+                <button
                   onClick={() => setCurrentPage('login')}
                   style={{ ...styles.buttonPrimary, padding: '1rem 2rem', fontSize: '1.125rem' }}
                 >
                   Đăng nhập
                 </button>
-                <button 
+                <button
                   onClick={() => setCurrentPage('register')}
                   style={{ ...styles.buttonSecondary, padding: '1rem 2rem', fontSize: '1.125rem' }}
                 >
@@ -271,7 +279,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
         <section style={{ padding: '4rem 0', backgroundColor: '#f0f4f8' }}>
           <div style={styles.container}>
             <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '3rem', alignItems: 'center', backgroundColor: '#fff', padding: '3rem', borderRadius: '0.75rem', boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)' }}>
-              
+
               {/* Left: Product Info & Countdown */}
               <div>
                 <span style={{ fontSize: '1rem', color: '#dc3545', fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>🔥 ƯU ĐÃI TUẦN NÀY</span>
@@ -281,11 +289,11 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
                 <p style={{ fontSize: '1.25rem', color: '#6c757d', marginBottom: '1.5rem' }}>
                   {dealProduct.description || 'Tiết kiệm lớn với sản phẩm tuyệt vời này. Số lượng có hạn!'}
                 </p>
-                
+
                 <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', alignItems: 'center' }}>
-                    <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563EB' }}>
-                        Chỉ {formatPrice(dealProduct.price)} 
-                    </p>
+                  <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563EB' }}>
+                    Chỉ {formatPrice(dealProduct.price)}
+                  </p>
                 </div>
 
                 {/* Countdown Timer */}
@@ -293,11 +301,11 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
                   {timerComponents.length ? timerComponents : <span>Ưu đãi đã kết thúc!</span>}
                 </div>
               </div>
-              
+
               {/* Right: Product Image & Action */}
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '8rem', marginBottom: '1rem' }}>📦</div>
-                <button 
+                <button
                   onClick={() => { handleAddToCart(dealProduct); setCurrentPage('cart'); }}
                   style={{ ...styles.buttonPrimary, padding: '1rem 3rem', fontSize: '1.125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', gap: '0.5rem' }}
                 >
@@ -315,7 +323,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
           <div style={styles.container}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
               <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold' }}>Sản phẩm bán chạy 🔥</h2>
-              <button 
+              <button
                 onClick={() => setCurrentPage('shop')}
                 style={{ color: '#2563EB', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
               >
@@ -324,10 +332,10 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
               {bestSellers.slice(0, 4).map(product => (
-                <ProductCard 
-                  key={product.idProduct || product.id} 
-                  product={product} 
-                  handleAddToCart={handleAddToCart} 
+                <ProductCard
+                  key={product.idProduct || product.id}
+                  product={product}
+                  handleAddToCart={handleAddToCart}
                   handleViewProductDetail={handleViewProductDetail}
                 />
               ))}
@@ -350,23 +358,23 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
                       {recommendedProducts.slice(0, 4).map(product => (
-                        <ProductCard 
-                          key={product.idProduct || product.id} 
-                          product={product} 
-                          handleAddToCart={handleAddToCart} 
+                        <ProductCard
+                          key={product.idProduct || product.id}
+                          product={product}
+                          handleAddToCart={handleAddToCart}
                           handleViewProductDetail={handleViewProductDetail}
                         />
                       ))}
                     </div>
                   </div>
                 )}
-                
+
                 {/* 8 sản phẩm sau - Gợi ý */}
                 {recommendedProducts.slice(4, 12).length > 0 && (
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                       <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold' }}>Gợi ý dành cho bạn ⭐</h2>
-                      <button 
+                      <button
                         onClick={() => setCurrentPage('shop')}
                         style={{ color: '#2563EB', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
                       >
@@ -375,10 +383,10 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
                       {recommendedProducts.slice(4, 12).map(product => (
-                        <ProductCard 
-                          key={product.idProduct || product.id} 
-                          product={product} 
-                          handleAddToCart={handleAddToCart} 
+                        <ProductCard
+                          key={product.idProduct || product.id}
+                          product={product}
+                          handleAddToCart={handleAddToCart}
                           handleViewProductDetail={handleViewProductDetail}
                         />
                       ))}
@@ -391,7 +399,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
                 <p style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>
                   Chưa có gợi ý sản phẩm. Hãy xem một số sản phẩm để chúng tôi có thể gợi ý cho bạn!
                 </p>
-                <button 
+                <button
                   onClick={() => setCurrentPage('shop')}
                   style={{ ...styles.buttonPrimary, padding: '0.75rem 1.5rem' }}
                 >
@@ -402,7 +410,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
           </div>
         </section>
       )}
-      
+
       {/* 7. Featured Products */}
       {isAuthenticated && featuredProducts.length > 0 && (
         <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
@@ -410,10 +418,10 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '3rem' }}>Sản phẩm nổi bật</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
               {featuredProducts.slice(0, 6).map(product => (
-                <ProductCard 
-                  key={product.idProduct || product.id} 
-                  product={product} 
-                  handleAddToCart={handleAddToCart} 
+                <ProductCard
+                  key={product.idProduct || product.id}
+                  product={product}
+                  handleAddToCart={handleAddToCart}
                   handleViewProductDetail={handleViewProductDetail}
                 />
               ))}
@@ -421,14 +429,14 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
           </div>
         </section>
       )}
-      
+
       {/* 8. New Products */}
       {isAuthenticated && newProducts.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
               <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold' }}>Sản phẩm mới 🆕</h2>
-              <button 
+              <button
                 onClick={() => setCurrentPage('shop')}
                 style={{ color: '#2563EB', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
               >
@@ -437,10 +445,10 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail }) 
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
               {newProducts.slice(0, 6).map(product => (
-                <ProductCard 
-                  key={product.idProduct || product.id} 
-                  product={product} 
-                  handleAddToCart={handleAddToCart} 
+                <ProductCard
+                  key={product.idProduct || product.id}
+                  product={product}
+                  handleAddToCart={handleAddToCart}
                   handleViewProductDetail={handleViewProductDetail}
                 />
               ))}

@@ -10,6 +10,26 @@ import {
 } from "lucide-react";
 import { reviewService } from "../../services/reviewService";
 import LoadingSpinner from "../common/LoadingSpinner";
+import { parseBackendDate } from "../../utils/formatUtils";
+
+/**
+ * Safe date formatter for review dates
+ * Returns formatted date string or "-" if invalid
+ */
+const formatReviewDate = (createdAt) => {
+  if (!createdAt) return "-";
+
+  const date = parseBackendDate(createdAt);
+  if (!date || isNaN(date.getTime())) return "-";
+
+  return date.toLocaleDateString("vi-VN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 const ReviewSection = ({ productId, userOrders = [] }) => {
   const [reviews, setReviews] = useState([]);
@@ -196,7 +216,8 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
   };
 
   const isWithin24Hours = (createdAt) => {
-    const reviewDate = new Date(createdAt);
+    const reviewDate = parseBackendDate(createdAt);
+    if (!reviewDate || isNaN(reviewDate.getTime())) return false;
     const now = new Date();
     const hoursDiff = (now - reviewDate) / (1000 * 60 * 60);
     return hoursDiff < 24;
@@ -210,8 +231,8 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
   const avgRating =
     reviews.length > 0
       ? (
-          reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-        ).toFixed(1)
+        reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      ).toFixed(1)
       : 0;
 
   const ratingCounts = [5, 4, 3, 2, 1].map((star) => ({
@@ -242,20 +263,18 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
                   onClick={() =>
                     setRatingFilter(ratingFilter === star ? null : star)
                   }
-                  className={`flex items-center gap-1 text-sm ${
-                    ratingFilter === star
-                      ? "text-yellow-500 font-semibold"
-                      : "text-gray-600"
-                  }`}>
+                  className={`flex items-center gap-1 text-sm ${ratingFilter === star
+                    ? "text-yellow-500 font-semibold"
+                    : "text-gray-600"
+                    }`}>
                   {star} <Star size={14} fill="#fadb14" stroke="#fadb14" />
                 </button>
                 <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-yellow-400"
                     style={{
-                      width: `${
-                        reviews.length > 0 ? (count / reviews.length) * 100 : 0
-                      }%`,
+                      width: `${reviews.length > 0 ? (count / reviews.length) * 100 : 0
+                        }%`,
                     }}
                   />
                 </div>
@@ -437,13 +456,7 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
                     )}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {new Date(review.createdAt).toLocaleDateString("vi-VN", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {formatReviewDate(review.createdAt)}
                   </div>
                 </div>
                 {canEditOrDelete(review) && (

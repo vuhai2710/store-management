@@ -13,6 +13,7 @@ import {
   Card,
   Divider,
   Tag,
+  Alert,
 } from "antd";
 import { UploadOutlined, DeleteOutlined, StarOutlined, StarFilled, EyeOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
@@ -31,11 +32,15 @@ const { Text } = Typography;
 const CODE_TYPES = ["SKU", "IMEI", "SERIAL", "BARCODE"];
 const STATUSES = ["IN_STOCK", "OUT_OF_STOCK"];
 
+// Helper text for locked fields
+const LOCKED_FIELDS_HELPER = "Cập nhật qua đơn nhập kho";
+
 const ProductForm = ({ product, onSuccess }) => {
   const dispatch = useDispatch();
   const [form] = Form.useForm();
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [loadingMeta, setLoadingMeta] = useState(false);
   const [productImages, setProductImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -45,6 +50,8 @@ const ProductForm = ({ product, onSuccess }) => {
 
   const codeType = Form.useWatch("codeType", form);
   const isEditing = !!product?.idProduct;
+  // Check if we're creating a new product (not editing)
+  const isCreating = !isEditing;
 
   const isProductCodeRequired = useMemo(() => codeType && codeType !== "SKU", [codeType]);
 
@@ -52,14 +59,16 @@ const ProductForm = ({ product, onSuccess }) => {
     const loadMeta = async () => {
       setLoadingMeta(true);
       try {
-        const [cats, sups] = await Promise.all([
+        const [cats, sups, brandsData] = await Promise.all([
           categoriesService.getAll(),
           suppliersService.getAllSuppliers(),
+          productsService.getAllBrands(),
         ]);
         // Normalize
         setCategories(Array.isArray(cats?.content) ? cats.content : Array.isArray(cats) ? cats : []);
         const supsData = Array.isArray(sups?.content) ? sups.content : Array.isArray(sups) ? sups : [];
         setSuppliers(supsData);
+        setBrands(Array.isArray(brandsData) ? brandsData : []);
       } catch {
         // ignore
       } finally {
@@ -107,20 +116,28 @@ const ProductForm = ({ product, onSuccess }) => {
       });
     } else {
       form.resetFields();
-      form.setFieldsValue({ codeType: "SKU", status: "IN_STOCK", stockQuantity: 0 });
+      // Set defaults for new product - locked fields will be 0/OUT_OF_STOCK
+      form.setFieldsValue({
+        codeType: "SKU",
+        status: "OUT_OF_STOCK",
+        stockQuantity: 0,
+        price: 0
+      });
     }
   }, [product, form]);
 
   const handleSubmit = async (values) => {
+    // Build payload - locked fields handled differently for create vs update
     const payload = {
       idCategory: values.idCategory,
       productName: values.productName?.trim(),
       brand: values.brand?.trim() || null,
       idSupplier: values.idSupplier || null,
       description: values.description?.trim() || null,
-      price: Number(values.price),
-      stockQuantity: values.stockQuantity != null ? Number(values.stockQuantity) : 0,
-      status: values.status || null,
+      // Locked fields: use defaults on create, actual values on update
+      price: isCreating ? 0 : Number(values.price),
+      stockQuantity: isCreating ? 0 : (values.stockQuantity != null ? Number(values.stockQuantity) : 0),
+      status: isCreating ? "OUT_OF_STOCK" : (values.status || null),
       imageUrl: values.imageUrl?.trim() || null, // Keep for backward compatibility
       productCode: values.productCode?.trim() || null,
       codeType: values.codeType,
@@ -220,8 +237,33 @@ const ProductForm = ({ product, onSuccess }) => {
     label: s.supplierName,
   }));
 
+  const brandOptions = brands.map((b) => ({
+    value: b,
+    label: b,
+  }));
+
   return (
     <Form form={form} layout="vertical" onFinish={handleSubmit}>
+      {/* Alert for locked fields when creating */}
+      {isCreating && (
+        <Alert
+          message="Thông tin giá và tồn kho"
+          description="Giá, số lượng tồn kho và trạng thái sẽ được đặt mặc định (Giá: 0, Tồn kho: 0, Trạng thái: Hết hàng) khi tạo mới. Giá nhập và tồn kho sẽ được cập nhật qua đơn nhập kho."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
+      {isEditing && (
+        <Alert
+          message="Lưu ý về tồn kho"
+          description="Số lượng tồn kho được cập nhật tự động qua đơn nhập/xuất hàng, không thể sửa trực tiếp. Giá bán có thể chỉnh sửa tại đây."
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
       <Form.Item
         name="idCategory"
         label="Danh mục"
@@ -248,39 +290,116 @@ const ProductForm = ({ product, onSuccess }) => {
       </Form.Item>
 
       <Form.Item name="brand" label="Thương hiệu">
-        <Input placeholder="VD: Apple, Samsung, Dell..." />
-      </Form.Item>
-
-      <Form.Item name="idSupplier" label="Nhà cung cấp (optional)">
         <Select
-          placeholder="Chọn nhà cung cấp"
+          placeholder="Chọn thương hiệu"
           loading={loadingMeta}
           allowClear
           showSearch
           optionFilterProp="label"
-          options={supplierOptions}
+          options={brandOptions}
+          mode={undefined}
+          dropdownRender={(menu) => (
+            <>
+              {menu}
+              <div style={{ padding: "8px", borderTop: "1px solid #f0f0f0", fontSize: "12px", color: "#999" }}>
+                Nếu thương hiệu chưa có, hãy nhập trực tiếp và nhấn Enter
+              </div>
+            </>
+          )}
         />
       </Form.Item>
+
+      {/* Supplier dropdown - show when editing */}
+      {isEditing && (
+        <Form.Item name="idSupplier" label="Nhà cung cấp">
+          <Select
+            placeholder="Chọn nhà cung cấp"
+            loading={loadingMeta}
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            options={supplierOptions}
+          />
+        </Form.Item>
+      )}
 
       <Form.Item name="description" label="Mô tả">
         <TextArea rows={3} placeholder="Mô tả sản phẩm" />
       </Form.Item>
 
+      {/* Locked fields section */}
+      <Divider orientation="left" style={{ marginTop: 8 }}>
+        Thông tin kho hàng {isCreating && <Tag color="blue">Tự động</Tag>}
+      </Divider>
+
       <Form.Item
         name="price"
-        label="Giá"
-        rules={[{ required: true, message: "Vui lòng nhập giá" }]}
+        label={
+          <span>
+            Giá bán{" "}
+            {isCreating && (
+              <Text type="secondary" style={{ fontWeight: "normal" }}>
+                (Tự động từ đơn nhập kho)
+              </Text>
+            )}
+          </span>
+        }
+        rules={isCreating ? [] : [{ required: true, message: "Vui lòng nhập giá bán" }]}
+        extra={isEditing ? "Đây là giá bán hiện tại. Giá này độc lập với giá nhập trong đơn nhập hàng." : null}
       >
-        <InputNumber min={0} step={1000} style={{ width: "100%" }} placeholder="Nhập giá" />
+        <InputNumber
+          min={0}
+          step={1000}
+          style={{ width: "100%" }}
+          placeholder={isCreating ? "Sẽ cập nhật qua đơn nhập kho" : "Nhập giá bán"}
+          disabled={isCreating}
+          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+          parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+        />
       </Form.Item>
 
-      <Form.Item name="stockQuantity" label="Tồn kho">
-        <InputNumber min={0} step={1} style={{ width: "100%" }} placeholder="Số lượng tồn kho" />
+      <Form.Item
+        name="stockQuantity"
+        label={
+          <span>
+            Tồn kho{" "}
+            <Text type="secondary" style={{ fontWeight: "normal" }}>
+              (Tự động)
+            </Text>
+          </span>
+        }
+        extra="Tồn kho được cập nhật tự động khi nhập và xuất hàng."
+      >
+        <InputNumber
+          min={0}
+          step={1}
+          style={{ width: "100%" }}
+          placeholder="Tự động cập nhật"
+          disabled={true}
+        />
       </Form.Item>
 
-      <Form.Item name="status" label="Trạng thái">
-        <Select options={STATUSES.map((st) => ({ value: st, label: st }))} />
+      <Form.Item
+        name="status"
+        label={
+          <span>
+            Trạng thái{" "}
+            {isCreating && (
+              <Text type="secondary" style={{ fontWeight: "normal" }}>
+                ({LOCKED_FIELDS_HELPER})
+              </Text>
+            )}
+          </span>
+        }
+      >
+        <Select
+          options={STATUSES.map((st) => ({ value: st, label: st === "IN_STOCK" ? "Còn hàng" : "Hết hàng" }))}
+          disabled={isCreating}
+          placeholder={isCreating ? "Tự động: Hết hàng" : "Chọn trạng thái"}
+        />
       </Form.Item>
+
+      <Divider orientation="left">Thông tin bổ sung</Divider>
 
       <Form.Item name="imageUrl" label="Ảnh (URL - tùy chọn, có thể upload ảnh bên dưới)">
         <Input placeholder="https://..." />
@@ -379,6 +498,8 @@ const ProductForm = ({ product, onSuccess }) => {
         </>
       )}
 
+      <Divider orientation="left">Mã sản phẩm</Divider>
+
       <Form.Item
         name="codeType"
         label="Loại mã"
@@ -439,5 +560,3 @@ const ProductForm = ({ product, onSuccess }) => {
 };
 
 export default ProductForm;
-
-

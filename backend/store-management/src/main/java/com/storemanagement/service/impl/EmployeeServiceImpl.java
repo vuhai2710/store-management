@@ -2,6 +2,7 @@ package com.storemanagement.service.impl;
 
 import com.storemanagement.dto.employee.EmployeeDTO;
 import com.storemanagement.dto.employee.EmployeeDetailDTO;
+import com.storemanagement.dto.employee.EmployeeOrderDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.EmployeeMapper;
 import com.storemanagement.model.Employee;
@@ -22,7 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -81,13 +84,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Transactional(readOnly = true)
     public PageResponse<EmployeeDTO> getAllEmployeesPaginated(String keyword, Pageable pageable) {
         Page<Employee> employeePage;
-        
+
         if (keyword != null && !keyword.trim().isEmpty()) {
             employeePage = employeeRepository.searchByKeyword(keyword.trim(), pageable);
         } else {
             employeePage = employeeRepository.findAll(pageable);
         }
-        
+
         List<EmployeeDTO> employeeDTOs = employeeMapper.toDTOList(employeePage.getContent());
         return PageUtils.toPageResponse(employeePage, employeeDTOs);
     }
@@ -105,20 +108,20 @@ public class EmployeeServiceImpl implements EmployeeService {
     public EmployeeDetailDTO getEmployeeDetailById(Integer id) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Nhân viên không tồn tại với ID: " + id));
-        
+
         EmployeeDetailDTO detailDTO = employeeMapper.toDetailDTO(employee);
-        
+
         // Get order statistics
         Long totalOrders = orderRepository.countOrdersByEmployeeId(id);
         BigDecimal totalAmount = orderRepository.sumOrderAmountByEmployeeId(id);
         Long pendingOrders = orderRepository.countOrdersByEmployeeIdAndStatus(id, Order.OrderStatus.PENDING);
         Long completedOrders = orderRepository.countOrdersByEmployeeIdAndStatus(id, Order.OrderStatus.COMPLETED);
         Long cancelledOrders = orderRepository.countOrdersByEmployeeIdAndStatus(id, Order.OrderStatus.CANCELED);
-        
+
         // Get return/exchange statistics
         Long totalReturnOrders = orderReturnRepository.countReturnOrdersByEmployeeId(id);
         Long totalExchangeOrders = orderReturnRepository.countExchangeOrdersByEmployeeId(id);
-        
+
         detailDTO.setTotalOrdersHandled(totalOrders != null ? totalOrders : 0L);
         detailDTO.setTotalOrderAmount(totalAmount != null ? totalAmount : BigDecimal.ZERO);
         detailDTO.setPendingOrders(pendingOrders != null ? pendingOrders : 0L);
@@ -126,7 +129,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         detailDTO.setCancelledOrders(cancelledOrders != null ? cancelledOrders : 0L);
         detailDTO.setTotalReturnOrders(totalReturnOrders != null ? totalReturnOrders : 0L);
         detailDTO.setTotalExchangeOrders(totalExchangeOrders != null ? totalExchangeOrders : 0L);
-        
+
         return detailDTO;
     }
 
@@ -146,7 +149,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         User user = employee.getUser();
 
         if (request.getUsername() != null && !user.getUsername().equals(request.getUsername())) {
-            // Chỉ validate username unique khi username thay đổi và đã được sử dụng bởi user khác
+            // Chỉ validate username unique khi username thay đổi và đã được sử dụng bởi
+            // user khác
             userRepository.findByUsername(request.getUsername())
                     .ifPresent(existingUser -> {
                         if (!existingUser.getIdUser().equals(user.getIdUser())) {
@@ -240,5 +244,36 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Employee updatedEmployee = employeeRepository.save(employee);
         return employeeMapper.toDTO(updatedEmployee);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<EmployeeOrderDTO> getOrdersByEmployeeId(
+            Integer employeeId,
+            Order.OrderStatus status,
+            LocalDateTime dateFrom,
+            LocalDateTime dateTo,
+            Pageable pageable) {
+
+        // Verify employee exists
+        employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Nhân viên không tồn tại với ID: " + employeeId));
+
+        Page<Order> orderPage = orderRepository.findByEmployeeIdWithFilters(
+                employeeId, status, dateFrom, dateTo, pageable);
+
+        List<EmployeeOrderDTO> orderDTOs = orderPage.getContent().stream()
+                .map(order -> EmployeeOrderDTO.builder()
+                        .idOrder(order.getIdOrder())
+                        .customerName(order.getCustomer() != null ? order.getCustomer().getCustomerName() : null)
+                        .totalAmount(order.getTotalAmount())
+                        .discount(order.getDiscount())
+                        .finalAmount(order.getFinalAmount())
+                        .status(order.getStatus() != null ? order.getStatus().name() : null)
+                        .createdAt(order.getOrderDate())
+                        .build())
+                .collect(Collectors.toList());
+
+        return PageUtils.toPageResponse(orderPage, orderDTOs);
     }
 }

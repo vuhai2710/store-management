@@ -183,21 +183,57 @@ const ImportOrders = () => {
 
   const handlePrintImportOrder = async (importOrderId, e) => {
     e?.stopPropagation();
+
+    // Check if already printed in current data
+    const order = importOrders.find(o => (o.idImportOrder || o.id) === importOrderId);
+    if (order?.invoicePrinted) {
+      message.warning("Phiếu nhập đã được in trước đó. Vui lòng vào trang Quản lý Hóa đơn để xem chi tiết.");
+      return;
+    }
+
     try {
-      const blob = await importOrderService.exportImportOrderToPdf(
-        importOrderId
-      );
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `phieu-nhap-hang-${importOrderId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      message.success("Xuất phiếu nhập hàng thành công!");
+      const { invoiceService } = await import("../services/invoiceService");
+      const printData = await invoiceService.printImportInvoice(importOrderId);
+      message.success("In phiếu nhập hàng thành công!");
+
+      // Refresh list to update printed status
+      fetchImportOrdersList();
+
+      // Open print window with invoice data
+      const printWindow = window.open("", "_blank", "width=800,height=600");
+      if (printWindow) {
+        const formatCurrency = (amount) => (amount || 0).toLocaleString("vi-VN") + " VNĐ";
+        const itemsHtml = (printData.items || []).map((item, idx) => `
+          <tr>
+            <td style="padding:8px;border:1px solid #ddd;text-align:center">${idx + 1}</td>
+            <td style="padding:8px;border:1px solid #ddd">${item.productName || ""}</td>
+            <td style="padding:8px;border:1px solid #ddd">${item.productCode || ""}</td>
+            <td style="padding:8px;border:1px solid #ddd;text-align:center">${item.quantity}</td>
+            <td style="padding:8px;border:1px solid #ddd;text-align:right">${formatCurrency(item.unitPrice)}</td>
+            <td style="padding:8px;border:1px solid #ddd;text-align:right">${formatCurrency(item.subtotal)}</td>
+          </tr>
+        `).join("");
+
+        printWindow.document.write(`
+          <!DOCTYPE html><html><head><title>Phiếu nhập hàng #${importOrderId}</title>
+          <style>body{font-family:Arial,sans-serif;padding:20px}.header{text-align:center;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#f5f5f5;padding:10px;border:1px solid #ddd}.summary{text-align:right}.total{font-weight:bold;font-size:18px;color:#1890ff}@media print{.no-print{display:none}}</style>
+          </head><body>
+          <div class="header"><h1>PHIẾU NHẬP HÀNG</h1><p>Mã phiếu nhập: #${importOrderId}</p></div>
+          <div><p><strong>Nhà cung cấp:</strong> ${printData.supplierName || "N/A"}</p><p><strong>Điện thoại:</strong> ${printData.supplierPhone || "N/A"}</p></div>
+          <table><thead><tr><th>STT</th><th>Tên sản phẩm</th><th>Mã SP</th><th>Số lượng</th><th>Đơn giá nhập</th><th>Thành tiền</th></tr></thead><tbody>${itemsHtml}</tbody></table>
+          <div class="summary"><p class="total"><strong>TỔNG TIỀN NHẬP:</strong> ${formatCurrency(printData.totalAmount)}</p></div>
+          <div class="no-print" style="margin-top:30px;text-align:center"><button onclick="window.print()" style="padding:10px 30px;font-size:16px;cursor:pointer">In phiếu nhập</button></div>
+          </body></html>
+        `);
+        printWindow.document.close();
+      }
     } catch (error) {
-      message.error("Xuất phiếu nhập hàng thất bại!");
+      if (error.status === 409) {
+        message.error("Phiếu nhập đã được in trước đó");
+        fetchImportOrdersList(); // Refresh to sync state
+      } else {
+        message.error("Xuất phiếu nhập hàng thất bại!");
+      }
     }
   };
 

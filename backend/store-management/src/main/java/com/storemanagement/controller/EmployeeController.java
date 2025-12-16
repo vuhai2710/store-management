@@ -3,13 +3,16 @@ package com.storemanagement.controller;
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.employee.EmployeeDTO;
 import com.storemanagement.dto.employee.EmployeeDetailDTO;
+import com.storemanagement.dto.employee.EmployeeOrderDTO;
 import com.storemanagement.dto.PageResponse;
+import com.storemanagement.model.Order;
 import com.storemanagement.service.EmployeeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,6 +20,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController
@@ -51,7 +57,7 @@ public class EmployeeController {
         // Validate and normalize parameters
         int validPageNo = Math.max(0, pageNo != null ? pageNo : 0);
         int validPageSize = Math.max(1, Math.min(100, pageSize != null ? pageSize : 10));
-        
+
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(validPageNo, validPageSize, Sort.by(direction, sortBy));
         PageResponse<EmployeeDTO> employees = employeeService.getAllEmployeesPaginated(keyword, pageable);
@@ -70,6 +76,30 @@ public class EmployeeController {
     public ResponseEntity<ApiResponse<EmployeeDetailDTO>> getEmployeeDetailById(@PathVariable Integer id) {
         EmployeeDetailDTO employee = employeeService.getEmployeeDetailById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin chi tiết nhân viên thành công", employee));
+    }
+
+    @GetMapping("/{id}/orders")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PageResponse<EmployeeOrderDTO>>> getEmployeeOrders(
+            @PathVariable Integer id,
+            @RequestParam(defaultValue = "0") Integer pageNo,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) Order.OrderStatus status,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate dateTo) {
+
+        int validPageNo = Math.max(0, pageNo != null ? pageNo : 0);
+        int validPageSize = Math.max(1, Math.min(100, pageSize != null ? pageSize : 10));
+
+        Pageable pageable = PageRequest.of(validPageNo, validPageSize);
+
+        // Convert LocalDate to LocalDateTime for filtering
+        LocalDateTime dateTimeFrom = dateFrom != null ? dateFrom.atStartOfDay() : null;
+        LocalDateTime dateTimeTo = dateTo != null ? dateTo.atTime(LocalTime.MAX) : null;
+
+        PageResponse<EmployeeOrderDTO> orders = employeeService.getOrdersByEmployeeId(
+                id, status, dateTimeFrom, dateTimeTo, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đơn hàng của nhân viên thành công", orders));
     }
 
     @GetMapping("/user/{userId}")

@@ -4,6 +4,7 @@ import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.dto.promotion.PromotionDTO;
 import com.storemanagement.dto.promotion.PromotionRuleDTO;
+import com.storemanagement.model.Promotion;
 import com.storemanagement.service.PromotionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,11 +37,12 @@ public class AdminPromotionController {
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDirection,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Promotion.PromotionScope scope) {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        PageResponse<PromotionDTO> promotions = promotionService.getAllPromotions(keyword, pageable);
+        PageResponse<PromotionDTO> promotions = promotionService.getAllPromotions(keyword, scope, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách mã giảm giá thành công", promotions));
     }
 

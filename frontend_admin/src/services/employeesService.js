@@ -123,4 +123,23 @@ export const employeesService = {
   getPositions: async () => [],
   updateEmployeeRole: async () => null,
   getEmployeeActivities: async () => [],
+
+  // Get paginated orders handled by an employee
+  getEmployeeOrders: async (employeeId, params = {}) => {
+    const { page = 1, pageSize = 10, status, dateFrom, dateTo } = params;
+    const queryParams = {
+      pageNo: Math.max(0, (page || 1) - 1),
+      pageSize: pageSize,
+    };
+    if (status) queryParams.status = status;
+    if (dateFrom) queryParams.dateFrom = dayjs(dateFrom).format("YYYY-MM-DD");
+    if (dateTo) queryParams.dateTo = dayjs(dateTo).format("YYYY-MM-DD");
+
+    console.log("Calling getEmployeeOrders with params:", queryParams);
+    const response = await api.get(`/employees/${employeeId}/orders`, {
+      params: queryParams,
+    });
+    console.log("API Response getEmployeeOrders:", response.data);
+    return mapPage(response.data);
+  },
 };

@@ -1,4 +1,5 @@
 import React from "react";
+import { formatDate } from "../../utils/formatUtils";
 
 /**
  * Timeline hiển thị quá trình đổi/trả hàng
@@ -79,16 +80,8 @@ const ReturnTimeline = ({ status, returnType, createdAt, updatedAt }) => {
 
   const steps = getTimelineSteps();
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const formatDateTimeline = (dateString) =>
+    formatDate(dateString, "dd/MM/yyyy HH:mm");
 
   return (
     <div className="bg-white p-6 rounded shadow">

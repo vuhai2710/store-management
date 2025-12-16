@@ -38,7 +38,7 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     @Transactional(readOnly = true)
     public ValidatePromotionResponseDTO validatePromotion(ValidatePromotionRequestDTO request) {
-        log.info("Validating promotion code: {}", request.getCode());
+        log.info("Validating promotion code: {}, expectedScope: {}", request.getCode(), request.getExpectedScope());
 
         Promotion promotion = promotionRepository.findByCodeAndIsActiveTrue(request.getCode())
                 .orElse(null);
@@ -47,6 +47,17 @@ public class PromotionServiceImpl implements PromotionService {
             return ValidatePromotionResponseDTO.builder()
                     .valid(false)
                     .message("Mã giảm giá không tồn tại hoặc đã bị vô hiệu hóa")
+                    .build();
+        }
+
+        // Validate scope if expectedScope is provided
+        if (request.getExpectedScope() != null && promotion.getScope() != request.getExpectedScope()) {
+            String scopeMessage = promotion.getScope() == Promotion.PromotionScope.SHIPPING
+                    ? "Mã này chỉ áp dụng cho phí vận chuyển"
+                    : "Mã này chỉ áp dụng cho đơn hàng";
+            return ValidatePromotionResponseDTO.builder()
+                    .valid(false)
+                    .message(scopeMessage)
                     .build();
         }
 
@@ -75,12 +86,18 @@ public class PromotionServiceImpl implements PromotionService {
 
         BigDecimal discount = calculateDiscountFromPromotion(promotion, request.getTotalAmount());
 
+        // For SHIPPING scope, cap discount at shippingFee if provided
+        if (promotion.getScope() == Promotion.PromotionScope.SHIPPING && request.getShippingFee() != null) {
+            discount = discount.min(request.getShippingFee());
+        }
+
         return ValidatePromotionResponseDTO.builder()
                 .valid(true)
                 .message("Mã giảm giá hợp lệ")
                 .discount(discount)
                 .discountType(promotion.getDiscountType())
                 .code(promotion.getCode())
+                .scope(promotion.getScope())
                 .build();
     }
 
@@ -154,6 +171,40 @@ public class PromotionServiceImpl implements PromotionService {
         return BigDecimal.ZERO;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public BigDecimal calculateShippingDiscount(BigDecimal shippingFee, String shippingPromotionCode) {
+        log.info("Calculating shipping discount: shippingFee={}, shippingPromotionCode={}",
+                shippingFee, shippingPromotionCode);
+
+        if (shippingPromotionCode == null || shippingPromotionCode.trim().isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        if (shippingFee == null || shippingFee.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        ValidatePromotionRequestDTO validateRequest = ValidatePromotionRequestDTO.builder()
+                .code(shippingPromotionCode.trim())
+                .totalAmount(shippingFee) // Use shippingFee as totalAmount for min order check
+                .shippingFee(shippingFee) // Cap discount at this
+                .expectedScope(Promotion.PromotionScope.SHIPPING)
+                .build();
+
+        ValidatePromotionResponseDTO validateResponse = validatePromotion(validateRequest);
+
+        if (validateResponse.getValid()) {
+            // Discount is already capped at shippingFee in validatePromotion
+            log.info("Applying shipping promotion code: {}, discount: {}",
+                    shippingPromotionCode, validateResponse.getDiscount());
+            return validateResponse.getDiscount();
+        }
+
+        log.info("Shipping promotion code not valid: {}", validateResponse.getMessage());
+        return BigDecimal.ZERO;
+    }
+
     private BigDecimal calculateDiscountFromPromotion(Promotion promotion, BigDecimal totalAmount) {
         if (promotion.getDiscountType() == Promotion.DiscountType.PERCENTAGE) {
             // Percentage discount
@@ -199,13 +250,27 @@ public class PromotionServiceImpl implements PromotionService {
         log.info("Getting all promotions with keyword: {}", keyword);
 
         Page<Promotion> promotions;
-        
+
         if (keyword != null && !keyword.trim().isEmpty()) {
             promotions = promotionRepository.searchByKeyword(keyword.trim(), pageable);
         } else {
             promotions = promotionRepository.findAll(pageable);
         }
-        
+
+        return PageUtils.toPageResponse(promotions.map(promotionMapper::toDTO));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<PromotionDTO> getAllPromotions(String keyword, Promotion.PromotionScope scope,
+            Pageable pageable) {
+        log.info("Getting all promotions with keyword: {}, scope: {}", keyword, scope);
+
+        Page<Promotion> promotions = promotionRepository.searchByKeywordAndScope(
+                keyword != null ? keyword.trim() : null,
+                scope,
+                pageable);
+
         return PageUtils.toPageResponse(promotions.map(promotionMapper::toDTO));
     }
 
@@ -235,6 +300,9 @@ public class PromotionServiceImpl implements PromotionService {
         promotion.setStartDate(promotionDTO.getStartDate());
         promotion.setEndDate(promotionDTO.getEndDate());
         promotion.setIsActive(promotionDTO.getIsActive());
+        if (promotionDTO.getScope() != null) {
+            promotion.setScope(promotionDTO.getScope());
+        }
 
         promotion = promotionRepository.save(promotion);
 

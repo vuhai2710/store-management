@@ -67,6 +67,7 @@ function AppContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [sortOption, setSortOption] = useState("default");
   const [initializedFromUrl, setInitializedFromUrl] = useState(false);
 
@@ -77,13 +78,24 @@ function AppContent() {
   const cartIconRef = useRef(null);
 
   // Map URL path (từ PayOS redirect) sang currentPage khi load lại
+  // Also read categoryId from URL query params for shareable category links
   useEffect(() => {
     const path = window.location.pathname;
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryIdFromUrl = urlParams.get('categoryId');
+
     if (path.startsWith("/payment/success")) {
       setCurrentPage("payment-success");
     } else if (path.startsWith("/payment/cancel")) {
       setCurrentPage("payment-cancel");
     }
+
+    // If categoryId is in URL, set it and navigate to shop
+    if (categoryIdFromUrl) {
+      setSelectedCategoryId(parseInt(categoryIdFromUrl));
+      setCurrentPage("shop");
+    }
+
     setInitializedFromUrl(true);
   }, []);
 
@@ -307,16 +319,42 @@ function AppContent() {
     window.scrollTo(0, 0);
   };
 
+  // --- CATEGORY NAVIGATION HANDLER ---
+  // Navigate to shop page with category filter and update URL
+  const handleCategoryNavigation = (categoryId, categoryName) => {
+    setSelectedCategoryId(categoryId);
+    setSelectedCategory(categoryName);
+    setCurrentPage("shop");
+
+    // Update URL with categoryId query param (without page reload)
+    const url = new URL(window.location.href);
+    url.searchParams.set('categoryId', categoryId);
+    window.history.pushState({}, '', url.toString());
+
+    window.scrollTo(0, 0);
+  };
+
+  // Function to clear category filter and update URL
+  const handleClearCategoryFilter = () => {
+    setSelectedCategoryId(null);
+    setSelectedCategory("All");
+
+    // Remove categoryId from URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('categoryId');
+    window.history.pushState({}, '', url.pathname);
+  };
+
   // Calculate cart subtotal (trước giảm giá) từ cartData hoặc từ items
   const cartSubtotal = cartData?.totalAmount
     ? Number(cartData.totalAmount)
     : cart.reduce((sum, item) => {
-        const price =
-          item.productPrice || item.price || item.product?.price || 0;
-        const quantity = item.quantity || item.qty || 0;
-        const subtotal = item.subtotal || price * quantity;
-        return sum + Number(subtotal);
-      }, 0);
+      const price =
+        item.productPrice || item.price || item.product?.price || 0;
+      const quantity = item.quantity || item.qty || 0;
+      const subtotal = item.subtotal || price * quantity;
+      return sum + Number(subtotal);
+    }, 0);
 
   // Giảm giá tự động cho giỏ hàng (từ backend)
   const cartAutomaticDiscount = cartData?.automaticDiscount
@@ -342,7 +380,7 @@ function AppContent() {
 
     switch (currentPage) {
       case "home":
-        return <HomePage {...pageProps} />;
+        return <HomePage {...pageProps} setSelectedCategory={setSelectedCategory} handleCategoryNavigation={handleCategoryNavigation} />;
 
       case "shop":
         return (
@@ -350,9 +388,12 @@ function AppContent() {
             {...pageProps}
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
+            selectedCategoryId={selectedCategoryId}
+            setSelectedCategoryId={setSelectedCategoryId}
             sortOption={sortOption}
             setSortOption={setSortOption}
             searchTerm={debouncedSearchTerm}
+            handleClearCategoryFilter={handleClearCategoryFilter}
           />
         );
 
