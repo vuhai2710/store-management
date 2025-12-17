@@ -80,22 +80,37 @@ function AppContent() {
 
   // Map URL path (từ PayOS redirect) sang currentPage khi load lại
   // Also read categoryId from URL query params for shareable category links
+  // Handle auth token from admin redirect
   useEffect(() => {
     const path = window.location.pathname;
     const urlParams = new URLSearchParams(window.location.search);
     const categoryIdFromUrl = urlParams.get('categoryId');
+    const tokenFromUrl = urlParams.get('token');
 
     if (path.startsWith("/payment/success")) {
       setCurrentPage("payment-success");
     } else if (path.startsWith("/payment/cancel")) {
       setCurrentPage("payment-cancel");
-    } else if (path.startsWith("/reset-password") || urlParams.get('token')) {
-      // Check for reset password page
+    } else if (path.startsWith("/reset-password")) {
+      // Only go to reset-password if the path explicitly starts with /reset-password
       setCurrentPage("reset-password");
+    } else if (tokenFromUrl && !path.startsWith("/reset-password")) {
+      // This is an auth token from admin redirect, not a reset password token
+      // Save the token to localStorage and clean up the URL
+      console.log("Received auth token from redirect, saving to localStorage");
+      localStorage.setItem("token", tokenFromUrl);
+
+      // Clean up the URL by removing the token parameter
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('token');
+      window.history.replaceState({}, '', newUrl.pathname + newUrl.search);
+
+      // Navigate to home page - AuthContext will pick up the token
+      setCurrentPage("home");
     }
 
     // If categoryId is in URL, set it and navigate to shop
-    if (categoryIdFromUrl && !urlParams.get('token')) {
+    if (categoryIdFromUrl && !tokenFromUrl) {
       setSelectedCategoryId(parseInt(categoryIdFromUrl));
       setCurrentPage("shop");
     }

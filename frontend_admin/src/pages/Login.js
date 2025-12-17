@@ -42,15 +42,22 @@ const Login = () => {
 
       // Kiểm tra role của user
       const user = result?.user || authService.getUserFromStorage();
+      console.log("User info:", user);
 
       if (user?.role === USER_ROLES.CUSTOMER) {
         // Nếu là CUSTOMER, redirect sang frontend_client
-        message.success("Đăng nhập thành công! Đang chuyển hướng...");
+        // KHÔNG hiển thị lỗi, chỉ hiển thị thông báo chuyển hướng
+        message.success("Đăng nhập thành công! Đang chuyển hướng đến trang khách hàng...");
+
         // Chuyển hướng sang frontend_client với token
         const token = localStorage.getItem("token");
         const clientUrl = APP_CONFIG.CLIENT_URL;
-        // Chuyển hướng với token trong URL hoặc localStorage (frontend_client sẽ đọc từ localStorage)
-        window.location.href = `${clientUrl}?token=${token}`;
+
+        // Đợi một chút để user thấy message trước khi redirect
+        setTimeout(() => {
+          // Chuyển hướng với token trong URL (frontend_client sẽ đọc từ URL params hoặc localStorage)
+          window.location.href = `${clientUrl}?token=${token}`;
+        }, 500);
         return;
       }
 
@@ -65,6 +72,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Lỗi đăng nhập:", error);
+      // CHỈ hiển thị lỗi khi thực sự đăng nhập thất bại (sai tài khoản/mật khẩu)
       // error is the rejected value from authSlice (already formatted message)
       message.error(error || "Sai tài khoản hoặc mật khẩu");
     } finally {

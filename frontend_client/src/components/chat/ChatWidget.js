@@ -26,6 +26,8 @@ const ChatWidget = () => {
   const messagesContainerRef = useRef(null);
   const conversationIdRef = useRef(null);
   const stompClientRef = useRef(null);
+  const connectingRef = useRef(false); // Track if we're currently connecting
+  const connectedRef = useRef(false); // Track connection status for closures
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -44,6 +46,16 @@ const ChatWidget = () => {
     }
   }, [messages]);
 
+  // Track if messages have been loaded in the current widget open session
+  const messagesLoadedRef = useRef(false);
+
+  // Reset messagesLoadedRef when widget is closed
+  useEffect(() => {
+    if (!isOpen) {
+      messagesLoadedRef.current = false;
+    }
+  }, [isOpen]);
+
   // Initialize conversation when authenticated and widget is opened
   useEffect(() => {
     if (isAuthenticated && isOpen) {
@@ -53,13 +65,17 @@ const ChatWidget = () => {
         console.log("[ChatWidget] No conversation, calling initializeConversation");
         initializeConversation();
       } else {
-        // Conversation exists from early init, just load messages
+        // Conversation exists from early init, load messages if not already loaded
         const convId = conversation.idConversation || conversation.id;
-        console.log("[ChatWidget] Conversation exists, convId:", convId, "messages:", messages.length);
-        if (convId && messages.length === 0) {
+        console.log("[ChatWidget] Conversation exists, convId:", convId, "messagesLoaded:", messagesLoadedRef.current);
+
+        // Always load messages when widget is opened if we haven't loaded yet in this session
+        if (convId && !messagesLoadedRef.current) {
           console.log("[ChatWidget] Loading messages for conversation:", convId);
+          messagesLoadedRef.current = true; // Mark as loading to prevent duplicate calls
           loadMessages(convId);
         }
+
         // Mark conversation as viewed
         chatService
           .markConversationAsViewed(convId)
@@ -88,6 +104,12 @@ const ChatWidget = () => {
   // Early initialization - just get/create conversation and connect WebSocket
   // Don't load messages until widget is opened
   const initializeEarlyConversation = async () => {
+    // Prevent multiple simultaneous connection attempts
+    if (connectingRef.current || connectedRef.current) {
+      console.log("[ChatWidget] Already connecting or connected, skipping early init");
+      return;
+    }
+
     try {
       console.log("[ChatWidget] Early initialization - getting conversation for WebSocket subscription");
 
@@ -111,8 +133,8 @@ const ChatWidget = () => {
         setConversation(conversationData);
 
         // Connect to WebSocket for real-time messages
-        // This is the key fix - subscribe even before widget is opened
-        if (!stompClientRef.current || !connected) {
+        // Use refs to check status instead of state (avoids stale closure)
+        if (!stompClientRef.current && !connectingRef.current && !connectedRef.current) {
           connectWebSocket(convId);
         }
 
@@ -237,7 +259,7 @@ const ChatWidget = () => {
         conversationId,
         {
           pageNo: 1,
-          pageSize: 50,
+          pageSize: 200, // Load more messages to ensure full chat history is available
         }
       );
       const msgs = messagesData?.content || [];
@@ -265,6 +287,8 @@ const ChatWidget = () => {
         console.error("Error disconnecting WebSocket:", error);
       } finally {
         stompClientRef.current = null;
+        connectingRef.current = false;
+        connectedRef.current = false;
         setConnected(false);
       }
     }
@@ -272,14 +296,25 @@ const ChatWidget = () => {
 
   // Connect to WebSocket
   const connectWebSocket = (conversationId) => {
+    // Prevent duplicate connections
+    if (connectingRef.current || connectedRef.current) {
+      console.log("[ChatWidget] Already connecting or connected, skipping");
+      return;
+    }
+
     try {
+      connectingRef.current = true; // Mark as connecting
+
       // Get token
       const token = authService.getToken();
       if (!token) {
         console.error("No token found for WebSocket connection");
         setError("Vui lòng đăng nhập để sử dụng chat.");
+        connectingRef.current = false;
         return;
       }
+
+      console.log("[ChatWidget] Connecting to WebSocket for conversation:", conversationId);
 
       // Create SockJS connection with token in query parameter
       // Backend supports token via query parameter or STOMP header
@@ -294,7 +329,9 @@ const ChatWidget = () => {
           Authorization: `Bearer ${token}`,
         },
         onConnect: (frame) => {
-          console.log("WebSocket connected", frame);
+          console.log("[ChatWidget] WebSocket connected", frame);
+          connectingRef.current = false;
+          connectedRef.current = true;
           setConnected(true);
           setError("");
 
@@ -302,6 +339,7 @@ const ChatWidget = () => {
           client.subscribe(`/topic/chat.${conversationId}`, (message) => {
             try {
               const messageData = JSON.parse(message.body);
+              console.log("[ChatWidget] Received message via WebSocket:", messageData);
 
               // Update support agent name if message is from EMPLOYEE or ADMIN
               if (
@@ -343,19 +381,27 @@ const ChatWidget = () => {
         },
         onStompError: (frame) => {
           console.error("STOMP error:", frame);
+          connectingRef.current = false;
+          connectedRef.current = false;
           setConnected(false);
           setError("Lỗi kết nối chat. Vui lòng thử lại.");
         },
         onWebSocketClose: () => {
           console.log("WebSocket closed");
+          connectingRef.current = false;
+          connectedRef.current = false;
           setConnected(false);
         },
         onDisconnect: () => {
           console.log("WebSocket disconnected");
+          connectingRef.current = false;
+          connectedRef.current = false;
           setConnected(false);
         },
         onWebSocketError: (event) => {
           console.error("WebSocket error:", event);
+          connectingRef.current = false;
+          connectedRef.current = false;
           setError("Không thể kết nối chat. Vui lòng thử lại sau.");
         },
       });
@@ -364,6 +410,8 @@ const ChatWidget = () => {
       stompClientRef.current = client;
     } catch (error) {
       console.error("Error connecting to WebSocket:", error);
+      connectingRef.current = false;
+      connectedRef.current = false;
       setError("Không thể kết nối chat. Vui lòng thử lại sau.");
     }
   };
@@ -372,7 +420,17 @@ const ChatWidget = () => {
   const sendMessage = async (e) => {
     e.preventDefault();
 
-    if (!newMessage.trim() || !stompClientRef.current || !connected) {
+    // Use ref for connection check to avoid stale closure
+    if (!newMessage.trim()) {
+      return;
+    }
+
+    if (!stompClientRef.current || !connectedRef.current) {
+      console.log("[ChatWidget] Cannot send - not connected", {
+        hasClient: !!stompClientRef.current,
+        connected: connectedRef.current
+      });
+      setError("Chưa kết nối. Vui lòng đợi...");
       return;
     }
 
@@ -857,9 +915,8 @@ const ChatWidget = () => {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Nhập tin nhắn..."
+                  placeholder={connected ? "Nhập tin nhắn..." : "Đang kết nối..."}
                   aria-label="Nội dung tin nhắn"
-                  disabled={!connected}
                   style={{
                     flex: 1,
                     padding: "0.75rem",
@@ -867,6 +924,15 @@ const ChatWidget = () => {
                     borderRadius: "0.5rem",
                     fontSize: "0.875rem",
                     outline: "none",
+                    backgroundColor: "#fff",
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "#2563EB";
+                    e.target.style.boxShadow = "0 0 0 2px rgba(37, 99, 235, 0.2)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "#E2E8F0";
+                    e.target.style.boxShadow = "none";
                   }}
                 />
                 <button

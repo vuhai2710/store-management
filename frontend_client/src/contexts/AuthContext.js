@@ -58,22 +58,36 @@ export const AuthProvider = ({ children }) => {
         rememberMe
       );
 
-      // Check if user is ADMIN or EMPLOYEE -> redirect to admin site
-      if (
-        response?.user?.role === "ROLE_ADMIN" ||
-        response?.user?.role === "ROLE_EMPLOYEE"
-      ) {
-        const token = authService.getToken();
-        // Redirect to admin site with token
-        window.location.href = `http://localhost:3000?token=${token}`;
-        return response;
-      }
+      // Backend login only returns { token, authenticated }, NOT user info
+      // We need to fetch profile to check the role
+      try {
+        const customerData = await customerService.getMyProfile();
 
-      // For CUSTOMER, fetch customer info
-      const customerData = await customerService.getMyProfile();
-      setCustomer(customerData);
-      setUser(customerData);
-      setIsAuthenticated(true);
+        // Check if user is ADMIN or EMPLOYEE -> redirect to admin site
+        // Note: Role comes as "ADMIN" or "EMPLOYEE" (without ROLE_ prefix)
+        const userRole = customerData?.user?.role || customerData?.role;
+        if (userRole === "ADMIN" || userRole === "EMPLOYEE") {
+          const token = authService.getToken();
+          // Redirect to admin site with token
+          window.location.href = `http://localhost:3000?token=${token}`;
+          return response;
+        }
+
+        // For CUSTOMER, set the customer data
+        setCustomer(customerData);
+        setUser(customerData);
+        setIsAuthenticated(true);
+      } catch (profileError) {
+        console.error("Error fetching profile after login:", profileError);
+        // If profile fetch fails, user might be ADMIN/EMPLOYEE who can't access customer profile
+        // Redirect to admin site to let them try there
+        const token = authService.getToken();
+        if (token) {
+          window.location.href = `http://localhost:3000?token=${token}`;
+          return response;
+        }
+        throw profileError;
+      }
 
       return response;
     } catch (error) {

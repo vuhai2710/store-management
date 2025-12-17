@@ -108,13 +108,6 @@ public class EmailServiceImpl implements EmailService {
         sendHtmlEmail(to, subject, htmlContent);
     }
 
-    @Override
-    public void sendNotificationEmail(String to, String title, String message) {
-        String subject = "Thông báo - Store Management System";
-        String htmlContent = buildNotificationHtml(title, message);
-        sendHtmlEmail(to, subject, htmlContent);
-    }
-
     /**
      * Tạo HTML template cho email quên mật khẩu
      */
@@ -207,197 +200,129 @@ public class EmailServiceImpl implements EmailService {
      * Tạo HTML template cho email đặt lại mật khẩu với link
      */
     private String buildPasswordResetHtml(String username, String resetLink, int expiryMinutes) {
-        return String.format("""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        body {
-                            font-family: 'Segoe UI', Arial, sans-serif;
-                            line-height: 1.6;
-                            color: #333;
-                            margin: 0;
-                            padding: 0;
-                        }
-                        .container {
-                            max-width: 600px;
-                            margin: 0 auto;
-                            padding: 20px;
-                            background-color: #f5f7fa;
-                        }
-                        .header {
-                            background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
-                            color: white;
-                            padding: 30px;
-                            text-align: center;
-                            border-radius: 12px 12px 0 0;
-                        }
-                        .header h1 {
-                            margin: 0;
-                            font-size: 24px;
-                        }
-                        .content {
-                            background-color: white;
-                            padding: 40px 30px;
-                            border-radius: 0 0 12px 12px;
-                            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                        }
-                        .greeting {
-                            font-size: 18px;
-                            margin-bottom: 20px;
-                        }
-                        .message {
-                            color: #555;
-                            margin-bottom: 30px;
-                        }
-                        .btn-reset {
-                            display: inline-block;
-                            background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
-                            color: white !important;
-                            text-decoration: none;
-                            padding: 15px 40px;
-                            border-radius: 8px;
-                            font-weight: bold;
-                            font-size: 16px;
-                            text-align: center;
-                        }
-                        .btn-container {
-                            text-align: center;
-                            margin: 30px 0;
-                        }
-                        .warning {
-                            background-color: #fff3cd;
-                            border-left: 4px solid #ffc107;
-                            padding: 15px;
-                            margin: 25px 0;
-                            border-radius: 4px;
-                            font-size: 14px;
-                        }
-                        .link-text {
-                            word-break: break-all;
-                            color: #667eea;
-                            font-size: 12px;
-                            background-color: #f0f0f0;
-                            padding: 10px;
-                            border-radius: 4px;
-                            margin-top: 20px;
-                        }
-                        .footer {
-                            text-align: center;
-                            margin-top: 30px;
-                            font-size: 12px;
-                            color: #888;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="header">
-                            <h1>🔐 Đặt lại mật khẩu</h1>
-                        </div>
-                        <div class="content">
-                            <p class="greeting">Xin chào <strong>%s</strong>,</p>
-                            <p class="message">
-                                Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn tại Electronic Store.
-                                Nhấn vào nút bên dưới để đặt lại mật khẩu của bạn.
-                            </p>
+        return String.format(
+                """
+                                <!DOCTYPE html>
+                                <html>
+                                <head>
+                                    <meta charset="UTF-8">
+                                    <style>
+                                        body {
+                                            font-family: 'Segoe UI', Arial, sans-serif;
+                                            line-height: 1.6;
+                                            color: #333;
+                                            margin: 0;
+                                            padding: 0;
+                                        }
+                                        .container {
+                                            max-width: 600px;
+                                            margin: 0 auto;
+                                            padding: 20px;
+                                            background-color: #f5f7fa;
+                                        }
+                                        .header {
+                                            background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
+                                            color: white;
+                                            padding: 30px;
+                                            text-align: center;
+                                            border-radius: 12px 12px 0 0;
+                                        }
+                                        .header h1 {
+                                            margin: 0;
+                                            font-size: 24px;
+                                        }
+                                        .content {
+                                            background-color: white;
+                                            padding: 40px 30px;
+                                            border-radius: 0 0 12px 12px;
+                                            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                                        }
+                                        .greeting {
+                                            font-size: 18px;
+                                            margin-bottom: 20px;
+                                        }
+                                        .message {
+                                            color: #555;
+                                            margin-bottom: 30px;
+                                        }
+                                        .btn-reset {
+                                            display: inline-block;
+                                            background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
+                                            color: white !important;
+                                            text-decoration: none;
+                                            padding: 15px 40px;
+                                            border-radius: 8px;
+                                            font-weight: bold;
+                                            font-size: 16px;
+                                            text-align: center;
+                                        }
+                                        .btn-container {
+                                            text-align: center;
+                                            margin: 30px 0;
+                                        }
+                                        .warning {
+                                            background-color: #fff3cd;
+                                            border-left: 4px solid #ffc107;
+                                            padding: 15px;
+                                            margin: 25px 0;
+                                            border-radius: 4px;
+                                            font-size: 14px;
+                                        }
+                                        .link-text {
+                                            word-break: break-all;
+                                            color: #667eea;
+                                            font-size: 12px;
+                                            background-color: #f0f0f0;
+                                            padding: 10px;
+                                            border-radius: 4px;
+                                            margin-top: 20px;
+                                        }
+                                        .footer {
+                                            text-align: center;
+                                            margin-top: 30px;
+                                            font-size: 12px;
+                                            color: #888;
+                                        }
+                                    </style>
+                                </head>
+                                <body>
+                                    <div class="container">
+                                        <div class="header">
+                                            <h1>🔐 Đặt lại mật khẩu</h1>
+                                        </div>
+                                        <div class="content">
+                                            <p class="greeting">Xin chào <strong>%s</strong>,</p>
+                                            <p class="message">
+                                                Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn tại Electronic Store.
+                                                Nhấn vào nút bên dưới để đặt lại mật khẩu của bạn.
+                                            </p>
 
-                            <div class="btn-container">
-                                <a href="%s" class="btn-reset">Đặt lại mật khẩu</a>
+                                            <div class="btn-container">
+                                                <a href="%s" class="btn-reset">Đặt lại mật khẩu</a>
+                                            </div>
+
+                                            <div class="warning">
+                                                ⏱️ <strong>Lưu ý:</strong> Link này sẽ hết hạn sau <strong>%d phút</strong>.
+                                                Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
+                                            </div>
+
+                                            <p style="font-size: 14px; color: #666;">
+                                                Nếu nút không hoạt động, sao chép và dán link dưới đây vào trình duyệt:
+                                            </p>
+                                            <div class="link-text">%s</div>
+
+                                            <p style="margin-top: 30px;">
+                                                Trân trọng,<br><strong>Electronic Store Team</strong>
+                                            </p>
+                                        </div>
+                                        <div class="footer">
+                                            <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+                                            <p>&copy; 2025 Electronic Store. All rights reserved.</p>
+                                </div>
                             </div>
-
-                            <div class="warning">
-                                ⏱️ <strong>Lưu ý:</strong> Link này sẽ hết hạn sau <strong>%d phút</strong>.
-                                Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
-                            </div>
-
-                            <p style="font-size: 14px; color: #666;">
-                                Nếu nút không hoạt động, sao chép và dán link dưới đây vào trình duyệt:
-                            </p>
-                            <div class="link-text">%s</div>
-
-                            <p style="margin-top: 30px;">
-                                Trân trọng,<br><strong>Electronic Store Team</strong>
-                            </p>
-                        </div>
-                        <div class="footer">
-                            <p>Email này được gửi tự động, vui lòng không trả lời.</p>
-                            <p>&copy; 2025 Electronic Store. All rights reserved.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """, username, resetLink, expiryMinutes, resetLink);
-    }
-
-    /**
-     * Tạo HTML template cho email thông báo
-     */
-    private String buildNotificationHtml(String title, String message) {
-        return String.format("""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            line-height: 1.6;
-                            color: #333;
-                        }
-                        .container {
-                            max-width: 600px;
-                            margin: 0 auto;
-                            padding: 20px;
-                            background-color: #f9f9f9;
-                            border-radius: 10px;
-                        }
-                        .header {
-                            background-color: #2196F3;
-                            color: white;
-                            padding: 20px;
-                            text-align: center;
-                            border-radius: 10px 10px 0 0;
-                        }
-                        .content {
-                            background-color: white;
-                            padding: 30px;
-                            border-radius: 0 0 10px 10px;
-                        }
-                        .message-box {
-                            background-color: #e3f2fd;
-                            border-left: 4px solid #2196F3;
-                            padding: 15px;
-                            margin: 20px 0;
-                        }
-                        .footer {
-                            text-align: center;
-                            margin-top: 20px;
-                            font-size: 12px;
-                            color: #888;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="header">
-                            <h1>🔔 Thông báo</h1>
-                        </div>
-                        <div class="content">
-                            <h2>%s</h2>
-                            <div class="message-box">
-                                <p>%s</p>
-                            </div>
-                            <p>Trân trọng,<br><strong>Store Management Team</strong></p>
-                        </div>
-                        <div class="footer">
-                            <p>Email này được gửi tự động, vui lòng không trả lời.</p>
-                            <p>&copy; 2025 Store Management System. All rights reserved.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """, title, message.replace("\n", "<br>"));
+                        </body>
+                        </html>
+                        """,
+                username, resetLink, expiryMinutes, resetLink);
     }
 }

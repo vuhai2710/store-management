@@ -70,6 +70,27 @@ const PublicRoutes = () => (
 function App() {
   const { user, isAuthenticated, loading } = useAuth();
 
+  // Xử lý token từ URL khi được redirect từ frontend_client
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenFromUrl = urlParams.get('token');
+    const path = window.location.pathname;
+
+    // Nếu có token trong URL và không phải trang reset-password
+    if (tokenFromUrl && !path.startsWith('/reset-password')) {
+      console.log("Received auth token from redirect, saving to localStorage");
+      localStorage.setItem("token", tokenFromUrl);
+
+      // Clean up URL by removing the token parameter
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('token');
+      window.history.replaceState({}, '', newUrl.pathname + newUrl.search);
+
+      // Reload page to pick up the new token
+      window.location.reload();
+    }
+  }, []);
+
   // Kiểm tra và redirect CUSTOMER sang frontend_client
   useEffect(() => {
     if (!loading && isAuthenticated && user?.role === USER_ROLES.CUSTOMER) {

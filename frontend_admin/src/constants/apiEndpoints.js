@@ -145,16 +145,6 @@ export const API_ENDPOINTS = {
     CREATE_GHN_FOR_ORDER: (orderId) => `/shipments/order/${orderId}/create-ghn`,
   },
 
-  // Notifications
-  NOTIFICATIONS: {
-    BASE: "/notifications",
-    BY_ID: (id) => `/notifications/${id}`,
-    UNREAD: "/notifications/unread",
-    UNREAD_COUNT: "/notifications/unread-count",
-    MARK_READ: (id) => `/notifications/${id}/mark-read`,
-    MARK_ALL_READ: "/notifications/mark-all-read",
-  },
-
   // Chat
   CHAT: {
     BASE: "/chat",

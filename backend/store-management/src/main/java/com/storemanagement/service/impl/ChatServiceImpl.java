@@ -121,9 +121,17 @@ public class ChatServiceImpl implements ChatService {
             validateConversationAccess(conversationId);
         }
 
+        // Fetch in DESC order to get latest messages first
         Page<ChatMessage> messages = messageRepository
-                .findByConversation_IdConversationOrderByCreatedAtAsc(conversationId, pageable);
-        return messages.map(this::toMessageDto);
+                .findByConversation_IdConversationOrderByCreatedAtDesc(conversationId, pageable);
+
+        // Map to DTOs and reverse to display in correct order (oldest first)
+        java.util.List<ChatMessageDTO> dtoList = messages.getContent().stream()
+                .map(this::toMessageDto)
+                .collect(java.util.stream.Collectors.toList());
+        java.util.Collections.reverse(dtoList);
+
+        return new org.springframework.data.domain.PageImpl<>(dtoList, pageable, messages.getTotalElements());
     }
 
     @Override
