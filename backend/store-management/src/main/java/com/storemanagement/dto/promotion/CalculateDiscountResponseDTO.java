@@ -20,4 +20,3 @@ public class CalculateDiscountResponseDTO {
     private Integer ruleId;
 }
 
-

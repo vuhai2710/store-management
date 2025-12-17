@@ -22,6 +22,6 @@ public class CategoryDTO {
 
     @Size(max = 10, message = "Mã tiền tố không được vượt quá 10 ký tự")
     private String codePrefix;
-    
+
     private LocalDateTime createdAt;
 }

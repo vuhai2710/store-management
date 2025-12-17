@@ -49,26 +49,20 @@ const { TabPane } = Tabs;
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
-/**
- * Parse datetime từ backend (yyyy-MM-dd HH:mm:ss) sang dayjs object
- * Hỗ trợ nhiều format: backend format, ISO, DD/MM/YYYY...
- */
 const parseDateFromBackend = (dateString) => {
   if (!dateString) return null;
 
   const formats = [
-    "YYYY-MM-DD HH:mm:ss", // Backend format
-    "YYYY-MM-DDTHH:mm:ss", // ISO format
+    "YYYY-MM-DD HH:mm:ss",
+    "YYYY-MM-DDTHH:mm:ss",
     "YYYY-MM-DD",
     "DD/MM/YYYY HH:mm:ss",
     "DD/MM/YYYY HH:mm",
     "DD/MM/YYYY",
   ];
 
-  // Thử parse với các format đã định nghĩa
   let parsed = dayjs(dateString, formats, true);
 
-  // Nếu không parse được, thử với dayjs mặc định
   if (!parsed.isValid()) {
     parsed = dayjs(dateString);
   }
@@ -81,15 +75,12 @@ const Promotions = () => {
   const { promotions, rules } = useSelector((state) => state.promotions || {});
   const [activeTab, setActiveTab] = useState("promotions");
 
-  // Search state for promotions
   const [promoSearchKeyword, setPromoSearchKeyword] = useState("");
   const debouncedPromoKeyword = useDebounce(promoSearchKeyword, 300);
 
-  // Search state for rules
   const [ruleSearchKeyword, setRuleSearchKeyword] = useState("");
   const debouncedRuleKeyword = useDebounce(ruleSearchKeyword, 300);
 
-  // Scope filter for promotions
   const [promoScopeFilter, setPromoScopeFilter] = useState(null);
 
   const [isPromoModalVisible, setIsPromoModalVisible] = useState(false);
@@ -102,7 +93,6 @@ const Promotions = () => {
   const [ruleSubmitting, setRuleSubmitting] = useState(false);
   const [ruleForm] = Form.useForm();
 
-  // Pagination cho promotions
   const {
     currentPage: promoPage,
     pageSize: promoPageSize,
@@ -112,7 +102,6 @@ const Promotions = () => {
     pagination: promoPagination,
   } = usePagination(1, 10);
 
-  // Pagination cho rules
   const {
     currentPage: rulePage,
     pageSize: rulePageSize,
@@ -155,19 +144,18 @@ const Promotions = () => {
     }
   }, [activeTab, fetchPromotionsList, fetchRulesList]);
 
-  // Reset pagination when search keyword changes
   useEffect(() => {
     if (debouncedPromoKeyword !== undefined) {
       resetPromoPagination();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [debouncedPromoKeyword]);
 
   useEffect(() => {
     if (debouncedRuleKeyword !== undefined) {
       resetRulePagination();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [debouncedRuleKeyword]);
 
   useEffect(() => {

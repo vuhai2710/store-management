@@ -35,7 +35,6 @@ const ImportOrderForm = ({ importOrder, onSuccess }) => {
   const [suppliers, setSuppliers] = useState([]);
   const [loadingMeta, setLoadingMeta] = useState(false);
 
-  // Search and filter states
   const [searchKeyword, setSearchKeyword] = useState("");
   const [brandFilter, setBrandFilter] = useState(null);
 
@@ -58,7 +57,6 @@ const ImportOrderForm = ({ importOrder, onSuccess }) => {
     loadMeta();
   }, []);
 
-  // Get unique brands from products
   const uniqueBrands = useMemo(() => {
     const brands = products
       .map((p) => p.brand)
@@ -66,7 +64,6 @@ const ImportOrderForm = ({ importOrder, onSuccess }) => {
     return [...new Set(brands)].sort();
   }, [products]);
 
-  // Filter products based on search and brand
   const filteredProducts = useMemo(() => {
     let filtered = products;
 
@@ -301,7 +298,7 @@ const ImportOrderForm = ({ importOrder, onSuccess }) => {
       <Divider orientation="left">Danh sách sản phẩm</Divider>
 
       <Card size="small" style={{ marginBottom: 16 }}>
-        {/* Search and filter section */}
+        { }
         <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
           <Col xs={24} sm={12} md={8}>
             <Input

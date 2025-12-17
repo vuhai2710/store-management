@@ -12,10 +12,6 @@ import { reviewService } from "../../services/reviewService";
 import LoadingSpinner from "../common/LoadingSpinner";
 import { parseBackendDate } from "../../utils/formatUtils";
 
-/**
- * Safe date formatter for review dates
- * Returns formatted date string or "-" if invalid
- */
 const formatReviewDate = (createdAt) => {
   if (!createdAt) return "-";
 
@@ -44,7 +40,6 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [editingReview, setEditingReview] = useState(null);
 
-  // Form state
   const [selectedOrderDetail, setSelectedOrderDetail] = useState("");
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
@@ -52,12 +47,10 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // State to track already reviewed order detail IDs
   const [reviewedOrderDetailIds, setReviewedOrderDetailIds] = useState(
     new Set()
   );
 
-  // Get eligible orders for this product (excluding already reviewed order details)
   const eligibleOrders = userOrders.filter(
     (order) =>
       order.status === "COMPLETED" &&
@@ -67,7 +60,7 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
           detail.productId ||
           (detail.product && (detail.product.idProduct || detail.product.id));
         const orderDetailId = detail.idOrderDetail || detail.id;
-        // Only include if product matches AND not already reviewed
+
         return (
           detailProductId &&
           Number(detailProductId) === Number(productId) &&
@@ -76,7 +69,6 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
       })
   );
 
-  // Fetch user's reviews to get already reviewed order detail IDs
   const fetchMyReviews = async () => {
     try {
       const myReviewsData = await reviewService.getMyReviews({
@@ -138,14 +130,14 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
     try {
       setSubmitLoading(true);
       if (editingReview) {
-        // Update review
+
         await reviewService.updateReview(editingReview.idReview, {
           rating,
           comment: comment.trim(),
         });
         setSuccess("Cập nhật đánh giá thành công!");
       } else {
-        // Create new review
+
         await reviewService.createReview(productId, {
           orderDetailId: parseInt(selectedOrderDetail),
           rating,
@@ -154,14 +146,12 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
         setSuccess("Đánh giá thành công!");
       }
 
-      // Reset form
       setSelectedOrderDetail("");
       setRating(5);
       setComment("");
       setEditingReview(null);
       setShowReviewForm(false);
 
-      // Reload reviews and refresh reviewed order detail IDs
       fetchReviews();
       fetchMyReviews();
     } catch (error) {
@@ -227,7 +217,6 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
     return isWithin24Hours(review.createdAt) && review.editCount < 1;
   };
 
-  // Calculate average rating
   const avgRating =
     reviews.length > 0
       ? (
@@ -244,7 +233,7 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
     <div className="mt-12">
       <h2 className="text-2xl font-bold mb-6">Đánh giá sản phẩm</h2>
 
-      {/* Review Summary */}
+      {}
       <div className="bg-gray-50 rounded-lg p-6 mb-6">
         <div className="flex items-start gap-8">
           <div className="text-center">
@@ -287,7 +276,7 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
         </div>
       </div>
 
-      {/* Write Review Button */}
+      {}
       {eligibleOrders.length > 0 && !showReviewForm && (
         <button
           onClick={() => setShowReviewForm(true)}
@@ -297,7 +286,7 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
         </button>
       )}
 
-      {/* Review Form */}
+      {}
       {showReviewForm && (
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
@@ -350,7 +339,7 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
                           (detail.product &&
                             (detail.product.idProduct || detail.product.id));
                         const orderDetailId = detail.idOrderDetail || detail.id;
-                        // Only show order details that match product AND not already reviewed
+
                         return (
                           detailProductId &&
                           Number(detailProductId) === Number(productId) &&
@@ -426,7 +415,7 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
         </div>
       )}
 
-      {/* Reviews List */}
+      {}
       {loading ? (
         <div className="flex justify-center py-8">
           <LoadingSpinner />
@@ -493,7 +482,7 @@ const ReviewSection = ({ productId, userOrders = [] }) => {
             </div>
           ))}
 
-          {/* Pagination */}
+          {}
           {pagination.totalPages > 1 && (
             <div className="flex justify-center gap-2 mt-6">
               <button

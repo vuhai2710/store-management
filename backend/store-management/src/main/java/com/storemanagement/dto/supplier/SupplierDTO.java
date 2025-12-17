@@ -30,6 +30,6 @@ public class SupplierDTO {
 
     @ValidEmail
     private String email;
-    
+
     private LocalDateTime createdAt;
 }

@@ -24,4 +24,3 @@ public class CreateReviewRequestDTO {
     private String comment;
 }
 
-

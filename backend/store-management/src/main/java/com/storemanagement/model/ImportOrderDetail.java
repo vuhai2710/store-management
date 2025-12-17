@@ -29,7 +29,6 @@ public class ImportOrderDetail {
     private Integer quantity;
 
     @Column(name = "import_price", precision = 12, scale = 2, nullable = false)
-    private BigDecimal importPrice;  // Giá nhập tại thời điểm mua
+    private BigDecimal importPrice;
 }
-
 

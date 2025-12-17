@@ -13,7 +13,7 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface CartMapper {
-    // Cart → CartDTO
+
     @Mapping(target = "idCart", source = "idCart")
     @Mapping(target = "idCustomer", source = "customer.idCustomer")
     @Mapping(target = "cartItems", expression = "java(mapCartItems(cart.getCartItems()))")
@@ -23,7 +23,6 @@ public interface CartMapper {
     @Mapping(target = "updatedAt", ignore = true)
     CartDTO toDTO(Cart cart);
 
-    // CartItem → CartItemDTO
     @Mapping(target = "idCartItem", source = "idCartItem")
     @Mapping(target = "idProduct", source = "product.idProduct")
     @Mapping(target = "productName", source = "product.productName")

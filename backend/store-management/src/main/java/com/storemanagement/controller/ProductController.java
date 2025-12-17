@@ -54,11 +54,9 @@ public class ProductController {
 
         PageResponse<ProductDTO> productPage;
 
-        // Normalize keyword: trim and treat empty string as null
         String normalizedKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
         String normalizedBrand = (brand != null && !brand.trim().isEmpty()) ? brand.trim() : null;
 
-        // If any search/filter params exist, use searchProducts
         if (normalizedKeyword != null || categoryId != null || normalizedBrand != null || minPrice != null
                 || maxPrice != null || inventoryStatus != null) {
             productPage = productService.searchProducts(normalizedKeyword, categoryId, normalizedBrand, minPrice,
@@ -77,14 +75,13 @@ public class ProductController {
             HttpServletRequest request) {
         ProductDTO product = productService.getProductById(id);
 
-        // Log the view - don't block response if it fails
         try {
             Integer userId = SecurityUtils.getCurrentUserId().orElse(null);
             String sessionId = request.getSession().getId();
             log.info("Attempting to log product view: userId={}, sessionId={}, productId={}", userId, sessionId, id);
             productViewService.logView(userId, sessionId, id);
         } catch (Exception e) {
-            // Log error but don't fail the request
+
             log.error("Failed to log product view for productId: {}, userId: {}, error: {}",
                     id, SecurityUtils.getCurrentUserId().orElse(null), e.getMessage(), e);
         }
@@ -189,7 +186,6 @@ public class ProductController {
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
 
-        // Best sellers đã được sort sẵn theo số lượng bán, không cần sortBy
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
 
         PageResponse<ProductDTO> productPage = productService.getBestSellingProducts(status, pageable);

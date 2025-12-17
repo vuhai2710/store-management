@@ -43,9 +43,6 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
                      @Param("status") Order.OrderStatus status,
                      Pageable pageable);
 
-       /**
-        * Search orders with keyword (searches by order ID as string)
-        */
        @Query("SELECT o FROM Order o WHERE " +
                      "(:customerId IS NULL OR o.customer.idCustomer = :customerId) AND " +
                      "(:status IS NULL OR o.status = :status) AND " +
@@ -59,9 +56,6 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
                      @Param("keyword") String keyword,
                      Pageable pageable);
 
-       /**
-        * Search customer orders with keyword
-        */
        @Query("SELECT o FROM Order o WHERE " +
                      "o.customer.idCustomer = :customerId AND " +
                      "(:status IS NULL OR o.status = :status) AND " +
@@ -73,39 +67,22 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
                      @Param("keyword") String keyword,
                      Pageable pageable);
 
-       /**
-        * Lấy danh sách product IDs mà customer đã mua (từ order_details)
-        */
        @Query(value = "SELECT DISTINCT od.id_product " +
                      "FROM orders o " +
                      "INNER JOIN order_details od ON o.id_order = od.id_order " +
                      "WHERE o.id_customer = :customerId", nativeQuery = true)
        List<Integer> findPurchasedProductIdsByCustomerId(@Param("customerId") Integer customerId);
 
-       // ======= EMPLOYEE STATISTICS QUERIES =======
-
-       /**
-        * Count total orders handled by an employee
-        */
        @Query("SELECT COUNT(o) FROM Order o WHERE o.employee.idEmployee = :employeeId")
        Long countOrdersByEmployeeId(@Param("employeeId") Integer employeeId);
 
-       /**
-        * Sum total amount of orders handled by an employee
-        */
        @Query("SELECT COALESCE(SUM(o.finalAmount), 0) FROM Order o WHERE o.employee.idEmployee = :employeeId")
        java.math.BigDecimal sumOrderAmountByEmployeeId(@Param("employeeId") Integer employeeId);
 
-       /**
-        * Count orders by employee and status
-        */
        @Query("SELECT COUNT(o) FROM Order o WHERE o.employee.idEmployee = :employeeId AND o.status = :status")
        Long countOrdersByEmployeeIdAndStatus(@Param("employeeId") Integer employeeId,
                      @Param("status") Order.OrderStatus status);
 
-       /**
-        * Find orders by employee ID with optional filters (status, dateFrom, dateTo)
-        */
        @Query("SELECT o FROM Order o LEFT JOIN FETCH o.customer WHERE " +
                      "o.employee.idEmployee = :employeeId AND " +
                      "(:status IS NULL OR o.status = :status) AND " +

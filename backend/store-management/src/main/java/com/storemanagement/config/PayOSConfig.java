@@ -13,13 +13,13 @@ public class PayOSConfig {
     @Bean
     public PayOS payOS() {
         if (clientId == null || apiKey == null || checksumKey == null) {
-            throw new IllegalStateException("PayOS credentials are not configured. Please set payos.client-id, payos.api-key, and payos.checksum-key in application.yaml");
+            throw new IllegalStateException(
+                    "PayOS credentials are not configured. Please set payos.client-id, payos.api-key, and payos.checksum-key in application.yaml");
         }
 
-        // PayOS SDK constructor: PayOS(clientId, apiKey, checksumKey)
-        // Environment được xác định tự động từ credentials (sandbox credentials sẽ gọi sandbox API)
         return new PayOS(clientId, apiKey, checksumKey);
     }
+
     private String clientId;
     private String apiKey;
     private String checksumKey;
@@ -29,4 +29,3 @@ public class PayOSConfig {
     private String environment;
     private String baseUrl;
 }
-

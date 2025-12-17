@@ -18,14 +18,12 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     @Override
     public void commence(HttpServletRequest request,
-                         HttpServletResponse response,
-                         AuthenticationException authException) throws IOException {
+            HttpServletResponse response,
+            AuthenticationException authException) throws IOException {
 
-        // 401 UNAUTHORIZED
         ApiResponse<Void> errorResponse = ApiResponse.error(
                 401,
-                "Yêu cầu đăng nhập"
-        );
+                "Yêu cầu đăng nhập");
 
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

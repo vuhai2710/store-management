@@ -12,7 +12,6 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface OrderMapper {
 
-    // Order → OrderDTO
     @Mapping(target = "idOrder", source = "idOrder")
     @Mapping(target = "idCustomer", source = "customer.idCustomer")
     @Mapping(target = "customerName", source = "customer.customerName")
@@ -45,7 +44,6 @@ public interface OrderMapper {
     @Mapping(target = "shippingAddressId", ignore = true)
     OrderDTO toDTO(Order entity);
 
-    // OrderDTO → Order
     @Mapping(target = "idOrder", ignore = true)
     @Mapping(target = "customer", ignore = true)
     @Mapping(target = "employee", ignore = true)
@@ -87,7 +85,6 @@ public interface OrderMapper {
 
     List<OrderDTO> toDTOList(List<Order> orders);
 
-    // Helper methods for promotion info
     default String getPromotionName(Order entity) {
         if (entity.getPromotion() != null) {
             return entity.getPromotion().getCode();

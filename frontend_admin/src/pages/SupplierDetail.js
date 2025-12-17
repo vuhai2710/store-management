@@ -86,7 +86,7 @@ const SupplierDetail = () => {
       let response;
 
       if (dates && dates.length === 2) {
-        // Khi có filter date range, dùng history endpoint với supplierId
+
         params.supplierId = id;
         params.startDate = dates[0]
           .startOf("day")
@@ -94,7 +94,7 @@ const SupplierDetail = () => {
         params.endDate = dates[1].endOf("day").format("YYYY-MM-DDTHH:mm:ss");
         response = await importOrderService.getImportOrderHistory(params);
       } else {
-        // Không có date filter, dùng endpoint riêng cho supplier để lấy tất cả đơn
+
         response = await importOrderService.getImportOrdersBySupplier(
           id,
           params
@@ -108,7 +108,6 @@ const SupplierDetail = () => {
         total: response.totalElements || 0,
       });
 
-      // Calculate statistics
       calculateStatistics(response.content || [], response.totalElements || 0);
     } catch (error) {
       console.error("Error fetching import orders:", error);
@@ -249,7 +248,7 @@ const SupplierDetail = () => {
 
   return (
     <div style={{ padding: "24px" }}>
-      {/* Header */}
+      { }
       <div style={{ marginBottom: "24px" }}>
         <Button
           icon={<ArrowLeftOutlined />}
@@ -262,7 +261,7 @@ const SupplierDetail = () => {
         </Title>
       </div>
 
-      {/* Supplier Info */}
+      { }
       <Card title="Thông tin nhà cung cấp" style={{ marginBottom: "24px" }}>
         <Descriptions column={{ xs: 1, sm: 2, md: 3 }} bordered>
           <Descriptions.Item label="ID">
@@ -283,7 +282,7 @@ const SupplierDetail = () => {
         </Descriptions>
       </Card>
 
-      {/* Statistics */}
+      { }
       <Card
         title={
           <>
@@ -334,7 +333,7 @@ const SupplierDetail = () => {
         </Row>
       </Card>
 
-      {/* Import Orders History */}
+      { }
       <Card
         title="Lịch sử giao dịch"
         extra={

@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class GHNExpectedDeliveryTimeResponseDTO {
     @JsonProperty("leadtime")
     private String leadtime;
-    
+
     @JsonProperty("order_date")
     private String orderDate;
 }

@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { promotionsService } from "../../services/promotionsService";
 
-// Async thunks cho Promotions
 export const fetchPromotions = createAsyncThunk(
   "promotions/fetchPromotions",
   async ({ pageNo = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "DESC", keyword, scope }, { rejectWithValue }) => {
@@ -50,7 +49,6 @@ export const deletePromotion = createAsyncThunk(
   }
 );
 
-// Async thunks cho Promotion Rules
 export const fetchPromotionRules = createAsyncThunk(
   "promotions/fetchPromotionRules",
   async ({ pageNo = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "DESC" }, { rejectWithValue }) => {
@@ -137,7 +135,7 @@ const promotionsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Promotions
+
       .addCase(fetchPromotions.pending, (state) => {
         state.promotions.loading = true;
         state.promotions.error = null;
@@ -170,7 +168,7 @@ const promotionsSlice = createSlice({
         state.promotions.list = state.promotions.list.filter((p) => p.idPromotion !== action.payload);
         state.promotions.pagination.totalElements = Math.max(0, state.promotions.pagination.totalElements - 1);
       })
-      // Rules
+
       .addCase(fetchPromotionRules.pending, (state) => {
         state.rules.loading = true;
         state.rules.error = null;
@@ -208,4 +206,3 @@ const promotionsSlice = createSlice({
 
 export const { clearPromotions, clearRules } = promotionsSlice.actions;
 export default promotionsSlice.reducer;
-

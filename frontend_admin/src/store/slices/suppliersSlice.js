@@ -16,7 +16,6 @@ export const fetchSuppliers = createAsyncThunk(
   }
 );
 
-// Paginated fetch with search
 export const fetchSuppliersPaginated = createAsyncThunk(
   "suppliers/fetchSuppliersPaginated",
   async (params, { rejectWithValue }) => {
@@ -36,7 +35,7 @@ export const createSupplier = createAsyncThunk(
       const res = await suppliersService.createSupplier(supplierData);
       return res;
     } catch (err) {
-      return rejectWithValue(handleApiError(err)); // serializable
+      return rejectWithValue(handleApiError(err));
     }
   }
 );
@@ -48,7 +47,7 @@ export const updateSupplier = createAsyncThunk(
       const res = await suppliersService.updateSupplier(id, supplierData);
       return res;
     } catch (err) {
-      return rejectWithValue(handleApiError(err)); // serializable
+      return rejectWithValue(handleApiError(err));
     }
   }
 );
@@ -97,7 +96,7 @@ const suppliersSlice = createSlice({
         state.loading = false;
         state.error = action.payload || action.error.message;
       })
-      // Paginated fetch
+
       .addCase(fetchSuppliersPaginated.pending, (state) => {
         state.loading = true;
         state.error = null;

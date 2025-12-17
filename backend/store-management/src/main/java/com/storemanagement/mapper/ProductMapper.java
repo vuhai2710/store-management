@@ -11,7 +11,6 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {ProductImageMapper.class})
 public interface ProductMapper {
 
-    // Product → ProductDTO
     @Mapping(target = "idProduct", source = "idProduct")
     @Mapping(target = "idCategory", source = "category.idCategory")
     @Mapping(target = "categoryName", source = "category.categoryName")
@@ -23,7 +22,6 @@ public interface ProductMapper {
     @Mapping(target = "reviewCount", ignore = true)
     ProductDTO toDTO(Product entity);
 
-    // ProductDTO → Product (for create/update)
     @Mapping(target = "idProduct", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "supplier", ignore = true)

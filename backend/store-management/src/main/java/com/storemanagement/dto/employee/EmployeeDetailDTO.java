@@ -9,15 +9,12 @@ import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/**
- * DTO for Employee detail with order statistics
- */
 @Data
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class EmployeeDetailDTO extends BaseDTO {
-    // Basic Employee Info
+
     private Integer idEmployee;
     private Integer idUser;
     private Boolean isActive;
@@ -30,14 +27,12 @@ public class EmployeeDetailDTO extends BaseDTO {
     private String email;
     private String avatarUrl;
 
-    // Order Statistics
-    private Long totalOrdersHandled;          // Tổng số đơn hàng đã xử lý
-    private BigDecimal totalOrderAmount;       // Tổng giá trị đơn hàng
-    private Long totalReturnOrders;            // Số yêu cầu đổi/trả đã xử lý
-    private Long totalExchangeOrders;          // Số yêu cầu đổi hàng đã xử lý
-    
-    // Computed Statistics
-    private Long pendingOrders;                // Đơn hàng đang chờ xử lý
-    private Long completedOrders;              // Đơn hàng đã hoàn thành
-    private Long cancelledOrders;              // Đơn hàng đã hủy
+    private Long totalOrdersHandled;
+    private BigDecimal totalOrderAmount;
+    private Long totalReturnOrders;
+    private Long totalExchangeOrders;
+
+    private Long pendingOrders;
+    private Long completedOrders;
+    private Long cancelledOrders;
 }

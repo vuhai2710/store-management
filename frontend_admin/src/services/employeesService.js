@@ -24,7 +24,7 @@ const SORT_FIELD_MAP = {
 
 const toBackendDate = (val) => {
   if (!val) return null;
-  // Hỗ trợ cả dayjs object hoặc string ISO
+
   const d = dayjs(val);
   return d.isValid() ? d.format("DD/MM/YYYY") : val;
 };
@@ -56,7 +56,6 @@ export const employeesService = {
       sortDirection: dir,
     };
 
-    // Add keyword if provided
     if (keyword && keyword.trim()) {
       queryParams.keyword = keyword.trim();
     }
@@ -106,13 +105,11 @@ export const employeesService = {
     return response.data;
   },
 
-  // Get my profile (EMPLOYEE)
   getMyProfile: async () => {
     const response = await api.get("/employees/me");
     return response.data;
   },
 
-  // Update my profile (EMPLOYEE)
   updateMyProfile: async (employeeData) => {
     const body = normalizeEmployeePayload(employeeData);
     const response = await api.put("/employees/me", body);
@@ -124,7 +121,6 @@ export const employeesService = {
   updateEmployeeRole: async () => null,
   getEmployeeActivities: async () => [],
 
-  // Get paginated orders handled by an employee
   getEmployeeOrders: async (employeeId, params = {}) => {
     const { page = 1, pageSize = 10, status, dateFrom, dateTo } = params;
     const queryParams = {

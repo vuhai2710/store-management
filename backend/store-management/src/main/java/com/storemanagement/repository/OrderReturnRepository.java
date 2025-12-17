@@ -21,13 +21,10 @@ public interface OrderReturnRepository extends JpaRepository<OrderReturn, Intege
 
     Page<OrderReturn> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
-    // Filter by status only
     Page<OrderReturn> findByStatusOrderByCreatedAtDesc(OrderReturn.ReturnStatus status, Pageable pageable);
 
-    // Filter by returnType only
     Page<OrderReturn> findByReturnTypeOrderByCreatedAtDesc(OrderReturn.ReturnType returnType, Pageable pageable);
 
-    // Filter by both status and returnType
     Page<OrderReturn> findByStatusAndReturnTypeOrderByCreatedAtDesc(
             OrderReturn.ReturnStatus status,
             OrderReturn.ReturnType returnType,
@@ -36,11 +33,6 @@ public interface OrderReturnRepository extends JpaRepository<OrderReturn, Intege
     @Query("SELECT COUNT(r) > 0 FROM OrderReturn r WHERE r.order.idOrder = :orderId AND r.status NOT IN ('REJECTED', 'COMPLETED', 'CANCELED')")
     boolean existsActiveReturnByOrderId(@Param("orderId") Integer orderId);
 
-    // ======= DYNAMIC SEARCH QUERY =======
-    
-    /**
-     * Advanced search with all filters: keyword (idReturn/orderId), customerKeyword (name/id), status, returnType
-     */
     @Query("SELECT r FROM OrderReturn r " +
            "LEFT JOIN r.order o " +
            "LEFT JOIN r.createdByCustomer c " +
@@ -60,23 +52,12 @@ public interface OrderReturnRepository extends JpaRepository<OrderReturn, Intege
             @Param("customerKeyword") String customerKeyword,
             Pageable pageable);
 
-    // ======= EMPLOYEE STATISTICS QUERIES =======
-    
-    /**
-     * Count return/exchange orders processed by an employee
-     */
     @Query("SELECT COUNT(r) FROM OrderReturn r WHERE r.processedByEmployee.idEmployee = :employeeId")
     Long countReturnsByEmployeeId(@Param("employeeId") Integer employeeId);
-    
-    /**
-     * Count return orders processed by an employee (RETURN type only)
-     */
+
     @Query("SELECT COUNT(r) FROM OrderReturn r WHERE r.processedByEmployee.idEmployee = :employeeId AND r.returnType = 'RETURN'")
     Long countReturnOrdersByEmployeeId(@Param("employeeId") Integer employeeId);
-    
-    /**
-     * Count exchange orders processed by an employee (EXCHANGE type only)
-     */
+
     @Query("SELECT COUNT(r) FROM OrderReturn r WHERE r.processedByEmployee.idEmployee = :employeeId AND r.returnType = 'EXCHANGE'")
     Long countExchangeOrdersByEmployeeId(@Param("employeeId") Integer employeeId);
 

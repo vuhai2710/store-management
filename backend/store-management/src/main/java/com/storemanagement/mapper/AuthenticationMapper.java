@@ -6,6 +6,6 @@ import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring", uses = {UserMapper.class})
 public interface AuthenticationMapper {
-    // User to UserDTO - delegates to UserMapper
+
     UserDTO toUserDTO(User entity);
 }

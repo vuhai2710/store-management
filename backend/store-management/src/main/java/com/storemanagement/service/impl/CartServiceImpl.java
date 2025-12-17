@@ -99,13 +99,11 @@ public class CartServiceImpl implements CartService {
             throw new RuntimeException("Sản phẩm đã ngừng kinh doanh");
         }
 
-        // Lấy stockQuantity, nếu null thì mặc định là 0
         int availableStock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;
 
-        // Kiểm tra status OUT_OF_STOCK nhưng vẫn có stock -> cập nhật status
         if (product.getStatus() == ProductStatus.OUT_OF_STOCK) {
             if (availableStock > 0) {
-                // Có stock nhưng status chưa được cập nhật -> tự động sửa
+
                 product.setStatus(ProductStatus.IN_STOCK);
                 productRepository.save(product);
             } else {
@@ -193,7 +191,7 @@ public class CartServiceImpl implements CartService {
     private Cart getOrCreateCart(Integer customerId) {
         return cartRepository.findByCustomerIdCustomer(customerId)
                 .orElseGet(() -> {
-                    // Customer chưa có giỏ hàng → Tạo mới
+
                     Customer customer = customerRepository.findById(customerId)
                             .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng"));
                     Cart newCart = Cart.builder()

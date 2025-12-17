@@ -15,19 +15,19 @@ import java.time.LocalDateTime;
 public class ProductImageDTO {
     @JsonProperty("idProductImage")
     private Integer idProductImage;
-    
+
     @JsonProperty("idProduct")
     private Integer idProduct;
-    
+
     @JsonProperty("imageUrl")
     private String imageUrl;
-    
+
     @JsonProperty("isPrimary")
     private Boolean isPrimary;
-    
+
     @JsonProperty("displayOrder")
     private Integer displayOrder;
-    
+
     @JsonProperty("createdAt")
     private LocalDateTime createdAt;
 }

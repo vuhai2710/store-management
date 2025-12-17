@@ -47,7 +47,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
       loadConversations();
       ensureWebSocketConnected();
     } else {
-      // Unsubscribe when closing drawer but keep connection for quick reopen
+
       unsubscribeFromConversation();
     }
   }, [visible]);
@@ -57,7 +57,6 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
       loadMessages(selectedConversation.idConversation);
       subscribeToConversation(selectedConversation.idConversation);
 
-      // Clear unread count for this conversation immediately in UI
       setConversations((prev) =>
         prev.map((conv) =>
           conv.idConversation === selectedConversation.idConversation
@@ -66,11 +65,10 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
         )
       );
 
-      // Mark conversation as viewed via API
       chatService
         .markConversationAsViewed(selectedConversation.idConversation)
         .then(() => {
-          // Reload conversations after a short delay to get updated unread counts from backend
+
           setTimeout(() => {
             loadConversations();
           }, 1000);
@@ -84,7 +82,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
   }, [selectedConversation]);
 
   useEffect(() => {
-    // Cleanup on unmount
+
     return () => {
       try {
         unsubscribeFromConversation();
@@ -92,7 +90,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
           stompClientRef.current.deactivate();
         }
       } catch (e) {
-        // no-op
+
       } finally {
         stompClientRef.current = null;
         subscriptionRef.current = null;
@@ -135,11 +133,10 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
     }
   };
 
-  // Helper to parse dd/MM/yyyy HH:mm:ss format
   const parseVietnameseDate = (dateString) => {
     if (!dateString) return null;
     try {
-      // Format: "13/11/2025 19:25:46"
+
       const parts = dateString.split(" ");
       if (parts.length !== 2) return null;
 
@@ -155,20 +152,18 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
-      // Use instant scroll without smooth animation to avoid interruption
+
       messagesEndRef.current.scrollIntoView({ behavior: "auto" });
     }
     setIsAtBottom(true);
     setHasNewMessages(false);
   };
 
-  // Auto scroll similar to client chat: scroll to bottom whenever messages change
   useEffect(() => {
     if (!selectedConversation || messages.length === 0) {
       return;
     }
 
-    // Small delay to ensure DOM is updated before scrolling
     const timer = setTimeout(() => {
       scrollToBottom();
     }, 0);
@@ -225,7 +220,6 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
       setMessageText("");
       scrollToBottom();
 
-      // Reload conversations after sending to update unread counts from backend
       setTimeout(() => {
         loadConversations();
       }, 500);
@@ -245,7 +239,6 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
       return;
     }
 
-    // Create SockJS and STOMP client
     const socket = new SockJS(`${WS_URL}?token=${encodeURIComponent(token)}`);
     const client = new Client({
       webSocketFactory: () => socket,
@@ -257,7 +250,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
       },
       onConnect: () => {
         setConnected(true);
-        // Resubscribe current conversation after reconnect
+
         if (selectedConversation?.idConversation) {
           subscribeToConversation(selectedConversation.idConversation);
         }
@@ -275,7 +268,6 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
   const subscribeToConversation = (conversationId) => {
     if (!stompClientRef.current || !connected || !conversationId) return;
 
-    // Clear previous subscription
     unsubscribeFromConversation();
 
     subscriptionRef.current = stompClientRef.current.subscribe(
@@ -284,7 +276,6 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
         try {
           const messageData = JSON.parse(messageFrame.body);
 
-          // Add message to messages list
           setMessages((prev) => {
             const exists = prev.some(
               (m) => m.idMessage === messageData.idMessage
@@ -293,7 +284,6 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
             return [...prev, messageData];
           });
 
-          // If message is from CUSTOMER and not in selected conversation, increment unread
           if (messageData.senderType === "CUSTOMER") {
             setConversations((prev) =>
               prev.map((conv) => {
@@ -308,7 +298,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
             );
           }
         } catch (e) {
-          // ignore
+
         }
       }
     );
@@ -319,18 +309,17 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
       try {
         subscriptionRef.current.unsubscribe();
       } catch (e) {
-        // ignore
+
       } finally {
         subscriptionRef.current = null;
       }
     }
   };
 
-  // Content component (reusable for both Drawer and Widget)
   const chatContent = (
     <div
       onWheelCapture={(e) => {
-        // Prevent page scroll when using the wheel on header/footer areas
+
         const target = e.target;
         if (
           (messagesContainerRef.current &&
@@ -348,7 +337,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
         flexDirection: window.innerWidth < 768 ? "column" : "row",
         height: isWidget ? "100%" : "calc(100vh - 100px)",
       }}>
-      {/* Conversations List */}
+      { }
       <div
         ref={conversationsContainerRef}
         style={{
@@ -431,7 +420,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
         )}
       </div>
 
-      {/* Messages Area */}
+      { }
       <div
         style={{
           flex: 1,
@@ -473,7 +462,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
             <div
               ref={messagesContainerRef}
               onWheel={(e) => {
-                // Prevent scroll propagation to parent page
+
                 const container = e.currentTarget;
                 const { scrollTop, scrollHeight, clientHeight } = container;
                 const canScroll = scrollHeight > clientHeight;
@@ -488,16 +477,14 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
                 const isAtBottom =
                   Math.abs(scrollHeight - clientHeight - scrollTop) < 1;
 
-                // Only allow propagation if scrolling beyond boundaries
                 const scrollingUp = e.deltaY < 0;
                 const scrollingDown = e.deltaY > 0;
 
                 if ((isAtTop && scrollingUp) || (isAtBottom && scrollingDown)) {
-                  // Allow propagation when at boundaries
+
                   return;
                 }
 
-                // Stop propagation when scrolling within content
                 e.stopPropagation();
               }}
               onScroll={(e) => {
@@ -530,7 +517,6 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
                 messages.map((msg) => {
                   const isCustomer = msg.senderType === "CUSTOMER";
 
-                  // Helper để render nội dung (hỗ trợ link và ảnh)
                   const renderContent = (text) => {
                     const urlRegex = /(https?:\/\/[^\s]+)/g;
                     const imageRegex = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i;
@@ -574,7 +560,6 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
                     });
                   };
 
-                  // Format thời gian
                   const formatTime = (dateString) => {
                     if (!dateString) return "";
                     try {
@@ -609,7 +594,7 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
                           boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
                           wordWrap: "break-word",
                         }}>
-                        {/* Show sender name for admin/employee messages */}
+                        { }
                         {!isCustomer && msg.senderName && (
                           <div
                             style={{
@@ -711,7 +696,6 @@ const ChatWindow = ({ visible, onClose, isWidget = false }) => {
     </div>
   );
 
-  // Return Drawer if not widget mode, otherwise return just the content
   return isWidget ? (
     chatContent
   ) : (

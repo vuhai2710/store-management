@@ -56,7 +56,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Value("${password-reset.client-url:http://localhost:3001/reset-password}")
     private String clientResetUrl;
 
-    // LOGIN
     public AuthenticationResponseDTO authenticate(LoginDTO request) throws JOSEException {
         User user = userService.verifyInfo(request.getUsername(), request.getPassword());
         String token = generateToken(user);
@@ -67,7 +66,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .build();
     }
 
-    // REGISTER
     public AuthenticationResponseDTO register(RegisterDTO request) throws JOSEException {
         UserDTO userDTO = userService.createCustomerUser(request);
         User user = userRepository.findById(userDTO.getIdUser())
@@ -83,7 +81,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public String generateToken(User user) throws JOSEException {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS256);
 
-        // Lấy employeeId nếu user là employee
         Optional<Integer> employeeIdOpt = Optional.empty();
         if ("EMPLOYEE".equals(user.getRole().name())) {
             employeeIdOpt = employeeRepository.findByUser_IdUser(user.getIdUser())
@@ -97,7 +94,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .claim("role", user.getRole().name())
                 .claim("idUser", user.getIdUser());
 
-        // Chỉ thêm employeeId nếu user là employee
         employeeIdOpt.ifPresent(employeeId -> claimsBuilder.claim("employeeId", employeeId));
 
         JWTClaimsSet jwtClaimsSet = claimsBuilder.build();
@@ -114,19 +110,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public String forgotPassword(String email) {
         log.info("Processing forgot password for email: {}", email);
 
-        // Bước 1: Tìm user theo email
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với email: " + email));
 
-        // Kiểm tra user có active không
         if (!Boolean.TRUE.equals(user.getIsActive())) {
             throw new RuntimeException("Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.");
         }
 
-        // Bước 2: Vô hiệu hóa tất cả token cũ của user này
         passwordResetTokenRepository.invalidateAllTokensForUser(user);
 
-        // Bước 3: Tạo reset token mới
         String resetToken = generateResetToken();
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(tokenExpiryMinutes);
 
@@ -139,10 +131,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         passwordResetTokenRepository.save(tokenEntity);
         log.info("Created password reset token for user: {}", user.getUsername());
 
-        // Bước 4: Tạo reset link dựa trên role của user
         String resetLink = buildResetLink(user, resetToken);
 
-        // Bước 5: Gửi email với link reset password
         try {
             emailService.sendPasswordResetEmail(email, user.getUsername(), resetLink, tokenExpiryMinutes);
             log.info("Sent password reset email to: {}", email);
@@ -159,33 +149,27 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public String resetPassword(String token, String newPassword, String confirmPassword) {
         log.info("Processing password reset with token");
 
-        // Validate password confirmation
         if (!newPassword.equals(confirmPassword)) {
             throw new RuntimeException("Mật khẩu xác nhận không khớp");
         }
 
-        // Find and validate token
         PasswordResetToken resetToken = passwordResetTokenRepository
                 .findByToken(token)
                 .orElseThrow(() -> InvalidTokenException.invalid());
 
-        // Check if token is already used
         if (resetToken.getUsed()) {
             throw InvalidTokenException.alreadyUsed();
         }
 
-        // Check if token is expired
         if (resetToken.isExpired()) {
             throw InvalidTokenException.expired();
         }
 
-        // Get user and update password
         User user = resetToken.getUser();
         String hashedPassword = passwordEncoder.encode(newPassword);
         user.setPassword(hashedPassword);
         userRepository.save(user);
 
-        // Mark token as used
         resetToken.setUsed(true);
         passwordResetTokenRepository.save(resetToken);
 
@@ -194,9 +178,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return "Đặt lại mật khẩu thành công. Vui lòng đăng nhập với mật khẩu mới.";
     }
 
-    /**
-     * Generate a secure random token for password reset
-     */
     private String generateResetToken() {
         SecureRandom random = new SecureRandom();
         byte[] bytes = new byte[32];
@@ -204,9 +185,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
-    /**
-     * Build reset link based on user role
-     */
     private String buildResetLink(User user, String token) {
         String baseUrl;
         switch (user.getRole()) {

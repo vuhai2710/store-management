@@ -1,4 +1,4 @@
-// src/components/layout/Header.js
+
 import React, { useState, useRef, useEffect } from "react";
 import {
   ShoppingBag,
@@ -15,12 +15,10 @@ import {
 } from "lucide-react";
 import styles from "../../styles/styles";
 
-// User Dropdown Component
 const UserDropdown = ({ userName, setCurrentPage, handleLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -242,7 +240,7 @@ const Header = ({
 
   return (
     <header style={styles.headerMain}>
-      {/* Top Bar */}
+      {}
       <div style={styles.headerTopBar}>
         <div style={styles.container}>
           <div
@@ -252,7 +250,7 @@ const Header = ({
               alignItems: "center",
               fontSize: "0.875rem",
             }}>
-            {/* Right: Auth Actions */}
+            {}
             <div
               style={{
                 display: "flex",
@@ -262,7 +260,7 @@ const Header = ({
               }}>
               {isLoggedIn ? (
                 <>
-                  {/* User Dropdown */}
+                  {}
                   <UserDropdown
                     userName={userName}
                     setCurrentPage={setCurrentPage}
@@ -271,7 +269,7 @@ const Header = ({
                 </>
               ) : (
                 <>
-                  {/* Nút Login */}
+                  {}
                   <button
                     onClick={() => setCurrentPage("login")}
                     style={{
@@ -287,7 +285,7 @@ const Header = ({
                     onMouseLeave={(e) => (e.target.style.color = "#2563EB")}>
                     <LogIn size={16} /> Đăng nhập
                   </button>
-                  {/* Nút Register */}
+                  {}
                   <button
                     onClick={() => setCurrentPage("register")}
                     style={{
@@ -310,7 +308,7 @@ const Header = ({
         </div>
       </div>
 
-      {/* Main Header */}
+      {}
       <div style={{ ...styles.container, padding: "1rem 1rem" }}>
         <div
           style={{
@@ -319,7 +317,7 @@ const Header = ({
             alignItems: "center",
             gap: "1rem",
           }}>
-          {/* Logo */}
+          {}
           <button
             onClick={() => setCurrentPage("home")}
             aria-label="Về trang chủ"
@@ -335,7 +333,7 @@ const Header = ({
             💻 Electronic Store
           </button>
 
-          {/* Desktop Navigation */}
+          {}
           <nav style={{ display: "flex", gap: "2rem" }}>
             <button
               onClick={() => setCurrentPage("home")}
@@ -364,7 +362,7 @@ const Header = ({
             )}
           </nav>
 
-          {/* Search Bar */}
+          {}
           <div
             style={{
               display: "flex",
@@ -407,7 +405,7 @@ const Header = ({
             </button>
           </div>
 
-          {/* Icons & Actions */}
+          {}
           <div
             style={{
               display: "flex",
@@ -415,9 +413,9 @@ const Header = ({
               gap: "1.25rem",
               flexShrink: 0,
             }}>
-            {/* User Account Icon - CHÍNH */}
+            {}
 
-            {/* Cart Icon */}
+            {}
             <button
               ref={cartIconRef}
               onClick={() => setCurrentPage("cart")}
@@ -470,7 +468,7 @@ const Header = ({
               </span>
             </button>
 
-            {/* Mobile Menu Toggle */}
+            {}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label={mobileMenuOpen ? "Đóng menu" : "Mở menu"}
@@ -488,7 +486,7 @@ const Header = ({
           </div>
         </div>
 
-        {/* Mobile Menu (if needed) */}
+        {}
         {mobileMenuOpen && (
           <nav
             id="mobile-nav"

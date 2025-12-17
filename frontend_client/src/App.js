@@ -1,16 +1,13 @@
-// App.js
+
 import React, { useState, useEffect, useRef } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Import context
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { BuyNowProvider } from "./contexts/BuyNowContext";
 
-// Import hooks
 import { useDebounce } from "./hooks/useDebounce";
 
-// Import components
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import HomePage from "./components/pages/HomePage";
@@ -33,10 +30,8 @@ import ErrorBoundary from "./components/common/ErrorBoundary";
 import ChatWidget from "./components/chat/ChatWidget";
 import FlyingCartIcon from "./components/common/FlyingCartIcon";
 
-// Import services
 import { cartService } from "./services/cartService";
 
-// Import data (for fallback/initial state)
 import { products, initialCart } from "./data/data";
 
 function AppContent() {
@@ -48,15 +43,14 @@ function AppContent() {
     isLoading: authLoading,
   } = useAuth();
 
-  // --- STATE HOOKS ---
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(() => {
-    // Restore page from localStorage on mount
+
     const savedPage = localStorage.getItem("currentPage");
     return savedPage || "home";
   });
   const [selectedProductId, setSelectedProductId] = useState(() => {
-    // Restore selected product from localStorage on mount
+
     const savedProductId = localStorage.getItem("selectedProductId");
     return savedProductId ? parseInt(savedProductId) : null;
   });
@@ -72,15 +66,11 @@ function AppContent() {
   const [sortOption, setSortOption] = useState("default");
   const [initializedFromUrl, setInitializedFromUrl] = useState(false);
 
-  // Cart animation state
   const [showFlyingCart, setShowFlyingCart] = useState(false);
   const [animationSource, setAnimationSource] = useState(null);
   const [animationTarget, setAnimationTarget] = useState(null);
   const cartIconRef = useRef(null);
 
-  // Map URL path (từ PayOS redirect) sang currentPage khi load lại
-  // Also read categoryId from URL query params for shareable category links
-  // Handle auth token from admin redirect
   useEffect(() => {
     const path = window.location.pathname;
     const urlParams = new URLSearchParams(window.location.search);
@@ -92,24 +82,20 @@ function AppContent() {
     } else if (path.startsWith("/payment/cancel")) {
       setCurrentPage("payment-cancel");
     } else if (path.startsWith("/reset-password")) {
-      // Only go to reset-password if the path explicitly starts with /reset-password
+
       setCurrentPage("reset-password");
     } else if (tokenFromUrl && !path.startsWith("/reset-password")) {
-      // This is an auth token from admin redirect, not a reset password token
-      // Save the token to localStorage and clean up the URL
+
       console.log("Received auth token from redirect, saving to localStorage");
       localStorage.setItem("token", tokenFromUrl);
 
-      // Clean up the URL by removing the token parameter
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('token');
       window.history.replaceState({}, '', newUrl.pathname + newUrl.search);
 
-      // Navigate to home page - AuthContext will pick up the token
       setCurrentPage("home");
     }
 
-    // If categoryId is in URL, set it and navigate to shop
     if (categoryIdFromUrl && !tokenFromUrl) {
       setSelectedCategoryId(parseInt(categoryIdFromUrl));
       setCurrentPage("shop");
@@ -132,12 +118,10 @@ function AppContent() {
     }
   }, [currentPage, initializedFromUrl]);
 
-  // Save currentPage to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("currentPage", currentPage);
   }, [currentPage]);
 
-  // Save selectedProductId to localStorage whenever it changes
   useEffect(() => {
     if (selectedProductId) {
       localStorage.setItem("selectedProductId", selectedProductId.toString());
@@ -146,8 +130,6 @@ function AppContent() {
     }
   }, [selectedProductId]);
 
-  // --- CART MANAGEMENT ---
-  // Load cart from API when user is authenticated
   useEffect(() => {
     const loadCart = async () => {
       if (isAuthenticated && !authLoading) {
@@ -164,7 +146,7 @@ function AppContent() {
           setCartLoading(false);
         }
       } else {
-        // Clear cart when user logs out
+
         setCart([]);
         setCartData(null);
       }
@@ -173,7 +155,6 @@ function AppContent() {
     loadCart();
   }, [isAuthenticated, authLoading]);
 
-  // Function to reload cart (can be passed to child components)
   const reloadCart = async () => {
     if (isAuthenticated) {
       try {
@@ -189,7 +170,6 @@ function AppContent() {
     }
   };
 
-  // --- AUTH LOGIC ---
   const handleLogout = async () => {
     try {
       await logout();
@@ -200,10 +180,9 @@ function AppContent() {
     }
   };
 
-  // --- CART HANDLERS ---
   const handleAddToCart = async (product, sourceElement = null) => {
     if (!isAuthenticated) {
-      // Redirect to login if not authenticated
+
       setCurrentPage("login");
       return;
     }
@@ -217,7 +196,6 @@ function AppContent() {
         return;
       }
 
-      // Get source position for animation
       let sourcePos = null;
       if (sourceElement) {
         const rect = sourceElement.getBoundingClientRect();
@@ -227,11 +205,9 @@ function AppContent() {
         };
       }
 
-      // Get target position (cart icon in header) - use setTimeout to ensure DOM is ready
       const triggerAnimation = () => {
         let targetPos = null;
 
-        // Try cartIconRef first
         if (cartIconRef.current) {
           const rect = cartIconRef.current.getBoundingClientRect();
           targetPos = {
@@ -239,7 +215,7 @@ function AppContent() {
             y: rect.top + rect.height / 2,
           };
         } else {
-          // Fallback: try to find cart icon by querying DOM
+
           const cartButton = document.querySelector('[title="Giỏ hàng"]');
           if (cartButton) {
             const rect = cartButton.getBoundingClientRect();
@@ -250,7 +226,6 @@ function AppContent() {
           }
         }
 
-        // Trigger animation if we have both positions
         if (sourcePos && targetPos) {
           setAnimationSource(sourcePos);
           setAnimationTarget(targetPos);
@@ -258,7 +233,6 @@ function AppContent() {
         }
       };
 
-      // Use requestAnimationFrame to ensure DOM is updated
       requestAnimationFrame(() => {
         setTimeout(triggerAnimation, 50);
       });
@@ -268,14 +242,13 @@ function AppContent() {
         quantity,
       });
 
-      // Reload cart
       try {
         const cartDataResponse = await cartService.getCart();
         setCartData(cartDataResponse);
         setCart(cartDataResponse.cartItems || cartDataResponse.items || []);
       } catch (cartError) {
         console.error("Error reloading cart:", cartError);
-        // Still continue even if reload fails
+
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -284,7 +257,7 @@ function AppContent() {
         error?.response?.data?.message ||
         "Không thể thêm sản phẩm vào giỏ hàng";
       toast.error(errorMessage);
-      throw error; // Re-throw to let component handle it
+      throw error;
     }
   };
 
@@ -298,7 +271,7 @@ function AppContent() {
         await handleRemoveFromCart(itemId);
       } else {
         await cartService.updateCartItem(itemId, { quantity: newQty });
-        // Reload cart
+
         const cartDataResponse = await cartService.getCart();
         setCartData(cartDataResponse);
         setCart(cartDataResponse.cartItems || cartDataResponse.items || []);
@@ -319,7 +292,6 @@ function AppContent() {
       const response = await cartService.removeCartItem(itemId);
       console.log("[App] Remove cart item response:", response);
 
-      // Backend returns the updated cart in response.data
       const updatedCart = response?.data || response;
       console.log("[App] Updated cart after remove:", updatedCart);
 
@@ -331,21 +303,17 @@ function AppContent() {
     }
   };
 
-  // --- PRODUCT HANDLERS ---
   const handleViewProductDetail = (productId) => {
     setSelectedProductId(productId);
     setCurrentPage("product-detail");
     window.scrollTo(0, 0);
   };
 
-  // --- CATEGORY NAVIGATION HANDLER ---
-  // Navigate to shop page with category filter and update URL
   const handleCategoryNavigation = (categoryId, categoryName) => {
     setSelectedCategoryId(categoryId);
     setSelectedCategory(categoryName);
     setCurrentPage("shop");
 
-    // Update URL with categoryId query param (without page reload)
     const url = new URL(window.location.href);
     url.searchParams.set('categoryId', categoryId);
     window.history.pushState({}, '', url.toString());
@@ -353,18 +321,15 @@ function AppContent() {
     window.scrollTo(0, 0);
   };
 
-  // Function to clear category filter and update URL
   const handleClearCategoryFilter = () => {
     setSelectedCategoryId(null);
     setSelectedCategory("All");
 
-    // Remove categoryId from URL
     const url = new URL(window.location.href);
     url.searchParams.delete('categoryId');
     window.history.pushState({}, '', url.pathname);
   };
 
-  // Calculate cart subtotal (trước giảm giá) từ cartData hoặc từ items
   const cartSubtotal = cartData?.totalAmount
     ? Number(cartData.totalAmount)
     : cart.reduce((sum, item) => {
@@ -375,19 +340,16 @@ function AppContent() {
       return sum + Number(subtotal);
     }, 0);
 
-  // Giảm giá tự động cho giỏ hàng (từ backend)
   const cartAutomaticDiscount = cartData?.automaticDiscount
     ? Number(cartData.automaticDiscount)
     : 0;
 
-  // Tổng sau khi trừ giảm giá tự động
   const cartTotal = Math.max(0, cartSubtotal - cartAutomaticDiscount);
 
   const cartItemCount = cartData?.totalItems
     ? Number(cartData.totalItems)
     : cart.reduce((sum, item) => sum + (item.quantity || item.qty || 0), 0);
 
-  // --- ROUTER/RENDER LOGIC ---
   const renderPage = () => {
     const pageProps = {
       setCurrentPage,
@@ -526,10 +488,8 @@ function AppContent() {
     }
   };
 
-  // ✅ KIỂM TRA: Nếu là trang Login, Register, hoặc Reset Password thì KHÔNG hiển thị Header/Footer
   const isAuthPage = currentPage === "login" || currentPage === "register" || currentPage === "reset-password";
 
-  // Show loading if auth is loading
   if (authLoading) {
     return (
       <div
@@ -546,7 +506,7 @@ function AppContent() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#F8FAFC" }}>
-      {/* Chỉ hiển thị Header nếu KHÔNG phải trang auth */}
+      {}
       {!isAuthPage && (
         <Header
           currentPage={currentPage}
@@ -566,13 +526,13 @@ function AppContent() {
 
       <main>{renderPage()}</main>
 
-      {/* Chỉ hiển thị Footer nếu KHÔNG phải trang auth */}
+      {}
       {!isAuthPage && <Footer />}
 
-      {/* Chat Widget - Only show if authenticated */}
+      {}
       {isAuthenticated && <ChatWidget />}
 
-      {/* Flying Cart Animation */}
+      {}
       {showFlyingCart && animationSource && animationTarget && (
         <FlyingCartIcon
           sourcePosition={animationSource}
@@ -585,7 +545,7 @@ function AppContent() {
         />
       )}
 
-      {/* Toast Container */}
+      {}
       <ToastContainer
         position="top-right"
         autoClose={2500}

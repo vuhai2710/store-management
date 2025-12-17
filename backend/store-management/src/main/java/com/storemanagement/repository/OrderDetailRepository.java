@@ -11,4 +11,3 @@ public interface OrderDetailRepository extends JpaRepository<OrderDetail, Intege
     Optional<OrderDetail> findByIdOrderDetail(Integer idOrderDetail);
 }
 
-

@@ -11,16 +11,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class WebSocketErrorDTO {
-    
+
     @JsonProperty("error")
     private String error;
-    
+
     @JsonProperty("message")
     private String message;
-    
+
     @JsonProperty("conversationId")
     private Integer conversationId;
-    
+
     @JsonProperty("timestamp")
     private Long timestamp;
 }

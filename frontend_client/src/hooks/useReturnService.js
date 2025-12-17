@@ -85,19 +85,13 @@ export const useReturnService = () => {
       return response.data?.allowedDays || response?.allowedDays || 7;
     } catch (err) {
       console.error("Failed to get return period days:", err);
-      return 7; // Default 7 days
+      return 7;
     }
   }, []);
 
-  /**
-   * Lấy thông tin yêu cầu đổi/trả theo orderId
-   * Trả về object { hasReturn, returnRequest } với:
-   * - hasReturn: boolean - có yêu cầu đổi/trả không
-   * - returnRequest: object - thông tin yêu cầu (status, returnType, etc.)
-   */
   const getReturnRequestByOrderId = useCallback(async (orderId) => {
     try {
-      // Lấy danh sách returns của user và lọc theo orderId
+
       const response = await api.get("/order-returns/my-returns", {
         params: { pageNo: 1, pageSize: 100 },
       });

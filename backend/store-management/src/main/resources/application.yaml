@@ -71,7 +71,7 @@ payos:
   webhook-url: "${PAYOS_WEBHOOK_URL:https://your-ngrok-url.ngrok.io/api/v1/payments/payos/webhook}"
   return-url: "http://localhost:8080/api/v1/payments/payos/return"
   cancel-url: "http://localhost:8080/api/v1/payments/payos/cancel"
-  environment: "sandbox" # Options: sandbox, production
+  environment: "sandbox" 
   base-url: "https://api-merchant.payos.vn"
 
 ghn:
@@ -86,7 +86,6 @@ ghn:
 recommender:
   base-url: http://localhost:5000
 
-# Password Reset Configuration
 password-reset:
   admin-url: http://localhost:3000/reset-password
   client-url: http://localhost:3001/reset-password

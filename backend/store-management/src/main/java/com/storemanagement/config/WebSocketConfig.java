@@ -13,7 +13,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
-    
+
     private final WebSocketAuthInterceptor webSocketAuthInterceptor;
 
     @Override
@@ -27,7 +27,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("http://localhost:3000", "http://localhost:3003")
                 .addInterceptors(new WebSocketHandshakeInterceptor())
-                .withSockJS(); // Enable SockJS fallback
+                .withSockJS();
     }
 
     @Override

@@ -1,4 +1,4 @@
-// src/components/pages/HomePage.js
+
 import React, { useState, useEffect } from 'react';
 import { Truck, RefreshCw, Headset } from 'lucide-react';
 import styles from '../../styles/styles';
@@ -10,7 +10,6 @@ import { productsService } from '../../services/productsService';
 import { categoriesService } from '../../services/categoriesService';
 import { useAuth } from '../../hooks/useAuth';
 
-// Component NHẬN handleViewProductDetail + setSelectedCategory + handleCategoryNavigation
 const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, setSelectedCategory, handleCategoryNavigation }) => {
   const { isAuthenticated } = useAuth();
   const [categories, setCategories] = useState([]);
@@ -46,10 +45,9 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
     fetchHomepagePolicy();
   }, []);
 
-  // Fetch data from API only when authenticated
   useEffect(() => {
     const fetchData = async () => {
-      // Only fetch data if user is authenticated
+
       if (!isAuthenticated) {
         setLoading(false);
         return;
@@ -59,23 +57,18 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         setLoading(true);
         setError(null);
 
-        // Fetch categories
         const categoriesData = await categoriesService.getAll();
         setCategories(categoriesData || []);
 
-        // Fetch best sellers
         const bestSellersData = await productsService.getTop5BestSellingProducts();
         setBestSellers(bestSellersData || []);
 
-        // Fetch new products
         const newProductsData = await productsService.getNewProducts({ pageNo: 1, pageSize: 6 });
         setNewProducts(newProductsData?.content || []);
 
-        // Fetch featured products (first 6 products)
         const featuredData = await productsService.getProducts({ pageNo: 1, pageSize: 6 });
         setFeaturedProducts(featuredData?.content || []);
 
-        // Fetch recommended products
         try {
           const recommendedData = await productsService.getRecommendedProducts();
           console.log('Recommended products data:', recommendedData);
@@ -87,7 +80,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
 
       } catch (err) {
         console.error('Error fetching homepage data:', err);
-        // Don't show error if it's just authentication issue
+
         if (err?.status !== 401) {
           setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
         }
@@ -99,7 +92,6 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
     fetchData();
   }, [isAuthenticated]);
 
-  // Style cho Service Icons
   const serviceIconStyle = {
     display: 'flex',
     flexDirection: 'column',
@@ -112,7 +104,6 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
     transition: 'transform 0.3s'
   };
 
-  // Show loading only when authenticated and loading
   if (loading && isAuthenticated) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -134,7 +125,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
 
   return (
     <div>
-      {/* 1. Hero Carousel Section (Đã làm lại thanh lịch hơn) */}
+      {}
       <section style={{ position: 'relative', height: '80vh', background: 'linear-gradient(135deg, #020617, #1E293B, #2563EB)', overflow: 'hidden' }}>
         <div style={{ position: 'relative', height: '100%', ...styles.container, display: 'flex', alignItems: 'center' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'center', width: '100%' }}>
@@ -160,7 +151,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </div>
       </section>
 
-      {/* 2. Service Bar (Thanh Dịch vụ) */}
+      {}
       <section style={{ backgroundColor: '#f0f4f8', padding: '3rem 0' }}>
         <div style={styles.container}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
@@ -191,7 +182,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </div>
       </section>
 
-      {/* 3. Category Explorer (Khám phá Danh mục) */}
+      {}
       {isAuthenticated && categories.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>
@@ -201,11 +192,11 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
                 <div
                   key={cat.idCategory || cat.id}
                   onClick={() => {
-                    // Use handleCategoryNavigation to set category and update URL
+
                     if (handleCategoryNavigation) {
                       handleCategoryNavigation(cat.idCategory || cat.id, cat.categoryName || cat.name);
                     } else {
-                      // Fallback to old behavior if handleCategoryNavigation is not provided
+
                       if (setSelectedCategory) {
                         setSelectedCategory(cat.categoryName || cat.name);
                       }
@@ -233,7 +224,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </section>
       )}
 
-      {/* Login Prompt for unauthenticated users */}
+      {}
       {!isAuthenticated && (
         <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
           <div style={styles.container}>
@@ -263,7 +254,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </section>
       )}
 
-      {/* 5. Flash Sale Slider - Products on Sale */}
+      {}
       {isAuthenticated && (
         <OnSaleSlider
           handleViewProductDetail={handleViewProductDetail}
@@ -272,7 +263,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         />
       )}
 
-      {/* 6. Best Sellers */}
+      {}
       {isAuthenticated && bestSellers.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>
@@ -299,13 +290,13 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </section>
       )}
 
-      {/* 6.5. Recommended Products - After Best Sellers */}
+      {}
       {isAuthenticated && (
         <section style={{ padding: '4rem 0', backgroundColor: '#f0f4f8' }}>
           <div style={styles.container}>
             {recommendedProducts.length > 0 ? (
               <>
-                {/* 4 sản phẩm đầu - Đã xem gần đây */}
+                {}
                 {recommendedProducts.slice(0, 4).length > 0 && (
                   <div style={{ marginBottom: '3rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -324,7 +315,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
                   </div>
                 )}
 
-                {/* 8 sản phẩm sau - Gợi ý */}
+                {}
                 {recommendedProducts.slice(4, 12).length > 0 && (
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -366,7 +357,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </section>
       )}
 
-      {/* 7. Featured Products */}
+      {}
       {isAuthenticated && featuredProducts.length > 0 && (
         <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
           <div style={styles.container}>
@@ -385,7 +376,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </section>
       )}
 
-      {/* 8. New Products */}
+      {}
       {isAuthenticated && newProducts.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>

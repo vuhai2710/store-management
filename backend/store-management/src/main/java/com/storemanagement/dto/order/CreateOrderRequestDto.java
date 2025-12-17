@@ -16,6 +16,6 @@ public class CreateOrderRequestDto {
 
     @NotNull(message = "Phương thức thanh toán không được để trống")
     private Order.PaymentMethod paymentMethod;
-    
+
     private String notes;
 }

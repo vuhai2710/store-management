@@ -24,15 +24,14 @@ public class PdfService {
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             ConverterProperties properties = new ConverterProperties();
-            
-            // Set UTF-8 encoding để hỗ trợ tiếng Việt
+
             properties.setCharset(StandardCharsets.UTF_8.name());
-            
+
             HtmlConverter.convertToPdf(htmlContent, outputStream, properties);
-            
+
             byte[] pdfBytes = outputStream.toByteArray();
             log.info("Generated PDF with size: {} bytes", pdfBytes.length);
-            
+
             return pdfBytes;
         } catch (Exception e) {
             log.error("Error generating PDF: {}", e.getMessage(), e);
@@ -54,20 +53,18 @@ public class PdfService {
 
     private String generateImportOrderHtml(PurchaseOrderDTO dto) {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-        
+
         StringBuilder html = new StringBuilder();
-        
-        // Header
+
         html.append("""
             <div class="header">
                 <h1>PHIẾU NHẬP HÀNG</h1>
                 <p>Mã đơn: #PO-%d</p>
                 <p>Ngày nhập: %s</p>
             </div>
-            """.formatted(dto.getIdImportOrder(), 
+            """.formatted(dto.getIdImportOrder(),
                     dto.getOrderDate() != null ? dto.getOrderDate().format(dateFormatter) : ""));
 
-        // Thông tin nhà cung cấp
         html.append("""
             <div class="info-section">
                 <h2>Thông tin nhà cung cấp</h2>
@@ -95,7 +92,6 @@ public class PdfService {
                 dto.getSupplierEmail() != null ? dto.getSupplierEmail() : ""
         ));
 
-        // Thông tin nhân viên
         if (dto.getIdEmployee() != null) {
             html.append("""
                 <div class="info-section">
@@ -108,7 +104,6 @@ public class PdfService {
                 """.formatted(dto.getEmployeeName() != null ? dto.getEmployeeName() : ""));
         }
 
-        // Bảng chi tiết sản phẩm
         html.append("""
             <div class="info-section">
                 <h2>Chi tiết sản phẩm nhập</h2>
@@ -157,7 +152,6 @@ public class PdfService {
             </div>
             """);
 
-        // Tổng tiền
         html.append("""
             <div class="total-section">
                 <div class="total-row">
@@ -167,7 +161,6 @@ public class PdfService {
             </div>
             """.formatted(formatCurrency(dto.getTotalAmount())));
 
-        // Footer
         html.append("""
             <div class="footer">
                 <p>Phiếu này được tạo tự động bởi hệ thống quản lý kho</p>
@@ -183,7 +176,6 @@ public class PdfService {
 
         StringBuilder html = new StringBuilder();
 
-        // Header
         html.append("""
             <div class="header">
                 <h1>HÓA ĐƠN BÁN HÀNG</h1>
@@ -193,7 +185,6 @@ public class PdfService {
             """.formatted(dto.getIdOrder(),
                     dto.getOrderDate() != null ? dto.getOrderDate().format(dateFormatter) : ""));
 
-        // Thông tin khách hàng
         if (dto.getIdCustomer() != null) {
             html.append("""
                 <div class="info-section">
@@ -218,7 +209,6 @@ public class PdfService {
             ));
         }
 
-        // Thông tin nhân viên
         if (dto.getIdEmployee() != null) {
             html.append("""
                 <div class="info-section">
@@ -231,7 +221,6 @@ public class PdfService {
                 """.formatted(dto.getEmployeeName() != null ? dto.getEmployeeName() : ""));
         }
 
-        // Bảng chi tiết sản phẩm
         html.append("""
             <div class="info-section">
                 <h2>Chi tiết sản phẩm</h2>
@@ -280,7 +269,6 @@ public class PdfService {
             </div>
             """);
 
-        // Tổng tiền, giảm giá, thành tiền
         html.append("""
             <div class="total-section">
                 <div class="total-row">
@@ -289,7 +277,6 @@ public class PdfService {
                 </div>
             """.formatted(formatCurrency(dto.getTotalAmount())));
 
-        // Giảm giá (nếu có)
         if (dto.getDiscount() != null && dto.getDiscount().compareTo(BigDecimal.ZERO) > 0) {
             html.append("""
                 <div class="total-row">
@@ -299,7 +286,6 @@ public class PdfService {
                 """.formatted(formatCurrency(dto.getDiscount())));
         }
 
-        // Thành tiền cuối cùng
         html.append("""
                 <div class="total-row">
                     <span class="total-label">Thành tiền:</span>
@@ -307,7 +293,6 @@ public class PdfService {
                 </div>
             """.formatted(formatCurrency(dto.getFinalAmount())));
 
-        // Phương thức thanh toán
         if (dto.getPaymentMethod() != null) {
             String paymentMethodText = switch (dto.getPaymentMethod()) {
                 case CASH -> "Tiền mặt";
@@ -325,7 +310,6 @@ public class PdfService {
             </div>
             """);
 
-        // Ghi chú (nếu có)
         if (dto.getNotes() != null && !dto.getNotes().trim().isEmpty()) {
             html.append("""
                 <div class="info-section">
@@ -335,7 +319,6 @@ public class PdfService {
                 """.formatted(dto.getNotes()));
         }
 
-        // Footer
         html.append("""
             <div class="footer">
                 <p>Hóa đơn này được tạo tự động bởi hệ thống quản lý cửa hàng</p>
@@ -346,9 +329,6 @@ public class PdfService {
         return html.toString();
     }
 
-    /**
-     * Wrap HTML content với template (CSS, structure)
-     */
     private String wrapHtmlTemplate(String title, String content) {
         return """
             <!DOCTYPE html>

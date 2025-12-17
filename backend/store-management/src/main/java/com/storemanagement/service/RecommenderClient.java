@@ -32,15 +32,15 @@ public class RecommenderClient {
     public List<Long> getUserRecommendations(Long userId) {
         String url = recommenderProperties.getBaseUrl() + "/recommend?userId=" + userId;
         log.info("Calling Python recommender service: {}", url);
-        
+
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             log.info("Python service response status: {}, body: {}", response.getStatusCode(), response.getBody());
-            
+
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 JsonNode jsonNode = objectMapper.readTree(response.getBody());
                 JsonNode recommendationsNode = jsonNode.get("recommendations");
-                
+
                 if (recommendationsNode != null && recommendationsNode.isArray()) {
                     List<Long> recommendations = new ArrayList<>();
                     for (JsonNode node : recommendationsNode) {
@@ -54,7 +54,7 @@ public class RecommenderClient {
             } else {
                 log.warn("Python service returned non-2xx status: {}", response.getStatusCode());
             }
-            
+
             log.warn("Failed to get recommendations for userId: {}", userId);
             return new ArrayList<>();
         } catch (org.springframework.web.client.ResourceAccessException e) {
@@ -69,15 +69,15 @@ public class RecommenderClient {
     public List<Long> getSimilarProducts(Long productId) {
         String url = recommenderProperties.getBaseUrl() + "/similar-products?productId=" + productId;
         log.info("Calling Python recommender service: {}", url);
-        
+
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             log.info("Python service response status: {}, body: {}", response.getStatusCode(), response.getBody());
-            
+
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 JsonNode jsonNode = objectMapper.readTree(response.getBody());
                 JsonNode similarNode = jsonNode.get("similar");
-                
+
                 if (similarNode != null && similarNode.isArray()) {
                     List<Long> similar = new ArrayList<>();
                     for (JsonNode node : similarNode) {
@@ -91,7 +91,7 @@ public class RecommenderClient {
             } else {
                 log.warn("Python service returned non-2xx status: {}", response.getStatusCode());
             }
-            
+
             log.warn("Failed to get similar products for productId: {}", productId);
             return new ArrayList<>();
         } catch (org.springframework.web.client.ResourceAccessException e) {

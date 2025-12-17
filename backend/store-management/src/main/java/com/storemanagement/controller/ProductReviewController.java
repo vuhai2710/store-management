@@ -57,7 +57,7 @@ public class ProductReviewController {
         } else {
             reviews = productReviewService.getProductReviews(productId, pageable);
         }
-        
+
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đánh giá thành công", reviews));
     }
 

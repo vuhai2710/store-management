@@ -28,9 +28,9 @@ public class SystemSettingController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> updateReturnWindow(
             @RequestParam int days) {
-        
+
         systemSettingService.updateReturnWindow(days);
-        
+
         Map<String, Object> data = Map.of(
                 "message", "Cập nhật thành công",
                 "days", days
@@ -81,9 +81,9 @@ public class SystemSettingController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> updateReviewEditWindow(
             @RequestParam int hours) {
-        
+
         systemSettingService.updateReviewEditWindow(hours);
-        
+
         Map<String, Object> data = Map.of(
                 "message", "Cập nhật thành công",
                 "hours", hours

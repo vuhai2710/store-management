@@ -20,36 +20,30 @@ import java.time.format.DateTimeFormatter;
 @Configuration
 public class JacksonConfig {
 
-    // Format cho LocalDate
     private static final String DATE_FORMAT = "dd/MM/yyyy";
 
-    // Format cho LocalDateTime
     private static final String DATETIME_FORMAT = "dd/MM/yyyy HH:mm:ss";
 
     @Bean
     public ObjectMapper objectMapper() {
         JavaTimeModule javaTimeModule = new JavaTimeModule();
 
-        // Cấu hình serializer (Entity -> JSON)
         javaTimeModule.addSerializer(LocalDate.class,
                 new LocalDateSerializer(DateTimeFormatter.ofPattern(DATE_FORMAT)));
         javaTimeModule.addSerializer(LocalDateTime.class,
                 new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DATETIME_FORMAT)));
 
-        // Cấu hình deserializer (JSON -> Entity)
         javaTimeModule.addDeserializer(LocalDate.class,
                 new LocalDateDeserializer(DateTimeFormatter.ofPattern(DATE_FORMAT)));
         javaTimeModule.addDeserializer(LocalDateTime.class,
                 new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(DATETIME_FORMAT)));
 
-        // Cấu hình format số để tránh scientific notation
         SimpleModule numberModule = new SimpleModule();
-        
-        // Custom serializer cho BigDecimal - không dùng scientific notation
+
         numberModule.addSerializer(BigDecimal.class, new com.fasterxml.jackson.databind.JsonSerializer<BigDecimal>() {
             @Override
-            public void serialize(BigDecimal value, com.fasterxml.jackson.core.JsonGenerator gen, 
-                                 com.fasterxml.jackson.databind.SerializerProvider serializers) throws java.io.IOException {
+            public void serialize(BigDecimal value, com.fasterxml.jackson.core.JsonGenerator gen,
+                    com.fasterxml.jackson.databind.SerializerProvider serializers) throws java.io.IOException {
                 if (value == null) {
                     gen.writeNull();
                 } else {
@@ -57,11 +51,11 @@ public class JacksonConfig {
                 }
             }
         });
-        
+
         numberModule.addSerializer(Double.class, new com.fasterxml.jackson.databind.JsonSerializer<Double>() {
             @Override
-            public void serialize(Double value, com.fasterxml.jackson.core.JsonGenerator gen, 
-                                 com.fasterxml.jackson.databind.SerializerProvider serializers) throws java.io.IOException {
+            public void serialize(Double value, com.fasterxml.jackson.core.JsonGenerator gen,
+                    com.fasterxml.jackson.databind.SerializerProvider serializers) throws java.io.IOException {
                 if (value == null) {
                     gen.writeNull();
                 } else {

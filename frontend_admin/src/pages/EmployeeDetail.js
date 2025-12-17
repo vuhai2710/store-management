@@ -80,7 +80,6 @@ const EmployeeDetail = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
 
-  // Orders state
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersPagination, setOrdersPagination] = useState({
@@ -328,7 +327,7 @@ const EmployeeDetail = () => {
         </Button>
       </div>
 
-      {/* Order Statistics */}
+      { }
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card>
@@ -370,7 +369,7 @@ const EmployeeDetail = () => {
         </Col>
       </Row>
 
-      {/* Order Status Breakdown */}
+      { }
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={8}>
           <Card>
@@ -404,7 +403,7 @@ const EmployeeDetail = () => {
         </Col>
       </Row>
 
-      {/* Personal Information */}
+      { }
       <Card title="Thông tin cá nhân" style={{ marginBottom: "16px" }}>
         <Descriptions column={{ xs: 1, sm: 2 }}>
           <Descriptions.Item label="Avatar">
@@ -447,7 +446,7 @@ const EmployeeDetail = () => {
         </Descriptions>
       </Card>
 
-      {/* Orders Table */}
+      { }
       <Card
         title="Đơn hàng đã xử lý"
         style={{ marginBottom: "16px" }}
@@ -487,7 +486,7 @@ const EmployeeDetail = () => {
         />
       </Card>
 
-      {/* Edit Modal */}
+      { }
       <Modal
         title="Chỉnh sửa nhân viên"
         open={isModalVisible}

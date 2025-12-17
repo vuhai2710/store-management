@@ -74,7 +74,7 @@ public class ProductServiceImpl implements ProductService {
             if (productCode == null || productCode.trim().isEmpty()) {
 
                 sku = generateUniqueSku(category);
-                productCode = sku; // productCode = SKU trong trường hợp này
+                productCode = sku;
                 log.info("Auto-generated SKU: {}", sku);
             } else {
                 ProductCodeValidator.validate(productCode, CodeType.SKU);
@@ -104,7 +104,6 @@ public class ProductServiceImpl implements ProductService {
                             "Nhà cung cấp không tồn tại với ID: " + productDto.getIdSupplier()));
         }
 
-        // Map DTO sang Entity
         Product product = productMapper.toEntity(productDto);
         product.setCategory(category);
         product.setSupplier(supplier);
@@ -113,14 +112,11 @@ public class ProductServiceImpl implements ProductService {
         product.setCodeType(productDto.getCodeType());
         product.setBrand(productDto.getBrand());
         product.setDescription(productDto.getDescription());
-        // imageUrl đã được set trong productDto ở bước upload ảnh (nếu có)
+
         if (productDto.getImageUrl() != null) {
             product.setImageUrl(productDto.getImageUrl());
         }
 
-        // REQUIREMENT A: Lock fields - always set defaults regardless of incoming
-        // values
-        // These fields will be updated via Purchase Import Orders
         product.setPrice(java.math.BigDecimal.ZERO);
         product.setStockQuantity(0);
         product.setStatus(ProductStatus.OUT_OF_STOCK);
@@ -128,12 +124,10 @@ public class ProductServiceImpl implements ProductService {
         log.info("New product will be created with price=0, stockQuantity=0 and status=OUT_OF_STOCK. " +
                 "Use ImportOrder to add stock and update price.");
 
-        // Lưu vào DB
         Product savedProduct = productRepository.save(product);
         log.info("Product created successfully with ID: {}, Stock: {}, Status: {}",
                 savedProduct.getIdProduct(), savedProduct.getStockQuantity(), savedProduct.getStatus());
 
-        // Fetch lại với JOIN FETCH để có đầy đủ thông tin category và supplier
         Product productWithDetails = productRepository.findByIdWithDetails(savedProduct.getIdProduct())
                 .orElse(savedProduct);
 
@@ -424,10 +418,10 @@ public class ProductServiceImpl implements ProductService {
 
         products.forEach(p -> {
             if (p.getCategory() != null) {
-                p.getCategory().getCategoryName(); // Trigger lazy load
+                p.getCategory().getCategoryName();
             }
             if (p.getSupplier() != null) {
-                p.getSupplier().getSupplierName(); // Trigger lazy load
+                p.getSupplier().getSupplierName();
             }
         });
         List<ProductDTO> productDtos = productMapper.toDTOList(products);
@@ -448,7 +442,7 @@ public class ProductServiceImpl implements ProductService {
                 normalizedStatus, pageSize, offset);
 
         if (bestSellingData.isEmpty()) {
-            // Không có sản phẩm nào đã bán
+
             return PageResponse.<ProductDTO>builder()
                     .content(List.of())
                     .pageNo(pageNo)
@@ -508,7 +502,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ProductDTO> getNewProducts(Pageable pageable, Integer limit) {
-        // Nếu có limit, tạo Pageable mới với limit làm pageSize
+
         Pageable queryPageable = pageable;
         if (limit != null && limit > 0) {
             queryPageable = org.springframework.data.domain.PageRequest.of(
@@ -566,7 +560,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public List<String> getAllBrands() {
         List<String> brands = productRepository.findDistinctBrandsByStatus();
-        // Filter và sort để đảm bảo không có null hoặc empty
+
         return brands.stream()
                 .filter(brand -> brand != null && !brand.trim().isEmpty())
                 .sorted()
@@ -580,14 +574,12 @@ public class ProductServiceImpl implements ProductService {
             return List.of();
         }
 
-        // Convert Long to Integer for product IDs
         List<Integer> intIds = productIds.stream()
                 .map(Long::intValue)
                 .toList();
 
         List<Product> products = productRepository.findAllById(intIds);
 
-        // Trigger lazy loading for category and supplier
         products.forEach(p -> {
             if (p.getCategory() != null) {
                 p.getCategory().getCategoryName();
@@ -597,11 +589,9 @@ public class ProductServiceImpl implements ProductService {
             }
         });
 
-        // Tạo map để giữ thứ tự theo productIds
         Map<Integer, Product> productMap = products.stream()
                 .collect(java.util.stream.Collectors.toMap(Product::getIdProduct, p -> p));
 
-        // Sắp xếp lại theo thứ tự trong productIds
         List<Product> orderedProducts = intIds.stream()
                 .map(productMap::get)
                 .filter(Objects::nonNull)

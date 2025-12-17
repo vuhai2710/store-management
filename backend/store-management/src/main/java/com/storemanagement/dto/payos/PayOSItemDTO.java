@@ -12,10 +12,10 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class PayOSItemDTO {
-    
+
     private String name;
-    
+
     private Integer quantity;
-    
+
     private BigDecimal price;
 }

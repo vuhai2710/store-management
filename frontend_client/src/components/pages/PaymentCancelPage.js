@@ -1,4 +1,4 @@
-// src/components/pages/PaymentCancelPage.js
+
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { XCircle, ArrowLeft, ShoppingBag } from "lucide-react";
@@ -151,4 +151,3 @@ const PaymentCancelPage = ({ setCurrentPage }) => {
 };
 
 export default PaymentCancelPage;
-

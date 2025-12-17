@@ -194,4 +194,3 @@ const ShipmentDetail = () => {
 };
 
 export default ShipmentDetail;
-

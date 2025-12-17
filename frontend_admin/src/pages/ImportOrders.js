@@ -35,7 +35,7 @@ import EmptyState from "../components/common/EmptyState";
 import LoadingSkeleton from "../components/common/LoadingSkeleton";
 import { exportToExcel, exportToCSV } from "../utils/exportUtils";
 import { DownloadOutlined } from "@ant-design/icons";
-import { formatDate } from "../utils/formatUtils"; // add
+import { formatDate } from "../utils/formatUtils";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -93,7 +93,6 @@ const ImportOrders = () => {
       sortDirection: "DESC",
     };
 
-    // Add keyword search
     if (debouncedKeyword && debouncedKeyword.trim()) {
       params.keyword = debouncedKeyword.trim();
     }
@@ -102,7 +101,7 @@ const ImportOrders = () => {
       const startDate = dateRange[0];
       const endDate = dateRange[1];
       if (startDate && endDate) {
-        // Format date without timezone for backend LocalDateTime.parse()
+
         params.startDate = startDate
           .startOf("day")
           .format("YYYY-MM-DDTHH:mm:ss");
@@ -132,12 +131,11 @@ const ImportOrders = () => {
     setTotal(pagination.total || 0);
   }, [pagination.total, setTotal]);
 
-  // Reset pagination when keyword changes
   useEffect(() => {
     if (debouncedKeyword !== undefined) {
       resetPagination();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [debouncedKeyword]);
 
   const handleTableChange = (p, _filters, sorter) => {
@@ -147,7 +145,7 @@ const ImportOrders = () => {
   const handleSupplierFilter = (value) => {
     setSupplierFilter(value);
     dispatch(setFilters({ supplierId: value }));
-    resetPagination(); // Reset về page 1
+    resetPagination();
   };
 
   const handleDateRangeChange = (dates) => {
@@ -162,7 +160,7 @@ const ImportOrders = () => {
     } else {
       dispatch(setFilters({ startDate: null, endDate: null }));
     }
-    resetPagination(); // Reset về page 1 khi thay đổi date range
+    resetPagination();
   };
 
   const handleResetFilters = () => {
@@ -184,7 +182,6 @@ const ImportOrders = () => {
   const handlePrintImportOrder = async (importOrderId, e) => {
     e?.stopPropagation();
 
-    // Check if already printed in current data
     const order = importOrders.find(o => (o.idImportOrder || o.id) === importOrderId);
     if (order?.invoicePrinted) {
       message.warning("Phiếu nhập đã được in trước đó. Vui lòng vào trang Quản lý Hóa đơn để xem chi tiết.");
@@ -196,10 +193,8 @@ const ImportOrders = () => {
       const printData = await invoiceService.printImportInvoice(importOrderId);
       message.success("In phiếu nhập hàng thành công!");
 
-      // Refresh list to update printed status
       fetchImportOrdersList();
 
-      // Open print window with invoice data
       const printWindow = window.open("", "_blank", "width=800,height=600");
       if (printWindow) {
         const formatCurrency = (amount) => (amount || 0).toLocaleString("vi-VN") + " VNĐ";
@@ -230,7 +225,7 @@ const ImportOrders = () => {
     } catch (error) {
       if (error.status === 409) {
         message.error("Phiếu nhập đã được in trước đó");
-        fetchImportOrdersList(); // Refresh to sync state
+        fetchImportOrdersList();
       } else {
         message.error("Xuất phiếu nhập hàng thất bại!");
       }

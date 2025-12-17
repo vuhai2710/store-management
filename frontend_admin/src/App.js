@@ -1,10 +1,3 @@
-/**
- * App.js - CẬP NHẬT với Authentication Flow
- *
- * File này là bản cập nhật của App.js hiện tại
- * Tích hợp đầy đủ authentication và protected routes
- */
-
 import React, { useEffect } from "react";
 import { Layout } from "antd";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -12,16 +5,11 @@ import ProtectedRoute from "./components/common/ProtectedRoute";
 import { USER_ROLES, APP_CONFIG } from "./constants";
 import { useAuth } from "./hooks";
 
-// Layout Components
 import AppHeader from "./components/layout/AppHeader";
 import AppSidebar from "./components/layout/AppSidebar";
 import Breadcrumbs from "./components/common/Breadcrumbs";
 import FloatingChatButton from "./components/chat/FloatingChatButton";
 
-// Common Components
-// giữ 1 dòng import duy nhất
-
-// Pages
 import Users from "./pages/Users";
 import Unauthorized from "./pages/Unauthorized";
 import Login from "./pages/Login";
@@ -56,7 +44,6 @@ import ImportInvoices from "./pages/ImportInvoices";
 
 const { Content } = Layout;
 
-// Thêm block này
 const PublicRoutes = () => (
   <Routes>
     <Route path="/login" element={<Login />} />
@@ -70,40 +57,34 @@ const PublicRoutes = () => (
 function App() {
   const { user, isAuthenticated, loading } = useAuth();
 
-  // Xử lý token từ URL khi được redirect từ frontend_client
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tokenFromUrl = urlParams.get('token');
     const path = window.location.pathname;
 
-    // Nếu có token trong URL và không phải trang reset-password
     if (tokenFromUrl && !path.startsWith('/reset-password')) {
       console.log("Received auth token from redirect, saving to localStorage");
       localStorage.setItem("token", tokenFromUrl);
 
-      // Clean up URL by removing the token parameter
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('token');
       window.history.replaceState({}, '', newUrl.pathname + newUrl.search);
 
-      // Reload page to pick up the new token
       window.location.reload();
     }
   }, []);
 
-  // Kiểm tra và redirect CUSTOMER sang frontend_client
   useEffect(() => {
     if (!loading && isAuthenticated && user?.role === USER_ROLES.CUSTOMER) {
       const token = localStorage.getItem("token");
       if (token) {
         const clientUrl = APP_CONFIG.CLIENT_URL;
-        // Chuyển hướng sang frontend_client với token
+
         window.location.href = `${clientUrl}?token=${token}`;
       }
     }
   }, [loading, isAuthenticated, user]);
 
-  // Loading state - hiển thị loading screen trước khi check auth
   if (loading) {
     return (
       <div
@@ -126,12 +107,10 @@ function App() {
     );
   }
 
-  // Nếu chưa đăng nhập → render PublicRoutes
   if (!isAuthenticated) {
     return <PublicRoutes />;
   }
 
-  // Nếu là CUSTOMER, hiển thị loading trong khi redirect
   if (user?.role === USER_ROLES.CUSTOMER) {
     return (
       <div
@@ -154,7 +133,6 @@ function App() {
     );
   }
 
-  // Protected routes (đã đăng nhập)
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <AppSidebar />
@@ -169,13 +147,13 @@ function App() {
           }}>
           <Breadcrumbs />
           <Routes>
-            {/* Public trong authenticated area */}
+            { }
             <Route path="/unauthorized" element={<Unauthorized />} />
 
-            {/* Redirect root to dashboard */}
+            { }
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            {/* Dashboard - Tất cả roles */}
+            { }
             <Route
               path="/dashboard"
               element={
@@ -185,7 +163,7 @@ function App() {
               }
             />
 
-            {/* Profile - Tất cả roles */}
+            { }
             <Route
               path="/profile"
               element={
@@ -195,7 +173,7 @@ function App() {
               }
             />
 
-            {/* Orders - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/orders"
               element={
@@ -215,7 +193,7 @@ function App() {
               }
             />
 
-            {/* Order Returns - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/order-returns"
               element={
@@ -235,7 +213,7 @@ function App() {
               }
             />
 
-            {/* Products - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/products"
               element={
@@ -255,7 +233,7 @@ function App() {
               }
             />
 
-            {/* Customers - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/customers"
               element={
@@ -275,7 +253,7 @@ function App() {
               }
             />
 
-            {/* Inventory - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/inventory"
               element={
@@ -304,7 +282,7 @@ function App() {
               }
             />
 
-            {/* Categories - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/categories"
               element={
@@ -315,7 +293,7 @@ function App() {
               }
             />
 
-            {/* Promotions - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/promotions"
               element={
@@ -326,7 +304,7 @@ function App() {
               }
             />
 
-            {/* Product Reviews - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/products/:productId/reviews"
               element={
@@ -337,7 +315,7 @@ function App() {
               }
             />
 
-            {/* Import Orders - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/import-orders"
               element={
@@ -357,7 +335,7 @@ function App() {
               }
             />
 
-            {/* Shipments - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/shipments/:id"
               element={
@@ -368,7 +346,7 @@ function App() {
               }
             />
 
-            {/* Employees - ADMIN only */}
+            { }
             <Route
               path="/employees"
               element={
@@ -386,7 +364,7 @@ function App() {
               }
             />
 
-            {/* Finance - ADMIN only */}
+            { }
             <Route
               path="/finance"
               element={
@@ -396,7 +374,7 @@ function App() {
               }
             />
 
-            {/* Reports - ADMIN only */}
+            { }
             <Route
               path="/reports"
               element={
@@ -406,7 +384,7 @@ function App() {
               }
             />
 
-            {/* Trang quản lý người dùng - chỉ ADMIN */}
+            { }
             <Route
               path="/users"
               element={
@@ -416,7 +394,7 @@ function App() {
               }
             />
 
-            {/* System Settings - ADMIN only */}
+            { }
             <Route
               path="/settings"
               element={
@@ -426,7 +404,7 @@ function App() {
               }
             />
 
-            {/* Invoices - ADMIN only */}
+            { }
             <Route
               path="/invoices/export"
               element={
@@ -444,7 +422,7 @@ function App() {
               }
             />
 
-            {/* Catch all - redirect to dashboard */}
+            { }
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Content>

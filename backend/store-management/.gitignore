@@ -107,8 +107,4 @@ secrets.jsonk
 *.pdf
 !**/documentation/**/*.pdf
 
-EnvChecker.java
-
 .windsurf/
-
-PHAN_TICH_BACKEND.md

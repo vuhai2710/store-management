@@ -10,18 +10,16 @@ import java.util.List;
 
 @Mapper(componentModel = "spring", uses = {UserMapper.class})
 public interface CustomerMapper {
-    // RegisterDTO → Customer
+
     @Mapping(target = "idCustomer", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "customerType", constant = "REGULAR")
     Customer toEntity(RegisterDTO dto);
 
-    // CustomerDTO → Customer
     @Mapping(target = "idCustomer", ignore = true)
     @Mapping(target = "user", ignore = true)
     Customer toEntity(CustomerDTO dto);
 
-    // Customer → CustomerDTO
     @Mapping(target = "idCustomer", source = "idCustomer")
     @Mapping(target = "idUser", source = "user.idUser")
     @Mapping(target = "username", source = "user.username")

@@ -16,7 +16,6 @@ public class OrderReturnItemDTO {
     private Integer idOrderDetail;
     private Integer quantity;
 
-    // Product info from OrderDetail snapshot
     private String productName;
     private BigDecimal price;
 

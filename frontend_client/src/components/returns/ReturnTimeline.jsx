@@ -1,17 +1,12 @@
 import React from "react";
 import { formatDate } from "../../utils/formatUtils";
 
-/**
- * Timeline hiển thị quá trình đổi/trả hàng
- * REQUESTED → APPROVED/REJECTED → COMPLETED
- */
 const ReturnTimeline = ({ status, returnType, createdAt, updatedAt }) => {
-  // Định nghĩa các bước trong timeline
+
   const getTimelineSteps = () => {
     const isReturn = returnType === "RETURN";
     const actionLabel = isReturn ? "trả hàng" : "đổi hàng";
 
-    // Timeline cho trường hợp bị từ chối
     if (status === "REJECTED") {
       return [
         {
@@ -33,7 +28,6 @@ const ReturnTimeline = ({ status, returnType, createdAt, updatedAt }) => {
       ];
     }
 
-    // Timeline bình thường
     return [
       {
         key: "REQUESTED",
@@ -90,7 +84,7 @@ const ReturnTimeline = ({ status, returnType, createdAt, updatedAt }) => {
       <div className="relative">
         {steps.map((step, index) => (
           <div key={step.key} className="flex items-start mb-8 last:mb-0">
-            {/* Đường kẻ dọc */}
+            {}
             {index < steps.length - 1 && (
               <div
                 className={`absolute left-4 w-0.5 h-8 transform translate-y-8 ${
@@ -104,7 +98,7 @@ const ReturnTimeline = ({ status, returnType, createdAt, updatedAt }) => {
               />
             )}
 
-            {/* Icon trạng thái */}
+            {}
             <div
               className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full border-2 flex-shrink-0 ${
                 step.failed
@@ -146,7 +140,7 @@ const ReturnTimeline = ({ status, returnType, createdAt, updatedAt }) => {
               )}
             </div>
 
-            {/* Nội dung */}
+            {}
             <div className="ml-4 flex-1">
               <h3
                 className={`font-medium ${
@@ -168,7 +162,7 @@ const ReturnTimeline = ({ status, returnType, createdAt, updatedAt }) => {
                 }`}>
                 {step.description}
               </p>
-              {/* Hiển thị thời gian cho bước đã hoàn thành */}
+              {}
               {step.completed && step.key === "REQUESTED" && createdAt && (
                 <p className="text-xs text-gray-400 mt-1">
                   {formatDate(createdAt)}

@@ -25,15 +25,13 @@ public class ImportOrderController {
 
     private final ImportOrderService importOrderService;
 
-
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PurchaseOrderDTO>> createImportOrder(
             @RequestBody @Valid PurchaseOrderDTO purchaseOrderDTO) {
-        
-        // Lấy employee ID từ JWT token (không cần query database)
+
         Integer employeeId = SecurityUtils.getCurrentEmployeeId().orElse(null);
-        
+
         PurchaseOrderDTO createdOrder = importOrderService.createImportOrder(purchaseOrderDTO, employeeId);
         return ResponseEntity.ok(ApiResponse.success("Tạo đơn nhập hàng thành công", createdOrder));
     }
@@ -74,7 +72,8 @@ public class ImportOrderController {
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
         PageResponse<PurchaseOrderDTO> orders = importOrderService.getImportOrdersBySupplier(supplierId, pageable);
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đơn nhập hàng theo nhà cung cấp thành công", orders));
+        return ResponseEntity
+                .ok(ApiResponse.success("Lấy danh sách đơn nhập hàng theo nhà cung cấp thành công", orders));
     }
 
     @GetMapping("/history")
@@ -95,14 +94,13 @@ public class ImportOrderController {
         LocalDateTime end = endDate != null ? LocalDateTime.parse(endDate) : LocalDateTime.now();
 
         PageResponse<PurchaseOrderDTO> orders;
-        
-        // Nếu có supplierId, lọc theo cả supplier và thời gian
+
         if (supplierId != null) {
             orders = importOrderService.getImportOrdersBySupplierAndDateRange(supplierId, start, end, pageable);
         } else {
             orders = importOrderService.getImportOrdersByDateRange(start, end, pageable);
         }
-        
+
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử nhập hàng thành công", orders));
     }
 

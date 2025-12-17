@@ -22,9 +22,9 @@ public class UpdateShippingAddressRequestDto {
     @NotBlank(message = "Địa chỉ không được để trống")
     private String address;
 
-    private Integer provinceId; // ID tỉnh/thành phố từ GHN API
+    private Integer provinceId;
 
-    private Integer districtId; // ID quận/huyện từ GHN API
+    private Integer districtId;
 
-    private String wardCode; // Code phường/xã từ GHN API
+    private String wardCode;
 }

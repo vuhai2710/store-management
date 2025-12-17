@@ -21,4 +21,3 @@ public class UpdateReviewRequestDTO {
     private String comment;
 }
 
-

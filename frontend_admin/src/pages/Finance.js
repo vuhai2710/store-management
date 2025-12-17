@@ -41,40 +41,27 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
-/**
- * Financial & Revenue Report Page
- *
- * BUSINESS DEFINITIONS:
- * - Product Revenue = SUM(quantity * price) from COMPLETED orders (excludes shipping)
- * - Net Revenue = Product Revenue - Discount
- * - Gross Profit = Net Revenue - Import Cost
- * - Shipping fee is reported separately and NOT included in revenue
- */
 const Finance = () => {
-  // State
+
   const [loading, setLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
 
-  // Date range (default: last 30 days)
   const [dateRange, setDateRange] = useState([
     dayjs().subtract(30, 'day'),
     dayjs(),
   ]);
   const [groupBy, setGroupBy] = useState('DAY');
 
-  // Data
   const [summary, setSummary] = useState(null);
   const [chartData, setChartData] = useState([]);
   const [productData, setProductData] = useState([]);
 
-  // Format currency
   const formatCurrency = (value) => {
     if (value === null || value === undefined) return '0 VNĐ';
     return `${Number(value).toLocaleString('vi-VN')} VNĐ`;
   };
 
-  // Load summary data
   const loadSummary = useCallback(async () => {
     try {
       const fromDate = dateRange[0].format('YYYY-MM-DD');
@@ -88,7 +75,6 @@ const Finance = () => {
     }
   }, [dateRange]);
 
-  // Load chart data
   const loadChartData = useCallback(async () => {
     try {
       setChartLoading(true);
@@ -105,7 +91,6 @@ const Finance = () => {
     }
   }, [dateRange, groupBy]);
 
-  // Load product data
   const loadProductData = useCallback(async () => {
     try {
       setTableLoading(true);
@@ -122,7 +107,6 @@ const Finance = () => {
     }
   }, [dateRange]);
 
-  // Initial load
   useEffect(() => {
     const loadAll = async () => {
       setLoading(true);
@@ -132,32 +116,27 @@ const Finance = () => {
     loadAll();
   }, [loadSummary, loadChartData, loadProductData]);
 
-  // Handle date range change
   const handleDateRangeChange = (dates) => {
     if (dates && dates[0] && dates[1]) {
       setDateRange(dates);
     }
   };
 
-  // Handle groupBy change
   const handleGroupByChange = (value) => {
     setGroupBy(value);
   };
 
-  // Reload chart when groupBy changes
   useEffect(() => {
     if (!loading) {
       loadChartData();
     }
   }, [groupBy]);
 
-  // Prepare chart data for recharts
   const rechartsData = chartData.map((item) => ({
     time: item.time,
     netRevenue: Number(item.netRevenue) || 0,
   }));
 
-  // Custom tooltip formatter
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -178,7 +157,6 @@ const Finance = () => {
     return null;
   };
 
-  // Product table columns
   const productColumns = [
     {
       title: 'Sản phẩm',
@@ -272,7 +250,6 @@ const Finance = () => {
     },
   ];
 
-  // Render loading skeleton
   if (loading) {
     return (
       <div style={{ padding: '8px 0' }}>
@@ -295,7 +272,7 @@ const Finance = () => {
 
   return (
     <div style={{ padding: '8px 0' }}>
-      {/* Page Header */}
+      { }
       <div
         className="page-header"
         style={{
@@ -344,9 +321,9 @@ const Finance = () => {
         </Space>
       </div>
 
-      {/* Summary Cards */}
+      { }
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        {/* Product Revenue */}
+        { }
         <Col xs={24} sm={12} lg={8} xl={4}>
           <Card
             style={{
@@ -373,7 +350,7 @@ const Finance = () => {
           </Card>
         </Col>
 
-        {/* Discount */}
+        { }
         <Col xs={24} sm={12} lg={8} xl={4}>
           <Card
             style={{
@@ -400,7 +377,7 @@ const Finance = () => {
           </Card>
         </Col>
 
-        {/* Net Revenue */}
+        { }
         <Col xs={24} sm={12} lg={8} xl={4}>
           <Card
             style={{
@@ -427,7 +404,7 @@ const Finance = () => {
           </Card>
         </Col>
 
-        {/* Import Cost */}
+        { }
         <Col xs={24} sm={12} lg={8} xl={4}>
           <Card
             style={{
@@ -454,7 +431,7 @@ const Finance = () => {
           </Card>
         </Col>
 
-        {/* Gross Profit */}
+        { }
         <Col xs={24} sm={12} lg={8} xl={4}>
           <Card
             style={{
@@ -482,7 +459,7 @@ const Finance = () => {
           </Card>
         </Col>
 
-        {/* Shipping Fee (Reference) */}
+        { }
         <Col xs={24} sm={12} lg={8} xl={4}>
           <Card
             style={{
@@ -514,7 +491,7 @@ const Finance = () => {
         </Col>
       </Row>
 
-      {/* Order Stats */}
+      { }
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col xs={12} sm={6}>
           <Card size="small" style={{ borderRadius: 8, textAlign: 'center' }}>
@@ -554,7 +531,7 @@ const Finance = () => {
         </Col>
       </Row>
 
-      {/* Revenue Chart */}
+      { }
       <Card
         title={
           <Space>
@@ -604,7 +581,7 @@ const Finance = () => {
         )}
       </Card>
 
-      {/* Product Revenue Table */}
+      { }
       <Card
         title={
           <Space>
@@ -631,7 +608,7 @@ const Finance = () => {
         />
       </Card>
 
-      {/* Formula Reference */}
+      { }
       <Card
         title="Công thức tính toán"
         size="small"

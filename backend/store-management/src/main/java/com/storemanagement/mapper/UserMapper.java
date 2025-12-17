@@ -11,17 +11,14 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-    // RegisterDTO → User
     @Mapping(target = "idUser", ignore = true)
     @Mapping(target = "role", constant = "CUSTOMER")
     @Mapping(target = "isActive", constant = "true")
     User toEntity(RegisterDTO dto);
 
-    // UserDTO → User
     @Mapping(target = "idUser", ignore = true)
     User toEntity(UserDTO dto);
 
-    // User → UserDTO
     @Mapping(target = "idUser", source = "idUser")
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "avatarUrl", source = "avatarUrl")

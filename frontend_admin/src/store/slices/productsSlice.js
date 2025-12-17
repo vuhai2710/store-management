@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { productsService } from "../../services/productsService";
 import { handleApiError } from "../../utils/apiHelper";
 
-// List (pageable)
 export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
   async (params, { rejectWithValue }) => {
@@ -15,7 +14,6 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
-// List theo nhà cung cấp
 export const fetchProductsBySupplier = createAsyncThunk(
   "products/fetchProductsBySupplier",
   async (
@@ -42,7 +40,6 @@ export const fetchProductsBySupplier = createAsyncThunk(
   }
 );
 
-// GET by id
 export const fetchProductById = createAsyncThunk(
   "products/fetchProductById",
   async (id, { rejectWithValue }) => {
@@ -55,7 +52,6 @@ export const fetchProductById = createAsyncThunk(
   }
 );
 
-// CREATE
 export const createProduct = createAsyncThunk(
   "products/createProduct",
   async (payload, { rejectWithValue }) => {
@@ -68,7 +64,6 @@ export const createProduct = createAsyncThunk(
   }
 );
 
-// UPDATE
 export const updateProduct = createAsyncThunk(
   "products/updateProduct",
   async ({ id, data }, { rejectWithValue }) => {
@@ -81,7 +76,6 @@ export const updateProduct = createAsyncThunk(
   }
 );
 
-// DELETE
 export const deleteProduct = createAsyncThunk(
   "products/deleteProduct",
   async (id, { rejectWithValue }) => {
@@ -94,7 +88,6 @@ export const deleteProduct = createAsyncThunk(
   }
 );
 
-// GET Top 5 Best Selling Products
 export const fetchTop5BestSellingProducts = createAsyncThunk(
   "products/fetchTop5BestSellingProducts",
   async ({ status } = {}, { rejectWithValue }) => {
@@ -145,7 +138,7 @@ const productsSlice = createSlice({
     };
 
     builder
-      // list
+
       .addCase(fetchProducts.pending, (s) => {
         s.loading = true;
         s.error = null;
@@ -160,7 +153,6 @@ const productsSlice = createSlice({
       .addCase(fetchProductsBySupplier.fulfilled, fulfillPage)
       .addCase(fetchProductsBySupplier.rejected, rejectPage)
 
-      // get by id
       .addCase(fetchProductById.pending, (s) => {
         s.loading = true;
         s.error = null;
@@ -175,7 +167,6 @@ const productsSlice = createSlice({
         s.error = a.payload || a.error;
       })
 
-      // create
       .addCase(createProduct.pending, (s) => {
         s.loading = true;
         s.error = null;
@@ -189,7 +180,6 @@ const productsSlice = createSlice({
         s.error = a.payload || a.error;
       })
 
-      // update
       .addCase(updateProduct.pending, (s) => {
         s.loading = true;
         s.error = null;
@@ -207,7 +197,6 @@ const productsSlice = createSlice({
         s.error = a.payload || a.error;
       })
 
-      // delete
       .addCase(deleteProduct.pending, (s) => {
         s.loading = true;
         s.error = null;
@@ -223,7 +212,6 @@ const productsSlice = createSlice({
         s.error = a.payload || a.error;
       })
 
-      // top 5 best sellers
       .addCase(fetchTop5BestSellingProducts.pending, (s) => {
         s.loading = true;
         s.error = null;

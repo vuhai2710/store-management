@@ -34,7 +34,6 @@ public class ChatController {
                 .orElseThrow(() -> new RuntimeException("Không thể xác định user hiện tại"));
         log.info("Creating conversation for user ID: {}", userId);
 
-        // Lấy customerId từ userId
         Customer customer = customerRepository.findByUser_IdUser(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng với user ID: " + userId));
 
@@ -49,7 +48,6 @@ public class ChatController {
                 .orElseThrow(() -> new RuntimeException("Không thể xác định user hiện tại"));
         log.info("Getting conversation for user ID: {}", userId);
 
-        // Lấy customerId từ userId
         Customer customer = customerRepository.findByUser_IdUser(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng với user ID: " + userId));
 
@@ -139,11 +137,6 @@ public class ChatController {
         return ResponseEntity.ok(ApiResponse.success("Đã đánh dấu cuộc hội thoại đã xem", null));
     }
 
-    /**
-     * Admin/Employee: Get or create conversation for a specific customer
-     * This allows admin to initiate chat with a customer even if the customer
-     * hasn't started chatting
-     */
     @PostMapping("/conversations/customer/{customerId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<ChatConversationDTO>> getOrCreateConversationForCustomer(

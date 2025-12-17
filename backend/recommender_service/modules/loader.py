@@ -3,7 +3,6 @@ import pandas as pd
 import config
 
 def get_connection():
-    """Get MySQL database connection"""
     return mysql.connector.connect(
         host=config.DB_HOST,
         port=config.DB_PORT,
@@ -13,7 +12,6 @@ def get_connection():
     )
 
 def load_products():
-    """Load all products from the database"""
     conn = get_connection()
     try:
         query = """
@@ -33,7 +31,6 @@ def load_products():
         conn.close()
 
 def load_user_history(user_id: int, limit: int = 200):
-    """Load view history for a specific user"""
     print(f"[Loader] Connecting to database: {config.DB_HOST}:{config.DB_PORT}/{config.DB_NAME}")
     conn = get_connection()
     try:
@@ -65,7 +62,6 @@ def load_user_history(user_id: int, limit: int = 200):
         conn.close()
 
 def load_global_views(limit: int = 5000):
-    """Load recent global views where user_id is not null"""
     conn = get_connection()
     try:
         query = """
@@ -85,4 +81,3 @@ def load_global_views(limit: int = 5000):
         return df
     finally:
         conn.close()
-

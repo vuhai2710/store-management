@@ -1,16 +1,11 @@
-/**
- * Constants - API Endpoints
- */
-
 export const API_ENDPOINTS = {
-  // Auth
+
   AUTH: {
     LOGIN: "/auth/login",
     REGISTER: "/auth/register",
     LOGOUT: "/auth/logout",
   },
 
-  // Users
   USERS: {
     BASE: "/users",
     STATUS: "/users/status",
@@ -22,7 +17,6 @@ export const API_ENDPOINTS = {
     AVATAR: "/users/avatar",
   },
 
-  // Customers
   CUSTOMERS: {
     BASE: "/customers",
     BY_ID: (id) => `/customers/${id}`,
@@ -34,7 +28,6 @@ export const API_ENDPOINTS = {
     ME_CHANGE_PASSWORD: "/customers/me/change-password",
   },
 
-  // Products
   PRODUCTS: {
     BASE: "/products",
     BY_ID: (id) => `/products/${id}`,
@@ -47,10 +40,9 @@ export const API_ENDPOINTS = {
     BEST_SELLERS: "/products/best-sellers",
     TOP_5_BEST_SELLERS: "/products/best-sellers/top-5",
     BRANDS: "/products/brands",
-    // PUBLIC: "/products/public" // nếu có dùng listing public
+
   },
 
-  // Orders
   ORDERS: {
     BASE: "/orders",
     BY_ID: (id) => `/orders/${id}`,
@@ -60,13 +52,11 @@ export const API_ENDPOINTS = {
     INVOICE: (id) => `/orders/${id}/invoice`,
   },
 
-  // Inventory
   INVENTORY: {
     BASE: "/inventory",
     MOVEMENTS: "/inventory/movements",
   },
 
-  // Inventory Transactions
   INVENTORY_TRANSACTIONS: {
     BASE: "/inventory-transactions",
     BY_PRODUCT: (productId) => `/inventory-transactions/product/${productId}`,
@@ -76,7 +66,6 @@ export const API_ENDPOINTS = {
     FILTER: "/inventory-transactions/filter",
   },
 
-  // Suppliers
   SUPPLIERS: {
     BASE: "/suppliers",
     BY_ID: (id) => `/suppliers/${id}`,
@@ -87,13 +76,11 @@ export const API_ENDPOINTS = {
     DELETE: (id) => `/suppliers/${id}`,
   },
 
-  // Warehouses
   WAREHOUSES: {
     BASE: "/warehouses",
     BY_ID: (id) => `/warehouses/${id}`,
   },
 
-  // Employees
   EMPLOYEES: {
     BASE: "/employees",
     BY_ID: (id) => `/employees/${id}`,
@@ -104,7 +91,6 @@ export const API_ENDPOINTS = {
     ACTIVITIES: (id) => `/employees/${id}/activities`,
   },
 
-  // Finance
   FINANCE: {
     BASE: "/finance",
     PAYROLL: "/finance/payroll",
@@ -118,7 +104,6 @@ export const API_ENDPOINTS = {
     },
   },
 
-  // Categories
   CATEGORIES: {
     BASE: "/categories",
     GET_ALL: "/categories/all",
@@ -126,7 +111,6 @@ export const API_ENDPOINTS = {
     SEARCH: "/categories/search",
   },
 
-  // Import Orders (Purchase Orders)
   IMPORT_ORDERS: {
     BASE: "/import-orders",
     BY_ID: (id) => `/import-orders/${id}`,
@@ -135,7 +119,6 @@ export const API_ENDPOINTS = {
     PDF: (id) => `/import-orders/${id}/pdf`,
   },
 
-  // Shipments
   SHIPMENTS: {
     BASE: "/shipments",
     BY_ID: (id) => `/shipments/${id}`,
@@ -145,7 +128,6 @@ export const API_ENDPOINTS = {
     CREATE_GHN_FOR_ORDER: (orderId) => `/shipments/order/${orderId}/create-ghn`,
   },
 
-  // Chat
   CHAT: {
     BASE: "/chat",
     CONVERSATIONS: "/chat/conversations",
@@ -157,7 +139,6 @@ export const API_ENDPOINTS = {
     CREATE_CONVERSATION_FOR_CUSTOMER: (customerId) => `/chat/conversations/customer/${customerId}`,
   },
 
-  // Reviews
   REVIEWS: {
     PRODUCT_REVIEWS: (productId) => `/products/${productId}/reviews`,
     ALL_REVIEWS: "/admin/reviews",
@@ -166,7 +147,6 @@ export const API_ENDPOINTS = {
     REPLY_REVIEW: (reviewId) => `/admin/reviews/${reviewId}/reply`,
   },
 
-  // Promotions
   PROMOTIONS: {
     BASE: "/admin/promotions",
     BY_ID: (id) => `/admin/promotions/${id}`,

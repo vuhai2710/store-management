@@ -17,7 +17,7 @@ const ReturnDetailPage = ({ returnId, setCurrentPage }) => {
       try {
         const response = await getReturnDetail(returnId);
         console.log("Return detail response:", response);
-        // API đã unwrap response.data nên response chính là data
+
         setReturnData(response);
       } catch (err) {
         console.error("Error fetching return detail:", err);
@@ -94,7 +94,7 @@ const ReturnDetailPage = ({ returnId, setCurrentPage }) => {
             </p>
           </div>
 
-          {/* Timeline hiển thị quá trình xử lý */}
+          {}
           <ReturnTimeline
             status={returnData.status}
             returnType={returnData.returnType}
@@ -160,7 +160,7 @@ const ReturnDetailPage = ({ returnId, setCurrentPage }) => {
             </div>
           </div>
 
-          {/* Order Price Breakdown */}
+          {}
           <div className="bg-white p-6 rounded shadow">
             <h3 className="font-semibold text-gray-900 mb-4">
               Chi tiết đơn hàng gốc
@@ -176,7 +176,7 @@ const ReturnDetailPage = ({ returnId, setCurrentPage }) => {
                 </span>
               </div>
 
-              {/* Promotion Info */}
+              {}
               {(returnData.orderPromotionCode ||
                 returnData.orderPromotionName) && (
                 <div className="flex justify-between text-green-600">
@@ -203,7 +203,7 @@ const ReturnDetailPage = ({ returnId, setCurrentPage }) => {
                 </div>
               )}
 
-              {/* Discount without code */}
+              {}
               {!returnData.orderPromotionCode &&
                 !returnData.orderPromotionName &&
                 returnData.orderDiscount > 0 && (
@@ -219,7 +219,7 @@ const ReturnDetailPage = ({ returnId, setCurrentPage }) => {
                   </div>
                 )}
 
-              {/* Shipping fee */}
+              {}
               {returnData.orderShippingFee > 0 && (
                 <div className="flex justify-between text-gray-400">
                   <span>Phí vận chuyển (không hoàn):</span>

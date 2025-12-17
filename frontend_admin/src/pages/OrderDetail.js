@@ -23,7 +23,6 @@ import { formatDate } from "../utils/formatUtils";
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-// Order status mapping
 const ORDER_STATUS = {
   PENDING: { text: "Chờ xác nhận", color: "warning" },
   CONFIRMED: { text: "Đã xác nhận", color: "processing" },
@@ -43,8 +42,7 @@ const OrderDetail = () => {
   useEffect(() => {
     if (id) {
       dispatch(fetchOrderById(Number(id)));
-      // Note: Shipment is optional and may not exist for all orders
-      // If needed, fetch shipment separately when order is confirmed
+
     }
   }, [dispatch, id]);
 
@@ -96,17 +94,17 @@ const OrderDetail = () => {
           ).unwrap();
           message.success("Cập nhật trạng thái đơn hàng thành công!");
           setSelectedStatus(newStatus);
-          // Refresh order data
+
           dispatch(fetchOrderById(Number(id)));
         } catch (error) {
           message.error(error || "Cập nhật trạng thái đơn hàng thất bại!");
-          setSelectedStatus(currentOrder.status); // Revert selection
+          setSelectedStatus(currentOrder.status);
         } finally {
           setStatusUpdating(false);
         }
       },
       onCancel: () => {
-        setSelectedStatus(currentOrder.status); // Revert selection
+        setSelectedStatus(currentOrder.status);
       },
     });
   };
@@ -134,7 +132,7 @@ const OrderDetail = () => {
       title: "Sản phẩm",
       key: "productName",
       render: (record) => {
-        // Use snapshot if available, otherwise use current product name
+
         return record.productNameSnapshot || record.productName || "N/A";
       },
     },
@@ -167,7 +165,7 @@ const OrderDetail = () => {
       key: "subtotal",
       width: 150,
       render: (subtotal, record) => {
-        // Calculate if not provided
+
         const total =
           subtotal ||
           (record.price && record.quantity
@@ -216,17 +214,16 @@ const OrderDetail = () => {
   const statusInfo = getStatusInfo(currentOrder.status);
   const orderId = currentOrder.idOrder || currentOrder.id;
 
-  // Get available status options based on current status & payment method
   const getAvailableStatuses = () => {
     const current = currentOrder.status?.toUpperCase();
     const paymentMethod = currentOrder.paymentMethod?.toUpperCase();
 
     if (current === "PENDING") {
-      // With CASH payments, allow going directly to COMPLETED (skip CONFIRMED)
+
       if (paymentMethod === "CASH") {
         return ["COMPLETED", "CANCELED"];
       }
-      // Other methods keep the original flow: PENDING -> CONFIRMED / CANCELED
+
       return ["CONFIRMED", "CANCELED"];
     }
 
@@ -234,7 +231,7 @@ const OrderDetail = () => {
       return ["COMPLETED"];
     }
 
-    return []; // COMPLETED and CANCELED cannot be changed
+    return [];
   };
 
   const availableStatuses = getAvailableStatuses();
@@ -366,7 +363,7 @@ const OrderDetail = () => {
           </Descriptions.Item>
         </Descriptions>
 
-        {/* Price Breakdown Section */}
+        { }
         <div
           style={{
             marginTop: 24,
@@ -378,7 +375,7 @@ const OrderDetail = () => {
             Chi tiết thanh toán
           </Title>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {/* Original Amount */}
+            { }
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Text>Tổng tiền sản phẩm:</Text>
               <Text>
@@ -390,7 +387,7 @@ const OrderDetail = () => {
               </Text>
             </div>
 
-            {/* Promotion Info */}
+            { }
             {(currentOrder.promotionCode || currentOrder.promotionName) && (
               <div
                 style={{
@@ -416,7 +413,7 @@ const OrderDetail = () => {
               </div>
             )}
 
-            {/* Discount without promotion code (auto discount rule) */}
+            { }
             {!currentOrder.promotionCode &&
               !currentOrder.promotionName &&
               currentOrder.discount &&
@@ -434,7 +431,7 @@ const OrderDetail = () => {
                 </div>
               )}
 
-            {/* Shipping Fee - NOT included in store revenue */}
+            { }
             {currentOrder.shippingFee &&
               Number(currentOrder.shippingFee) > 0 && (
                 <div
@@ -449,14 +446,14 @@ const OrderDetail = () => {
                 </div>
               )}
 
-            {/* Divider */}
+            { }
             <div
               style={{
                 borderTop: "1px solid #d9d9d9",
                 marginTop: 8,
                 paddingTop: 8,
               }}>
-              {/* Store Revenue (excluding shipping) */}
+              { }
               {currentOrder.shippingFee &&
                 Number(currentOrder.shippingFee) > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -477,7 +474,7 @@ const OrderDetail = () => {
                   </div>
                 )}
 
-              {/* Final Amount (Total Payable) - finalAmount already includes shipping fee */}
+              { }
               <div
                 style={{
                   display: "flex",

@@ -1,4 +1,4 @@
-// src/components/pages/PaymentSuccessPage.js
+
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, ShoppingBag, XCircle } from 'lucide-react';
 import styles from '../../styles/styles';
@@ -377,8 +377,3 @@ const PaymentSuccessPage = ({ setCurrentPage }) => {
 };
 
 export default PaymentSuccessPage;
-
-
-
-
-

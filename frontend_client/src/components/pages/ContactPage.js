@@ -1,10 +1,9 @@
-// src/components/pages/ContactPage.js
+
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import styles from "../../styles/styles";
 
-// Component NHẬN các props chung (như setCurrentPage)
 const ContactPage = ({ setCurrentPage }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -26,7 +25,6 @@ const ContactPage = ({ setCurrentPage }) => {
       return;
     }
 
-    // Logic gửi form giả lập
     console.log("Sending message:", formData);
     toast.success(
       "Gửi tin nhắn thành công! Cảm ơn bạn đã liên hệ với chúng tôi."
@@ -46,7 +44,7 @@ const ContactPage = ({ setCurrentPage }) => {
           Contact Us
         </h2>
 
-        {/* Contact Info Grid */}
+        {}
         <div
           style={{
             display: "grid",
@@ -86,7 +84,7 @@ const ContactPage = ({ setCurrentPage }) => {
           ))}
         </div>
 
-        {/* Contact Form */}
+        {}
         <form
           onSubmit={handleSubmit}
           style={{

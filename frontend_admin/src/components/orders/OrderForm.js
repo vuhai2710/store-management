@@ -32,24 +32,22 @@ const OrderForm = ({ order, onSuccess }) => {
   const [createNewCustomer, setCreateNewCustomer] = useState(false);
 
   useEffect(() => {
-    // Fetch products with pagination to get full list
+
     dispatch(fetchProducts({ pageNo: 1, pageSize: 1000, sortBy: "idProduct", sortDirection: "ASC" }));
-    // Fetch customers with pagination
+
     dispatch(fetchCustomers({ pageNo: 1, pageSize: 100, sortBy: "idCustomer", sortDirection: "ASC" }));
   }, [dispatch]);
 
   useEffect(() => {
     if (order) {
-      // Note: Backend doesn't support direct order update
-      // This form is only for creating new orders
-      // If order exists, we can pre-fill some fields for reference
+
       form.setFieldsValue({
         customerId: order.idCustomer || order.customerId,
         paymentMethod: order.paymentMethod,
         discount: order.discount || 0,
         notes: order.notes,
       });
-      // Map orderDetails to orderItems format for display
+
       if (order.orderDetails && Array.isArray(order.orderDetails)) {
         const items = order.orderDetails.map(detail => ({
           productId: detail.idProduct || detail.productId,
@@ -63,7 +61,7 @@ const OrderForm = ({ order, onSuccess }) => {
         setOrderItems([]);
       }
     } else {
-      // Reset form for new order
+
       form.resetFields();
       setOrderItems([]);
       setCreateNewCustomer(false);
@@ -76,7 +74,6 @@ const OrderForm = ({ order, onSuccess }) => {
       return;
     }
 
-    // Products from Redux have idProduct field
     const productId = selectedProduct.idProduct || selectedProduct.id;
     if (!productId) {
       message.error('Sản phẩm không hợp lệ');
@@ -90,7 +87,7 @@ const OrderForm = ({ order, onSuccess }) => {
     if (existingItemIndex >= 0) {
       const updatedItems = [...orderItems];
       updatedItems[existingItemIndex].quantity += quantity;
-      updatedItems[existingItemIndex].total = 
+      updatedItems[existingItemIndex].total =
         updatedItems[existingItemIndex].quantity * updatedItems[existingItemIndex].price;
       setOrderItems(updatedItems);
     } else {
@@ -142,12 +139,11 @@ const OrderForm = ({ order, onSuccess }) => {
     }
 
     try {
-      // Lấy thông tin khách hàng đã chọn (nếu là khách có sẵn)
+
       const selectedCustomer = values.customerId
         ? (customers || []).find(c => (c.idCustomer || c.id) === values.customerId)
         : null;
 
-      // Chuẩn hóa snapshot tên/điện thoại/địa chỉ
       const customerNameSnapshot =
         values.customerName ||
         selectedCustomer?.customerName ||
@@ -172,13 +168,12 @@ const OrderForm = ({ order, onSuccess }) => {
       }
 
       const orderData = {
-        // Gửi cả customerId và snapshot để qua được validate backend
+
         ...(values.customerId ? { customerId: values.customerId } : {}),
         customerName: customerNameSnapshot,
         customerPhone: customerPhoneSnapshot,
         customerAddress: customerAddressSnapshot,
 
-        // Order items: chỉ cần productId và quantity, backend tự tính tiền
         orderItems: orderItems.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
@@ -251,7 +246,7 @@ const OrderForm = ({ order, onSuccess }) => {
       onFinish={handleSubmit}
     >
       <Card title="Thông tin đơn hàng" style={{ marginBottom: '16px' }}>
-        {/* Customer Selection: Existing or New */}
+        { }
         <Form.Item
           name="customerType"
           label="Loại khách hàng"
@@ -272,7 +267,7 @@ const OrderForm = ({ order, onSuccess }) => {
             label="Khách hàng"
             rules={[{ required: !createNewCustomer, message: 'Vui lòng chọn khách hàng' }]}
           >
-            <Select 
+            <Select
               placeholder="Chọn khách hàng"
               loading={customersLoading}
               showSearch
@@ -313,8 +308,8 @@ const OrderForm = ({ order, onSuccess }) => {
           </>
         )}
 
-        {/* Status is automatically set to PENDING by backend when creating order */}
-        {/* Status can only be updated via updateOrderStatus endpoint, not during creation */}
+        { }
+        { }
 
         <Form.Item
           name="paymentMethod"
@@ -359,7 +354,7 @@ const OrderForm = ({ order, onSuccess }) => {
             style={{ width: 300 }}
             value={selectedProduct?.idProduct || selectedProduct?.id}
             onChange={(value) => {
-              // Products from Redux have idProduct field
+
               const product = products.find(p => (p.idProduct || p.id) === value);
               setSelectedProduct(product);
             }}
@@ -433,5 +428,3 @@ const OrderForm = ({ order, onSuccess }) => {
 };
 
 export default OrderForm;
-
-

@@ -14,7 +14,7 @@ const ApproveModal = ({
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
-      // Tự động set refundAmount bằng số tiền đã tính
+
       onOk({ ...values, refundAmount });
       form.resetFields();
     } catch (error) {
@@ -22,14 +22,12 @@ const ApproveModal = ({
     }
   };
 
-  // Tính tổng tiền sản phẩm trả
   const itemsTotal =
     returnData?.items?.reduce(
       (sum, item) => sum + (Number(item.price) || 0) * (item.quantity || 0),
       0
     ) || 0;
 
-  // Kiểm tra có giảm giá không
   const hasDiscount = Number(returnData?.orderDiscount) > 0;
   const orderTotal = Number(returnData?.orderTotalAmount) || 0;
   const orderDiscount = Number(returnData?.orderDiscount) || 0;

@@ -1,16 +1,9 @@
 import * as XLSX from "xlsx";
 
-/**
- * Export data to Excel file
- * @param {Array} data - Array of objects to export
- * @param {string} filename - Name of the file (without extension)
- * @param {Array} columns - Array of column definitions with key and title
- */
 export const exportToExcel = (data, filename = "export", columns = null) => {
   try {
     let exportData = data;
 
-    // If columns are provided, map data to column structure
     if (columns && Array.isArray(columns) && columns.length > 0) {
       exportData = data.map((row) => {
         const mappedRow = {};
@@ -18,7 +11,7 @@ export const exportToExcel = (data, filename = "export", columns = null) => {
           const key = col.dataIndex || col.key;
           if (key) {
             const value = row[key];
-            // Handle nested keys (e.g., "customer.name")
+
             if (key.includes(".")) {
               const keys = key.split(".");
               mappedRow[col.title || key] = keys.reduce((obj, k) => obj?.[k], row) || "";
@@ -31,12 +24,10 @@ export const exportToExcel = (data, filename = "export", columns = null) => {
       });
     }
 
-    // Create workbook and worksheet
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
 
-    // Generate Excel file and trigger download
     XLSX.writeFile(wb, `${filename}.xlsx`);
     return true;
   } catch (error) {
@@ -45,12 +36,6 @@ export const exportToExcel = (data, filename = "export", columns = null) => {
   }
 };
 
-/**
- * Export data to CSV file
- * @param {Array} data - Array of objects to export
- * @param {string} filename - Name of the file (without extension)
- * @param {Array} columns - Array of column definitions with key and title
- */
 export const exportToCSV = (data, filename = "export", columns = null) => {
   try {
     if (!data || data.length === 0) {
@@ -59,12 +44,11 @@ export const exportToCSV = (data, filename = "export", columns = null) => {
 
     let exportData = data;
 
-    // If columns are provided, map data to column structure
     if (columns && Array.isArray(columns) && columns.length > 0) {
       exportData = data.map((row) => {
         const mappedRow = {};
         columns.forEach((col) => {
-          // Skip action columns
+
           if (col.key === "actions" || col.title === "Hành động") {
             return;
           }
@@ -72,7 +56,7 @@ export const exportToCSV = (data, filename = "export", columns = null) => {
           const key = col.dataIndex || col.key;
           if (key) {
             let value = "";
-            
+
             if (key.includes(".")) {
               const keys = key.split(".");
               value = keys.reduce((obj, k) => obj?.[k], row) || "";
@@ -97,13 +81,10 @@ export const exportToCSV = (data, filename = "export", columns = null) => {
       });
     }
 
-    // Create worksheet
     const ws = XLSX.utils.json_to_sheet(exportData);
 
-    // Convert to CSV
     const csv = XLSX.utils.sheet_to_csv(ws);
 
-    // Create blob and trigger download
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -121,11 +102,6 @@ export const exportToCSV = (data, filename = "export", columns = null) => {
   }
 };
 
-/**
- * Export table data to PDF (using browser print)
- * @param {string} tableId - ID of the table element to print
- * @param {string} filename - Name of the file
- */
 export const exportToPDF = (tableId, filename = "export") => {
   try {
     const table = document.getElementById(tableId);
@@ -133,7 +109,6 @@ export const exportToPDF = (tableId, filename = "export") => {
       throw new Error("Table element not found");
     }
 
-    // Create a new window for printing
     const printWindow = window.open("", "_blank");
     printWindow.document.write(`
       <html>
@@ -160,4 +135,3 @@ export const exportToPDF = (tableId, filename = "export") => {
     throw error;
   }
 };
-

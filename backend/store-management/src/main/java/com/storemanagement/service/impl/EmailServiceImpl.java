@@ -64,7 +64,7 @@ public class EmailServiceImpl implements EmailService {
         if (!emailConfigured) {
             log.warn("📧 [DEV MODE] Would send HTML email to: {}", to);
             log.warn("📧 [DEV MODE] Subject: {}", subject);
-            // Don't log full HTML content, too verbose
+
             return;
         }
 
@@ -74,7 +74,7 @@ public class EmailServiceImpl implements EmailService {
 
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(htmlContent, true); // true = HTML
+            helper.setText(htmlContent, true);
 
             mailSender.send(mimeMessage);
             log.info("HTML email sent successfully to: {}", to);
@@ -108,9 +108,6 @@ public class EmailServiceImpl implements EmailService {
         sendHtmlEmail(to, subject, htmlContent);
     }
 
-    /**
-     * Tạo HTML template cho email quên mật khẩu
-     */
     private String buildForgotPasswordHtml(String username, String newPassword) {
         return String.format(
                 """
@@ -196,9 +193,6 @@ public class EmailServiceImpl implements EmailService {
                 username, newPassword);
     }
 
-    /**
-     * Tạo HTML template cho email đặt lại mật khẩu với link
-     */
     private String buildPasswordResetHtml(String username, String resetLink, int expiryMinutes) {
         return String.format(
                 """

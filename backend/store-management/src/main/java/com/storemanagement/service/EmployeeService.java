@@ -19,7 +19,7 @@ public interface EmployeeService {
 
     EmployeeDTO getEmployeeById(Integer id);
 
-    EmployeeDetailDTO getEmployeeDetailById(Integer id); // New: with order statistics
+    EmployeeDetailDTO getEmployeeDetailById(Integer id);
 
     EmployeeDTO getEmployeeByUserId(Integer userId);
 
@@ -31,7 +31,6 @@ public interface EmployeeService {
 
     EmployeeDTO updateMyProfile(String username, EmployeeDTO request);
 
-    // Get paginated orders handled by employee
     PageResponse<EmployeeOrderDTO> getOrdersByEmployeeId(
             Integer employeeId,
             Order.OrderStatus status,

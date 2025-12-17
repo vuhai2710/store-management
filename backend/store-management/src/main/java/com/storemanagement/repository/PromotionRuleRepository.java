@@ -15,10 +15,6 @@ import java.util.Optional;
 public interface PromotionRuleRepository extends JpaRepository<PromotionRule, Integer> {
        List<PromotionRule> findByIsActiveTrue();
 
-       /**
-        * Find applicable ORDER promotion rules for auto-apply product discounts
-        * Only returns ORDER scope rules (not SHIPPING)
-        */
        @Query("SELECT pr FROM PromotionRule pr WHERE pr.isActive = true " +
                      "AND pr.startDate <= :now AND pr.endDate >= :now " +
                      "AND pr.scope = 'ORDER' " +
@@ -32,10 +28,6 @@ public interface PromotionRuleRepository extends JpaRepository<PromotionRule, In
 
        Optional<PromotionRule> findByIdRule(Integer idRule);
 
-       /**
-        * Find applicable shipping promotion rules for auto-apply
-        * Only returns SHIPPING scope rules that are active and within valid date range
-        */
        @Query("SELECT pr FROM PromotionRule pr WHERE pr.isActive = true " +
                      "AND pr.startDate <= :now AND pr.endDate >= :now " +
                      "AND pr.scope = 'SHIPPING' " +

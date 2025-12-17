@@ -78,7 +78,7 @@ export const deleteEmployee = createAsyncThunk(
 const initialState = {
   employees: [],
   currentEmployee: null,
-  employeeDetail: null, // For detailed employee with statistics
+  employeeDetail: null,
   loading: false,
   error: null,
   pagination: {
@@ -126,7 +126,7 @@ const employeesSlice = createSlice({
         state.loading = false;
         state.employees = action.payload.data;
         state.pagination.total = action.payload.total;
-        // Nếu BE trả về page/pageSize đã chuẩn hóa, có thể sync current/pageSize:
+
         if (action.payload.page) state.pagination.current = action.payload.page;
         if (action.payload.pageSize)
           state.pagination.pageSize = action.payload.pageSize;

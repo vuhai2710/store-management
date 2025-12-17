@@ -7,9 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-/**
- * DTO for invoice line item (shared between export and import invoices)
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

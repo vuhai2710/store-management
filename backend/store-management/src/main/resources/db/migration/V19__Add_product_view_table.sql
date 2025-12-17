@@ -9,4 +9,3 @@ CREATE TABLE product_view (
     INDEX idx_product_view_user_created (user_id, created_at),
     INDEX idx_product_view_product_created (product_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-

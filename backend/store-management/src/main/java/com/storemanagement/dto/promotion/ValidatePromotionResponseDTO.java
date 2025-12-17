@@ -18,5 +18,5 @@ public class ValidatePromotionResponseDTO {
     private BigDecimal discount;
     private Promotion.DiscountType discountType;
     private String code;
-    private Promotion.PromotionScope scope; // ORDER or SHIPPING
+    private Promotion.PromotionScope scope;
 }

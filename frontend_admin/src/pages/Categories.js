@@ -42,7 +42,7 @@ const Categories = () => {
     handlePageChange,
     resetPagination,
     pagination: tablePagination,
-  } = usePagination(1, 5); // Default page size: 5
+  } = usePagination(1, 5);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -56,7 +56,7 @@ const Categories = () => {
       sortDirection: "ASC",
     };
     if (searchText?.trim()) {
-      params.name = searchText.trim(); // Backend accepts 'name' as search parameter
+      params.name = searchText.trim();
     }
     dispatch(fetchCategories(params));
   }, [dispatch, currentPage, pageSize, searchText]);
@@ -102,7 +102,7 @@ const Categories = () => {
   const handleSearch = (value) => {
     setSearchText(value);
     dispatch(setFilters({ categoryName: value || null }));
-    resetPagination(); // Reset về page 1
+    resetPagination();
   };
 
   const handleTableChange = (p, _filters, sorter) => {
@@ -326,4 +326,3 @@ const Categories = () => {
 };
 
 export default Categories;
-

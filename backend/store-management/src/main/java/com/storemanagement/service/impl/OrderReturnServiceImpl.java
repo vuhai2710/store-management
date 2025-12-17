@@ -38,7 +38,6 @@ public class OrderReturnServiceImpl implements OrderReturnService {
     private final CustomerRepository customerRepository;
     private final EmployeeRepository employeeRepository;
     private final OrderReturnMapper orderReturnMapper;
-    // Note: SystemSettingService removed - now using order.returnWindowDays snapshot
 
     @Override
     public OrderReturnDTO requestReturn(Integer customerId, Integer orderId, OrderReturnDTO request) {
@@ -171,8 +170,6 @@ public class OrderReturnServiceImpl implements OrderReturnService {
             throw new RuntimeException("Danh sách sản phẩm đổi/trả không được để trống");
         }
 
-        // ======= TÍNH REFUND THEO CHUẨN TMĐT =======
-        // Lấy thông tin đơn hàng để tính tỷ lệ giảm giá
         BigDecimal orderTotalAmount = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
         BigDecimal orderDiscount = order.getDiscount() != null ? order.getDiscount() : BigDecimal.ZERO;
 
@@ -223,27 +220,21 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                         : itemDTO.getQuantity());
             }
 
-            // ======= TÍNH LINE REFUND THEO CÔNG THỨC PHÂN BỔ DISCOUNT =======
-            // itemSubtotal = price * quantity (giá gốc của sản phẩm trả)
             BigDecimal itemSubtotal = detail.getPrice()
                     .multiply(BigDecimal.valueOf(itemDTO.getQuantity()));
-            
+
             BigDecimal lineRefund;
-            
+
             if (orderTotalAmount.compareTo(BigDecimal.ZERO) > 0 && orderDiscount.compareTo(BigDecimal.ZERO) > 0) {
-                // Có giảm giá → phân bổ discount theo tỷ lệ
-                // ratio = itemSubtotal / orderTotalAmount
-                // discountShare = orderDiscount * ratio
-                // lineRefund = itemSubtotal - discountShare
+
                 BigDecimal ratio = itemSubtotal.divide(orderTotalAmount, 10, java.math.RoundingMode.HALF_UP);
                 BigDecimal discountShare = orderDiscount.multiply(ratio);
                 lineRefund = itemSubtotal.subtract(discountShare);
             } else {
-                // Không có giảm giá → hoàn nguyên giá
+
                 lineRefund = itemSubtotal;
             }
-            
-            // Làm tròn đến đơn vị, đảm bảo không âm
+
             lineRefund = lineRefund.max(BigDecimal.ZERO).setScale(0, java.math.RoundingMode.HALF_UP);
             item.setLineRefundAmount(lineRefund);
 
@@ -351,14 +342,12 @@ public class OrderReturnServiceImpl implements OrderReturnService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<OrderReturnDTO> getAllReturns(Pageable pageable, String status, String returnType, String keyword, String customerKeyword) {
-        log.info("Getting all return/exchange list for admin with status={}, returnType={}, keyword={}, customerKeyword={}", 
+        log.info("Getting all return/exchange list for admin with status={}, returnType={}, keyword={}, customerKeyword={}",
                 status, returnType, keyword, customerKeyword);
-        
-        // Parse status and returnType if provided
-        // Note: status "ALL" or null/empty means no status filter
+
         OrderReturn.ReturnStatus statusEnum = null;
         OrderReturn.ReturnType typeEnum = null;
-        
+
         if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("ALL")) {
             try {
                 statusEnum = OrderReturn.ReturnStatus.valueOf(status);
@@ -366,7 +355,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                 log.warn("Invalid status value: {}", status);
             }
         }
-        
+
         if (returnType != null && !returnType.isEmpty() && !returnType.equalsIgnoreCase("ALL")) {
             try {
                 typeEnum = OrderReturn.ReturnType.valueOf(returnType);
@@ -374,19 +363,17 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                 log.warn("Invalid returnType value: {}", returnType);
             }
         }
-        
-        // Trim keywords
+
         String trimmedKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
         String trimmedCustomerKeyword = (customerKeyword != null && !customerKeyword.trim().isEmpty()) ? customerKeyword.trim() : null;
-        
-        // Use the advanced search method that handles all filters
+
         Page<OrderReturn> page = orderReturnRepository.searchAdvanced(
-                statusEnum, 
-                typeEnum, 
-                trimmedKeyword, 
-                trimmedCustomerKeyword, 
+                statusEnum,
+                typeEnum,
+                trimmedKeyword,
+                trimmedCustomerKeyword,
                 pageable);
-        
+
         List<OrderReturnDTO> content = orderReturnMapper.toDTOList(page.getContent());
         return PageUtils.toPageResponse(page, content);
     }
@@ -397,41 +384,30 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         return orderReturnRepository.existsActiveReturnByOrderId(orderId);
     }
 
-    /**
-     * Validate return window using order's snapshot data (returnWindowDays, completedAt)
-     * Formula: expireAt = baseTime + returnWindowDays
-     * Where baseTime = completedAt || deliveredAt || orderDate
-     * 
-     * This ensures FE and BE use the same logic for calculating return deadline.
-     */
     private void validateReturnWindow(Order order) {
-        // ===== DEBUG LOGGING =====
+
         log.info("=== VALIDATE RETURN WINDOW FOR ORDER {} ===", order.getIdOrder());
         log.info("Order.completedAt = {}", order.getCompletedAt());
         log.info("Order.deliveredAt = {}", order.getDeliveredAt());
         log.info("Order.orderDate = {}", order.getOrderDate());
         log.info("Order.returnWindowDays = {}", order.getReturnWindowDays());
-        
-        // Lấy returnWindowDays từ snapshot trong order, KHÔNG dùng config toàn cục
+
         Integer returnWindowDays = order.getReturnWindowDays();
-        
-        // Nếu returnWindowDays = null → ĐƠN CŨ chưa có snapshot, cho phép đổi/trả
-        // Nếu returnWindowDays = 0 → Không giới hạn thời gian
+
         if (returnWindowDays == null) {
-            log.warn("Order {} has NULL returnWindowDays (old order without snapshot), ALLOWING return", 
+            log.warn("Order {} has NULL returnWindowDays (old order without snapshot), ALLOWING return",
                     order.getIdOrder());
-            return; // Cho phép đổi/trả cho đơn cũ
+            return;
         }
-        
+
         if (returnWindowDays == 0) {
             log.info("Order {} has returnWindowDays=0 (no limit), ALLOWING return", order.getIdOrder());
             return;
         }
-        
-        // Lấy mốc thời gian: completedAt → deliveredAt → orderDate
+
         LocalDateTime baseTime = order.getCompletedAt();
         String baseTimeSource = "completedAt";
-        
+
         if (baseTime == null) {
             baseTime = order.getDeliveredAt();
             baseTimeSource = "deliveredAt";
@@ -440,29 +416,27 @@ public class OrderReturnServiceImpl implements OrderReturnService {
             baseTime = order.getOrderDate();
             baseTimeSource = "orderDate";
         }
-        
+
         log.info("BaseTime = {} (source: {})", baseTime, baseTimeSource);
-        
+
         if (baseTime == null) {
             log.warn("Order {} has no baseTime (all dates null), ALLOWING return", order.getIdOrder());
             return;
         }
-        
-        // Tính deadline = baseTime + returnWindowDays
+
         LocalDateTime expireAt = baseTime.plusDays(returnWindowDays);
         LocalDateTime now = LocalDateTime.now();
-        
+
         log.info("ExpireAt = {} (baseTime + {} days)", expireAt, returnWindowDays);
         log.info("Now = {}", now);
         log.info("Is expired? now.isAfter(expireAt) = {}", now.isAfter(expireAt));
-        
-        // So sánh: nếu now > expireAt thì quá hạn
+
         if (now.isAfter(expireAt)) {
-            log.error("Order {} REJECTED - past return deadline. BaseTime: {}, ExpireAt: {}, Now: {}", 
+            log.error("Order {} REJECTED - past return deadline. BaseTime: {}, ExpireAt: {}, Now: {}",
                     order.getIdOrder(), baseTime, expireAt, now);
             throw new RuntimeException("Đơn hàng đã quá hạn đổi/trả (" + returnWindowDays + " ngày kể từ khi hoàn thành)");
         }
-        
+
         log.info("Order {} ALLOWED - within return window. ExpireAt: {}", order.getIdOrder(), expireAt);
     }
 }

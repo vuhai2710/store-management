@@ -1,4 +1,4 @@
-// src/components/pages/ProductDetailPage.js
+
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import {
@@ -49,14 +49,12 @@ const ProductDetailPage = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [canReview, setCanReview] = useState(false); // Check if user can review this product
+  const [canReview, setCanReview] = useState(false);
   const [buyNowLoading, setBuyNowLoading] = useState(false);
   const addToCartButtonRef = useRef(null);
 
-  // User orders for review
   const [userOrders, setUserOrders] = useState([]);
 
-  // Reviews state
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsPage, setReviewsPage] = useState(1);
@@ -70,13 +68,11 @@ const ProductDetailPage = ({
   });
   const [submittingReview, setSubmittingReview] = useState(false);
   const [editingReviewId, setEditingReviewId] = useState(null);
-  const [orderDetailsForReview, setOrderDetailsForReview] = useState([]); // Order details that can be reviewed
+  const [orderDetailsForReview, setOrderDetailsForReview] = useState([]);
 
-  // Automatic promotion discount for this product (single-item order approximation)
   const [autoDiscount, setAutoDiscount] = useState(0);
   const [autoDiscountInfo, setAutoDiscountInfo] = useState(null);
 
-  // Fetch product details
   useEffect(() => {
     const fetchProduct = async () => {
       if (!productId) {
@@ -89,11 +85,9 @@ const ProductDetailPage = ({
         setLoading(true);
         setError(null);
 
-        // Fetch product details
         const productData = await productsService.getProductById(productId);
         setProduct(productData);
 
-        // Fetch product images
         try {
           const imagesData = await productsService.getProductImages(productId);
           setImages(imagesData || []);
@@ -102,7 +96,6 @@ const ProductDetailPage = ({
           setImages([]);
         }
 
-        // Fetch related products
         try {
           const relatedData = await productsService.getRelatedProducts(
             productId,
@@ -114,7 +107,6 @@ const ProductDetailPage = ({
           setRelatedProducts([]);
         }
 
-        // Fetch similar products (recommendations)
         try {
           const similarData = await productsService.getSimilarProducts(
             productId
@@ -125,10 +117,9 @@ const ProductDetailPage = ({
           setSimilarProducts([]);
         }
 
-        // Check if user can review this product (only if authenticated and has purchased)
         if (isAuthenticated) {
           try {
-            // Get all completed orders
+
             const ordersData = await ordersService.getMyOrders({
               pageNo: 1,
               pageSize: 100,
@@ -136,10 +127,8 @@ const ProductDetailPage = ({
             });
             const completedOrders = ordersData?.content || [];
 
-            // Save user orders for ReviewSection component
             setUserOrders(completedOrders);
 
-            // Get user's reviews to filter out already reviewed products
             let myReviewedOrderDetailIds = new Set();
             try {
               const myReviewsData = await reviewService.getMyReviews({
@@ -154,7 +143,6 @@ const ProductDetailPage = ({
               console.error("Error fetching my reviews:", reviewError);
             }
 
-            // Check if any completed order contains this product
             const currentProductId = productId ? Number(productId) : null;
             const orderDetails = [];
             completedOrders.forEach((order) => {
@@ -165,9 +153,6 @@ const ProductDetailPage = ({
                   detail.product?.id;
                 const orderDetailId = detail.idOrderDetail || detail.id;
 
-                // Only include if:
-                // 1. Product matches current product
-                // 2. Order detail has not been reviewed yet
                 if (
                   detailProductId &&
                   Number(detailProductId) === currentProductId &&
@@ -207,7 +192,6 @@ const ProductDetailPage = ({
     fetchProduct();
   }, [productId, isAuthenticated]);
 
-  // Calculate automatic discount for this product (approximate: single product order)
   useEffect(() => {
     const calculateProductAutoDiscount = async () => {
       if (!isAuthenticated || !product) {
@@ -254,7 +238,6 @@ const ProductDetailPage = ({
     calculateProductAutoDiscount();
   }, [isAuthenticated, product]);
 
-  // Fetch reviews when page changes
   useEffect(() => {
     const fetchReviews = async () => {
       if (!productId) return;
@@ -282,11 +265,10 @@ const ProductDetailPage = ({
     fetchReviews();
   }, [productId, reviewsPage]);
 
-  // Set default orderDetailId when orderDetailsForReview changes
   useEffect(() => {
     if (orderDetailsForReview.length > 0) {
       setReviewForm((prev) => {
-        // Only set if not already set and form is not visible
+
         if (!prev.orderDetailId && !showReviewForm && !editingReviewId) {
           return {
             ...prev,
@@ -301,7 +283,7 @@ const ProductDetailPage = ({
   const handleQuantityChange = (delta) => {
     setQty((prev) => {
       const newQty = prev + delta;
-      // Min 1, max stockQuantity
+
       if (newQty < 1) return 1;
       if (stockQuantity > 0 && newQty > stockQuantity) return stockQuantity;
       return newQty;
@@ -322,7 +304,6 @@ const ProductDetailPage = ({
         comment: reviewForm.comment.trim(),
       });
 
-      // Refresh reviews
       const reviewsData = await reviewService.getProductReviews(productId, {
         pageNo: reviewsPage,
         pageSize: 10,
@@ -334,7 +315,6 @@ const ProductDetailPage = ({
       setReviewsTotalPages(reviewsData?.totalPages || 1);
       setReviewsTotalElements(reviewsData?.totalElements || 0);
 
-      // Reset form
       setShowReviewForm(false);
       setReviewForm({
         orderDetailId: orderDetailsForReview[0]?.idOrderDetail || null,
@@ -366,7 +346,6 @@ const ProductDetailPage = ({
         comment: reviewForm.comment.trim(),
       });
 
-      // Refresh reviews
       const reviewsData = await reviewService.getProductReviews(productId, {
         pageNo: reviewsPage,
         pageSize: 10,
@@ -378,7 +357,6 @@ const ProductDetailPage = ({
       setReviewsTotalPages(reviewsData?.totalPages || 1);
       setReviewsTotalElements(reviewsData?.totalElements || 0);
 
-      // Reset form
       setEditingReviewId(null);
       setShowReviewForm(false);
       setReviewForm({
@@ -406,7 +384,6 @@ const ProductDetailPage = ({
     try {
       await reviewService.deleteReview(reviewId);
 
-      // Refresh reviews
       const reviewsData = await reviewService.getProductReviews(productId, {
         pageNo: reviewsPage,
         pageSize: 10,
@@ -447,23 +424,13 @@ const ProductDetailPage = ({
         productId: product.idProduct || product.id,
       };
       await handleAddToCart(productWithQty, addToCartButtonRef.current);
-      // Don't show alert here - let App.js handle it
+
     } catch (error) {
-      // Error is already handled in App.js
+
       console.error("Error adding to cart:", error);
     }
   };
 
-  /**
-   * handleBuyNow - Xử lý khi user nhấn "Mua Ngay"
-   *
-   * LUỒNG MỚI (giống Shopee/Lazada):
-   * 1. KHÔNG tạo đơn hàng ngay
-   * 2. Lưu productId + quantity vào BuyNowContext
-   * 3. Điều hướng sang trang Checkout
-   * 4. Tại Checkout, user chọn địa chỉ, phương thức thanh toán, xem phí ship
-   * 5. User nhấn "Đặt hàng" → lúc này mới gọi API tạo đơn
-   */
   const handleBuyNow = () => {
     if (!isAuthenticated) {
       setCurrentPage("login");
@@ -477,21 +444,17 @@ const ProductDetailPage = ({
 
     const productIdValue = product.idProduct || product.id;
 
-    // Kiểm tra số lượng hợp lệ
     if (qty < 1) {
       toast.warning("Số lượng phải lớn hơn 0");
       return;
     }
 
-    // Kiểm tra tồn kho
     const stockQuantity = product.stockQuantity || 0;
     if (qty > stockQuantity) {
       toast.warning(`Chỉ còn ${stockQuantity} sản phẩm trong kho`);
       return;
     }
 
-    // Lưu thông tin sản phẩm vào BuyNowContext
-    // KHÔNG gọi API tạo đơn hàng ở đây
     setBuyNow({
       productId: productIdValue,
       quantity: qty,
@@ -501,21 +464,13 @@ const ProductDetailPage = ({
         price: product.price,
         imageUrl: product.imageUrl,
         stockQuantity: product.stockQuantity,
-        weight: product.weight || 1000, // Default 1kg if not specified
+        weight: product.weight || 1000,
       },
     });
 
-    // Điều hướng sang trang Checkout
-    // Tại đây user sẽ:
-    // - Xem lại sản phẩm
-    // - Chọn địa chỉ giao hàng
-    // - Xem phí vận chuyển GHN
-    // - Chọn phương thức thanh toán (COD / PayOS)
-    // - Nhấn "Đặt hàng" để tạo đơn
     setCurrentPage("checkout");
   };
 
-  // Get item in cart
   const itemInCart = cart.find((item) => {
     const itemProductId =
       item.productId || item.product?.idProduct || item.product?.id;
@@ -523,7 +478,6 @@ const ProductDetailPage = ({
     return itemProductId === currentProductId;
   });
 
-  // Get main image
   const getMainImage = () => {
     if (images && images.length > 0) {
       const selectedImage = images[selectedImageIndex] || images[0];
@@ -546,7 +500,6 @@ const ProductDetailPage = ({
   const headerAverageRating = product?.averageRating || 0;
   const headerReviewCount = product?.reviewCount || 0;
 
-  // --- Helpers cho khu vực Tabs ---
   const DescriptionBlock = () => (
     <div
       style={{
@@ -612,7 +565,7 @@ const ProductDetailPage = ({
   );
 
   const ReviewsBlock = () => {
-    // Only show review section if user can review (has purchased and received)
+
     if (!isAuthenticated) {
       return (
         <div
@@ -666,7 +619,6 @@ const ProductDetailPage = ({
       );
     }
 
-    // Calculate average rating from reviews
     const averageRating =
       reviews.length > 0
         ? reviews.reduce((sum, review) => sum + (review.rating || 0), 0) /
@@ -723,7 +675,7 @@ const ProductDetailPage = ({
           )}
         </div>
 
-        {/* Average Rating */}
+        {}
         <div
           style={{
             display: "flex",
@@ -750,7 +702,7 @@ const ProductDetailPage = ({
           </div>
         </div>
 
-        {/* Review Form */}
+        {}
         {showReviewForm && (
           <div
             style={{
@@ -938,7 +890,7 @@ const ProductDetailPage = ({
           </div>
         )}
 
-        {/* Reviews List */}
+        {}
         {reviewsLoading ? (
           <div
             style={{
@@ -1096,7 +1048,7 @@ const ProductDetailPage = ({
               );
             })}
 
-            {/* Pagination */}
+            {}
             {reviewsTotalPages > 1 && (
               <div
                 style={{
@@ -1226,11 +1178,10 @@ const ProductDetailPage = ({
     );
   }
 
-  // --- Main Render ---
   return (
     <section style={{ padding: "4rem 0", backgroundColor: "#F8FAFC" }}>
       <div style={styles.container}>
-        {/* Breadcrumb */}
+        {}
         <div style={{ color: "#6c757d", marginBottom: "2rem" }}>
           <button
             onClick={() => setCurrentPage("home")}
@@ -1247,7 +1198,7 @@ const ProductDetailPage = ({
           /<span> {productName}</span>
         </div>
 
-        {/* Product Details Header */}
+        {}
         <div
           style={{
             display: "grid",
@@ -1259,14 +1210,14 @@ const ProductDetailPage = ({
             borderRadius: "0.5rem",
             boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
           }}>
-          {/* Image Gallery (Left) */}
+          {}
           <div
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
             }}>
-            {/* Main Image with Navigation Arrows */}
+            {}
             <div
               style={{
                 width: "100%",
@@ -1290,7 +1241,7 @@ const ProductDetailPage = ({
                 <div style={{ fontSize: "10rem", opacity: 0.5 }}>📦</div>
               )}
 
-              {/* Navigation Arrows - Only show if multiple images */}
+              {}
               {images.length > 1 && (
                 <>
                   <button
@@ -1358,7 +1309,7 @@ const ProductDetailPage = ({
                     <ChevronRight size={24} color="#333" />
                   </button>
 
-                  {/* Image Counter Badge */}
+                  {}
                   <div
                     style={{
                       position: "absolute",
@@ -1377,7 +1328,7 @@ const ProductDetailPage = ({
               )}
             </div>
 
-            {/* Gallery Thumbnails - Show ALL images with horizontal scroll */}
+            {}
             {images.length > 1 && (
               <div
                 style={{
@@ -1437,7 +1388,7 @@ const ProductDetailPage = ({
             )}
           </div>
 
-          {/* Product Info (Right) */}
+          {}
           <div>
             <h1
               style={{
@@ -1523,7 +1474,7 @@ const ProductDetailPage = ({
               {product.description || product.desc || "Chưa có mô tả"}
             </p>
 
-            {/* Quantity Control */}
+            {}
             <div
               style={{
                 display: "flex",
@@ -1589,7 +1540,7 @@ const ProductDetailPage = ({
               )}
             </div>
 
-            {/* Action Buttons */}
+            {}
             <div
               style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}>
               <button
@@ -1636,9 +1587,9 @@ const ProductDetailPage = ({
           </div>
         </div>
 
-        {/* Tabs: Description, Information, Reviews (Bottom) */}
+        {}
         <div style={{ marginBottom: "4rem" }}>
-          {/* Tab Navigations */}
+          {}
           <div
             style={{
               display: "flex",
@@ -1674,7 +1625,7 @@ const ProductDetailPage = ({
             ))}
           </div>
 
-          {/* Tab Content */}
+          {}
           <div>
             {activeTab === "description" && <DescriptionBlock />}
             {activeTab === "information" && <InformationBlock />}
@@ -1686,7 +1637,7 @@ const ProductDetailPage = ({
           </div>
         </div>
 
-        {/* Similar Products (Recommendations) */}
+        {}
         {similarProducts.length > 0 && (
           <div style={{ marginBottom: "4rem" }}>
             <h2
@@ -1716,7 +1667,7 @@ const ProductDetailPage = ({
           </div>
         )}
 
-        {/* Related Products */}
+        {}
         {relatedProducts.length > 0 && (
           <div>
             <h2

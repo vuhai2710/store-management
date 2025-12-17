@@ -39,4 +39,3 @@ public class Employee extends BaseEntity {
     private BigDecimal baseSalary;
 }
 
-

@@ -8,9 +8,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * Lightweight DTO for displaying order summary in employee context
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

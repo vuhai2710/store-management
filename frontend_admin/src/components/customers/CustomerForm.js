@@ -23,7 +23,7 @@ const CustomerForm = ({ customer, onSuccess }) => {
         customerType: customer.customerType || "REGULAR",
       });
     } else {
-      // Set default value for new customer
+
       form.setFieldsValue({
         customerType: "REGULAR",
       });
@@ -35,7 +35,7 @@ const CustomerForm = ({ customer, onSuccess }) => {
       const trimmedValues = {
         ...values,
         username: values.username?.trim(),
-        password: values.password, // giữ nguyên mật khẩu
+        password: values.password,
         name: values.name?.trim(),
         fullName: values.fullName?.trim(),
         email: values.email?.trim(),
@@ -45,13 +45,13 @@ const CustomerForm = ({ customer, onSuccess }) => {
       };
 
       if (customer) {
-        // Update existing customer
+
         await dispatch(
           updateCustomer({ id: customer.id, customerData: trimmedValues })
         ).unwrap();
         message.success("Cập nhật khách hàng thành công!");
       } else {
-        // Register new customer (requires username and password)
+
         await dispatch(createCustomer(trimmedValues)).unwrap();
         message.success("Đăng ký khách hàng mới thành công!");
       }
@@ -66,7 +66,7 @@ const CustomerForm = ({ customer, onSuccess }) => {
 
   return (
     <Form form={form} layout="vertical" onFinish={handleSubmit}>
-      {/* Username and Password - Only for new customer */}
+      { }
       {!customer && (
         <Row gutter={16}>
           <Col span={12}>
@@ -145,7 +145,7 @@ const CustomerForm = ({ customer, onSuccess }) => {
         <TextArea rows={3} placeholder="Nhập địa chỉ" />
       </Form.Item>
 
-      {/* Only show customerType when editing */}
+      { }
       {customer && (
         <Form.Item
           name="customerType"

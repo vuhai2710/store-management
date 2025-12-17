@@ -17,7 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-
 @RestController
 @RequestMapping("/api/v1/customers")
 @RequiredArgsConstructor
@@ -60,7 +59,7 @@ public class CustomerController {
             @RequestParam(defaultValue = "ASC") String sortDirection) {
 
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(pageNo-1, pageSize, Sort.by(direction, sortBy));
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
         PageResponse<CustomerDTO> customerPage = customerService.searchCustomersPaginated(name, phone, pageable);
         return ResponseEntity.ok(ApiResponse.success("Tìm kiếm customer thành công", customerPage));

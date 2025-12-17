@@ -27,12 +27,9 @@ import { getImageUrl } from "../../utils/formatUtils";
 const { TextArea } = Input;
 const { Text } = Typography;
 
-// const { Option } = Select; // remove for antd v5
-
 const CODE_TYPES = ["SKU", "IMEI", "SERIAL", "BARCODE"];
 const STATUSES = ["IN_STOCK", "OUT_OF_STOCK"];
 
-// Helper text for locked fields
 const LOCKED_FIELDS_HELPER = "Cập nhật qua đơn nhập kho";
 
 const ProductForm = ({ product, onSuccess }) => {
@@ -50,7 +47,7 @@ const ProductForm = ({ product, onSuccess }) => {
 
   const codeType = Form.useWatch("codeType", form);
   const isEditing = !!product?.idProduct;
-  // Check if we're creating a new product (not editing)
+
   const isCreating = !isEditing;
 
   const isProductCodeRequired = useMemo(() => codeType && codeType !== "SKU", [codeType]);
@@ -64,13 +61,13 @@ const ProductForm = ({ product, onSuccess }) => {
           suppliersService.getAllSuppliers(),
           productsService.getAllBrands(),
         ]);
-        // Normalize
+
         setCategories(Array.isArray(cats?.content) ? cats.content : Array.isArray(cats) ? cats : []);
         const supsData = Array.isArray(sups?.content) ? sups.content : Array.isArray(sups) ? sups : [];
         setSuppliers(supsData);
         setBrands(Array.isArray(brandsData) ? brandsData : []);
       } catch {
-        // ignore
+
       } finally {
         setLoadingMeta(false);
       }
@@ -78,7 +75,6 @@ const ProductForm = ({ product, onSuccess }) => {
     loadMeta();
   }, []);
 
-  // Load product images when editing
   useEffect(() => {
     if (product?.idProduct) {
       loadProductImages(product.idProduct);
@@ -109,14 +105,14 @@ const ProductForm = ({ product, onSuccess }) => {
         price: product.price,
         stockQuantity: product.stockQuantity,
         status: product.status,
-        imageUrl: product.imageUrl, // Keep for backward compatibility
+        imageUrl: product.imageUrl,
         productCode: product.productCode,
         codeType: product.codeType || "SKU",
         sku: product.sku,
       });
     } else {
       form.resetFields();
-      // Set defaults for new product - locked fields will be 0/OUT_OF_STOCK
+
       form.setFieldsValue({
         codeType: "SKU",
         status: "OUT_OF_STOCK",
@@ -127,18 +123,18 @@ const ProductForm = ({ product, onSuccess }) => {
   }, [product, form]);
 
   const handleSubmit = async (values) => {
-    // Build payload - locked fields handled differently for create vs update
+
     const payload = {
       idCategory: values.idCategory,
       productName: values.productName?.trim(),
       brand: values.brand?.trim() || null,
       idSupplier: values.idSupplier || null,
       description: values.description?.trim() || null,
-      // Locked fields: use defaults on create, actual values on update
+
       price: isCreating ? 0 : Number(values.price),
       stockQuantity: isCreating ? 0 : (values.stockQuantity != null ? Number(values.stockQuantity) : 0),
       status: isCreating ? "OUT_OF_STOCK" : (values.status || null),
-      imageUrl: values.imageUrl?.trim() || null, // Keep for backward compatibility
+      imageUrl: values.imageUrl?.trim() || null,
       productCode: values.productCode?.trim() || null,
       codeType: values.codeType,
       sku: values.sku?.trim() || null,
@@ -154,7 +150,6 @@ const ProductForm = ({ product, onSuccess }) => {
         message.success("Thêm sản phẩm thành công!");
       }
 
-      // Upload images if there are new files (only for new products or when adding new images)
       if (fileList.length > 0 && fileList.some((file) => file.originFileObj)) {
         const productId = createdOrUpdatedProduct?.idProduct || product?.idProduct;
         if (productId) {
@@ -166,7 +161,7 @@ const ProductForm = ({ product, onSuccess }) => {
             if (filesToUpload.length > 0) {
               await productsService.uploadProductImages(productId, filesToUpload);
               message.success("Upload ảnh thành công!");
-              // Reload images
+
               await loadProductImages(productId);
             }
           } catch (error) {
@@ -195,7 +190,7 @@ const ProductForm = ({ product, onSuccess }) => {
 
   const handleImageUpload = (info) => {
     const { fileList: newFileList } = info;
-    // Limit to 5 images total (existing + new)
+
     const maxNewFiles = Math.max(0, 5 - productImages.length);
     const filteredFileList = newFileList.slice(0, maxNewFiles);
     setFileList(filteredFileList);
@@ -205,7 +200,7 @@ const ProductForm = ({ product, onSuccess }) => {
     try {
       await productsService.deleteProductImage(imageId);
       message.success("Xóa ảnh thành công!");
-      // Reload images
+
       if (product?.idProduct) {
         await loadProductImages(product.idProduct);
       }
@@ -218,7 +213,7 @@ const ProductForm = ({ product, onSuccess }) => {
     try {
       await productsService.setImageAsPrimary(imageId);
       message.success("Đặt ảnh chính thành công!");
-      // Reload images
+
       if (product?.idProduct) {
         await loadProductImages(product.idProduct);
       }
@@ -244,7 +239,7 @@ const ProductForm = ({ product, onSuccess }) => {
 
   return (
     <Form form={form} layout="vertical" onFinish={handleSubmit}>
-      {/* Alert for locked fields when creating */}
+      { }
       {isCreating && (
         <Alert
           message="Thông tin giá và tồn kho"
@@ -309,7 +304,7 @@ const ProductForm = ({ product, onSuccess }) => {
         />
       </Form.Item>
 
-      {/* Supplier dropdown - show when editing */}
+      { }
       {isEditing && (
         <Form.Item name="idSupplier" label="Nhà cung cấp">
           <Select
@@ -327,7 +322,7 @@ const ProductForm = ({ product, onSuccess }) => {
         <TextArea rows={3} placeholder="Mô tả sản phẩm" />
       </Form.Item>
 
-      {/* Locked fields section */}
+      { }
       <Divider orientation="left" style={{ marginTop: 8 }}>
         Thông tin kho hàng {isCreating && <Tag color="blue">Tự động</Tag>}
       </Divider>
@@ -405,7 +400,7 @@ const ProductForm = ({ product, onSuccess }) => {
         <Input placeholder="https://..." />
       </Form.Item>
 
-      {/* Product Images Section - Only show when editing */}
+      { }
       {isEditing && product?.idProduct && (
         <>
           <Divider orientation="left">Ảnh sản phẩm</Divider>
@@ -467,7 +462,7 @@ const ProductForm = ({ product, onSuccess }) => {
               listType="picture-card"
               fileList={fileList}
               onChange={handleImageUpload}
-              beforeUpload={() => false} // Prevent auto upload
+              beforeUpload={() => false}
               accept="image/*"
               multiple
               maxCount={Math.max(0, 5 - productImages.length)}
@@ -486,7 +481,7 @@ const ProductForm = ({ product, onSuccess }) => {
         </>
       )}
 
-      {/* For new products, show upload */}
+      { }
       {!isEditing && (
         <>
           <Divider orientation="left">Ảnh sản phẩm (sẽ upload sau khi tạo)</Divider>
@@ -545,7 +540,7 @@ const ProductForm = ({ product, onSuccess }) => {
         </Space>
       </Form.Item>
 
-      {/* Image Lightbox */}
+      { }
       <ImageLightbox
         images={productImages.map((img) => ({
           url: getImageUrl(img.imageUrl),

@@ -56,46 +56,46 @@ INSERT INTO products (id_category, id_supplier, product_name, brand, description
 ON DUPLICATE KEY UPDATE product_name = product_name;
 
 INSERT INTO purchase_orders (id_supplier, id_employee, order_date, total_amount) VALUES
-(1, 1, '2025-01-05 10:00:00', 500000000.00),  -- Đơn nhập từ Apple
-(2, 1, '2025-01-10 14:30:00', 320000000.00),  -- Đơn nhập từ Samsung
-(1, 2, '2025-01-15 09:15:00', 750000000.00),  -- Đơn nhập từ Apple (employee 2)
-(3, 2, '2025-01-20 11:00:00', 150000000.00),  -- Đơn nhập từ Xiaomi
-(4, 3, '2025-01-25 15:45:00', 450000000.00)   -- Đơn nhập từ HP
+(1, 1, '2025-01-05 10:00:00', 500000000.00),
+(2, 1, '2025-01-10 14:30:00', 320000000.00),
+(1, 2, '2025-01-15 09:15:00', 750000000.00),
+(3, 2, '2025-01-20 11:00:00', 150000000.00),
+(4, 3, '2025-01-25 15:45:00', 450000000.00)
 ON DUPLICATE KEY UPDATE total_amount = total_amount;
 
 INSERT INTO purchase_order_details (id_purchase_order, id_product, quantity, import_price) VALUES
-(1, (SELECT id_product FROM products WHERE product_code = 'IP15PRO-001' LIMIT 1), 20, 20000000.00),  -- iPhone 15 Pro: 20 cái, giá nhập 20tr
-(1, (SELECT id_product FROM products WHERE product_code = 'IP14-001' LIMIT 1), 15, 15000000.00),  -- iPhone 14: 15 cái, giá nhập 15tr
-(1, (SELECT id_product FROM products WHERE product_code = 'MBP14-001' LIMIT 1), 5, 38000000.00),  -- MacBook Pro 14: 5 cái, giá nhập 38tr
-(1, (SELECT id_product FROM products WHERE product_code = 'MBA-M2-001' LIMIT 1), 10, 20000000.00), -- MacBook Air M2: 10 cái, giá nhập 20tr
-(1, (SELECT id_product FROM products WHERE product_code = 'IPDP12-001' LIMIT 1), 8, 22000000.00),  -- iPad Pro 12.9: 8 cái, giá nhập 22tr
-(1, (SELECT id_product FROM products WHERE product_code = 'APDP2-001' LIMIT 1), 50, 4500000.00)   -- AirPods Pro 2: 50 cái, giá nhập 4.5tr
+(1, (SELECT id_product FROM products WHERE product_code = 'IP15PRO-001' LIMIT 1), 20, 20000000.00),
+(1, (SELECT id_product FROM products WHERE product_code = 'IP14-001' LIMIT 1), 15, 15000000.00),
+(1, (SELECT id_product FROM products WHERE product_code = 'MBP14-001' LIMIT 1), 5, 38000000.00),
+(1, (SELECT id_product FROM products WHERE product_code = 'MBA-M2-001' LIMIT 1), 10, 20000000.00),
+(1, (SELECT id_product FROM products WHERE product_code = 'IPDP12-001' LIMIT 1), 8, 22000000.00),
+(1, (SELECT id_product FROM products WHERE product_code = 'APDP2-001' LIMIT 1), 50, 4500000.00)
 ON DUPLICATE KEY UPDATE quantity = quantity;
 
 INSERT INTO purchase_order_details (id_purchase_order, id_product, quantity, import_price) VALUES
-(2, (SELECT id_product FROM products WHERE product_code = 'SGS24U-001' LIMIT 1), 12, 24000000.00),  -- Galaxy S24 Ultra: 12 cái, giá nhập 24tr
-(2, (SELECT id_product FROM products WHERE product_code = 'SGA54-001' LIMIT 1), 50, 6500000.00),   -- Galaxy A54: 50 cái, giá nhập 6.5tr
-(2, (SELECT id_product FROM products WHERE product_code = 'SGTABS9-001' LIMIT 1), 10, 16000000.00), -- Galaxy Tab S9: 10 cái, giá nhập 16tr
-(2, (SELECT id_product FROM products WHERE product_code = 'SGW6-001' LIMIT 1), 30, 6500000.00),  -- Galaxy Watch 6: 30 cái, giá nhập 6.5tr
-(2, (SELECT id_product FROM products WHERE product_code = 'SGBUDS2-001' LIMIT 1), 40, 3200000.00)   -- Galaxy Buds2 Pro: 40 cái, giá nhập 3.2tr
+(2, (SELECT id_product FROM products WHERE product_code = 'SGS24U-001' LIMIT 1), 12, 24000000.00),
+(2, (SELECT id_product FROM products WHERE product_code = 'SGA54-001' LIMIT 1), 50, 6500000.00),
+(2, (SELECT id_product FROM products WHERE product_code = 'SGTABS9-001' LIMIT 1), 10, 16000000.00),
+(2, (SELECT id_product FROM products WHERE product_code = 'SGW6-001' LIMIT 1), 30, 6500000.00),
+(2, (SELECT id_product FROM products WHERE product_code = 'SGBUDS2-001' LIMIT 1), 40, 3200000.00)
 ON DUPLICATE KEY UPDATE quantity = quantity;
 
 INSERT INTO purchase_order_details (id_purchase_order, id_product, quantity, import_price) VALUES
-(3, (SELECT id_product FROM products WHERE product_code = 'IP15PRO-001' LIMIT 1), 30, 20000000.00),  -- iPhone 15 Pro: 30 cái
-(3, (SELECT id_product FROM products WHERE product_code = 'IPDP12-001' LIMIT 1), 12, 22000000.00), -- iPad Pro 12.9: 12 cái
-(3, (SELECT id_product FROM products WHERE product_code = 'IPDA-001' LIMIT 1), 20, 12000000.00), -- iPad Air: 20 cái
-(3, (SELECT id_product FROM products WHERE product_code = 'APDP2-001' LIMIT 1), 80, 4500000.00),  -- AirPods Pro 2: 80 cái
-(3, (SELECT id_product FROM products WHERE product_code = 'AW9-001' LIMIT 1), 25, 9500000.00)   -- Apple Watch Series 9: 25 cái, giá nhập 9.5tr
+(3, (SELECT id_product FROM products WHERE product_code = 'IP15PRO-001' LIMIT 1), 30, 20000000.00),
+(3, (SELECT id_product FROM products WHERE product_code = 'IPDP12-001' LIMIT 1), 12, 22000000.00),
+(3, (SELECT id_product FROM products WHERE product_code = 'IPDA-001' LIMIT 1), 20, 12000000.00),
+(3, (SELECT id_product FROM products WHERE product_code = 'APDP2-001' LIMIT 1), 80, 4500000.00),
+(3, (SELECT id_product FROM products WHERE product_code = 'AW9-001' LIMIT 1), 25, 9500000.00)
 ON DUPLICATE KEY UPDATE quantity = quantity;
 
 INSERT INTO purchase_order_details (id_purchase_order, id_product, quantity, import_price) VALUES
-(4, (SELECT id_product FROM products WHERE product_code = 'XMI14P-001' LIMIT 1), 20, 12000000.00),  -- Xiaomi 14 Pro: 20 cái, giá nhập 12tr
-(4, (SELECT id_product FROM products WHERE product_code = 'RMN13-001' LIMIT 1), 60, 4000000.00)    -- Redmi Note 13: 60 cái, giá nhập 4tr
+(4, (SELECT id_product FROM products WHERE product_code = 'XMI14P-001' LIMIT 1), 20, 12000000.00),
+(4, (SELECT id_product FROM products WHERE product_code = 'RMN13-001' LIMIT 1), 60, 4000000.00)
 ON DUPLICATE KEY UPDATE quantity = quantity;
 
 INSERT INTO purchase_order_details (id_purchase_order, id_product, quantity, import_price) VALUES
-(5, (SELECT id_product FROM products WHERE product_code = 'HPPAV15-001' LIMIT 1), 10, 12000000.00),  -- HP Pavilion 15: 10 cái, giá nhập 12tr
-(5, (SELECT id_product FROM products WHERE product_code = 'HPELB-001' LIMIT 1), 8, 20000000.00)     -- HP EliteBook X360: 8 cái, giá nhập 20tr
+(5, (SELECT id_product FROM products WHERE product_code = 'HPPAV15-001' LIMIT 1), 10, 12000000.00),
+(5, (SELECT id_product FROM products WHERE product_code = 'HPELB-001' LIMIT 1), 8, 20000000.00)
 ON DUPLICATE KEY UPDATE quantity = quantity;
 
 INSERT INTO inventory_transactions (id_product, transaction_type, quantity, reference_type, reference_id, id_employee, notes, transaction_date) VALUES

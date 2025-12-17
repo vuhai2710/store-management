@@ -1,13 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { ordersService } from "../../services/ordersService";
 
-// Async thunks
 export const fetchOrders = createAsyncThunk(
   "orders/fetchOrders",
   async (params, { rejectWithValue }) => {
     try {
       const pageResponse = await ordersService.getOrders(params);
-      // Backend returns PageResponse with: content, pageNo (0-indexed), pageSize, totalElements, totalPages, etc.
+
       return pageResponse;
     } catch (error) {
       return rejectWithValue(
@@ -124,24 +123,24 @@ const ordersSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch orders
+
       .addCase(fetchOrders.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchOrders.fulfilled, (state, action) => {
         state.loading = false;
-        // Backend returns PageResponse: { content, pageNo (0-indexed), pageSize, totalElements, totalPages, ... }
+
         const pageResponse = action.payload;
         if (pageResponse && pageResponse.content) {
           state.orders = pageResponse.content || [];
-          // Convert 0-indexed pageNo to 1-indexed for frontend
+
           state.pagination.current = (pageResponse.pageNo || 0) + 1;
           state.pagination.pageSize = pageResponse.pageSize || 10;
           state.pagination.total = pageResponse.totalElements || 0;
           state.pagination.totalPages = pageResponse.totalPages || 0;
         } else {
-          // Fallback: if not PageResponse, treat as array
+
           state.orders = Array.isArray(pageResponse) ? pageResponse : [];
           state.pagination.total = state.orders.length;
         }
@@ -149,17 +148,17 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchOrders.rejected, (state, action) => {
         state.loading = false;
-        state.orders = []; // Set to empty array on error
+        state.orders = [];
         state.error = action.payload;
       })
-      // Fetch order by ID
+
       .addCase(fetchOrderById.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchOrderById.fulfilled, (state, action) => {
         state.loading = false;
-        // Backend returns OrderDTO directly
+
         state.currentOrder = action.payload;
         state.error = null;
       })
@@ -167,15 +166,15 @@ const ordersSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Create order
+
       .addCase(createOrder.fulfilled, (state, action) => {
         const newOrder = action.payload;
         state.orders.unshift(newOrder);
         state.pagination.total += 1;
       })
-      // Update order (deprecated - backend doesn't support direct update)
+
       .addCase(updateOrder.fulfilled, (state, action) => {
-        // This should not be called as backend doesn't support direct update
+
         const updatedOrder = action.payload;
         const orderId = updatedOrder.idOrder || updatedOrder.id;
         const index = state.orders.findIndex(
@@ -188,10 +187,10 @@ const ordersSlice = createSlice({
           state.currentOrder = updatedOrder;
         }
       })
-      // Update order status
+
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
         const updatedOrder = action.payload;
-        // Backend uses idOrder, not id
+
         const orderId = updatedOrder.idOrder || updatedOrder.id;
         const index = state.orders.findIndex(
           (order) => (order.idOrder || order.id) === orderId
@@ -203,9 +202,9 @@ const ordersSlice = createSlice({
           state.currentOrder = updatedOrder;
         }
       })
-      // Delete order (deprecated - backend doesn't support deletion)
+
       .addCase(deleteOrder.fulfilled, (state, action) => {
-        // This should not be called as backend doesn't support deletion
+
         const orderId = action.payload;
         state.orders = state.orders.filter(
           (order) => (order.idOrder || order.id) !== orderId

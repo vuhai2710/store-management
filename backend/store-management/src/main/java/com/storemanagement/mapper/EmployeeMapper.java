@@ -12,7 +12,6 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface EmployeeMapper {
 
-    // Employee → EmployeeDTO
     @Mapping(target = "idEmployee", source = "idEmployee")
     @Mapping(source = "user.idUser", target = "idUser")
     @Mapping(source = "user.username", target = "username")
@@ -23,7 +22,6 @@ public interface EmployeeMapper {
 
     List<EmployeeDTO> toDTOList(List<Employee> entities);
 
-    // Employee → EmployeeDetailDTO (without statistics - stats added in service)
     @Mapping(target = "idEmployee", source = "idEmployee")
     @Mapping(source = "user.idUser", target = "idUser")
     @Mapping(source = "user.username", target = "username")
@@ -39,12 +37,10 @@ public interface EmployeeMapper {
     @Mapping(target = "cancelledOrders", ignore = true)
     EmployeeDetailDTO toDetailDTO(Employee entity);
 
-    // EmployeeDTO → Employee (for create/update)
     @Mapping(target = "idEmployee", ignore = true)
     @Mapping(target = "user", ignore = true)
     Employee toEntity(EmployeeDTO dto);
 
-    // Update Employee từ EmployeeDTO
     @Mapping(target = "idEmployee", ignore = true)
     @Mapping(target = "user", ignore = true)
     void updateEntityFromDto(EmployeeDTO dto, @MappingTarget Employee entity);

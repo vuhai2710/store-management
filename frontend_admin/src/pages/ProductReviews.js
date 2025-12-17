@@ -233,7 +233,7 @@ const ProductReviews = () => {
     <div>
       <Card>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
-          {/* Header */}
+          { }
           <Row justify="space-between" align="middle">
             <Col>
               <Space>
@@ -249,7 +249,7 @@ const ProductReviews = () => {
             </Col>
           </Row>
 
-          {/* Statistics */}
+          { }
           <Card size="small" style={{ backgroundColor: "#fafafa" }}>
             <Row gutter={16}>
               <Col span={6}>
@@ -285,7 +285,7 @@ const ProductReviews = () => {
             </Row>
           </Card>
 
-          {/* Filters */}
+          { }
           <Space>
             <Select
               placeholder="Lọc theo đánh giá"
@@ -305,7 +305,7 @@ const ProductReviews = () => {
             </Button>
           </Space>
 
-          {/* Table */}
+          { }
           <Table
             columns={columns}
             dataSource={reviews}
@@ -325,7 +325,7 @@ const ProductReviews = () => {
         </Space>
       </Card>
 
-      {/* Reply Modal */}
+      { }
       <Modal
         title={selectedReview?.adminReply ? "Sửa trả lời" : "Trả lời đánh giá"}
         open={replyModalVisible}

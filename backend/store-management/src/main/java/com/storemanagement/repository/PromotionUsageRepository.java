@@ -20,4 +20,3 @@ public interface PromotionUsageRepository extends JpaRepository<PromotionUsage, 
     Long countByPromotionId(@Param("promotionId") Integer promotionId);
 }
 
-

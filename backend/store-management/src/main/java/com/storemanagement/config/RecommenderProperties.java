@@ -17,4 +17,3 @@ public class RecommenderProperties {
         return new RestTemplate();
     }
 }
-

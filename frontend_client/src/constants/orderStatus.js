@@ -1,6 +1,4 @@
-/**
- * Order Status Constants
- */
+
 export const ORDER_STATUS = {
   PENDING: 'PENDING',
   CONFIRMED: 'CONFIRMED',
@@ -21,12 +19,3 @@ export const ORDER_STATUS_COLORS = {
   [ORDER_STATUS.COMPLETED]: '#28a745',
   [ORDER_STATUS.CANCELED]: '#dc3545',
 };
-
-
-
-
-
-
-
-
-

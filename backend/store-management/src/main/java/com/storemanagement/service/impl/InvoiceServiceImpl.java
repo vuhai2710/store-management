@@ -22,9 +22,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Implementation of InvoiceService for managing export and import invoices
- */
 @Service
 @RequiredArgsConstructor
 public class InvoiceServiceImpl implements InvoiceService {
@@ -42,7 +39,6 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         Page<Order> orderPage;
 
-        // Use existing repository methods with filters
         if (status != null && fromDate != null && toDate != null) {
             orderPage = orderRepository.findByFilters(null, status, pageable);
         } else if (status != null) {
@@ -118,17 +114,14 @@ public class InvoiceServiceImpl implements InvoiceService {
         Order order = orderRepository.findByIdWithDetails(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng với ID: " + orderId));
 
-        // Check if order is completed - only completed orders can be printed
         if (order.getStatus() != Order.OrderStatus.COMPLETED) {
             throw new IllegalStateException("Chỉ có thể in hóa đơn cho đơn hàng đã hoàn thành");
         }
 
-        // Check if already printed
         if (Boolean.TRUE.equals(order.getInvoicePrinted())) {
             throw new InvoiceAlreadyPrintedException("Hóa đơn đã được in trước đó");
         }
 
-        // Mark as printed
         order.setInvoicePrinted(true);
         order.setInvoicePrintedAt(LocalDateTime.now());
         order.setInvoicePrintedBy(userId);
@@ -145,12 +138,10 @@ public class InvoiceServiceImpl implements InvoiceService {
             throw new EntityNotFoundException("Không tìm thấy đơn nhập hàng với ID: " + purchaseOrderId);
         }
 
-        // Check if already printed
         if (Boolean.TRUE.equals(importOrder.getInvoicePrinted())) {
             throw new InvoiceAlreadyPrintedException("Hóa đơn đã được in trước đó");
         }
 
-        // Mark as printed
         importOrder.setInvoicePrinted(true);
         importOrder.setInvoicePrintedAt(LocalDateTime.now());
         importOrder.setInvoicePrintedBy(userId);
@@ -159,10 +150,8 @@ public class InvoiceServiceImpl implements InvoiceService {
         return mapToImportInvoiceDTO(importOrder);
     }
 
-    // ========== MAPPING METHODS ==========
-
     private ExportInvoiceDTO mapToExportInvoiceDTO(Order order) {
-        // Calculate product subtotal (sum of items, excluding shipping)
+
         BigDecimal productSubtotal = BigDecimal.ZERO;
         List<InvoiceItemDTO> items = null;
 
@@ -176,7 +165,6 @@ public class InvoiceServiceImpl implements InvoiceService {
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
 
-        // Get printed by name
         String printedByName = null;
         if (order.getInvoicePrintedBy() != null) {
             printedByName = employeeRepository.findById(order.getInvoicePrintedBy())
@@ -219,7 +207,6 @@ public class InvoiceServiceImpl implements InvoiceService {
                     .collect(Collectors.toList());
         }
 
-        // Get printed by name
         String printedByName = null;
         if (importOrder.getInvoicePrintedBy() != null) {
             printedByName = employeeRepository.findById(importOrder.getInvoicePrintedBy())
@@ -227,7 +214,6 @@ public class InvoiceServiceImpl implements InvoiceService {
                     .orElse(null);
         }
 
-        // Get employee name
         String employeeName = null;
         if (importOrder.getIdEmployee() != null) {
             employeeName = employeeRepository.findById(importOrder.getIdEmployee())

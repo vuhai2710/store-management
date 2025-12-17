@@ -31,7 +31,7 @@ const ReturnDetailPage = () => {
     try {
       const response = await getReturnDetail(id);
       console.log("Admin return detail response:", response);
-      // API interceptor đã unwrap nên response chính là data
+
       setReturnData(response);
     } catch (error) {
       message.error("Không thể tải thông tin chi tiết");
@@ -74,35 +74,24 @@ const ReturnDetailPage = () => {
     }
   };
 
-  /**
-   * Tính số tiền hoàn lại cho khách
-   * Công thức: itemsTotal * discountRatio
-   * - itemsTotal: Tổng tiền các sản phẩm yêu cầu trả (price * quantity)
-   * - discountRatio: Tỷ lệ sau giảm giá = (totalAmount - discount) / totalAmount
-   * Không tính phí ship vào tiền hoàn
-   */
   const calculateRefundAmount = (data) => {
     if (!data || !data.items) return 0;
 
-    // Tính tổng tiền sản phẩm yêu cầu trả
     const itemsTotal = data.items.reduce(
       (sum, item) => sum + (Number(item.price) || 0) * (item.quantity || 0),
       0
     );
 
-    // Nếu không có thông tin đơn hàng hoặc không có giảm giá -> hoàn nguyên giá
     const orderTotal = Number(data.orderTotalAmount) || 0;
     const orderDiscount = Number(data.orderDiscount) || 0;
 
     if (orderTotal <= 0) {
-      // Không có thông tin đơn hàng, hoàn nguyên giá sản phẩm
+
       return Math.round(itemsTotal);
     }
 
-    // Tính tỷ lệ sau giảm giá
     const discountRatio = (orderTotal - orderDiscount) / orderTotal;
 
-    // Số tiền hoàn = tổng tiền sp trả * tỷ lệ giảm giá
     const refundAmount = itemsTotal * discountRatio;
 
     return Math.round(refundAmount);
@@ -178,7 +167,7 @@ const ReturnDetailPage = () => {
           )}
         </Descriptions>
 
-        {/* Order Price Breakdown Section */}
+        { }
         <Divider orientation="left">Chi tiết đơn hàng gốc</Divider>
         <div
           style={{
@@ -188,7 +177,7 @@ const ReturnDetailPage = () => {
             marginBottom: 16,
           }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {/* Original Order Amount */}
+            { }
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span>Tổng tiền sản phẩm:</span>
               <span>
@@ -200,7 +189,7 @@ const ReturnDetailPage = () => {
               </span>
             </div>
 
-            {/* Promotion Info */}
+            { }
             {(returnData.orderPromotionCode ||
               returnData.orderPromotionName) && (
               <div
@@ -231,7 +220,7 @@ const ReturnDetailPage = () => {
               </div>
             )}
 
-            {/* Discount without promotion code */}
+            { }
             {!returnData.orderPromotionCode &&
               !returnData.orderPromotionName &&
               returnData.orderDiscount &&
@@ -250,7 +239,7 @@ const ReturnDetailPage = () => {
                 </div>
               )}
 
-            {/* Shipping Fee */}
+            { }
             {returnData.orderShippingFee &&
               Number(returnData.orderShippingFee) > 0 && (
                 <div
@@ -269,7 +258,7 @@ const ReturnDetailPage = () => {
                 </div>
               )}
 
-            {/* Final Amount */}
+            { }
             <div
               style={{
                 borderTop: "1px solid #d9d9d9",

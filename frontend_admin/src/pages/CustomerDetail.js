@@ -83,7 +83,7 @@ const CustomerDetail = () => {
   const handleEditSuccess = () => {
     setIsEditModalVisible(false);
     message.success("Cập nhật khách hàng thành công!");
-    // Reload customer data
+
     dispatch(fetchCustomerById(id));
   };
 
@@ -91,7 +91,7 @@ const CustomerDetail = () => {
     try {
       await dispatch(deleteCustomer(id)).unwrap();
       message.success("Xóa khách hàng thành công!");
-      // Redirect to customers list
+
       navigate("/customers");
     } catch (error) {
       message.error("Xóa khách hàng thất bại!");
@@ -213,7 +213,7 @@ const CustomerDetail = () => {
         />
       </Card>
 
-      {/* Edit Customer Modal */}
+      { }
       <Modal
         title="Chỉnh sửa khách hàng"
         open={isEditModalVisible}

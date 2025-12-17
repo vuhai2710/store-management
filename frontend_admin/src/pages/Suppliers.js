@@ -75,12 +75,11 @@ const Suppliers = () => {
     setTotal(pagination?.totalElements || 0);
   }, [pagination?.totalElements, setTotal]);
 
-  // Reset pagination when keyword changes
   useEffect(() => {
     if (debouncedKeyword !== undefined) {
       resetPagination();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [debouncedKeyword]);
 
   const handleResetFilters = () => {

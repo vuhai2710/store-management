@@ -27,14 +27,14 @@ const AppHeader = ({ user: userProp }) => {
 
   const getAvatarUrl = () => {
     if (user?.avatarUrl) {
-      // If avatarUrl is a full URL, return as is
+
       if (
         user.avatarUrl.startsWith("http://") ||
         user.avatarUrl.startsWith("https://")
       ) {
         return user.avatarUrl;
       }
-      // Otherwise, prepend base URL
+
       return `${process.env.REACT_APP_API_URL || "http://localhost:8080"}${user.avatarUrl
         }`;
     }

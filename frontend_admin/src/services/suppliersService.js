@@ -7,7 +7,7 @@ export const suppliersService = {
   getAllSuppliers: async () => {
     try {
       const resp = await api.get(API_ENDPOINTS.SUPPLIERS.GET_ALL);
-      return unwrap(resp); // -> array
+      return unwrap(resp);
     } catch {
       const resp = await api.get(API_ENDPOINTS.SUPPLIERS.BASE, {
         params: {
@@ -26,10 +26,6 @@ export const suppliersService = {
     }
   },
 
-  /**
-   * Lấy danh sách suppliers phân trang với tìm kiếm
-   * @param {object} params - { pageNo, pageSize, sortBy, sortDirection, keyword }
-   */
   getSuppliersPaginated: async (params = {}) => {
     const {
       pageNo = 1,

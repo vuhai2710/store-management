@@ -28,4 +28,3 @@ public interface ProductReviewService {
     PageResponse<ProductReviewDTO> getProductReviewsByRating(Integer productId, Integer rating, Pageable pageable);
 }
 
-

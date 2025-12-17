@@ -52,34 +52,31 @@ const Products = () => {
     (state) => state.products || {}
   );
 
-  // usePagination(v1): trả về currentPage/pageSize/total + handlers
   const {
     currentPage,
     pageSize,
     setTotal,
     handlePageChange,
-    // handlePageSizeChange, // bỏ vì không dùng
+
     resetPagination,
     pagination: tablePagination,
-  } = usePagination(1, 5); // Default page size: 5
+  } = usePagination(1, 5);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
-  // Filters
-  const [searchKeyword, setSearchKeyword] = useState(""); // Combined keyword search
+  const [searchKeyword, setSearchKeyword] = useState("");
   const debouncedKeyword = useDebounce(searchKeyword, 300);
   const [categoryId, setCategoryId] = useState(null);
   const [brand, setBrand] = useState("");
-  const debouncedBrand = useDebounce(brand, 300); // Debounce brand to prevent API calls on every keystroke
+  const debouncedBrand = useDebounce(brand, 300);
   const [supplierId, setSupplierId] = useState(null);
   const [minPrice, setMinPrice] = useState();
   const [maxPrice, setMaxPrice] = useState();
-  const debouncedMinPrice = useDebounce(minPrice, 400); // Debounce price inputs
-  const debouncedMaxPrice = useDebounce(maxPrice, 400); // Debounce price inputs
-  const [inventoryStatusFilter, setInventoryStatusFilter] = useState(null); // Filter by inventory status: 'COMING_SOON', 'IN_STOCK', 'OUT_OF_STOCK', null (all)
+  const debouncedMinPrice = useDebounce(minPrice, 400);
+  const debouncedMaxPrice = useDebounce(maxPrice, 400);
+  const [inventoryStatusFilter, setInventoryStatusFilter] = useState(null);
 
-  // Sort (quản lý riêng vì hook không xử lý sorter)
   const [sortBy, setSortBy] = useState("idProduct");
   const [sortDirection, setSortDirection] = useState("ASC");
 
@@ -105,7 +102,7 @@ const Products = () => {
 
   const fetchList = useCallback(() => {
     if (supplierId) {
-      // dùng endpoint /products/supplier/{supplierId}
+
       dispatch(
         fetchProductsBySupplier({
           supplierId,
@@ -148,33 +145,28 @@ const Products = () => {
     inventoryStatusFilter,
   ]);
 
-  // Khi đổi nhà cung cấp → về trang 1 và fetch lại
   useEffect(() => {
     if (supplierId != null) {
       handlePageChange(1, pageSize);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [supplierId]);
 
-  // Tải danh sách khi page/sort đổi
   useEffect(() => {
     fetchList();
   }, [fetchList]);
 
-  // Đồng bộ total từ Redux vào hook để Table hiển thị đúng
   useEffect(() => {
     setTotal(pagination.totalElements || 0);
   }, [pagination.totalElements, setTotal]);
 
-  // Reset về trang 1 khi keyword thay đổi
   useEffect(() => {
     if (debouncedKeyword !== undefined) {
       resetPagination();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [debouncedKeyword]);
 
-  // Nút Xóa lọc: reset filters + reset phân trang + reset sort
   const onResetFilters = () => {
     setSearchKeyword("");
     setCategoryId(null);
@@ -188,7 +180,6 @@ const Products = () => {
     resetPagination();
   };
 
-  // Table onChange: đổi trang/kích thước + cập nhật sorter
   const onTableChange = (p, _filters, sorter) => {
     handlePageChange(p.current, p.pageSize);
     if (sorter && sorter.field) {
@@ -197,7 +188,6 @@ const Products = () => {
     }
   };
 
-  // Handlers cho CRUD modal/bảng
   const handleCreate = () => {
     setEditingProduct(null);
     setIsModalVisible(true);
@@ -265,7 +255,7 @@ const Products = () => {
         dataIndex: "status",
         key: "status",
         render: (st, record) => {
-          // Determine stock status based on status and stockQuantity
+
           if (st === "OUT_OF_STOCK" || record.stockQuantity === 0) {
             return <Tag color="red">Hết hàng</Tag>;
           } else if (

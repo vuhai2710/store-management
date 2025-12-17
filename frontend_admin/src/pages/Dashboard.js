@@ -41,12 +41,6 @@ import { dashboardService } from "../services/dashboardService";
 
 const { Title, Text } = Typography;
 
-/**
- * Admin Dashboard - Business Overview
- *
- * IMPORTANT: Revenue = Products only (EXCLUDES shipping fee)
- */
-
 const Dashboard = () => {
   const user = useSelector((state) => state.auth?.user);
   const userRole = user?.role;
@@ -54,7 +48,6 @@ const Dashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState(null);
 
-  // Format currency
   const formatCurrency = (value) => {
     if (value === null || value === undefined) return "0";
     const num = Number(value);
@@ -75,7 +68,6 @@ const Dashboard = () => {
     return `${Number(value).toLocaleString("vi-VN")} VNĐ`;
   };
 
-  // Load dashboard data
   const loadDashboard = useCallback(async (showRefreshing = false) => {
     try {
       if (showRefreshing) {
@@ -95,22 +87,18 @@ const Dashboard = () => {
     }
   }, []);
 
-  // Initial load
-
   useEffect(() => {
     if (userRole === USER_ROLES.ADMIN) {
       loadDashboard();
     }
   }, [loadDashboard, userRole]);
 
-  // Handle refresh
   const handleRefresh = () => {
     if (userRole === USER_ROLES.ADMIN) {
       loadDashboard(true);
     }
   };
 
-  // Custom chart tooltip
   const CustomChartTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -137,7 +125,6 @@ const Dashboard = () => {
     return null;
   };
 
-  // Top products columns
   const topProductsColumns = [
     {
       title: "#",
@@ -188,7 +175,6 @@ const Dashboard = () => {
     },
   ];
 
-  // Recent orders columns
   const recentOrdersColumns = [
     {
       title: "Mã ĐH",
@@ -242,7 +228,6 @@ const Dashboard = () => {
     },
   ];
 
-  // Render loading skeleton
   if (loading) {
     return (
       <div style={{ padding: "8px 0" }}>
@@ -272,7 +257,6 @@ const Dashboard = () => {
     );
   }
 
-  // Transform chart data
   const chartData = (data?.revenueChart || []).map((item) => ({
     date: item.date,
     netRevenue: Number(item.netRevenue) || 0,
@@ -281,7 +265,7 @@ const Dashboard = () => {
 
   return (
     <div style={{ padding: "8px 0" }}>
-      {/* Page Header */}
+      { }
       <div
         style={{
           marginBottom: 24,
@@ -314,9 +298,9 @@ const Dashboard = () => {
         </Button>
       </div>
 
-      {/* KPI Cards Row 1 - Today */}
+      { }
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        {/* Today Revenue */}
+        { }
         <Col xs={24} sm={12} lg={8} xl={4}>
           <Card
             style={{
@@ -342,7 +326,7 @@ const Dashboard = () => {
           </Card>
         </Col>
 
-        {/* Month Revenue */}
+        { }
         <Col xs={24} sm={12} lg={8} xl={4}>
           <Card
             style={{
@@ -365,7 +349,7 @@ const Dashboard = () => {
           </Card>
         </Col>
 
-        {/* Orders Today */}
+        { }
         <Col xs={24} sm={12} lg={8} xl={4}>
           <Card
             style={{
@@ -386,7 +370,7 @@ const Dashboard = () => {
           </Card>
         </Col>
 
-        {/* Completed Today */}
+        { }
         <Col xs={24} sm={12} lg={8} xl={4}>
           <Card
             style={{
@@ -407,7 +391,7 @@ const Dashboard = () => {
           </Card>
         </Col>
 
-        {/* Orders This Month */}
+        { }
         <Col xs={24} sm={12} lg={8} xl={4}>
           <Card
             style={{
@@ -428,7 +412,7 @@ const Dashboard = () => {
           </Card>
         </Col>
 
-        {/* Active Returns */}
+        { }
         <Col xs={24} sm={12} lg={8} xl={4}>
           <Card
             style={{
@@ -464,9 +448,9 @@ const Dashboard = () => {
         </Col>
       </Row>
 
-      {/* Charts Row */}
+      { }
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        {/* Revenue Chart */}
+        { }
         <Col xs={24} lg={16}>
           <Card
             title={
@@ -514,7 +498,7 @@ const Dashboard = () => {
           </Card>
         </Col>
 
-        {/* Top Products */}
+        { }
         <Col xs={24} lg={8}>
           <Card
             title={
@@ -541,7 +525,7 @@ const Dashboard = () => {
         </Col>
       </Row>
 
-      {/* Recent Orders */}
+      { }
       <Card
         title={
           <Space>
@@ -566,7 +550,7 @@ const Dashboard = () => {
         />
       </Card>
 
-      {/* Footer Note */}
+      { }
       <div style={{ marginTop: 16, textAlign: "center" }}>
         <Text type="secondary" style={{ fontSize: 12 }}>
           💡 Doanh thu được tính từ đơn hàng HOÀN THÀNH và{" "}

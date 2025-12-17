@@ -1,4 +1,4 @@
-// src/components/chat/ChatWidget.js
+
 import React, { useState, useEffect, useRef } from "react";
 import { MessageCircle, X, Send, Minimize2, Maximize2 } from "lucide-react";
 import { chatService } from "../../services/chatService";
@@ -26,85 +26,75 @@ const ChatWidget = () => {
   const messagesContainerRef = useRef(null);
   const conversationIdRef = useRef(null);
   const stompClientRef = useRef(null);
-  const connectingRef = useRef(false); // Track if we're currently connecting
-  const connectedRef = useRef(false); // Track connection status for closures
+  const connectingRef = useRef(false);
+  const connectedRef = useRef(false);
 
-  // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
-      // Use instant scroll without smooth animation
+
       messagesEndRef.current.scrollIntoView({ behavior: "auto" });
     }
   };
 
   useEffect(() => {
     if (messages.length > 0) {
-      // Small delay to ensure DOM is updated
+
       setTimeout(() => {
         scrollToBottom();
       }, 100);
     }
   }, [messages]);
 
-  // Track if messages have been loaded in the current widget open session
   const messagesLoadedRef = useRef(false);
 
-  // Reset messagesLoadedRef when widget is closed
   useEffect(() => {
     if (!isOpen) {
       messagesLoadedRef.current = false;
     }
   }, [isOpen]);
 
-  // Initialize conversation when authenticated and widget is opened
   useEffect(() => {
     if (isAuthenticated && isOpen) {
       console.log("[ChatWidget] Widget opened, conversation:", conversation ? "exists" : "null");
       if (!conversation) {
-        // No conversation yet, initialize fully
+
         console.log("[ChatWidget] No conversation, calling initializeConversation");
         initializeConversation();
       } else {
-        // Conversation exists from early init, load messages if not already loaded
+
         const convId = conversation.idConversation || conversation.id;
         console.log("[ChatWidget] Conversation exists, convId:", convId, "messagesLoaded:", messagesLoadedRef.current);
 
-        // Always load messages when widget is opened if we haven't loaded yet in this session
         if (convId && !messagesLoadedRef.current) {
           console.log("[ChatWidget] Loading messages for conversation:", convId);
-          messagesLoadedRef.current = true; // Mark as loading to prevent duplicate calls
+          messagesLoadedRef.current = true;
           loadMessages(convId);
         }
 
-        // Mark conversation as viewed
         chatService
           .markConversationAsViewed(convId)
           .then(() => {
             console.log("[ChatWidget] Conversation marked as viewed");
-            setUnreadCount(0); // Reset unread count when viewing
+            setUnreadCount(0);
           })
           .catch((err) => {
             console.error("[ChatWidget] Error marking as viewed:", err);
           });
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [isAuthenticated, isOpen, conversation]);
 
-  // *** KEY FIX: Subscribe to WebSocket immediately when authenticated ***
-  // This ensures client can receive messages from admin even before opening the chat widget
   useEffect(() => {
     if (isAuthenticated && customer) {
-      // Get or create conversation early to establish WebSocket subscription
+
       initializeEarlyConversation();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [isAuthenticated, customer]);
 
-  // Early initialization - just get/create conversation and connect WebSocket
-  // Don't load messages until widget is opened
   const initializeEarlyConversation = async () => {
-    // Prevent multiple simultaneous connection attempts
+
     if (connectingRef.current || connectedRef.current) {
       console.log("[ChatWidget] Already connecting or connected, skipping early init");
       return;
@@ -113,12 +103,11 @@ const ChatWidget = () => {
     try {
       console.log("[ChatWidget] Early initialization - getting conversation for WebSocket subscription");
 
-      // Get or create conversation
       let conversationData = null;
       try {
         conversationData = await chatService.getMyConversation();
       } catch (err) {
-        // Fallback: create conversation if not found
+
         try {
           conversationData = await chatService.createConversation();
         } catch (createErr) {
@@ -132,8 +121,6 @@ const ChatWidget = () => {
         conversationIdRef.current = convId;
         setConversation(conversationData);
 
-        // Connect to WebSocket for real-time messages
-        // Use refs to check status instead of state (avoids stale closure)
         if (!stompClientRef.current && !connectingRef.current && !connectedRef.current) {
           connectWebSocket(convId);
         }
@@ -145,7 +132,6 @@ const ChatWidget = () => {
     }
   };
 
-  // Cleanup when user logs out
   useEffect(() => {
     if (!isAuthenticated) {
       disconnectWebSocket();
@@ -159,7 +145,6 @@ const ChatWidget = () => {
     }
   }, [isAuthenticated]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (stompClientRef.current) {
@@ -174,23 +159,19 @@ const ChatWidget = () => {
     };
   }, []);
 
-  // Initialize conversation (when widget is opened)
   const initializeConversation = async () => {
     try {
       setLoading(true);
       setError("");
 
-      // If conversation already exists from early initialization, just load messages
       if (conversation && conversationIdRef.current) {
         const convId = conversation.idConversation || conversation.id;
         await loadMessages(convId);
 
-        // Ensure WebSocket is connected
         if (!stompClientRef.current || !connected) {
           connectWebSocket(convId);
         }
 
-        // Mark conversation as viewed
         chatService
           .markConversationAsViewed(convId)
           .catch((err) =>
@@ -199,12 +180,11 @@ const ChatWidget = () => {
         return;
       }
 
-      // Get or create conversation
       let conversationData = null;
       try {
         conversationData = await chatService.getMyConversation();
       } catch (err) {
-        // Fallback: create conversation if not found or backend error
+
         conversationData = await chatService.createConversation();
       }
 
@@ -212,14 +192,13 @@ const ChatWidget = () => {
       const convId = conversationData?.idConversation || conversationData?.id;
       conversationIdRef.current = convId;
 
-      // Load messages
       if (convId) {
         await loadMessages(convId);
-        // Connect to WebSocket if not already connected
+
         if (!stompClientRef.current || !connected) {
           connectWebSocket(convId);
         }
-        // Mark conversation as viewed
+
         chatService
           .markConversationAsViewed(convId)
           .catch((err) =>
@@ -234,11 +213,10 @@ const ChatWidget = () => {
     }
   };
 
-  // Helper to parse dd/MM/yyyy HH:mm:ss format
   const parseVietnameseDate = (dateString) => {
     if (!dateString) return null;
     try {
-      // Format: "13/11/2025 19:25:46"
+
       const parts = dateString.split(" ");
       if (parts.length !== 2) return null;
 
@@ -252,20 +230,18 @@ const ChatWidget = () => {
     }
   };
 
-  // Load messages
   const loadMessages = async (conversationId) => {
     try {
       const messagesData = await chatService.getConversationMessages(
         conversationId,
         {
           pageNo: 1,
-          pageSize: 200, // Load more messages to ensure full chat history is available
+          pageSize: 200,
         }
       );
       const msgs = messagesData?.content || [];
       setMessages(msgs);
 
-      // Find the most recent employee/admin message to get support agent name
       const supportMsg = [...msgs]
         .reverse()
         .find((m) => m.senderType === "EMPLOYEE" || m.senderType === "ADMIN");
@@ -278,7 +254,6 @@ const ChatWidget = () => {
     }
   };
 
-  // Disconnect WebSocket
   const disconnectWebSocket = () => {
     if (stompClientRef.current) {
       try {
@@ -294,18 +269,16 @@ const ChatWidget = () => {
     }
   };
 
-  // Connect to WebSocket
   const connectWebSocket = (conversationId) => {
-    // Prevent duplicate connections
+
     if (connectingRef.current || connectedRef.current) {
       console.log("[ChatWidget] Already connecting or connected, skipping");
       return;
     }
 
     try {
-      connectingRef.current = true; // Mark as connecting
+      connectingRef.current = true;
 
-      // Get token
       const token = authService.getToken();
       if (!token) {
         console.error("No token found for WebSocket connection");
@@ -316,15 +289,13 @@ const ChatWidget = () => {
 
       console.log("[ChatWidget] Connecting to WebSocket for conversation:", conversationId);
 
-      // Create SockJS connection with token in query parameter
-      // Backend supports token via query parameter or STOMP header
       const socket = new SockJS(`${WS_URL}?token=${encodeURIComponent(token)}`);
       const client = new Client({
         webSocketFactory: () => socket,
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
-        // Also send token in STOMP connect headers as fallback
+
         connectHeaders: {
           Authorization: `Bearer ${token}`,
         },
@@ -335,13 +306,11 @@ const ChatWidget = () => {
           setConnected(true);
           setError("");
 
-          // Subscribe to conversation messages
           client.subscribe(`/topic/chat.${conversationId}`, (message) => {
             try {
               const messageData = JSON.parse(message.body);
               console.log("[ChatWidget] Received message via WebSocket:", messageData);
 
-              // Update support agent name if message is from EMPLOYEE or ADMIN
               if (
                 (messageData.senderType === "EMPLOYEE" ||
                   messageData.senderType === "ADMIN") &&
@@ -350,14 +319,13 @@ const ChatWidget = () => {
                 setSupportAgentName(messageData.senderName);
               }
 
-              // Increment unread count if message is from EMPLOYEE/ADMIN and widget is closed
               const userId = customer?.idUser || user?.idUser;
               if (
                 (messageData.senderType === "EMPLOYEE" ||
                   messageData.senderType === "ADMIN") &&
                 messageData.senderId !== userId
               ) {
-                // Only increment if widget is completely closed (not just minimized)
+
                 setIsOpen((currentIsOpen) => {
                   if (!currentIsOpen) {
                     setUnreadCount((prev) => prev + 1);
@@ -367,7 +335,7 @@ const ChatWidget = () => {
               }
 
               setMessages((prev) => {
-                // Check if message already exists to avoid duplicates
+
                 const exists = prev.some(
                   (m) => m.idMessage === messageData.idMessage
                 );
@@ -416,11 +384,9 @@ const ChatWidget = () => {
     }
   };
 
-  // Send message
   const sendMessage = async (e) => {
     e.preventDefault();
 
-    // Use ref for connection check to avoid stale closure
     if (!newMessage.trim()) {
       return;
     }
@@ -440,8 +406,7 @@ const ChatWidget = () => {
     }
 
     try {
-      // Backend expects senderId to be idUser (from JWT token), not idCustomer
-      // CustomerDTO contains idUser field
+
       const userId = customer?.idUser || user?.idUser;
 
       console.log("[ChatWidget] Sending message:", {
@@ -469,13 +434,11 @@ const ChatWidget = () => {
 
       console.log("[ChatWidget] Message data to send:", messageData);
 
-      // Send message via WebSocket
       stompClientRef.current.publish({
         destination: "/app/chat.send",
         body: JSON.stringify(messageData),
       });
 
-      // Clear input
       setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
@@ -483,39 +446,34 @@ const ChatWidget = () => {
     }
   };
 
-  // Toggle widget
   const toggleWidget = () => {
     if (isOpen) {
-      // Close widget: keep WebSocket connected to receive realtime messages
-      // Only reset UI state, don't disconnect or clear conversation
+
       setMessages([]);
       setNewMessage("");
       setError("");
       setIsOpen(false);
       setIsMinimized(false);
-      // Note: Do NOT disconnect WebSocket or clear conversation
-      // This allows receiving messages from admin even when widget is closed
+
     } else {
-      // Open widget: will initialize conversation via useEffect
+
       setIsOpen(true);
       setIsMinimized(false);
-      setUnreadCount(0); // Reset unread count when opening
+      setUnreadCount(0);
     }
   };
 
-  // Toggle minimize
   const toggleMinimize = () => {
     setIsMinimized(!isMinimized);
   };
 
-  // Don't render if not authenticated
   if (!isAuthenticated) {
     return null;
   }
 
   return (
     <>
-      {/* Chat Button (Bottom Right) */}
+      {}
       {!isOpen && (
         <div
           style={{
@@ -580,7 +538,7 @@ const ChatWidget = () => {
         </div>
       )}
 
-      {/* Chat Widget (Bottom Right) */}
+      {}
       {isOpen && (
         <div
           style={{
@@ -600,7 +558,7 @@ const ChatWidget = () => {
             zIndex: 1001,
             transition: "all 0.3s",
           }}>
-          {/* Header */}
+          {}
           <div
             style={{
               padding: "1rem",
@@ -668,10 +626,10 @@ const ChatWidget = () => {
             </div>
           </div>
 
-          {/* Chat Content */}
+          {}
           {!isMinimized && (
             <>
-              {/* Chat Header - Hiển thị đang chat với ai */}
+              {}
               <div
                 style={{
                   padding: "0.75rem 1rem",
@@ -692,18 +650,17 @@ const ChatWidget = () => {
                 )}
               </div>
 
-              {/* Messages */}
+              {}
               <div
                 ref={messagesContainerRef}
                 onWheel={(e) => {
-                  // Prevent scroll propagation to parent page
+
                   const container = e.currentTarget;
                   const { scrollTop, scrollHeight, clientHeight } = container;
                   const isAtTop = scrollTop === 0;
                   const isAtBottom =
                     Math.abs(scrollHeight - clientHeight - scrollTop) < 1;
 
-                  // Only allow propagation if scrolling beyond boundaries
                   const scrollingUp = e.deltaY < 0;
                   const scrollingDown = e.deltaY > 0;
 
@@ -711,11 +668,10 @@ const ChatWidget = () => {
                     (isAtTop && scrollingUp) ||
                     (isAtBottom && scrollingDown)
                   ) {
-                    // Allow propagation when at boundaries
+
                     return;
                   }
 
-                  // Stop propagation when scrolling within content
                   e.stopPropagation();
                 }}
                 role="log"
@@ -777,18 +733,17 @@ const ChatWidget = () => {
                   const userId = customer?.idUser || user?.idUser;
                   const isMyMessage = isCustomer && message.senderId === userId;
 
-                  // Helper function để render nội dung tin nhắn (hỗ trợ link và ảnh)
                   const renderMessageContent = (text) => {
-                    // Regex để detect URL
+
                     const urlRegex = /(https?:\/\/[^\s]+)/g;
-                    // Regex để detect URL ảnh
+
                     const imageRegex = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i;
 
                     const parts = text.split(urlRegex);
 
                     return parts.map((part, i) => {
                       if (urlRegex.test(part)) {
-                        // Nếu là URL ảnh, hiển thị ảnh
+
                         if (imageRegex.test(part)) {
                           return (
                             <div key={i} style={{ marginTop: "0.5rem" }}>
@@ -806,7 +761,7 @@ const ChatWidget = () => {
                             </div>
                           );
                         }
-                        // Nếu là link thường, hiển thị link
+
                         return (
                           <a
                             key={i}
@@ -826,7 +781,6 @@ const ChatWidget = () => {
                     });
                   };
 
-                  // Format thời gian
                   const formatTime = (dateString) => {
                     if (!dateString) return "";
                     try {
@@ -902,7 +856,7 @@ const ChatWidget = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message Input */}
+              {}
               <form
                 onSubmit={sendMessage}
                 style={{

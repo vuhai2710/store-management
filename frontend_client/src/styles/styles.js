@@ -1,13 +1,13 @@
-// src/styles/styles.js
+
 const styles = {
-  // --- Layout & Reusable Styles ---
+
   container: {
     maxWidth: '1280px',
     margin: '0 auto',
     padding: '0 1.5rem',
   },
   buttonPrimary: {
-    backgroundColor: '#2563EB', // primary blue-600
+    backgroundColor: '#2563EB',
     color: '#FFFFFF',
     padding: '0.75rem 1.5rem',
     borderRadius: '0.75rem',
@@ -18,7 +18,7 @@ const styles = {
     transition: 'background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease',
   },
   buttonSecondary: {
-    backgroundColor: '#1E293B', // secondary slate-800
+    backgroundColor: '#1E293B',
     color: '#FFFFFF',
     padding: '0.75rem 1.5rem',
     borderRadius: '0.75rem',
@@ -46,7 +46,7 @@ const styles = {
     backgroundColor: '#FFFFFF',
     outline: 'none',
   },
-  // --- Header Styles ---
+
   headerTopBar: {
     backgroundColor: '#F8FAFC',
     borderBottom: '1px solid #E2E8F0',
@@ -80,7 +80,7 @@ const styles = {
     border: 'none',
     cursor: 'pointer',
   },
-  // --- Product Card Styles ---
+
   card: {
     border: '1px solid #E2E8F0',
     borderRadius: '0.75rem',
@@ -113,7 +113,7 @@ const styles = {
     fontWeight: 'bold',
     marginBottom: '0.75rem',
   },
-  // --- Cart/Table Styles ---
+
   tableHead: {
     backgroundColor: '#F8FAFC',
     borderBottom: '1px solid #E2E8F0',
@@ -121,10 +121,10 @@ const styles = {
   tableRow: {
     borderBottom: '1px solid #E2E8F0',
   },
-  // --- Shop/Sidebar Styles (Desktop First) ---
+
   shopLayout: {
     display: 'grid',
-    gridTemplateColumns: '250px 1fr', 
+    gridTemplateColumns: '250px 1fr',
     gap: '2rem',
   },
   sidebar: {
@@ -138,10 +138,10 @@ const styles = {
     paddingBottom: '1.5rem',
   },
   latestProductItem: {
-    display: 'flex', 
-    gap: '0.75rem', 
-    alignItems: 'center', 
-    paddingBottom: '1rem', 
+    display: 'flex',
+    gap: '0.75rem',
+    alignItems: 'center',
+    paddingBottom: '1rem',
     borderBottom: '1px dotted #E2E8F0'
   }
 };

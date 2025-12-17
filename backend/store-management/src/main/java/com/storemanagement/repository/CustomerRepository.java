@@ -14,9 +14,9 @@ import java.util.Optional;
 
 public interface CustomerRepository extends JpaRepository<Customer, Integer> {
     Optional<Customer> findByUser(User user);
-    
+
     Optional<Customer> findByUser_IdUser(Integer idUser);
-    
+
     Optional<Customer> findByPhoneNumber(String phoneNumber);
 
     List<Customer> findByCustomerType(CustomerType customerType);
@@ -25,7 +25,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
 
     @Query("""
             SELECT c FROM Customer c
-            WHERE 
+            WHERE
                 (
                    (:name IS NOT NULL AND LOWER(c.customerName) LIKE LOWER(CONCAT('%', :name, '%')))
                    OR
@@ -36,9 +36,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
             """)
     Page<Customer> searchCustomers(@Param("name") String name, @Param("phone") String phone, Pageable pageable);
 
-    /**
-     * Search customers by keyword (name, phone, email)
-     */
     @Query("SELECT c FROM Customer c WHERE " +
            "(:keyword IS NULL OR :keyword = '' OR " +
            "LOWER(c.customerName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

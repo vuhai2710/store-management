@@ -11,19 +11,19 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class GHNWebhookDTO {
-    
+
     @JsonProperty("order_code")
     private String orderCode;
-    
+
     @JsonProperty("status")
     private String status;
-    
+
     @JsonProperty("updated_at")
     private String updatedAt;
-    
+
     @JsonProperty("note")
     private String note;
-    
+
     @JsonProperty("client_order_code")
     private String clientOrderCode;
 }

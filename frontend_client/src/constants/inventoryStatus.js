@@ -1,6 +1,4 @@
-/**
- * Inventory Status Constants
- */
+
 export const INVENTORY_STATUS = {
   IN_STOCK: 'IN_STOCK',
   OUT_OF_STOCK: 'OUT_OF_STOCK',
@@ -18,12 +16,3 @@ export const INVENTORY_STATUS_COLORS = {
   [INVENTORY_STATUS.OUT_OF_STOCK]: '#dc3545',
   [INVENTORY_STATUS.COMING_SOON]: '#ffc107',
 };
-
-
-
-
-
-
-
-
-

@@ -52,7 +52,6 @@ const Employees = () => {
   const [form] = Form.useForm();
   const [searchKeyword, setSearchKeyword] = useState("");
 
-  // Debounced search keyword for realtime search
   const debouncedKeyword = useDebounce(searchKeyword, 300);
 
   useEffect(() => {
@@ -74,7 +73,6 @@ const Employees = () => {
     debouncedKeyword,
   ]);
 
-  // Reset page when keyword changes
   useEffect(() => {
     dispatch(setPagination({ current: 1, pageSize: pagination.pageSize }));
   }, [debouncedKeyword, dispatch, pagination.pageSize]);
@@ -97,7 +95,7 @@ const Employees = () => {
       email: record.email,
       phoneNumber: record.phoneNumber,
       username: record.username,
-      // backend sends 'DD/MM/YYYY'
+
       hireDate: record.hireDate
         ? dayjs(record.hireDate, ["DD/MM/YYYY", "DD/MM/YYYY HH:mm:ss"], true)
         : null,
@@ -128,19 +126,18 @@ const Employees = () => {
   };
 
   const handleSubmit = async (values) => {
-    // Build payload - email only for create, not for update
+
     const payload = {
       employeeName: values.employeeName,
       phoneNumber: values.phoneNumber,
       username: values.username,
-      password: values.password || undefined, // optional when edit
-      // BE yêu cầu dd/MM/yyyy
+      password: values.password || undefined,
+
       hireDate: values.hireDate ? values.hireDate.format("DD/MM/YYYY") : null,
       address: values.address,
       baseSalary: values.baseSalary ?? null,
     };
 
-    // Only include email for new employee creation
     if (!editingEmployee) {
       payload.email = values.email;
     }

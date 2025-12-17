@@ -22,7 +22,7 @@ ChartJS.register(
 );
 
 const RevenueChart = ({ orders = [] }) => {
-  // Process orders to calculate revenue by month
+
   const chartData = useMemo(() => {
     if (!orders || orders.length === 0) {
       return {
@@ -31,7 +31,6 @@ const RevenueChart = ({ orders = [] }) => {
       };
     }
 
-    // Group orders by month
     const monthlyRevenue = {};
     const monthlyProfit = {};
 
@@ -57,17 +56,15 @@ const RevenueChart = ({ orders = [] }) => {
         const finalAmount = Number(order.finalAmount) || revenue;
 
         monthlyRevenue[monthKey].revenue += finalAmount;
-        // Simple profit calculation: assume 30% profit margin
+
         monthlyRevenue[monthKey].profit += finalAmount * 0.3;
       });
 
-    // Sort by month key and extract data
     const sortedMonths = Object.keys(monthlyRevenue).sort();
     const labels = sortedMonths.map((key) => monthlyRevenue[key].label);
     const revenueData = sortedMonths.map((key) => monthlyRevenue[key].revenue);
     const profitData = sortedMonths.map((key) => monthlyRevenue[key].profit);
 
-    // If no data, show last 6 months with zeros
     if (labels.length === 0) {
       const now = new Date();
       for (let i = 5; i >= 0; i--) {

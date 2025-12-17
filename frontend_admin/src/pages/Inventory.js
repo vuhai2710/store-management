@@ -40,7 +40,6 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-// Constants for reference types
 const REFERENCE_TYPES = {
   PURCHASE_ORDER: { label: "Đơn nhập hàng", color: "blue" },
   SALE_ORDER: { label: "Đơn bán hàng", color: "green" },
@@ -49,7 +48,6 @@ const REFERENCE_TYPES = {
   SALE_EXCHANGE: { label: "Đổi hàng", color: "purple" },
 };
 
-// Constants for transaction types
 const TRANSACTION_TYPES = {
   IN: { label: "Nhập kho", color: "green" },
   OUT: { label: "Xuất kho", color: "red" },
@@ -63,24 +61,22 @@ const Inventory = () => {
     pagination: productsPagination,
   } = useSelector((state) => state.products || {});
 
-  // Active tab state
   const [activeTab, setActiveTab] = useState("inventory");
 
-  // ==================== TAB TỒN KHO - STATES ====================
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
-  // Filter states cho tab Tồn kho
+
   const [inventoryProductSearch, setInventoryProductSearch] = useState("");
   const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState(null);
   const [inventoryBrandFilter, setInventoryBrandFilter] = useState(null);
   const [inventoryStatusFilter, setInventoryStatusFilter] = useState(null);
-  // Pagination cho tab Tồn kho
+
   const [inventoryPagination, setInventoryPagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0,
   });
-  // Thống kê tổng kho (không phụ thuộc vào phân trang)
+
   const [inventoryStats, setInventoryStats] = useState({
     totalProducts: 0,
     lowStockCount: 0,
@@ -89,14 +85,11 @@ const Inventory = () => {
     totalValue: 0,
   });
 
-  // Debounce cho tab Tồn kho
   const debouncedInventoryProductSearch = useDebounce(
     inventoryProductSearch,
     400
   );
 
-  // ==================== TAB LỊCH SỬ - STATES ====================
-  // Product history modal states
   const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalTransactions, setModalTransactions] = useState([]);
@@ -108,7 +101,6 @@ const Inventory = () => {
     useState(null);
   const [modalDateRange, setModalDateRange] = useState(null);
 
-  // All history tab states
   const [allTransactions, setAllTransactions] = useState([]);
   const [allTransactionsLoading, setAllTransactionsLoading] = useState(false);
   const [historyProductNameSearch, setHistoryProductNameSearch] = useState("");
@@ -122,10 +114,8 @@ const Inventory = () => {
     total: 0,
   });
 
-  // Debounced values for auto-search (tab Lịch sử)
   const debouncedProductName = useDebounce(historyProductNameSearch, 400);
 
-  // Pagination for modal transactions
   const {
     currentPage: modalCurrentPage,
     pageSize: modalPageSize,
@@ -135,7 +125,6 @@ const Inventory = () => {
     pagination: modalTablePagination,
   } = usePagination(1, 10);
 
-  // ==================== LOAD CATEGORIES & BRANDS ====================
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -149,11 +138,10 @@ const Inventory = () => {
     loadCategories();
   }, []);
 
-  // Load brands từ products
   useEffect(() => {
     const loadBrands = async () => {
       try {
-        // Lấy tất cả products để extract unique brands
+
         const res = await productsService.getProductsPaginated({
           pageNo: 1,
           pageSize: 1000,
@@ -171,11 +159,10 @@ const Inventory = () => {
     loadBrands();
   }, []);
 
-  // ==================== LOAD INVENTORY STATS (KHÔNG PHỤ THUỘC PHÂN TRANG) ====================
   useEffect(() => {
     const loadInventoryStats = async () => {
       try {
-        // Lấy tất cả products để tính thống kê tổng
+
         const res = await productsService.getProductsPaginated({
           pageNo: 1,
           pageSize: 10000,
@@ -211,7 +198,6 @@ const Inventory = () => {
     loadInventoryStats();
   }, []);
 
-  // ==================== FETCH PRODUCTS (TAB TỒN KHO) ====================
   const fetchInventoryProducts = useCallback(() => {
     dispatch(
       fetchProducts({
@@ -235,15 +221,13 @@ const Inventory = () => {
     inventoryStatusFilter,
   ]);
 
-  // Fetch products khi filter thay đổi (auto-search với debounce)
   useEffect(() => {
     if (activeTab === "inventory") {
-      // Reset về page 1 khi filter thay đổi (trừ pagination change)
+
       fetchInventoryProducts();
     }
   }, [activeTab, fetchInventoryProducts]);
 
-  // Sync total từ redux
   useEffect(() => {
     if (productsPagination?.totalElements !== undefined) {
       setInventoryPagination((prev) => ({
@@ -253,7 +237,6 @@ const Inventory = () => {
     }
   }, [productsPagination?.totalElements]);
 
-  // ==================== FETCH TRANSACTIONS (TAB LỊCH SỬ) ====================
   const fetchAllTransactions = useCallback(
     async (params = {}) => {
       try {
@@ -266,12 +249,10 @@ const Inventory = () => {
           sortDirection: "DESC",
         };
 
-        // Filter theo loại giao dịch (không gửi nếu null = Tất cả)
         if (historyTransactionType) {
           queryParams.transactionType = historyTransactionType;
         }
 
-        // Filter theo loại tham chiếu (không gửi nếu null = Tất cả)
         if (historyReferenceType) {
           queryParams.referenceType = historyReferenceType;
         }
@@ -280,12 +261,10 @@ const Inventory = () => {
           queryParams.productName = debouncedProductName.trim();
         }
 
-        // Filter theo thương hiệu
         if (historyBrandFilter) {
           queryParams.brand = historyBrandFilter;
         }
 
-        // Date range chỉ gửi khi user chọn và bấm Tìm kiếm
         if (historyDateRange && historyDateRange.length === 2) {
           const [startDate, endDate] = historyDateRange;
           if (startDate && endDate) {
@@ -337,12 +316,11 @@ const Inventory = () => {
     ]
   );
 
-  // Auto-fetch khi các filter thay đổi (trừ dateRange - cần bấm nút)
   useEffect(() => {
     if (activeTab === "history") {
       fetchAllTransactions({ pageNo: 1 });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [
     activeTab,
     debouncedProductName,
@@ -351,7 +329,6 @@ const Inventory = () => {
     historyReferenceType,
   ]);
 
-  // Fetch transactions for selected product modal
   const fetchModalTransactions = useCallback(
     async (productId, page = 1, size = 10) => {
       if (!productId) return;
@@ -468,13 +445,10 @@ const Inventory = () => {
     setModalDateRange(null);
   };
 
-  // ==================== HANDLERS TAB LỊCH SỬ ====================
-  // Chỉ gọi khi bấm nút "Tìm kiếm theo ngày"
   const handleHistoryDateSearch = () => {
     fetchAllTransactions({ pageNo: 1 });
   };
 
-  // Reset toàn bộ filter
   const handleHistoryReset = () => {
     setHistoryProductNameSearch("");
     setHistoryBrandFilter(null);
@@ -482,7 +456,7 @@ const Inventory = () => {
     setHistoryReferenceType(null);
     setHistoryDateRange(null);
     setHistoryPagination((prev) => ({ ...prev, current: 1 }));
-    // Gọi API load lại full data
+
     setTimeout(() => {
       fetchAllTransactions({ pageNo: 1 });
     }, 0);
@@ -494,7 +468,6 @@ const Inventory = () => {
     fetchAllTransactions({ pageNo: current, pageSize });
   };
 
-  // ==================== HANDLERS TAB TỒN KHO ====================
   const handleInventoryTableChange = (paginationInfo) => {
     const { current, pageSize } = paginationInfo;
     setInventoryPagination((prev) => ({ ...prev, current, pageSize }));
@@ -508,7 +481,6 @@ const Inventory = () => {
     setInventoryPagination((prev) => ({ ...prev, current: 1 }));
   };
 
-  // Product table columns
   const productColumns = [
     {
       title: "ID",
@@ -606,7 +578,6 @@ const Inventory = () => {
     },
   ];
 
-  // Transaction columns for both modal and history tab
   const transactionColumns = [
     {
       title: "ID",
@@ -715,7 +686,6 @@ const Inventory = () => {
     },
   ];
 
-  // Tab items - sử dụng JSX trực tiếp thay vì functional components để tránh remount
   const tabItems = [
     {
       key: "inventory",
@@ -727,7 +697,7 @@ const Inventory = () => {
       ),
       children: (
         <>
-          {/* Statistics Cards */}
+          { }
           <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
             <Col xs={24} sm={6}>
               <Card
@@ -808,7 +778,7 @@ const Inventory = () => {
             </Col>
           </Row>
 
-          {/* Filter Card cho Tab Tồn kho */}
+          { }
           <Card
             style={{
               marginBottom: 16,
@@ -905,7 +875,7 @@ const Inventory = () => {
             </Row>
           </Card>
 
-          {/* Table Card */}
+          { }
           <Card
             className="table-container"
             style={{
@@ -948,7 +918,7 @@ const Inventory = () => {
       ),
       children: (
         <>
-          {/* Filter Card - Tab Lịch sử */}
+          { }
           <Card
             style={{
               marginBottom: 16,
@@ -958,7 +928,7 @@ const Inventory = () => {
             }}
             bodyStyle={{ padding: 16 }}>
             <Row gutter={[16, 12]}>
-              {/* Tên sản phẩm - auto search */}
+              { }
               <Col xs={24} sm={12} md={5}>
                 <div style={{ marginBottom: 4 }}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
@@ -973,7 +943,7 @@ const Inventory = () => {
                   allowClear
                 />
               </Col>
-              {/* Thương hiệu - auto search khi chọn */}
+              { }
               <Col xs={24} sm={12} md={4}>
                 <div style={{ marginBottom: 4 }}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
@@ -997,7 +967,7 @@ const Inventory = () => {
                   ]}
                 />
               </Col>
-              {/* Loại giao dịch - auto search khi chọn */}
+              { }
               <Col xs={24} sm={12} md={4}>
                 <div style={{ marginBottom: 4 }}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
@@ -1019,7 +989,7 @@ const Inventory = () => {
                   </Option>
                 </Select>
               </Col>
-              {/* Loại tham chiếu - auto search khi chọn */}
+              { }
               <Col xs={24} sm={12} md={4}>
                 <div style={{ marginBottom: 4 }}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
@@ -1050,7 +1020,7 @@ const Inventory = () => {
                   </Option>
                 </Select>
               </Col>
-              {/* Khoảng thời gian - cần bấm nút Tìm kiếm */}
+              { }
               <Col xs={24} sm={12} md={5}>
                 <div style={{ marginBottom: 4 }}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
@@ -1065,7 +1035,7 @@ const Inventory = () => {
                   style={{ width: "100%" }}
                 />
               </Col>
-              {/* Buttons */}
+              { }
               <Col xs={24} sm={12} md={2}>
                 <div style={{ marginBottom: 4 }}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
@@ -1091,7 +1061,7 @@ const Inventory = () => {
             </Row>
           </Card>
 
-          {/* Table Card */}
+          { }
           <Card
             style={{
               borderRadius: 12,
@@ -1159,7 +1129,7 @@ const Inventory = () => {
         style={{ marginBottom: 0 }}
       />
 
-      {/* Product History Modal */}
+      { }
       <Modal
         title={
           <div>

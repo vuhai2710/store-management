@@ -35,7 +35,7 @@ public class PromotionRule extends BaseEntity {
 
     @Column(name = "customer_type", length = 20)
     @Builder.Default
-    private String customerType = "ALL"; // VIP, REGULAR
+    private String customerType = "ALL";
 
     @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;
@@ -49,7 +49,7 @@ public class PromotionRule extends BaseEntity {
 
     @Column(name = "priority")
     @Builder.Default
-    private Integer priority = 0; // Số càng cao càng ưu tiên
+    private Integer priority = 0;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "scope", nullable = false)
@@ -61,8 +61,8 @@ public class PromotionRule extends BaseEntity {
     }
 
     public enum PromotionScope {
-        ORDER, // Giảm giá đơn hàng (default)
-        SHIPPING, // Giảm giá phí vận chuyển
-        PRODUCT // Giảm giá sản phẩm cụ thể (Flash Sale)
+        ORDER,
+        SHIPPING,
+        PRODUCT
     }
 }

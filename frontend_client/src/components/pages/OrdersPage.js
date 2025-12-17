@@ -1,4 +1,4 @@
-// src/components/pages/OrdersPage.js
+
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import {
@@ -48,8 +48,8 @@ const OrdersPage = ({
   setSelectedReturnId,
   reloadCart,
 }) => {
-  // Tab state
-  const [activeTab, setActiveTab] = useState("orders"); // 'orders' | 'returns'
+
+  const [activeTab, setActiveTab] = useState("orders");
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,8 +67,7 @@ const OrdersPage = ({
   const [returnPeriodDays, setReturnPeriodDays] = useState(7);
   const [checkingReturn, setCheckingReturn] = useState(false);
 
-  // New states for reviews and return request details
-  const [orderReviews, setOrderReviews] = useState({}); // Map orderDetailId -> review
+  const [orderReviews, setOrderReviews] = useState({});
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [returnRequestInfo, setReturnRequestInfo] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -77,27 +76,24 @@ const OrdersPage = ({
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
 
-  // useReturnService hook - only for order detail return checking
   const {
     hasActiveReturnRequest,
     getReturnPeriodDays,
     getReturnRequestByOrderId,
   } = useReturnService();
 
-  // Lock body scroll when modal is open
   useEffect(() => {
     if (selectedOrder) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
     }
-    // Cleanup on unmount
+
     return () => {
       document.body.style.overflow = "unset";
     };
   }, [selectedOrder]);
 
-  // Load return period days on mount
   useEffect(() => {
     const loadReturnPeriod = async () => {
       const days = await getReturnPeriodDays();
@@ -106,19 +102,16 @@ const OrdersPage = ({
     loadReturnPeriod();
   }, [getReturnPeriodDays]);
 
-  // Check if order has active return request when viewing order detail
   useEffect(() => {
     const checkActiveReturn = async () => {
       if (selectedOrder && selectedOrder.status === "COMPLETED") {
         setCheckingReturn(true);
 
-        // Check active return request (boolean)
         const hasActive = await hasActiveReturnRequest(
           selectedOrder.idOrder || selectedOrder.id
         );
         setHasActiveReturn(hasActive);
 
-        // Get detailed return request info (with status)
         const returnInfo = await getReturnRequestByOrderId(
           selectedOrder.idOrder || selectedOrder.id
         );
@@ -133,7 +126,6 @@ const OrdersPage = ({
     checkActiveReturn();
   }, [selectedOrder, hasActiveReturnRequest, getReturnRequestByOrderId]);
 
-  // Fetch reviews for order products when viewing COMPLETED order
   useEffect(() => {
     const fetchOrderReviews = async () => {
       if (
@@ -143,14 +135,13 @@ const OrdersPage = ({
       ) {
         setLoadingReviews(true);
         try {
-          // Get user's reviews
+
           const myReviewsData = await reviewService.getMyReviews({
             pageNo: 1,
             pageSize: 1000,
           });
           const myReviews = myReviewsData?.content || [];
 
-          // Create a map of orderDetailId -> review
           const reviewsMap = {};
           myReviews.forEach((review) => {
             const orderDetailId = review.orderDetailId || review.idOrderDetail;
@@ -173,7 +164,6 @@ const OrdersPage = ({
     fetchOrderReviews();
   }, [selectedOrder]);
 
-  // Fetch orders
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -200,9 +190,6 @@ const OrdersPage = ({
     fetchOrders();
   }, [pageNo, statusFilter, debouncedSearchTerm]);
 
-  // Returns tab now uses shared ReturnsTracking component - no duplicate fetch needed
-
-  // Reset page when search term changes
   useEffect(() => {
     setPageNo(1);
   }, [debouncedSearchTerm]);
@@ -214,7 +201,7 @@ const OrdersPage = ({
 
     try {
       await ordersService.cancelOrder(orderId);
-      // Refresh orders
+
       const ordersData = await ordersService.getMyOrders({
         pageNo,
         pageSize,
@@ -237,7 +224,7 @@ const OrdersPage = ({
 
     try {
       await ordersService.confirmDelivery(orderId);
-      // Refresh orders
+
       const ordersData = await ordersService.getMyOrders({
         pageNo,
         pageSize,
@@ -276,7 +263,7 @@ const OrdersPage = ({
       let failedProducts = [];
 
       for (const detail of order.orderDetails) {
-        // Backend trả về idProduct, không phải productId
+
         const productId =
           detail.idProduct || detail.productId || detail.product?.idProduct;
         const quantity = detail.quantity || detail.qty || 1;
@@ -298,7 +285,6 @@ const OrdersPage = ({
         }
       }
 
-      // Reload cart to update cart icon in header
       if (successCount > 0 && reloadCart) {
         await reloadCart();
       }
@@ -333,7 +319,6 @@ const OrdersPage = ({
     }
   };
 
-  // Handle opening review modal for a product
   const handleOpenReviewModal = (detail) => {
     const orderDetailId = detail.idOrderDetail || detail.id;
     const productId =
@@ -350,7 +335,6 @@ const OrdersPage = ({
     setShowReviewModal(true);
   };
 
-  // Handle submitting a review
   const handleSubmitReview = async () => {
     if (!selectedProductForReview || !reviewForm.comment.trim()) {
       toast.warning("Vui lòng nhập nội dung đánh giá");
@@ -365,7 +349,6 @@ const OrdersPage = ({
         comment: reviewForm.comment.trim(),
       });
 
-      // Refresh reviews for this order
       const myReviewsData = await reviewService.getMyReviews({
         pageNo: 1,
         pageSize: 1000,
@@ -380,7 +363,6 @@ const OrdersPage = ({
       });
       setOrderReviews(reviewsMap);
 
-      // Close modal and reset form
       setShowReviewModal(false);
       setSelectedProductForReview(null);
       setReviewForm({ rating: 5, comment: "" });
@@ -396,7 +378,6 @@ const OrdersPage = ({
     }
   };
 
-  // Get return status label
   const getReturnStatusLabel = (status) => {
     const labels = {
       REQUESTED: "Đang chờ xử lý",
@@ -407,7 +388,6 @@ const OrdersPage = ({
     return labels[status] || status;
   };
 
-  // Get return status color
   const getReturnStatusColor = (status) => {
     const colors = {
       REQUESTED: { bg: "#FEF3C7", text: "#92400E" },
@@ -418,22 +398,19 @@ const OrdersPage = ({
     return colors[status] || { bg: "#F3F4F6", text: "#374151" };
   };
 
-  // Kiểm tra đơn hàng có trong thời gian cho phép hoàn không
-  // Sử dụng order.completedAt + order.returnWindowDays (snapshot tại thời điểm hoàn thành)
   const isWithinReturnPeriod = (order) => {
-    // Lấy returnWindowDays từ order (snapshot), fallback về system settings nếu không có
+
     const orderReturnWindowDays = order?.returnWindowDays ?? returnPeriodDays;
 
-    // Ưu tiên sử dụng completedAt, fallback sang deliveredAt, rồi orderDate
     const completedAt = order?.completedAt || order?.deliveredAt;
 
     if (!completedAt) {
-      // Fallback: sử dụng orderDate nếu có
+
       if (order?.orderDate) {
         const orderDate = parseBackendDate(order.orderDate);
         if (!orderDate) return true;
         const now = new Date();
-        // Tính theo ngày, không theo giờ
+
         const todayStart = new Date(
           now.getFullYear(),
           now.getMonth(),
@@ -448,14 +425,14 @@ const OrdersPage = ({
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         return diffDays <= orderReturnWindowDays;
       }
-      return true; // Cho phép đổi/trả nếu không có thông tin ngày
+      return true;
     }
-    if (orderReturnWindowDays === 0) return true; // 0 = không giới hạn
+    if (orderReturnWindowDays === 0) return true;
 
     const completedDate = parseBackendDate(completedAt);
     if (!completedDate) return true;
     const now = new Date();
-    // Tính theo ngày, không theo giờ
+
     const todayStart = new Date(
       now.getFullYear(),
       now.getMonth(),
@@ -472,22 +449,19 @@ const OrdersPage = ({
     return diffDays <= orderReturnWindowDays;
   };
 
-  // Tính số ngày còn lại để hoàn hàng
-  // Sử dụng order.completedAt + order.returnWindowDays (snapshot tại thời điểm hoàn thành)
   const getRemainingDays = (order) => {
-    // Lấy returnWindowDays từ order (snapshot), fallback về system settings nếu không có
+
     const orderReturnWindowDays = order?.returnWindowDays ?? returnPeriodDays;
 
-    // Ưu tiên sử dụng completedAt, fallback sang deliveredAt, rồi orderDate
     const completedAt = order?.completedAt || order?.deliveredAt;
 
     if (!completedAt) {
-      // Fallback: sử dụng orderDate nếu có
+
       if (order?.orderDate) {
         const orderDate = parseBackendDate(order.orderDate);
         if (!orderDate) return orderReturnWindowDays;
         const now = new Date();
-        // Tính theo ngày, không theo giờ
+
         const todayStart = new Date(
           now.getFullYear(),
           now.getMonth(),
@@ -502,14 +476,14 @@ const OrdersPage = ({
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         return Math.max(0, orderReturnWindowDays - diffDays);
       }
-      return orderReturnWindowDays; // Trả về số ngày tối đa nếu không có thông tin
+      return orderReturnWindowDays;
     }
-    if (orderReturnWindowDays === 0) return -1; // -1 = không giới hạn
+    if (orderReturnWindowDays === 0) return -1;
 
     const completedDate = parseBackendDate(completedAt);
     if (!completedDate) return orderReturnWindowDays;
     const now = new Date();
-    // Tính theo ngày, không theo giờ
+
     const todayStart = new Date(
       now.getFullYear(),
       now.getMonth(),
@@ -587,7 +561,7 @@ const OrdersPage = ({
           Đơn hàng của tôi
         </h2>
 
-        {/* Tabs */}
+        {}
         <div
           style={{
             display: "flex",
@@ -639,7 +613,7 @@ const OrdersPage = ({
           </button>
         </div>
 
-        {/* Orders Tab Content */}
+        {}
         {activeTab === "orders" && (
           <>
             <div
@@ -702,7 +676,7 @@ const OrdersPage = ({
               </div>
             </div>
 
-            {/* Error Message */}
+            {}
             {error && (
               <div
                 style={{
@@ -716,7 +690,7 @@ const OrdersPage = ({
               </div>
             )}
 
-            {/* Orders List */}
+            {}
             {orders.length === 0 ? (
               <div
                 style={{
@@ -848,7 +822,7 @@ const OrdersPage = ({
                           </div>
                         </div>
 
-                        {/* Order Items Preview */}
+                        {}
                         {order.orderDetails && order.orderDetails.length > 0 && (
                           <div
                             style={{
@@ -899,7 +873,7 @@ const OrdersPage = ({
                           </div>
                         )}
 
-                        {/* Actions */}
+                        {}
                         <div
                           style={{
                             display: "flex",
@@ -956,7 +930,7 @@ const OrdersPage = ({
                   })}
                 </div>
 
-                {/* Pagination */}
+                {}
                 {totalPages > 1 && (
                   <div
                     style={{
@@ -1029,7 +1003,7 @@ const OrdersPage = ({
           </>
         )}
 
-        {/* Returns Tab Content (Đổi/Trả) - Uses shared ReturnsTracking component */}
+        {}
         {activeTab === "returns" && (
           <ReturnsTracking
             embedded={true}
@@ -1040,7 +1014,7 @@ const OrdersPage = ({
           />
         )}
 
-        {/* Order Detail Modal */}
+        {}
         {selectedOrder && (
           <div
             style={{
@@ -1114,7 +1088,7 @@ const OrdersPage = ({
                   {formatDate(selectedOrder.orderDate, "dd/MM/yyyy HH:mm")}
                 </p>
 
-                {/* Hiển thị hạn đổi trả cho đơn COMPLETED */}
+                {}
                 {selectedOrder.status === "COMPLETED" &&
                   (selectedOrder.completedAt || selectedOrder.deliveredAt) && (
                     <p style={{ marginBottom: "0.5rem" }}>
@@ -1128,7 +1102,7 @@ const OrdersPage = ({
                               Không giới hạn
                             </span>
                           );
-                        // Ưu tiên completedAt, fallback sang deliveredAt
+
                         const completedAt =
                           selectedOrder.completedAt ||
                           selectedOrder.deliveredAt;
@@ -1141,7 +1115,7 @@ const OrdersPage = ({
                           );
                         const deadline = new Date(completedDate);
                         deadline.setDate(deadline.getDate() + returnDays);
-                        // So sánh theo ngày, không theo giờ
+
                         const now = new Date();
                         const todayStart = new Date(
                           now.getFullYear(),
@@ -1173,7 +1147,7 @@ const OrdersPage = ({
                     </p>
                   )}
 
-                {/* Tóm tắt tiền */}
+                {}
                 {selectedOrder.totalAmount != null && (
                   <p style={{ marginBottom: "0.25rem" }}>
                     <strong>Tổng tiền sản phẩm:</strong>{" "}
@@ -1181,7 +1155,7 @@ const OrdersPage = ({
                   </p>
                 )}
 
-                {/* Promotion/Discount Info with details */}
+                {}
                 {selectedOrder.discount != null &&
                   Number(selectedOrder.discount) > 0 && (
                     <p style={{ marginBottom: "0.25rem", color: "#28a745" }}>
@@ -1207,7 +1181,7 @@ const OrdersPage = ({
                     </p>
                   )}
 
-                {/* Phí giao hàng */}
+                {}
                 <p style={{ marginBottom: "0.25rem" }}>
                   <strong>Phí giao hàng:</strong>{" "}
                   {selectedOrder.shippingFee != null &&
@@ -1238,7 +1212,7 @@ const OrdersPage = ({
                   )}
                 </p>
 
-                {/* Tổng thanh toán (finalAmount đã bao gồm: totalAmount + shippingFee - discount) */}
+                {}
                 <p
                   style={{
                     marginTop: "0.5rem",
@@ -1314,7 +1288,7 @@ const OrdersPage = ({
                     </button>
                   </div>
                 )}
-              {/* Order Items */}
+              {}
               {selectedOrder.orderDetails &&
                 selectedOrder.orderDetails.length > 0 && (
                   <div>
@@ -1327,7 +1301,7 @@ const OrdersPage = ({
                       Sản phẩm trong đơn hàng
                     </h4>
 
-                    {/* For COMPLETED orders, show review table */}
+                    {}
                     {selectedOrder.status === "COMPLETED" ? (
                       <div style={{ overflowX: "auto" }}>
                         <table
@@ -1549,7 +1523,7 @@ const OrdersPage = ({
                         </table>
                       </div>
                     ) : (
-                      /* For non-COMPLETED orders, show simple list */
+
                       <div
                         style={{
                           display: "flex",
@@ -1611,7 +1585,7 @@ const OrdersPage = ({
                   </div>
                 )}
 
-              {/* Return/Exchange Button and Buy Again Button */}
+              {}
               {(selectedOrder.status === "COMPLETED" ||
                 selectedOrder.status === "CANCELED") && (
                   <div
@@ -1622,7 +1596,7 @@ const OrdersPage = ({
                       gap: "1rem",
                       flexWrap: "wrap",
                     }}>
-                    {/* Buy Again Button - for COMPLETED and CANCELED orders */}
+                    {}
                     <button
                       onClick={() => handleBuyAgain(selectedOrder)}
                       disabled={isAddingToCart}
@@ -1651,11 +1625,10 @@ const OrdersPage = ({
                       {isAddingToCart ? "Đang thêm..." : "Mua lại"}
                     </button>
 
-                    {/* Review Button - only for COMPLETED orders and when there are unreviewed products
-                      Ẩn nút này vì đã có bảng đánh giá từng sản phẩm trong danh sách sản phẩm */}
-                    {/* Đã chuyển sang đánh giá từng sản phẩm trong bảng, không cần nút này nữa */}
+                    {}
+                    {}
 
-                    {/* Return/Exchange Button - only for COMPLETED orders */}
+                    {}
                     {selectedOrder.status === "COMPLETED" && (
                       <>
                         {checkingReturn ? (
@@ -1669,7 +1642,7 @@ const OrdersPage = ({
                             <LoadingSpinner size="small" /> Đang kiểm tra...
                           </div>
                         ) : returnRequestInfo?.hasReturn ? (
-                          // Show return request status based on its state
+
                           (() => {
                             const status =
                               returnRequestInfo.returnRequest?.status;
@@ -1680,7 +1653,6 @@ const OrdersPage = ({
                                 ? "đổi"
                                 : "trả";
 
-                            // Helper function to navigate to return detail
                             const handleViewReturnDetail = () => {
                               const returnId =
                                 returnRequestInfo.returnRequest?.idReturn;
@@ -1691,7 +1663,6 @@ const OrdersPage = ({
                               }
                             };
 
-                            // Different UI for different statuses
                             if (
                               status === "REQUESTED" ||
                               status === "PENDING" ||
@@ -1848,7 +1819,7 @@ const OrdersPage = ({
                                     <XCircle size={18} />
                                     Yêu cầu {returnType} hàng bị từ chối
                                   </div>
-                                  {/* Allow new request if previous was rejected and still within period */}
+                                  {}
                                   {isWithinReturnPeriod(selectedOrder) && (
                                     <button
                                       onClick={() => {
@@ -1879,7 +1850,7 @@ const OrdersPage = ({
                                 </div>
                               );
                             } else {
-                              // Fallback for unknown status
+
                               return (
                                 <div
                                   style={{
@@ -2010,7 +1981,7 @@ const OrdersPage = ({
         </div>
       )}
 
-      {/* Review Modal */}
+      {}
       {showReviewModal && selectedProductForReview && (
         <div
           style={{
@@ -2076,7 +2047,7 @@ const OrdersPage = ({
               {selectedProductForReview.productName}
             </p>
 
-            {/* Rating Stars */}
+            {}
             <div style={{ marginBottom: "1rem" }}>
               <label
                 style={{
@@ -2124,7 +2095,7 @@ const OrdersPage = ({
               </div>
             </div>
 
-            {/* Comment Textarea */}
+            {}
             <div style={{ marginBottom: "1.5rem" }}>
               <label
                 style={{
@@ -2156,7 +2127,7 @@ const OrdersPage = ({
               />
             </div>
 
-            {/* Submit Button */}
+            {}
             <div
               style={{
                 display: "flex",

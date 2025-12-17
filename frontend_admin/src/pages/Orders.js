@@ -44,7 +44,6 @@ dayjs.extend(customParseFormat);
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-// Order status mapping
 const ORDER_STATUS = {
   PENDING: { text: "Chờ xác nhận", color: "warning" },
   CONFIRMED: { text: "Đã xác nhận", color: "processing" },
@@ -63,14 +62,11 @@ const Orders = () => {
   const [statusFilter, setStatusFilter] = useState(filters.status || null);
   const [searchKeyword, setSearchKeyword] = useState("");
 
-  // Debounced search keyword for realtime search
   const debouncedKeyword = useDebounce(searchKeyword, 300);
 
-  // Order returns data for badge display
   const { getReturns } = useAdminReturnService();
   const [orderReturnsMap, setOrderReturnsMap] = useState({});
 
-  // Use pagination hook
   const {
     currentPage,
     pageSize,
@@ -80,7 +76,6 @@ const Orders = () => {
     pagination: tablePagination,
   } = usePagination();
 
-  // Fetch orders when pagination, filters or keyword change
   const fetchOrdersList = useCallback(() => {
     const params = {
       pageNo: currentPage,
@@ -99,16 +94,14 @@ const Orders = () => {
     fetchOrdersList();
   }, [fetchOrdersList]);
 
-  // Reset page when keyword changes
   useEffect(() => {
     resetPagination();
   }, [debouncedKeyword, resetPagination]);
 
-  // Fetch order returns to show badge on orders with active return requests
   useEffect(() => {
     const fetchOrderReturns = async () => {
       try {
-        // Get active return requests (REQUESTED, APPROVED statuses)
+
         const response = await getReturns({ pageSize: 1000 });
         const returnsMap = {};
         (response.content || []).forEach((returnItem) => {
@@ -125,7 +118,6 @@ const Orders = () => {
     fetchOrderReturns();
   }, [getReturns]);
 
-  // Sync total from Redux to hook
   useEffect(() => {
     setTotal(pagination.total || 0);
   }, [pagination.total, setTotal]);
@@ -137,7 +129,7 @@ const Orders = () => {
   const handleStatusFilter = (value) => {
     setStatusFilter(value);
     dispatch(setFilters({ status: value }));
-    resetPagination(); // Reset về page 1
+    resetPagination();
   };
 
   const handleResetFilters = () => {
@@ -159,10 +151,8 @@ const Orders = () => {
   const handlePrintInvoice = async (orderId, e) => {
     e?.stopPropagation();
 
-    // Check order status and print status in current data
     const order = orders.find(o => (o.idOrder || o.id) === orderId);
 
-    // Only allow printing for COMPLETED orders
     const status = order?.status?.toUpperCase?.() || order?.status;
     if (status !== "COMPLETED") {
       message.warning("Chỉ có thể in hóa đơn cho đơn hàng đã hoàn thành");
@@ -179,10 +169,8 @@ const Orders = () => {
       const printData = await invoiceService.printExportInvoice(orderId);
       message.success("In hóa đơn thành công!");
 
-      // Refresh order list to update printed status
       fetchOrdersList();
 
-      // Open print window with invoice data
       const printWindow = window.open("", "_blank", "width=800,height=600");
       if (printWindow) {
         const formatCurrency = (amount) => (amount || 0).toLocaleString("vi-VN") + " VNĐ";
@@ -212,7 +200,7 @@ const Orders = () => {
     } catch (error) {
       if (error.status === 409) {
         message.error("Hóa đơn đã được in trước đó");
-        fetchOrdersList(); // Refresh to sync state
+        fetchOrdersList();
       } else {
         message.error("Xuất hóa đơn thất bại!");
       }
@@ -225,7 +213,6 @@ const Orders = () => {
     return ORDER_STATUS[statusUpper] || { text: status, color: "default" };
   };
 
-  // Lấy ngày từ nhiều key (DTO dùng orderDate, phòng khi trả snake_case)
   const getOrderDateValue = (record) =>
     record?.orderDate ??
     record?.order_date ??
@@ -310,7 +297,7 @@ const Orders = () => {
       title: "Ngày đặt",
       key: "orderDate",
       width: 160,
-      // dùng render để tự chọn field và format
+
       render: (_, record) =>
         formatDate(getOrderDateValue(record), "DD/MM/YYYY HH:mm"),
     },
@@ -516,7 +503,7 @@ const Orders = () => {
         />
       </Card>
 
-      {/* Modal tạo đơn hàng - chỉ mở khi isModalVisible = true */}
+      { }
       <Modal
         open={isModalVisible}
         title="Tạo đơn hàng"

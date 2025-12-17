@@ -30,4 +30,3 @@ public class PromotionDTO extends BaseDTO {
     private Promotion.PromotionScope scope;
 }
 
-

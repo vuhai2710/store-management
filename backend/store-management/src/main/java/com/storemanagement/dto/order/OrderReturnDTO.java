@@ -17,8 +17,7 @@ import java.util.List;
 public class OrderReturnDTO {
     private Integer idReturn;
     private Integer orderId;
-    
-    // Customer info for admin display
+
     private Integer customerId;
     private String customerName;
 
@@ -29,17 +28,16 @@ public class OrderReturnDTO {
     private String noteAdmin;
 
     private BigDecimal refundAmount;
-    private BigDecimal orderFinalAmount; // Tổng tiền đơn hàng khách đã thanh toán
-    private BigDecimal orderTotalAmount; // Tổng tiền sản phẩm (chưa trừ giảm giá)
-    private BigDecimal orderDiscount;    // Số tiền giảm giá
-    private BigDecimal orderShippingFee; // Phí ship
+    private BigDecimal orderFinalAmount;
+    private BigDecimal orderTotalAmount;
+    private BigDecimal orderDiscount;
+    private BigDecimal orderShippingFee;
 
-    // Promotion info for price breakdown
-    private String orderPromotionCode;      // Mã giảm giá đã dùng
-    private String orderPromotionName;      // Tên chương trình giảm giá
-    private String orderPromotionDiscountType; // PERCENTAGE or FIXED_AMOUNT
-    private BigDecimal orderPromotionDiscountValue; // Giá trị giảm (% hoặc số tiền)
-    private String orderPromotionScope;     // ORDER or SHIPPING
+    private String orderPromotionCode;
+    private String orderPromotionName;
+    private String orderPromotionDiscountType;
+    private BigDecimal orderPromotionDiscountValue;
+    private String orderPromotionScope;
 
     private Integer createdByCustomerId;
     private Integer processedByEmployeeId;

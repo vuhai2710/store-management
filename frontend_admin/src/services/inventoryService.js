@@ -61,5 +61,3 @@ export const inventoryService = {
     return response.data;
   },
 };
-
-

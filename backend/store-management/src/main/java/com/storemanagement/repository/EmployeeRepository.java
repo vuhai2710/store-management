@@ -17,9 +17,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Integer> {
     Optional<Employee> findByUser_IdUser(Integer idUser);
     boolean existsByPhoneNumber(String phoneNumber);
 
-    /**
-     * Search employees by keyword (name, phone, email)
-     */
     @Query("SELECT e FROM Employee e WHERE " +
            "(:keyword IS NULL OR :keyword = '' OR " +
            "LOWER(e.employeeName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
@@ -28,5 +25,4 @@ public interface EmployeeRepository extends JpaRepository<Employee, Integer> {
            "LOWER(e.user.username) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Employee> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 }
-
 

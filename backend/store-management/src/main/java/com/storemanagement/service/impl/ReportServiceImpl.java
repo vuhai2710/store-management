@@ -21,16 +21,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Implementation of ReportService for financial and revenue reporting.
- * 
- * BUSINESS RULES:
- * 1. Product Revenue = SUM(order_details.quantity * order_details.price) for
- * COMPLETED orders
- * 2. Shipping fee is NEVER included in revenue
- * 3. Net Revenue = Product Revenue - Discount
- * 4. Gross Profit = Net Revenue - Import Cost
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -47,11 +37,6 @@ public class ReportServiceImpl implements ReportService {
         LocalDateTime startDateTime = fromDate.atStartOfDay();
         LocalDateTime endDateTime = toDate.atTime(23, 59, 59);
 
-        // === 1. Get COMPLETED orders revenue ===
-        // Product Revenue = SUM(quantity * price) - EXCLUDES shipping fee
-        // NOTE: Use separate queries to avoid counting discount/shipping multiple times
-
-        // 1.1 Get product revenue (from order_details)
         String productRevenueQuery = """
                 SELECT COALESCE(SUM(od.quantity * od.price), 0) as productRevenue
                 FROM Order o
@@ -70,7 +55,6 @@ public class ReportServiceImpl implements ReportService {
             productRevenue = BigDecimal.ZERO;
         }
 
-        // 1.2 Get discount, shipping fee, and order count (from orders table directly)
         String orderStatsQuery = """
                 SELECT COALESCE(SUM(o.discount), 0) as totalDiscount,
                        COALESCE(SUM(o.shippingFee), 0) as shippingFeeTotal,
@@ -90,20 +74,15 @@ public class ReportServiceImpl implements ReportService {
         BigDecimal shippingFeeTotal = stats[1] != null ? (BigDecimal) stats[1] : BigDecimal.ZERO;
         Long completedOrders = stats[2] != null ? (Long) stats[2] : 0L;
 
-        // === 2. Calculate Net Revenue ===
         BigDecimal netRevenue = productRevenue.subtract(totalDiscount);
         if (netRevenue.compareTo(BigDecimal.ZERO) < 0) {
             netRevenue = BigDecimal.ZERO;
         }
 
-        // === 3. Calculate Import Cost (estimated) ===
-        // Use weighted average import price from purchase_orders
         BigDecimal importCost = calculateImportCost(startDateTime, endDateTime);
 
-        // === 4. Calculate Gross Profit ===
         BigDecimal grossProfit = netRevenue.subtract(importCost);
 
-        // === 5. Get order counts by status (unified query) ===
         String countQuery = """
                 SELECT o.status, COUNT(o)
                 FROM Order o
@@ -137,10 +116,8 @@ public class ReportServiceImpl implements ReportService {
             }
         }
 
-        // Use the counted completed orders (more accurate than the revenue query count)
         final long finalCompletedOrders = countedCompletedOrders > 0 ? countedCompletedOrders : completedOrders;
 
-        // === 6. Get return/refund stats ===
         String returnQuery = """
                 SELECT COUNT(r), COALESCE(SUM(r.refundAmount), 0)
                 FROM OrderReturn r
@@ -176,12 +153,8 @@ public class ReportServiceImpl implements ReportService {
                 .build();
     }
 
-    /**
-     * Calculate import cost for sold items in the period.
-     * Uses the weighted average import price from purchase_order_details.
-     */
     private BigDecimal calculateImportCost(LocalDateTime startDate, LocalDateTime endDate) {
-        // Get products sold in completed orders and their quantities
+
         String soldProductsQuery = """
                 SELECT od.product.idProduct as productId,
                        SUM(od.quantity) as quantitySold
@@ -210,7 +183,6 @@ public class ReportServiceImpl implements ReportService {
             Integer productId = (Integer) row[0];
             Long quantitySold = (Long) row[1];
 
-            // Get weighted average import price for this product
             BigDecimal avgImportPrice = getAverageImportPrice(productId);
 
             if (avgImportPrice != null && avgImportPrice.compareTo(BigDecimal.ZERO) > 0) {
@@ -222,9 +194,6 @@ public class ReportServiceImpl implements ReportService {
         return totalImportCost;
     }
 
-    /**
-     * Get weighted average import price for a product from purchase_order_details.
-     */
     private BigDecimal getAverageImportPrice(Integer productId) {
         String avgPriceQuery = """
                 SELECT AVG(pod.importPrice)
@@ -251,14 +220,12 @@ public class ReportServiceImpl implements ReportService {
         LocalDateTime startDateTime = fromDate.atStartOfDay();
         LocalDateTime endDateTime = toDate.atTime(23, 59, 59);
 
-        // Determine date format based on groupBy
         String dateFormat = switch (groupBy.toUpperCase()) {
             case "DAY" -> "%Y-%m-%d";
             case "YEAR" -> "%Y";
-            default -> "%Y-%m"; // MONTH is default
+            default -> "%Y-%m";
         };
 
-        // Native query for date formatting
         String nativeQuery = """
                 SELECT DATE_FORMAT(o.order_date, :dateFormat) as time_period,
                        COALESCE(SUM(od.quantity * od.price), 0) as product_revenue,
@@ -341,14 +308,12 @@ public class ReportServiceImpl implements ReportService {
         @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
 
-        // Calculate total product revenue for discount allocation
         BigDecimal totalProductRevenue = BigDecimal.ZERO;
         for (Object[] row : results) {
             BigDecimal revenue = (BigDecimal) row[5];
             totalProductRevenue = totalProductRevenue.add(revenue);
         }
 
-        // Get total discount for the period
         BigDecimal totalDiscount = getTotalDiscountForPeriod(startDateTime, endDateTime);
 
         List<RevenueByProductDTO> response = new ArrayList<>();
@@ -361,7 +326,6 @@ public class ReportServiceImpl implements ReportService {
             Long quantitySold = (Long) row[4];
             BigDecimal productRevenue = (BigDecimal) row[5];
 
-            // Allocate discount proportionally based on revenue share
             BigDecimal discount = BigDecimal.ZERO;
             if (totalProductRevenue.compareTo(BigDecimal.ZERO) > 0) {
                 BigDecimal revenueShare = productRevenue.divide(totalProductRevenue, 10, RoundingMode.HALF_UP);

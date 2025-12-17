@@ -1,4 +1,4 @@
-// src/components/pages/ProfilePage.js
+
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import {
@@ -52,7 +52,6 @@ const ProfilePage = ({ setCurrentPage }) => {
     wardCode: null,
   });
 
-  // GHN location data
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
@@ -66,14 +65,12 @@ const ProfilePage = ({ setCurrentPage }) => {
     confirmPassword: "",
   });
 
-  // Fetch profile and shipping addresses
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch customer profile
         const profileData = await customerService.getMyProfile();
         setProfile(profileData);
         setProfileForm({
@@ -82,7 +79,6 @@ const ProfilePage = ({ setCurrentPage }) => {
           address: profileData.address || "",
         });
 
-        // Fetch user profile for avatar
         try {
           const userData = await userService.getMyProfile();
           if (userData?.avatarUrl) {
@@ -90,21 +86,19 @@ const ProfilePage = ({ setCurrentPage }) => {
           }
         } catch (userError) {
           console.error("Error fetching user profile:", userError);
-          // User profile might not exist or be accessible, that's okay
+
         }
 
-        // Fetch shipping addresses
         const addressesData = await shippingAddressService.getAllAddresses();
         setShippingAddresses(addressesData || []);
 
-        // Fetch provinces from GHN
         try {
           setLoadingProvinces(true);
           const provincesData = await ghnService.getProvinces();
           setProvinces(provincesData || []);
         } catch (ghnError) {
           console.error("Error fetching provinces:", ghnError);
-          // Don't fail if GHN is not available
+
         } finally {
           setLoadingProvinces(false);
         }
@@ -119,7 +113,6 @@ const ProfilePage = ({ setCurrentPage }) => {
     fetchData();
   }, []);
 
-  // Fetch districts when province is selected
   useEffect(() => {
     const fetchDistricts = async () => {
       if (!addressForm.provinceId) {
@@ -134,7 +127,7 @@ const ProfilePage = ({ setCurrentPage }) => {
           addressForm.provinceId
         );
         setDistricts(districtsData || []);
-        setWards([]); // Reset wards when province changes
+        setWards([]);
         setAddressForm((prev) => ({
           ...prev,
           districtId: null,
@@ -151,7 +144,6 @@ const ProfilePage = ({ setCurrentPage }) => {
     fetchDistricts();
   }, [addressForm.provinceId]);
 
-  // Fetch wards when district is selected
   useEffect(() => {
     const fetchWards = async () => {
       if (!addressForm.districtId) {
@@ -364,13 +356,11 @@ const ProfilePage = ({ setCurrentPage }) => {
       return;
     }
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.warning("Vui lòng chọn file ảnh");
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.warning("File ảnh quá lớn. Vui lòng chọn file nhỏ hơn 5MB");
       return;
@@ -379,13 +369,11 @@ const ProfilePage = ({ setCurrentPage }) => {
     try {
       setAvatarLoading(true);
 
-      // Upload avatar
       const userData = await userService.uploadAvatar(file);
 
-      // Update avatar state
       if (userData?.avatarUrl) {
         setAvatar(userData.avatarUrl);
-        await refreshUser(); // Refresh user data in context
+        await refreshUser();
         toast.success("Upload ảnh đại diện thành công");
       }
     } catch (error) {
@@ -395,7 +383,7 @@ const ProfilePage = ({ setCurrentPage }) => {
       );
     } finally {
       setAvatarLoading(false);
-      // Reset file input
+
       e.target.value = "";
     }
   };
@@ -409,7 +397,7 @@ const ProfilePage = ({ setCurrentPage }) => {
       setAvatarLoading(true);
       await userService.deleteAvatar();
       setAvatar(null);
-      await refreshUser(); // Refresh user data in context
+      await refreshUser();
       toast.success("Xóa ảnh đại diện thành công");
     } catch (error) {
       console.error("Error deleting avatar:", error);
@@ -475,7 +463,7 @@ const ProfilePage = ({ setCurrentPage }) => {
           Hồ sơ của tôi
         </h2>
 
-        {/* Profile Section */}
+        {}
         <div
           style={{
             backgroundColor: "white",
@@ -516,7 +504,7 @@ const ProfilePage = ({ setCurrentPage }) => {
             )}
           </div>
 
-          {/* Avatar Section */}
+          {}
           <div
             style={{
               marginBottom: "2rem",
@@ -868,7 +856,7 @@ const ProfilePage = ({ setCurrentPage }) => {
           )}
         </div>
 
-        {/* Change Password Section */}
+        {}
         <div
           style={{
             backgroundColor: "white",
@@ -1043,7 +1031,7 @@ const ProfilePage = ({ setCurrentPage }) => {
           )}
         </div>
 
-        {/* Shipping Addresses Section */}
+        {}
         <div
           style={{
             backgroundColor: "white",
@@ -1083,7 +1071,7 @@ const ProfilePage = ({ setCurrentPage }) => {
             )}
           </div>
 
-          {/* Add Address Form */}
+          {}
           {showAddressForm && (
             <form
               onSubmit={handleCreateAddress}
@@ -1163,7 +1151,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                 </div>
               </div>
 
-              {/* Province/District/Ward Selection */}
+              {}
               <div
                 style={{
                   display: "grid",
@@ -1416,7 +1404,7 @@ const ProfilePage = ({ setCurrentPage }) => {
             </form>
           )}
 
-          {/* Addresses List */}
+          {}
           {shippingAddresses.length === 0 ? (
             <p
               style={{
@@ -1513,7 +1501,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                           </div>
                         </div>
 
-                        {/* Province/District/Ward Selection */}
+                        {}
                         <div
                           style={{
                             display: "grid",
@@ -1826,7 +1814,6 @@ const ProfilePage = ({ setCurrentPage }) => {
                                 };
                                 setAddressForm(formData);
 
-                                // Fetch districts if provinceId exists
                                 if (formData.provinceId) {
                                   try {
                                     setLoadingDistricts(true);
@@ -1836,7 +1823,6 @@ const ProfilePage = ({ setCurrentPage }) => {
                                       );
                                     setDistricts(districtsData || []);
 
-                                    // Fetch wards if districtId exists
                                     if (formData.districtId) {
                                       setLoadingWards(true);
                                       const wardsData =

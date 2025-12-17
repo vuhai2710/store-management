@@ -31,14 +31,13 @@ const AppSidebar = () => {
   const user = useSelector((state) => state.auth?.user);
   const userRole = user?.role;
 
-  // Filter menu items based on user role
   const menuItems = useMemo(() => {
     const allMenuItems = [
       {
         key: "/dashboard",
         icon: <DashboardOutlined />,
         label: "Dashboard",
-        roles: [USER_ROLES.ADMIN], // Only Admin can see Dashboard
+        roles: [USER_ROLES.ADMIN],
       },
       {
         key: "/orders",
@@ -130,7 +129,6 @@ const AppSidebar = () => {
       },
     ];
 
-    // Filter menu items based on user role
     if (!userRole) return [];
     return allMenuItems.filter((item) => item.roles.includes(userRole));
   }, [userRole]);
@@ -146,7 +144,7 @@ const AppSidebar = () => {
   };
 
   const getOpenKeys = () => {
-    // Không cần open keys nữa vì đã bỏ submenu
+
     return [];
   };
 

@@ -18,11 +18,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 
-/**
- * Controller for Admin Invoice Management
- * Handles export invoices (from orders) and import invoices (from purchase
- * orders)
- */
 @RestController
 @RequestMapping("/api/v1/admin/invoices")
 @RequiredArgsConstructor
@@ -31,12 +26,6 @@ public class InvoiceController {
 
     private final InvoiceService invoiceService;
 
-    // ========== EXPORT INVOICES (from orders) ==========
-
-    /**
-     * Get paginated list of export invoices
-     * GET /api/v1/admin/invoices/export
-     */
     @GetMapping("/export")
     public ResponseEntity<ApiResponse<PageResponse<ExportInvoiceDTO>>> getExportInvoices(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
@@ -53,7 +42,7 @@ public class InvoiceController {
             try {
                 orderStatus = Order.OrderStatus.valueOf(status.toUpperCase());
             } catch (IllegalArgumentException e) {
-                // Invalid status, ignore filter
+
             }
         }
 
@@ -63,10 +52,6 @@ public class InvoiceController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách hóa đơn xuất thành công", invoices));
     }
 
-    /**
-     * Get export invoice detail by order ID
-     * GET /api/v1/admin/invoices/export/{orderId}
-     */
     @GetMapping("/export/{orderId}")
     public ResponseEntity<ApiResponse<ExportInvoiceDTO>> getExportInvoiceById(
             @PathVariable Integer orderId) {
@@ -74,28 +59,16 @@ public class InvoiceController {
         return ResponseEntity.ok(ApiResponse.success("Lấy chi tiết hóa đơn xuất thành công", invoice));
     }
 
-    /**
-     * Print export invoice (one-time only)
-     * POST /api/v1/admin/invoices/export/{orderId}/print
-     * Returns 409 Conflict if already printed
-     */
     @PostMapping("/export/{orderId}/print")
     public ResponseEntity<ApiResponse<ExportInvoiceDTO>> printExportInvoice(
             @PathVariable Integer orderId) {
 
-        // Get current user ID from security context
         Integer userId = SecurityUtils.getCurrentEmployeeId().orElse(null);
 
         ExportInvoiceDTO invoice = invoiceService.printExportInvoice(orderId, userId);
         return ResponseEntity.ok(ApiResponse.success("In hóa đơn thành công", invoice));
     }
 
-    // ========== IMPORT INVOICES (from purchase orders) ==========
-
-    /**
-     * Get paginated list of import invoices
-     * GET /api/v1/admin/invoices/import
-     */
     @GetMapping("/import")
     public ResponseEntity<ApiResponse<PageResponse<ImportInvoiceDTO>>> getImportInvoices(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
@@ -113,10 +86,6 @@ public class InvoiceController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách hóa đơn nhập thành công", invoices));
     }
 
-    /**
-     * Get import invoice detail by purchase order ID
-     * GET /api/v1/admin/invoices/import/{purchaseOrderId}
-     */
     @GetMapping("/import/{purchaseOrderId}")
     public ResponseEntity<ApiResponse<ImportInvoiceDTO>> getImportInvoiceById(
             @PathVariable Integer purchaseOrderId) {
@@ -124,16 +93,10 @@ public class InvoiceController {
         return ResponseEntity.ok(ApiResponse.success("Lấy chi tiết hóa đơn nhập thành công", invoice));
     }
 
-    /**
-     * Print import invoice (one-time only)
-     * POST /api/v1/admin/invoices/import/{purchaseOrderId}/print
-     * Returns 409 Conflict if already printed
-     */
     @PostMapping("/import/{purchaseOrderId}/print")
     public ResponseEntity<ApiResponse<ImportInvoiceDTO>> printImportInvoice(
             @PathVariable Integer purchaseOrderId) {
 
-        // Get current user ID from security context
         Integer userId = SecurityUtils.getCurrentEmployeeId().orElse(null);
 
         ImportInvoiceDTO invoice = invoiceService.printImportInvoice(purchaseOrderId, userId);

@@ -23,11 +23,8 @@ public class ValidatePromotionRequestDTO {
     @DecimalMin(value = "0.0", message = "Tổng tiền đơn hàng phải lớn hơn hoặc bằng 0")
     private BigDecimal totalAmount;
 
-    // Optional: shipping fee for SHIPPING scope validation (caps discount at this
-    // value)
     @DecimalMin(value = "0.0", message = "Phí vận chuyển phải lớn hơn hoặc bằng 0")
     private BigDecimal shippingFee;
 
-    // Optional: expected scope for validation (ORDER or SHIPPING)
     private Promotion.PromotionScope expectedScope;
 }

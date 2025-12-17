@@ -26,6 +26,6 @@ public interface CustomerService {
     void deleteCustomer(Integer id);
     void deleteCustomerByUser(User user);
     CustomerDTO updateMyCustomerInfo(String username, CustomerDTO customerDTO);
-    
+
     CustomerDTO createCustomerWithoutUser(String customerName, String phoneNumber, String address);
 }

@@ -14,7 +14,7 @@ import java.util.Optional;
 @Repository
 public interface ProductReviewRepository extends JpaRepository<ProductReview, Integer> {
     Page<ProductReview> findByProductIdProductOrderByCreatedAtDesc(Integer productId, Pageable pageable);
-    
+
     Page<ProductReview> findByProductIdProductAndRatingOrderByCreatedAtDesc(Integer productId, Integer rating, Pageable pageable);
 
     Page<ProductReview> findByCustomerIdCustomerOrderByCreatedAtDesc(Integer customerId, Pageable pageable);
@@ -39,5 +39,4 @@ public interface ProductReviewRepository extends JpaRepository<ProductReview, In
 
     long countByProductIdProduct(Integer productId);
 }
-
 

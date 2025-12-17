@@ -32,27 +32,24 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
         if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-            // Lấy token từ query parameter hoặc header
+
             String token = extractToken(accessor);
 
             if (token != null && !token.isEmpty()) {
                 try {
-                    // Validate và decode JWT token
+
                     Jwt jwt = jwtDecoder.decode(token);
 
-                    // Convert JWT thành Authentication object
                     Authentication authentication = jwtAuthenticationConverter.convert(jwt);
 
-                    // Set authentication vào session
                     accessor.setUser(authentication);
 
-                    //  THÊM: Set authentication vào SecurityContext để SecurityUtils có thể lấy được
                     SecurityContextHolder.getContext().setAuthentication(authentication);
 
                     log.info("WebSocket authenticated for user: {}", authentication.getName());
                 } catch (Exception e) {
                     log.error("WebSocket authentication failed: {}", e.getMessage());
-                    // Reject connection nếu token không hợp lệ
+
                     throw new RuntimeException("Authentication failed: " + e.getMessage());
                 }
             } else {
@@ -61,7 +58,6 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             }
         }
 
-        //  THÊM: Set authentication cho tất cả các message (không chỉ CONNECT)
         if (accessor != null && accessor.getUser() instanceof Authentication) {
             Authentication authentication = (Authentication) accessor.getUser();
             SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -70,11 +66,8 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         return message;
     }
 
-    /**
-     * Extract JWT token từ query parameter hoặc STOMP header
-     */
     private String extractToken(StompHeaderAccessor accessor) {
-        // 1. Thử lấy từ query parameter (nativeHeaders chứa query params)
+
         Map<String, List<String>> nativeHeaders = accessor.toNativeHeaderMap();
         if (nativeHeaders != null) {
             List<String> tokenParams = nativeHeaders.get("token");
@@ -83,7 +76,6 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             }
         }
 
-        // 2. Thử lấy từ STOMP header Authorization
         List<String> authHeaders = accessor.getNativeHeader("Authorization");
         if (authHeaders != null && !authHeaders.isEmpty()) {
             String authHeader = authHeaders.get(0);
@@ -92,7 +84,6 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             }
         }
 
-        // 3. Thử lấy từ session attributes (nếu đã set từ handshake)
         Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
         if (sessionAttributes != null) {
             Object tokenObj = sessionAttributes.get("token");

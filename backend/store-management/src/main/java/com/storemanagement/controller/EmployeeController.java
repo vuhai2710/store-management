@@ -54,7 +54,7 @@ public class EmployeeController {
             @RequestParam(defaultValue = "idEmployee") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDirection,
             @RequestParam(required = false) String keyword) {
-        // Validate and normalize parameters
+
         int validPageNo = Math.max(0, pageNo != null ? pageNo : 0);
         int validPageSize = Math.max(1, Math.min(100, pageSize != null ? pageSize : 10));
 
@@ -93,7 +93,6 @@ public class EmployeeController {
 
         Pageable pageable = PageRequest.of(validPageNo, validPageSize);
 
-        // Convert LocalDate to LocalDateTime for filtering
         LocalDateTime dateTimeFrom = dateFrom != null ? dateFrom.atStartOfDay() : null;
         LocalDateTime dateTimeTo = dateTo != null ? dateTo.atTime(LocalTime.MAX) : null;
 

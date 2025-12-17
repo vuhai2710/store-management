@@ -1,8 +1,3 @@
-/**
- * Unauthorized Page
- * Hiển thị khi user không có quyền truy cập
- */
-
 import React from "react";
 import { Result, Button } from "antd";
 import { useNavigate } from "react-router-dom";

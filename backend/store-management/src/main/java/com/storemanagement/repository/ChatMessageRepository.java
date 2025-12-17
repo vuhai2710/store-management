@@ -17,8 +17,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Intege
         Page<ChatMessage> findByConversation_IdConversationOrderByCreatedAtAsc(Integer conversationId,
                         Pageable pageable);
 
-        // Get messages in DESC order (newest first) for pagination to get latest
-        // messages
         Page<ChatMessage> findByConversation_IdConversationOrderByCreatedAtDesc(Integer conversationId,
                         Pageable pageable);
 

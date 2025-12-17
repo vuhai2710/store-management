@@ -1,4 +1,4 @@
-// src/components/pages/ResetPasswordPage.js
+
 import React, { useState, useEffect } from "react";
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
 import styles from "../../styles/styles";
@@ -20,7 +20,7 @@ const ResetPasswordPage = ({ setCurrentPage }) => {
     const [token, setToken] = useState("");
 
     useEffect(() => {
-        // Get token from URL query params
+
         const urlParams = new URLSearchParams(window.location.search);
         const tokenParam = urlParams.get("token");
         if (tokenParam) {
@@ -119,7 +119,7 @@ const ResetPasswordPage = ({ setCurrentPage }) => {
                             boxShadow: "0 24px 60px rgba(15, 23, 42, 0.16)",
                             overflow: "hidden",
                         }}>
-                        {/* Header */}
+                        {}
                         <div
                             style={{
                                 background:
@@ -154,7 +154,7 @@ const ResetPasswordPage = ({ setCurrentPage }) => {
                             </p>
                         </div>
 
-                        {/* Content */}
+                        {}
                         <div style={{ padding: "2rem", textAlign: "center" }}>
                             <p style={{ color: "#495057", marginBottom: "1.5rem" }}>
                                 Bạn có thể đăng nhập với mật khẩu mới ngay bây giờ.
@@ -207,7 +207,7 @@ const ResetPasswordPage = ({ setCurrentPage }) => {
                         boxShadow: "0 24px 60px rgba(15, 23, 42, 0.16)",
                         overflow: "hidden",
                     }}>
-                    {/* Header */}
+                    {}
                     <div
                         style={{
                             background:
@@ -242,9 +242,9 @@ const ResetPasswordPage = ({ setCurrentPage }) => {
                         </p>
                     </div>
 
-                    {/* Form */}
+                    {}
                     <form onSubmit={handleSubmit} style={{ padding: "2rem" }}>
-                        {/* New Password Field */}
+                        {}
                         <div style={inputWrapperStyle}>
                             <label
                                 style={{
@@ -281,7 +281,7 @@ const ResetPasswordPage = ({ setCurrentPage }) => {
                             />
                         </div>
 
-                        {/* Confirm Password Field */}
+                        {}
                         <div style={inputWrapperStyle}>
                             <label
                                 style={{
@@ -322,7 +322,7 @@ const ResetPasswordPage = ({ setCurrentPage }) => {
                             />
                         </div>
 
-                        {/* API Error Message */}
+                        {}
                         {apiError && (
                             <div
                                 style={{
@@ -342,7 +342,7 @@ const ResetPasswordPage = ({ setCurrentPage }) => {
                             </div>
                         )}
 
-                        {/* Submit Button */}
+                        {}
                         <Button
                             type="submit"
                             disabled={isLoading || !token}
@@ -351,7 +351,7 @@ const ResetPasswordPage = ({ setCurrentPage }) => {
                             {isLoading ? "Đang xử lý..." : "Đặt lại mật khẩu"}
                         </Button>
 
-                        {/* Back to Login */}
+                        {}
                         <div style={{ textAlign: "center" }}>
                             <button
                                 type="button"
@@ -372,7 +372,7 @@ const ResetPasswordPage = ({ setCurrentPage }) => {
                             </button>
                         </div>
 
-                        {/* Back to Home */}
+                        {}
                         <div style={{ textAlign: "center", marginTop: "1rem" }}>
                             <button
                                 type="button"

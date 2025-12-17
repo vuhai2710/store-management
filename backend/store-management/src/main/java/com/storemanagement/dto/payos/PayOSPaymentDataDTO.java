@@ -12,18 +12,18 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class PayOSPaymentDataDTO {
-    
+
     private String paymentLinkId;
-    
+
     private String checkoutUrl;
-    
+
     private String qrCode;
-    
+
     private Long orderCode;
-    
+
     private BigDecimal amount;
-    
+
     private String description;
-    
+
     private String status;
 }

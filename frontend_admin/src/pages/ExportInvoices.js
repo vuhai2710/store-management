@@ -31,7 +31,6 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-// Order status mapping
 const ORDER_STATUS = {
     PENDING: { text: "Chờ xác nhận", color: "warning" },
     CONFIRMED: { text: "Đã xác nhận", color: "processing" },
@@ -49,12 +48,11 @@ const ExportInvoices = () => {
     });
     const [dateRange, setDateRange] = useState(null);
     const [statusFilter, setStatusFilter] = useState(null);
-    const [printedFilter, setPrintedFilter] = useState(null); // null, true, false
+    const [printedFilter, setPrintedFilter] = useState(null);
     const [selectedInvoice, setSelectedInvoice] = useState(null);
     const [drawerVisible, setDrawerVisible] = useState(false);
     const [printingId, setPrintingId] = useState(null);
 
-    // Fetch invoices
     const fetchInvoices = useCallback(async () => {
         setLoading(true);
         try {
@@ -74,7 +72,6 @@ const ExportInvoices = () => {
             const response = await invoiceService.getExportInvoices(params);
             let filteredInvoices = response.content || [];
 
-            // Filter by printed status on frontend
             if (printedFilter !== null) {
                 filteredInvoices = filteredInvoices.filter(inv => inv.invoicePrinted === printedFilter);
             }
@@ -96,7 +93,6 @@ const ExportInvoices = () => {
         fetchInvoices();
     }, [fetchInvoices]);
 
-    // Handle table pagination change
     const handleTableChange = (newPagination) => {
         setPagination((prev) => ({
             ...prev,
@@ -105,7 +101,6 @@ const ExportInvoices = () => {
         }));
     };
 
-    // Handle view invoice detail
     const handleViewDetail = async (invoice) => {
         try {
             const detail = await invoiceService.getExportInvoiceById(invoice.orderId);
@@ -116,9 +111,8 @@ const ExportInvoices = () => {
         }
     };
 
-    // Handle print invoice
     const handlePrint = async (invoice) => {
-        // Only allow printing for COMPLETED orders
+
         if (invoice.status !== "COMPLETED") {
             message.warning("Chỉ có thể in hóa đơn cho đơn hàng đã hoàn thành");
             return;
@@ -134,7 +128,6 @@ const ExportInvoices = () => {
             const printData = await invoiceService.printExportInvoice(invoice.orderId);
             message.success("In hóa đơn thành công!");
 
-            // Update invoice state immediately in table list
             setInvoices((prev) =>
                 prev.map((inv) =>
                     inv.orderId === invoice.orderId
@@ -147,7 +140,6 @@ const ExportInvoices = () => {
                 )
             );
 
-            // Also update selectedInvoice if it's the same one (for drawer)
             if (selectedInvoice && selectedInvoice.orderId === invoice.orderId) {
                 setSelectedInvoice({
                     ...selectedInvoice,
@@ -156,17 +148,15 @@ const ExportInvoices = () => {
                 });
             }
 
-            // Close the drawer after successful print
             setDrawerVisible(false);
 
-            // Open print window
             openPrintWindow(printData);
         } catch (error) {
             if (error.status === 409) {
                 message.error("Hóa đơn đã được in trước đó");
-                // Refresh list to sync state
+
                 fetchInvoices();
-                // Close drawer
+
                 setDrawerVisible(false);
             } else {
                 message.error(error.message || "Không thể in hóa đơn");
@@ -176,7 +166,6 @@ const ExportInvoices = () => {
         }
     };
 
-    // Open print window with invoice data
     const openPrintWindow = (invoice) => {
         const printWindow = window.open("", "_blank", "width=800,height=600");
         if (!printWindow) {
@@ -225,13 +214,13 @@ const ExportInvoices = () => {
           <p>Mã đơn hàng: #${invoice.orderId}</p>
           <p>Ngày: ${formatDate(invoice.orderDate, "DD/MM/YYYY HH:mm")}</p>
         </div>
-        
+
         <div class="info">
           <p><strong>Khách hàng:</strong> ${invoice.customerName || "N/A"}</p>
           <p><strong>Điện thoại:</strong> ${invoice.customerPhone || "N/A"}</p>
           <p><strong>Địa chỉ:</strong> ${invoice.customerAddress || "N/A"}</p>
         </div>
-        
+
         <table>
           <thead>
             <tr>
@@ -246,7 +235,7 @@ const ExportInvoices = () => {
             ${itemsHtml}
           </tbody>
         </table>
-        
+
         <div class="summary">
           <div class="summary-row"><strong>Thành tiền sản phẩm:</strong> ${formatCurrency(invoice.productSubtotal)}</div>
           <div class="summary-row"><strong>Phí vận chuyển:</strong> ${formatCurrency(invoice.shippingFee)}</div>
@@ -254,14 +243,14 @@ const ExportInvoices = () => {
           ${invoice.shippingDiscount > 0 ? `<div class="summary-row"><strong>Giảm phí vận chuyển:</strong> -${formatCurrency(invoice.shippingDiscount)}</div>` : ""}
           <div class="summary-row total"><strong>TỔNG THANH TOÁN:</strong> ${formatCurrency(invoice.finalPayable)}</div>
         </div>
-        
+
         <div class="no-print printed-notice">
           <p><strong>✅ Hóa đơn đã được đánh dấu là đã in trong hệ thống.</strong></p>
           <p>Bạn có thể đóng cửa sổ này sau khi in xong.</p>
           <button onclick="window.print()" style="padding:10px 30px;font-size:16px;cursor:pointer;margin-top:10px">In hóa đơn</button>
           <button onclick="window.close()" style="padding:10px 30px;font-size:16px;cursor:pointer;margin-top:10px;margin-left:10px;background:#f5f5f5">Đóng</button>
         </div>
-        
+
         <script>
           // Auto-close window after printing
           window.onafterprint = function() {
@@ -278,7 +267,6 @@ const ExportInvoices = () => {
         printWindow.document.close();
     };
 
-    // Reset filters
     const handleResetFilters = () => {
         setDateRange(null);
         setStatusFilter(null);
@@ -286,7 +274,6 @@ const ExportInvoices = () => {
         setPagination((prev) => ({ ...prev, current: 1 }));
     };
 
-    // Table columns
     const columns = [
         {
             title: "Mã đơn hàng",
@@ -407,7 +394,7 @@ const ExportInvoices = () => {
                 }}
                 bodyStyle={{ padding: 16 }}
             >
-                {/* Filters */}
+                { }
                 <div
                     style={{
                         marginBottom: 16,
@@ -458,7 +445,7 @@ const ExportInvoices = () => {
                     </Button>
                 </div>
 
-                {/* Table */}
+                { }
                 <Table
                     columns={columns}
                     dataSource={invoices}
@@ -478,7 +465,7 @@ const ExportInvoices = () => {
                 />
             </Card>
 
-            {/* Detail Drawer */}
+            { }
             <Drawer
                 title={`Chi tiết hóa đơn #${selectedInvoice?.orderId || ""}`}
                 open={drawerVisible}

@@ -14,10 +14,9 @@ import lombok.NoArgsConstructor;
 public class AddToCartRequestDto {
     @NotNull(message = "ID sản phẩm không được để trống")
     private Integer productId;
-    
+
     @NotNull(message = "Số lượng không được để trống")
     @Min(value = 1, message = "Số lượng phải lớn hơn 0")
     private Integer quantity;
 }
-
 

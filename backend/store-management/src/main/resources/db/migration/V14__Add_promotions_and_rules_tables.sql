@@ -69,9 +69,3 @@ ADD CONSTRAINT fk_orders_promotion
 ADD CONSTRAINT fk_orders_promotion_rule
   FOREIGN KEY (id_promotion_rule) REFERENCES promotion_rules(id_rule)
   ON DELETE SET NULL ON UPDATE CASCADE;
-
-
-
-
-
-

@@ -34,7 +34,7 @@ public class Promotion extends BaseEntity {
     private BigDecimal minOrderAmount = BigDecimal.ZERO;
 
     @Column(name = "usage_limit")
-    private Integer usageLimit; // NULL = không giới hạn
+    private Integer usageLimit;
 
     @Column(name = "usage_count")
     @Builder.Default
@@ -55,7 +55,6 @@ public class Promotion extends BaseEntity {
     @Builder.Default
     private PromotionScope scope = PromotionScope.ORDER;
 
-    // Products linked to this promotion (only used when scope = PRODUCT)
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "promotion_products", joinColumns = @JoinColumn(name = "id_promotion"), inverseJoinColumns = @JoinColumn(name = "id_product"))
     @Builder.Default
@@ -66,8 +65,8 @@ public class Promotion extends BaseEntity {
     }
 
     public enum PromotionScope {
-        ORDER, // Giảm giá đơn hàng (default)
-        SHIPPING, // Giảm giá phí vận chuyển
-        PRODUCT // Giảm giá sản phẩm cụ thể (Flash Sale)
+        ORDER,
+        SHIPPING,
+        PRODUCT
     }
 }

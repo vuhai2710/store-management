@@ -21,7 +21,6 @@ public class GlobalExceptionHandler {
 
     private final ObjectMapper objectMapper;
 
-    // DUPLICATE KEY (DB constraint)
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleDuplicate(DataIntegrityViolationException ex) {
         String message = "Dữ liệu đã tồn tại";
@@ -40,7 +39,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
-    // VALIDATION ERROR
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
@@ -54,49 +52,42 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
-    // 401 UNAUTHORIZED - Lỗi xác thực (chưa đăng nhập hoặc token không hợp lệ)
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(AuthenticationException ex) {
         ApiResponse<Void> response = ApiResponse.error(401, "Yêu cầu đăng nhập");
         return ResponseEntity.status(401).body(response);
     }
 
-    // 403 FORBIDDEN - Lỗi phân quyền (không có quyền truy cập)
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException ex) {
         ApiResponse<Void> response = ApiResponse.error(403, "Bạn không có quyền truy cập tài nguyên này");
         return ResponseEntity.status(403).body(response);
     }
 
-    // 409 CONFLICT - Invoice already printed
     @ExceptionHandler(InvoiceAlreadyPrintedException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvoiceAlreadyPrinted(InvoiceAlreadyPrintedException ex) {
         ApiResponse<Void> response = ApiResponse.error(409, ex.getMessage());
         return ResponseEntity.status(409).body(response);
     }
 
-    // NOT FOUND - EntityNotFoundException
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNotFound(EntityNotFoundException ex) {
         ApiResponse<Void> response = ApiResponse.error(404, ex.getMessage());
         return ResponseEntity.status(404).body(response);
     }
 
-    // NOT FOUND - ResourceNotFoundException (custom)
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(ResourceNotFoundException ex) {
         ApiResponse<Void> response = ApiResponse.error(404, ex.getMessage());
         return ResponseEntity.status(404).body(response);
     }
 
-    // INVALID TOKEN
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvalidToken(InvalidTokenException ex) {
         ApiResponse<Void> response = ApiResponse.error(400, ex.getMessage());
         return ResponseEntity.badRequest().body(response);
     }
 
-    // BUSINESS EXCEPTION
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(RuntimeException ex) {
         ApiResponse<Void> response = ApiResponse.error(400, ex.getMessage());

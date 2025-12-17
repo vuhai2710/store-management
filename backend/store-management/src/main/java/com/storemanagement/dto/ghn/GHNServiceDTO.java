@@ -11,13 +11,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class GHNServiceDTO {
-    
+
     @JsonProperty("service_id")
     private Integer serviceId;
-    
+
     @JsonProperty("short_name")
     private String shortName;
-    
+
     @JsonProperty("service_type_id")
     private Integer serviceTypeId;
 }

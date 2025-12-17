@@ -2,20 +2,18 @@ import api from "./api";
 import { API_ENDPOINTS } from "../constants/apiEndpoints";
 
 const unwrap = (resp) => {
-  // Backend returns { code, message, data }
-  // data can be object or PageResponse
+
   return resp?.data?.data ?? resp?.data;
 };
 
 export const chatService = {
-  // Get all conversations (Admin/Employee)
+
   getAllConversations: async ({ pageNo = 1, pageSize = 20 } = {}) => {
     const params = { pageNo, pageSize };
     const resp = await api.get(API_ENDPOINTS.CHAT.CONVERSATIONS, { params });
     return unwrap(resp);
   },
 
-  // Get conversation by ID
   getConversationById: async (conversationId) => {
     const resp = await api.get(
       API_ENDPOINTS.CHAT.CONVERSATION_BY_ID(conversationId)
@@ -23,7 +21,6 @@ export const chatService = {
     return unwrap(resp);
   },
 
-  // Get conversation messages
   getConversationMessages: async (
     conversationId,
     { pageNo = 1, pageSize = 50 } = {}
@@ -36,7 +33,6 @@ export const chatService = {
     return unwrap(resp);
   },
 
-  // Close conversation
   closeConversation: async (conversationId) => {
     const resp = await api.put(
       API_ENDPOINTS.CHAT.CLOSE_CONVERSATION(conversationId)
@@ -44,14 +40,11 @@ export const chatService = {
     return unwrap(resp);
   },
 
-  // Mark conversation as viewed
   markConversationAsViewed: async (conversationId) => {
     const resp = await api.put(API_ENDPOINTS.CHAT.MARK_VIEWED(conversationId));
     return unwrap(resp);
   },
 
-  // Get or create conversation for a specific customer (Admin/Employee only)
-  // This allows admin to initiate chat with a customer
   getOrCreateConversationForCustomer: async (customerId) => {
     const resp = await api.post(
       API_ENDPOINTS.CHAT.CREATE_CONVERSATION_FOR_CUSTOMER(customerId)

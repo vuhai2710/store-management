@@ -22,7 +22,7 @@ export const productsService = {
       sortBy,
       sortDirection,
     };
-    // Use keyword for both code and name search
+
     if (keyword && keyword.trim()) params.keyword = keyword.trim();
     if (categoryId) params.categoryId = categoryId;
     if (brand) params.brand = brand;
@@ -126,7 +126,7 @@ export const productsService = {
   },
 
   createProduct: async (product) => {
-    // ProductDto fields align với BE
+
     const body = {
       idCategory: product.idCategory,
       productName: product.productName,
@@ -135,11 +135,11 @@ export const productsService = {
       description: product.description || null,
       price: product.price,
       stockQuantity: product.stockQuantity != null ? product.stockQuantity : 0,
-      status: product.status || null, // BE sẽ sync theo tồn nếu null
+      status: product.status || null,
       imageUrl: product.imageUrl || null,
-      productCode: product.productCode || null, // Với SKU có thể bỏ trống để BE tự sinh
-      codeType: product.codeType, // IMEI | SERIAL | SKU | BARCODE
-      sku: product.sku || null, // optional
+      productCode: product.productCode || null,
+      codeType: product.codeType,
+      sku: product.sku || null,
     };
     const resp = await api.post(API_ENDPOINTS.PRODUCTS.BASE, body);
     return unwrap(resp);
@@ -169,14 +169,6 @@ export const productsService = {
     return unwrap(resp);
   },
 
-  // Product Image Methods
-  /**
-   * Upload multiple images for a product
-   * POST /api/v1/products/{id}/images
-   * @param {number} productId - Product ID
-   * @param {File[]} images - Array of image files
-   * @returns {Promise<ProductImageDTO[]>}
-   */
   uploadProductImages: async (productId, images) => {
     const formData = new FormData();
     images.forEach((image) => {
@@ -194,12 +186,6 @@ export const productsService = {
     return unwrap(resp);
   },
 
-  /**
-   * Get all images for a product
-   * GET /api/v1/products/{id}/images
-   * @param {number} productId - Product ID
-   * @returns {Promise<ProductImageDTO[]>}
-   */
   getProductImages: async (productId) => {
     const resp = await api.get(
       API_ENDPOINTS.PRODUCTS.BY_ID(productId) + "/images"
@@ -207,33 +193,16 @@ export const productsService = {
     return unwrap(resp);
   },
 
-  /**
-   * Delete a product image
-   * DELETE /api/v1/products/images/{imageId}
-   * @param {number} imageId - Image ID
-   * @returns {Promise<void>}
-   */
   deleteProductImage: async (imageId) => {
     const resp = await api.delete(`/products/images/${imageId}`);
     return unwrap(resp);
   },
 
-  /**
-   * Set an image as primary
-   * PUT /api/v1/products/images/{imageId}/primary
-   * @param {number} imageId - Image ID
-   * @returns {Promise<ProductImageDTO>}
-   */
   setImageAsPrimary: async (imageId) => {
     const resp = await api.put(`/products/images/${imageId}/primary`);
     return unwrap(resp);
   },
 
-  /**
-   * Get all unique brands
-   * GET /api/v1/products/brands
-   * @returns {Promise<string[]>}
-   */
   getAllBrands: async () => {
     const resp = await api.get(API_ENDPOINTS.PRODUCTS.BRANDS);
     return unwrap(resp);

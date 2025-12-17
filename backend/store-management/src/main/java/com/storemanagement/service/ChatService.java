@@ -27,9 +27,5 @@ public interface ChatService {
 
     void markConversationAsViewed(Integer conversationId);
 
-    /**
-     * Admin/Employee: Get or create conversation for a specific customer
-     * This allows admin to initiate chat with a customer
-     */
     ChatConversationDTO getOrCreateConversationForCustomer(Integer customerId);
 }

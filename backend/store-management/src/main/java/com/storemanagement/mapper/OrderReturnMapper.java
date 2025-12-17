@@ -45,7 +45,6 @@ public interface OrderReturnMapper {
 
     List<OrderReturnDTO> toDTOList(List<OrderReturn> list);
 
-    // Helper methods for promotion info from order
     default String getPromotionName(OrderReturn entity) {
         if (entity.getOrder() == null) return null;
         if (entity.getOrder().getPromotion() != null) {

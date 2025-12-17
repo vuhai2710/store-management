@@ -17,4 +17,3 @@ public class UpdateCartItemRequestDto {
     private Integer quantity;
 }
 
-

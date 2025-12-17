@@ -17,24 +17,8 @@ public interface PromotionService {
 
     BigDecimal calculateDiscountForOrder(BigDecimal totalAmount, String promotionCode, String customerType);
 
-    /**
-     * Calculate shipping discount from shipping promotion code
-     * 
-     * @param shippingFee           the shipping fee to apply discount to
-     * @param shippingPromotionCode the shipping promotion code
-     * @return the shipping discount amount (capped at shippingFee)
-     */
     BigDecimal calculateShippingDiscount(BigDecimal shippingFee, String shippingPromotionCode);
 
-    /**
-     * Calculate automatic shipping discount based on active SHIPPING scope rules
-     * This is for auto-apply shipping promotions (no code required)
-     * 
-     * @param shippingFee  the shipping fee to apply discount to
-     * @param orderTotal   the order total to check against minOrderAmount
-     * @param customerType the customer type (VIP, REGULAR, ALL)
-     * @return CalculateDiscountResponseDTO with discount details
-     */
     CalculateDiscountResponseDTO calculateAutoShippingDiscount(BigDecimal shippingFee, BigDecimal orderTotal,
             String customerType);
 
@@ -42,9 +26,6 @@ public interface PromotionService {
 
     PageResponse<PromotionDTO> getAllPromotions(String keyword, Pageable pageable);
 
-    /**
-     * Get all promotions with optional scope filter
-     */
     PageResponse<PromotionDTO> getAllPromotions(String keyword, Promotion.PromotionScope scope, Pageable pageable);
 
     PromotionDTO getPromotionById(Integer id);
@@ -65,12 +46,5 @@ public interface PromotionService {
 
     void recordPromotionUsage(Integer promotionId, Integer orderId, Integer customerId);
 
-    /**
-     * Get all products currently on sale (with active PRODUCT-scope promotions and
-     * stock > 0).
-     * Used for the homepage Flash Sale slider.
-     * 
-     * @return List of products on sale with discount details
-     */
     List<ProductOnSaleDTO> getProductsOnSale();
 }

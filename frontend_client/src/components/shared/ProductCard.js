@@ -1,4 +1,4 @@
-// src/components/shared/ProductCard.js
+
 import React, { useState, useRef, useEffect } from "react";
 import styles from "../../styles/styles";
 import StarRating from "../layout/StarRating";
@@ -18,18 +18,17 @@ const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
   const [autoDiscountInfo, setAutoDiscountInfo] = useState(null);
   const { isAuthenticated } = useAuth();
 
-  // Get product image URL
   const getProductImage = () => {
     if (imageError) return null;
-    // Try to get image from product.images array (first image)
+
     if (product.images && product.images.length > 0) {
       return getImageUrl(product.images[0].imageUrl || product.images[0].url);
     }
-    // Try to get image from product.imageUrl
+
     if (product.imageUrl) {
       return getImageUrl(product.imageUrl);
     }
-    // Fallback to emoji if no image
+
     return null;
   };
 
@@ -91,7 +90,7 @@ const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
         ...styles.card,
         cursor: "pointer",
       }}>
-      {/* Vùng ảnh và thông tin có thể click để xem chi tiết */}
+      {}
       <div
         onClick={() => handleViewProductDetail(product.idProduct || product.id)}
         style={{ cursor: "pointer" }}>
@@ -199,7 +198,7 @@ const ProductCard = ({ product, handleAddToCart, handleViewProductDetail }) => {
           </div>
         </div>
       </div>
-      {/* Nút Add to Cart (riêng biệt) */}
+      {}
       <div style={{ padding: "0 1rem 1rem" }}>
         <button
           ref={addToCartButtonRef}

@@ -56,7 +56,7 @@ public class OrderController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
-        
+
         OrderDTO order = orderService.createOrderFromCart(customerId, request);
         return ResponseEntity.ok(ApiResponse.success("Đặt hàng thành công", order));
     }
@@ -64,18 +64,11 @@ public class OrderController {
     @PostMapping("/buy-now")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<OrderDTO>> buyNow(@RequestBody @Valid OrderDTO request) {
-        // Lấy thông tin customer từ JWT token
-        // JWT token chứa username, từ đó lấy customerId
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
-        
-        // Tạo đơn hàng trực tiếp từ sản phẩm (không qua giỏ hàng)
-        // Method này sẽ:
-        // - Validate sản phẩm và tồn kho
-        // - Tạo order với 1 order detail
-        // - Trừ tồn kho và tạo inventory transaction
-        // - Không xóa giỏ hàng (vì không sử dụng giỏ hàng)
+
         OrderDTO order = orderService.createOrderDirectly(customerId, request);
         return ResponseEntity.ok(ApiResponse.success("Đặt hàng thành công", order));
     }
@@ -83,27 +76,18 @@ public class OrderController {
     @PostMapping("/create-for-customer")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<OrderDTO>> createOrderForCustomer(@RequestBody @Valid OrderDTO request) {
-        // Lấy thông tin employee từ JWT token
-        // Employee này là người tạo đơn hàng (được lưu vào order.employee)
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
 
-        //Chỉ lây employeeId nếu user có role EMPLOYEE
         Integer employeeId = null;
         boolean isEmployee = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"));
 
-        if (isEmployee) { //ADMIN -> employeeId = null
+        if (isEmployee) {
             employeeId = employeeService.getMyProfile(username).getIdEmployee();
         }
 
-        // Tạo đơn hàng cho khách hàng (có thể là walk-in customer)
-        // Method này sẽ:
-        // - Xử lý customer: sử dụng customerId có sẵn hoặc tạo customer mới (walk-in)
-        // - Validate tất cả sản phẩm trong danh sách
-        // - Tính tổng tiền và áp dụng discount
-        // - Tạo order với employee và customer
-        // - Trừ tồn kho và tạo inventory transactions
         OrderDTO order = orderService.createOrderForCustomer(employeeId, request);
         return ResponseEntity.ok(ApiResponse.success("Tạo đơn hàng thành công", order));
     }
@@ -120,20 +104,20 @@ public class OrderController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
-        
+
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
-        
-        // Parse status string thành Order.OrderStatus enum (nếu có)
+
         Order.OrderStatus orderStatus = null;
         if (status != null && !status.isEmpty()) {
             try {
                 orderStatus = Order.OrderStatus.valueOf(status.toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Trạng thái đơn hàng không hợp lệ: " + status + ". Các giá trị hợp lệ: PENDING, CONFIRMED, COMPLETED, CANCELED");
+                throw new IllegalArgumentException("Trạng thái đơn hàng không hợp lệ: " + status
+                        + ". Các giá trị hợp lệ: PENDING, CONFIRMED, COMPLETED, CANCELED");
             }
         }
-        
+
         PageResponse<OrderDTO> orders = orderService.getMyOrders(customerId, orderStatus, keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách đơn hàng thành công", orders));
     }
@@ -144,7 +128,7 @@ public class OrderController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
-        
+
         OrderDTO order = orderService.getMyOrderById(customerId, orderId);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin đơn hàng thành công", order));
     }
@@ -155,7 +139,7 @@ public class OrderController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
-        
+
         OrderDTO order = orderService.cancelOrder(customerId, orderId);
         return ResponseEntity.ok(ApiResponse.success("Hủy đơn hàng thành công", order));
     }
@@ -166,7 +150,7 @@ public class OrderController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
-        
+
         OrderDTO order = orderService.confirmDelivery(customerId, orderId);
         return ResponseEntity.ok(ApiResponse.success("Xác nhận nhận hàng thành công", order));
     }
@@ -185,7 +169,6 @@ public class OrderController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
-        // Parse status string thành Order.OrderStatus enum (nếu có)
         Order.OrderStatus orderStatus = null;
         if (status != null && !status.isEmpty()) {
             try {

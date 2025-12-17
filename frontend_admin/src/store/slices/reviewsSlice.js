@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { reviewsService } from "../../services/reviewsService";
 
-// Async thunks
 export const fetchProductReviews = createAsyncThunk(
   "reviews/fetchProductReviews",
   async ({ productId, pageNo = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "DESC" }, { rejectWithValue }) => {
@@ -88,7 +87,7 @@ const reviewsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch product reviews
+
       .addCase(fetchProductReviews.pending, (state) => {
         state.productReviews.loading = true;
         state.productReviews.error = null;
@@ -107,7 +106,7 @@ const reviewsSlice = createSlice({
         state.productReviews.loading = false;
         state.productReviews.error = action.payload;
       })
-      // Fetch all reviews
+
       .addCase(fetchAllReviews.pending, (state) => {
         state.allReviews.loading = true;
         state.allReviews.error = null;
@@ -126,28 +125,26 @@ const reviewsSlice = createSlice({
         state.allReviews.loading = false;
         state.allReviews.error = action.payload;
       })
-      // Delete review
+
       .addCase(deleteReview.fulfilled, (state, action) => {
-        // Remove from product reviews
+
         state.productReviews.list = state.productReviews.list.filter((r) => r.idReview !== action.payload);
-        // Remove from all reviews
+
         state.allReviews.list = state.allReviews.list.filter((r) => r.idReview !== action.payload);
-        // Update total
+
         state.productReviews.pagination.totalElements = Math.max(0, state.productReviews.pagination.totalElements - 1);
         state.allReviews.pagination.totalElements = Math.max(0, state.allReviews.pagination.totalElements - 1);
       })
-      // Reply to review
+
       .addCase(replyToReview.fulfilled, (state, action) => {
         const updated = action.payload;
         if (!updated || !updated.idReview) return;
 
-        // Update in productReviews
         const prIndex = state.productReviews.list.findIndex((r) => r.idReview === updated.idReview);
         if (prIndex !== -1) {
           state.productReviews.list[prIndex].adminReply = updated.adminReply;
         }
 
-        // Update in allReviews
         const arIndex = state.allReviews.list.findIndex((r) => r.idReview === updated.idReview);
         if (arIndex !== -1) {
           state.allReviews.list[arIndex].adminReply = updated.adminReply;
@@ -158,4 +155,3 @@ const reviewsSlice = createSlice({
 
 export const { clearProductReviews, clearAllReviews } = reviewsSlice.actions;
 export default reviewsSlice.reducer;
-

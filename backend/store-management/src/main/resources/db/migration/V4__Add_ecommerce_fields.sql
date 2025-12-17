@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS shipping_addresses (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-ALTER TABLE orders 
+ALTER TABLE orders
   ADD COLUMN id_shipping_address INT DEFAULT NULL COMMENT 'Reference đến shipping_addresses',
   ADD COLUMN shipping_address_snapshot TEXT DEFAULT NULL COMMENT 'Snapshot của địa chỉ tại thời điểm đặt hàng',
   ADD KEY idx_orders_shipping_address (id_shipping_address),

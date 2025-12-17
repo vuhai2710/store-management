@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { categoriesService } from "../../services/categoriesService";
 
-// Fetch all categories with pagination
 export const fetchCategories = createAsyncThunk(
   "categories/fetchCategories",
   async (params, { rejectWithValue }) => {
@@ -14,7 +13,6 @@ export const fetchCategories = createAsyncThunk(
   }
 );
 
-// Fetch category by ID
 export const fetchCategoryById = createAsyncThunk(
   "categories/fetchCategoryById",
   async (id, { rejectWithValue }) => {
@@ -27,7 +25,6 @@ export const fetchCategoryById = createAsyncThunk(
   }
 );
 
-// Create category
 export const createCategory = createAsyncThunk(
   "categories/createCategory",
   async (categoryData, { rejectWithValue }) => {
@@ -40,7 +37,6 @@ export const createCategory = createAsyncThunk(
   }
 );
 
-// Update category
 export const updateCategory = createAsyncThunk(
   "categories/updateCategory",
   async ({ id, data }, { rejectWithValue }) => {
@@ -53,7 +49,6 @@ export const updateCategory = createAsyncThunk(
   }
 );
 
-// Delete category
 export const deleteCategory = createAsyncThunk(
   "categories/deleteCategory",
   async (id, { rejectWithValue }) => {
@@ -98,7 +93,7 @@ const categoriesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch categories
+
       .addCase(fetchCategories.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -122,7 +117,7 @@ const categoriesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Fetch category by ID
+
       .addCase(fetchCategoryById.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -136,7 +131,7 @@ const categoriesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Create category
+
       .addCase(createCategory.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -151,7 +146,7 @@ const categoriesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Update category
+
       .addCase(updateCategory.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -174,7 +169,7 @@ const categoriesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Delete category
+
       .addCase(deleteCategory.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -198,5 +193,3 @@ const categoriesSlice = createSlice({
 
 export const { setFilters, clearFilters, clearCurrentCategory } = categoriesSlice.actions;
 export default categoriesSlice.reducer;
-
-

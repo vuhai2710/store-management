@@ -1,7 +1,3 @@
-/**
- * Constants - Order Status
- */
-
 export const ORDER_STATUS = {
   PENDING: "PENDING",
   CONFIRMED: "CONFIRMED",

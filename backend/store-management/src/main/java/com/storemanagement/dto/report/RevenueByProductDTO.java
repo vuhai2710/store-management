@@ -7,10 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-/**
- * Revenue by product DTO
- * Shows sales performance per product.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,28 +18,13 @@ public class RevenueByProductDTO {
     private String productName;
     private String categoryName;
 
-    /**
-     * Total quantity sold
-     */
     private Long quantitySold;
 
-    /**
-     * Product revenue = SUM(quantity * price)
-     */
     private BigDecimal productRevenue;
 
-    /**
-     * Allocated discount per product (proportional)
-     */
     private BigDecimal discount;
 
-    /**
-     * Net revenue = productRevenue - discount
-     */
     private BigDecimal netRevenue;
 
-    /**
-     * Average selling price
-     */
     private BigDecimal avgSellingPrice;
 }

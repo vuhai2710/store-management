@@ -22,15 +22,15 @@ public class CreateOrderForCustomerRequestDto {
     private String customerName;
     private String customerPhone;
     private String customerAddress;
-    
+
     @NotEmpty(message = "Danh sách sản phẩm không được để trống")
     @Valid
     private List<OrderItemDto> orderItems;
-    
+
     @NotNull(message = "Phương thức thanh toán không được để trống")
     private Order.PaymentMethod paymentMethod;
-    
+
     private BigDecimal discount;
-    
+
     private String notes;
 }

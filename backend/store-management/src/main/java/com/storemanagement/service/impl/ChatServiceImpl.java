@@ -42,15 +42,13 @@ public class ChatServiceImpl implements ChatService {
     public ChatConversationDTO createConversation(Integer customerId) {
         log.info("Creating conversation for customer ID: {}", customerId);
 
-        // Validate customer tồn tại
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Khách hàng không tồn tại với ID: " + customerId));
 
-        // Kiểm tra xem customer đã có conversation OPEN chưa
         return conversationRepository.findByCustomer_IdCustomerAndStatus(customerId, ConversationStatus.OPEN)
                 .map(this::toConversationDto)
                 .orElseGet(() -> {
-                    // Tạo conversation mới
+
                     ChatConversation conversation = ChatConversation.builder()
                             .customer(customer)
                             .status(ConversationStatus.OPEN)
@@ -67,12 +65,10 @@ public class ChatServiceImpl implements ChatService {
         log.info("Sending message from {} ID: {} to conversation ID: {}",
                 request.getSenderType(), request.getSenderId(), request.getConversationId());
 
-        // Validate conversation tồn tại
         ChatConversation conversation = conversationRepository.findById(request.getConversationId())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Cuộc hội thoại không tồn tại với ID: " + request.getConversationId()));
 
-        // Validate senderId từ Principal
         Integer currentUserId = extractUserIdFromPrincipal(principal);
         if (currentUserId == null || !currentUserId.equals(request.getSenderId())) {
             log.warn("Access denied: principal userId={}, request senderId={}",
@@ -80,14 +76,11 @@ public class ChatServiceImpl implements ChatService {
             throw new AccessDeniedException("Sender ID không khớp với user hiện tại");
         }
 
-        // Validate conversation access - customer chỉ có thể gửi tin nhắn trong
-        // conversation của mình
         Optional<String> currentRole = SecurityUtils.getCurrentRole();
         if (currentRole.isPresent() && "ROLE_CUSTOMER".equals(currentRole.get())) {
             validateConversationAccess(conversation.getIdConversation());
         }
 
-        // Tạo message entity
         ChatMessage message = ChatMessage.builder()
                 .conversation(conversation)
                 .senderId(request.getSenderId())
@@ -97,8 +90,7 @@ public class ChatServiceImpl implements ChatService {
 
         ChatMessage saved = messageRepository.save(message);
 
-        // Cập nhật conversation.updatedAt (tự động bởi @PreUpdate trong BaseEntity)
-        conversation.setStatus(conversation.getStatus()); // Trigger update
+        conversation.setStatus(conversation.getStatus());
         conversationRepository.save(conversation);
 
         log.info("Message sent successfully, ID: {}", saved.getIdMessage());
@@ -110,22 +102,18 @@ public class ChatServiceImpl implements ChatService {
     public Page<ChatMessageDTO> getConversationMessages(Integer conversationId, Pageable pageable) {
         log.info("Getting messages for conversation ID: {}", conversationId);
 
-        // Validate conversation tồn tại
         ChatConversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(
                         () -> new EntityNotFoundException("Cuộc hội thoại không tồn tại với ID: " + conversationId));
 
-        // Validate conversation access - customer chỉ có thể xem conversation của mình
         Optional<String> currentRole = SecurityUtils.getCurrentRole();
         if (currentRole.isPresent() && "ROLE_CUSTOMER".equals(currentRole.get())) {
             validateConversationAccess(conversationId);
         }
 
-        // Fetch in DESC order to get latest messages first
         Page<ChatMessage> messages = messageRepository
                 .findByConversation_IdConversationOrderByCreatedAtDesc(conversationId, pageable);
 
-        // Map to DTOs and reverse to display in correct order (oldest first)
         java.util.List<ChatMessageDTO> dtoList = messages.getContent().stream()
                 .map(this::toMessageDto)
                 .collect(java.util.stream.Collectors.toList());
@@ -138,7 +126,6 @@ public class ChatServiceImpl implements ChatService {
     public ChatConversationDTO getOrCreateCustomerConversation(Integer customerId) {
         log.info("Getting or creating conversation for customer ID: {}", customerId);
 
-        // Tìm conversation OPEN
         return conversationRepository.findByCustomer_IdCustomerAndStatus(customerId, ConversationStatus.OPEN)
                 .map(this::toConversationDto)
                 .orElseGet(() -> createConversation(customerId));
@@ -176,7 +163,6 @@ public class ChatServiceImpl implements ChatService {
                 .orElseThrow(
                         () -> new EntityNotFoundException("Cuộc hội thoại không tồn tại với ID: " + conversationId));
 
-        // Validate conversation access - customer chỉ có thể xem conversation của mình
         Optional<String> currentRole = SecurityUtils.getCurrentRole();
         if (currentRole.isPresent() && "ROLE_CUSTOMER".equals(currentRole.get())) {
             validateConversationAccess(conversationId);
@@ -200,7 +186,6 @@ public class ChatServiceImpl implements ChatService {
         return null;
     }
 
-    // role từ Principal
     private Optional<String> extractRoleFromPrincipal(Principal principal) {
         if (principal instanceof JwtAuthenticationToken) {
             JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) principal;
@@ -211,14 +196,11 @@ public class ChatServiceImpl implements ChatService {
         return Optional.empty();
     }
 
-    // Sửa validateConversationAccess - nhận userId từ parameter thay vì
-    // SecurityUtils
     private void validateConversationAccess(Integer conversationId, Integer userId) {
-        // Lấy customerId từ userId
+
         Customer customer = customerRepository.findByUser_IdUser(userId)
                 .orElseThrow(() -> new AccessDeniedException("Không tìm thấy khách hàng với user ID: " + userId));
 
-        // Kiểm tra conversation thuộc về customer này
         ChatConversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(
                         () -> new EntityNotFoundException("Cuộc hội thoại không tồn tại với ID: " + conversationId));
@@ -234,12 +216,10 @@ public class ChatServiceImpl implements ChatService {
             throw new AccessDeniedException("Không thể xác định user hiện tại");
         }
 
-        // Lấy customerId từ userId
         Customer customer = customerRepository.findByUser_IdUser(currentUserId.get())
                 .orElseThrow(() -> new AccessDeniedException(
                         "Không tìm thấy khách hàng với user ID: " + currentUserId.get()));
 
-        // Kiểm tra conversation thuộc về customer này
         ChatConversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(
                         () -> new EntityNotFoundException("Cuộc hội thoại không tồn tại với ID: " + conversationId));
@@ -250,10 +230,9 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private ChatConversationDTO toConversationDto(ChatConversation conversation) {
-        // Lấy tin nhắn mới nhất
+
         ChatMessage lastMessage = messageRepository.findLatestMessageByConversationId(conversation.getIdConversation());
 
-        // Tính unread count
         Long unreadCount = calculateUnreadCount(conversation.getIdConversation());
 
         return ChatConversationDTO.builder()
@@ -287,21 +266,20 @@ public class ChatServiceImpl implements ChatService {
 
             LocalDateTime lastViewedTime;
 
-            // Xác định sender type cần đếm (tin nhắn từ phía kia)
             if ("ROLE_CUSTOMER".equals(currentRole.get())) {
-                // Customer đếm tin nhắn từ ADMIN/EMPLOYEE sau lastViewedByCustomerAt
+
                 lastViewedTime = conversation.getLastViewedByCustomerAt();
                 if (lastViewedTime == null) {
-                    // Nếu chưa từng xem, đếm tất cả tin nhắn từ admin/employee
+
                     lastViewedTime = LocalDateTime.of(1970, 1, 1, 0, 0);
                 }
                 return messageRepository.countUnreadMessages(conversationId, SenderType.EMPLOYEE, lastViewedTime) +
                         messageRepository.countUnreadMessages(conversationId, SenderType.ADMIN, lastViewedTime);
             } else {
-                // Admin/Employee đếm tin nhắn từ CUSTOMER sau lastViewedByAdminAt
+
                 lastViewedTime = conversation.getLastViewedByAdminAt();
                 if (lastViewedTime == null) {
-                    // Nếu chưa từng xem, đếm tất cả tin nhắn từ customer
+
                     lastViewedTime = LocalDateTime.of(1970, 1, 1, 0, 0);
                 }
                 return messageRepository.countUnreadMessages(conversationId, SenderType.CUSTOMER, lastViewedTime);
@@ -334,13 +312,11 @@ public class ChatServiceImpl implements ChatService {
                 return "CUSTOMER";
             }
 
-            // For admin/employee, get actual role from User
             User user = userRepository.findById(senderId).orElse(null);
             if (user != null && user.getRole() != null) {
-                return user.getRole().name(); // "ADMIN" or "EMPLOYEE"
+                return user.getRole().name();
             }
 
-            // Fallback to senderType
             return senderType.name();
         } catch (Exception e) {
             log.error("Error getting sender role: {}", e.getMessage());
@@ -355,7 +331,6 @@ public class ChatServiceImpl implements ChatService {
                 return "Unknown";
             }
 
-            // Lấy tên từ bảng tương ứng
             if (senderType == SenderType.CUSTOMER) {
                 return customerRepository.findByUser_IdUser(senderId)
                         .map(Customer::getCustomerName)
@@ -392,11 +367,11 @@ public class ChatServiceImpl implements ChatService {
         LocalDateTime now = LocalDateTime.now();
 
         if ("ROLE_CUSTOMER".equals(currentRole.get())) {
-            // Validate customer chỉ có thể xem conversation của mình
+
             validateConversationAccess(conversationId);
             conversation.setLastViewedByCustomerAt(now);
         } else {
-            // Admin/Employee có thể xem tất cả conversations
+
             conversation.setLastViewedByAdminAt(now);
         }
 
@@ -408,15 +383,13 @@ public class ChatServiceImpl implements ChatService {
     public ChatConversationDTO getOrCreateConversationForCustomer(Integer customerId) {
         log.info("Admin/Employee getting or creating conversation for customer ID: {}", customerId);
 
-        // Validate customer exists
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Khách hàng không tồn tại với ID: " + customerId));
 
-        // Find existing OPEN conversation or create new one
         return conversationRepository.findByCustomer_IdCustomerAndStatus(customerId, ConversationStatus.OPEN)
                 .map(this::toConversationDto)
                 .orElseGet(() -> {
-                    // Create new conversation for customer
+
                     ChatConversation conversation = ChatConversation.builder()
                             .customer(customer)
                             .status(ConversationStatus.OPEN)

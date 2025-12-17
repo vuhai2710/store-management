@@ -25,7 +25,7 @@ public class ImportOrder {
     private Supplier supplier;
 
     @Column(name = "id_employee")
-    private Integer idEmployee; // ID nhân viên tạo đơn
+    private Integer idEmployee;
 
     @Column(name = "order_date")
     private LocalDateTime orderDate;
@@ -37,7 +37,6 @@ public class ImportOrder {
     @Builder.Default
     private List<ImportOrderDetail> importOrderDetails = new ArrayList<>();
 
-    // Invoice print tracking fields
     @Column(name = "invoice_printed")
     @Builder.Default
     private Boolean invoicePrinted = false;

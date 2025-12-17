@@ -45,10 +45,6 @@ public class PromotionController {
         return ResponseEntity.ok(ApiResponse.success("Calculate automatic discount", response));
     }
 
-    /**
-     * Calculate automatic shipping discount based on SHIPPING scope promotion rules
-     * This is for auto-apply shipping discounts (no code required)
-     */
     @PostMapping("/calculate-auto-shipping")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<CalculateDiscountResponseDTO>> calculateAutoShippingDiscount(

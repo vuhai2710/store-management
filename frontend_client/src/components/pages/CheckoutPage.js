@@ -1,4 +1,4 @@
-// src/components/pages/CheckoutPage.js
+
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { MapPin, Plus, Edit, Trash2, CreditCard, Truck } from "lucide-react";
@@ -34,12 +34,10 @@ const CheckoutPage = ({ setCurrentPage }) => {
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [notes, setNotes] = useState("");
 
-  // GHN shipping fee
   const [shippingFee, setShippingFee] = useState(0);
   const [loadingShippingFee, setLoadingShippingFee] = useState(false);
   const [shippingFeeError, setShippingFeeError] = useState(null);
 
-  // Promotion/Discount (Order)
   const [promotionCode, setPromotionCode] = useState("");
   const [promotionDiscount, setPromotionDiscount] = useState(0);
   const [promotionValid, setPromotionValid] = useState(false);
@@ -48,24 +46,18 @@ const CheckoutPage = ({ setCurrentPage }) => {
   const [automaticDiscount, setAutomaticDiscount] = useState(0);
   const [automaticDiscountInfo, setAutomaticDiscountInfo] = useState(null);
 
-  // Shipping Promotion/Discount
   const [shippingPromotionCode, setShippingPromotionCode] = useState("");
   const [shippingPromotionDiscount, setShippingPromotionDiscount] = useState(0);
   const [shippingPromotionValid, setShippingPromotionValid] = useState(false);
   const [shippingPromotionError, setShippingPromotionError] = useState(null);
   const [loadingShippingPromotion, setLoadingShippingPromotion] = useState(false);
 
-  // Auto Shipping Discount (no code required)
   const [autoShippingDiscount, setAutoShippingDiscount] = useState(0);
   const [autoShippingDiscountInfo, setAutoShippingDiscountInfo] = useState(null);
 
-  // Buy Now product (loaded from API if needed)
   const [buyNowProduct, setBuyNowProduct] = useState(null);
   const [loadingBuyNowProduct, setLoadingBuyNowProduct] = useState(false);
 
-  // Xác định items để hiển thị và tính toán
-  // Nếu là Buy Now mode → dùng buyNowItem
-  // Nếu là Cart mode → dùng cartItems
   const checkoutItems =
     isBuyNowMode && buyNowItem
       ? [
@@ -78,16 +70,12 @@ const CheckoutPage = ({ setCurrentPage }) => {
       ]
       : cart?.cartItems || cart?.items || [];
 
-  // Default shop district ID (should be configured in backend, using placeholder for now)
-  // TODO: Get this from backend config or API endpoint
-  const SHOP_DISTRICT_ID = 1442; // Example: Ho Chi Minh City, District 1 (need to configure in backend)
+  const SHOP_DISTRICT_ID = 1442;
 
-  // Load Buy Now product details if in Buy Now mode
   useEffect(() => {
     const loadBuyNowProduct = async () => {
       if (!isBuyNowMode || !buyNowItem) return;
 
-      // Nếu đã có product info từ context, không cần load lại
       if (buyNowItem.product && buyNowItem.product.productName) {
         setBuyNowProduct(buyNowItem.product);
         return;
@@ -111,7 +99,6 @@ const CheckoutPage = ({ setCurrentPage }) => {
     loadBuyNowProduct();
   }, [isBuyNowMode, buyNowItem, setCurrentPage]);
 
-  // Fetch cart and shipping addresses
   useEffect(() => {
     const fetchData = async () => {
       if (!isAuthenticated) {
@@ -123,17 +110,14 @@ const CheckoutPage = ({ setCurrentPage }) => {
         setLoading(true);
         setError(null);
 
-        // Chỉ fetch cart nếu KHÔNG phải Buy Now mode
         if (!isBuyNowMode) {
           const cartData = await cartService.getCart();
           setCart(cartData);
         }
 
-        // Fetch shipping addresses (cần cho cả 2 mode)
         const addressesData = await shippingAddressService.getAllAddresses();
         setShippingAddresses(addressesData || []);
 
-        // Set default address if available
         if (addressesData && addressesData.length > 0) {
           const defaultAddress = addressesData.find((addr) => addr.isDefault);
           if (defaultAddress) {
@@ -157,10 +141,9 @@ const CheckoutPage = ({ setCurrentPage }) => {
     fetchData();
   }, [isAuthenticated, setCurrentPage, isBuyNowMode]);
 
-  // Calculate shipping fee when address is selected
   useEffect(() => {
     const calculateShippingFee = async () => {
-      // Kiểm tra có items để tính phí ship không
+
       const hasItems = isBuyNowMode
         ? buyNowItem && buyNowProduct
         : cart && (cart.cartItems?.length > 0 || cart.items?.length > 0);
@@ -175,7 +158,6 @@ const CheckoutPage = ({ setCurrentPage }) => {
         return;
       }
 
-      // Find selected address
       const selectedAddress = shippingAddresses.find(
         (addr) => (addr.idShippingAddress || addr.id) === selectedAddressId
       );
@@ -185,7 +167,6 @@ const CheckoutPage = ({ setCurrentPage }) => {
         return;
       }
 
-      // Check if address has districtId and wardCode
       if (!selectedAddress.districtId || !selectedAddress.wardCode) {
         setShippingFee(0);
         setShippingFeeError(
@@ -202,12 +183,12 @@ const CheckoutPage = ({ setCurrentPage }) => {
         let orderTotal = 0;
 
         if (isBuyNowMode && buyNowItem && buyNowProduct) {
-          // Buy Now mode: tính weight và total từ buyNowItem
-          const itemWeight = buyNowProduct.weight || 1000; // Default 1kg
+
+          const itemWeight = buyNowProduct.weight || 1000;
           estimatedWeight = itemWeight * buyNowItem.quantity;
           orderTotal = (buyNowProduct.price || 0) * buyNowItem.quantity;
         } else {
-          // Cart mode: tính từ cart items
+
           const cartItemsList = cart.cartItems || cart.items || [];
           estimatedWeight = cartItemsList.reduce((total, item) => {
             const itemWeight = item.weight || item.product?.weight || 1000;
@@ -217,16 +198,15 @@ const CheckoutPage = ({ setCurrentPage }) => {
           orderTotal = cart.totalAmount || cart.total || 0;
         }
 
-        // Calculate shipping fee using GHN API
         const feeResponse = await ghnService.calculateShippingFee({
           fromDistrictId: SHOP_DISTRICT_ID,
           toDistrictId: selectedAddress.districtId,
           toWardCode: selectedAddress.wardCode,
-          weight: Math.max(estimatedWeight, 1000), // Minimum 1kg
+          weight: Math.max(estimatedWeight, 1000),
           length: 20,
           width: 20,
           height: 20,
-          insuranceValue: Math.round(orderTotal), // Order total as insurance value
+          insuranceValue: Math.round(orderTotal),
         });
 
         if (feeResponse && feeResponse.total) {
@@ -258,10 +238,9 @@ const CheckoutPage = ({ setCurrentPage }) => {
     buyNowProduct,
   ]);
 
-  // Calculate automatic discount when cart total changes
   useEffect(() => {
     const calculateAutomaticDiscount = async () => {
-      // Tính tổng tiền và items dựa trên mode
+
       let orderTotal = 0;
       let items = [];
 
@@ -322,17 +301,15 @@ const CheckoutPage = ({ setCurrentPage }) => {
     calculateAutomaticDiscount();
   }, [cart, isBuyNowMode, buyNowItem, buyNowProduct]);
 
-  // Calculate automatic shipping discount when shipping fee or order total changes
   useEffect(() => {
     const calculateAutoShipping = async () => {
-      // Skip if no shipping fee or if manual shipping promo code is applied
+
       if (shippingFee <= 0 || shippingPromotionValid) {
         setAutoShippingDiscount(0);
         setAutoShippingDiscountInfo(null);
         return;
       }
 
-      // Calculate order total
       let orderTotal = 0;
       if (isBuyNowMode && buyNowItem && buyNowProduct) {
         orderTotal = (buyNowProduct.price || 0) * buyNowItem.quantity;
@@ -407,7 +384,6 @@ const CheckoutPage = ({ setCurrentPage }) => {
       return;
     }
 
-    // Kiểm tra có items không (tùy mode)
     if (isBuyNowMode) {
       if (!buyNowItem || !buyNowProduct) {
         setError("Không tìm thấy thông tin sản phẩm");
@@ -437,8 +413,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
       let order;
 
       if (isBuyNowMode) {
-        // ========== BUY NOW MODE ==========
-        // Gọi API buy-now với đầy đủ thông tin
+
         order = await ordersService.buyNow({
           productId: buyNowItem.productId,
           quantity: buyNowItem.quantity,
@@ -450,11 +425,9 @@ const CheckoutPage = ({ setCurrentPage }) => {
           shippingFee: shippingFee > 0 ? shippingFee : undefined,
         });
 
-        // Clear BuyNow context sau khi đặt hàng thành công
         clearBuyNow();
       } else {
-        // ========== CART MODE ==========
-        // Gọi API checkout từ giỏ hàng
+
         order = await ordersService.checkout({
           shippingAddressId: Number(selectedAddressId),
           paymentMethod: paymentMethod,
@@ -465,7 +438,6 @@ const CheckoutPage = ({ setCurrentPage }) => {
         });
       }
 
-      // If payment method is PAYOS, create payment link and redirect
       if (paymentMethod === "PAYOS") {
         try {
           const orderId = order.idOrder || order.id;
@@ -473,15 +445,13 @@ const CheckoutPage = ({ setCurrentPage }) => {
             throw new Error("Không tìm thấy ID đơn hàng");
           }
 
-          // Create PayOS payment link
           const paymentLink = await paymentService.createPayOSPaymentLink(
             orderId
           );
 
-          // Redirect to PayOS payment page
           if (paymentLink.paymentLinkUrl) {
             window.location.href = paymentLink.paymentLinkUrl;
-            return; // Don't set submitting to false here, as we're redirecting
+            return;
           } else {
             throw new Error("Không thể tạo link thanh toán");
           }
@@ -490,7 +460,6 @@ const CheckoutPage = ({ setCurrentPage }) => {
           let paymentErrorMessage =
             "Không thể tạo link thanh toán. Vui lòng thử lại.";
 
-          // Extract error message from various error formats
           if (paymentError?.message) {
             paymentErrorMessage = paymentError.message;
           } else if (paymentError?.response?.data?.message) {
@@ -501,7 +470,6 @@ const CheckoutPage = ({ setCurrentPage }) => {
             paymentErrorMessage = paymentError.response.data.error;
           }
 
-          // Check for specific PayOS configuration errors
           if (
             paymentErrorMessage.includes("credentials") ||
             paymentErrorMessage.includes("configured") ||
@@ -514,19 +482,16 @@ const CheckoutPage = ({ setCurrentPage }) => {
           setError(paymentErrorMessage);
           setSubmitting(false);
 
-          // Show error alert
           toast.error(`Lỗi: ${paymentErrorMessage}`);
           return;
         }
       }
 
-      // For CASH payment, redirect to orders page
       toast.success("Đặt hàng thành công!");
       setCurrentPage("orders");
     } catch (error) {
       console.error("Error placing order:", error);
 
-      // Extract error message
       let errorMessage = "Không thể đặt hàng. Vui lòng thử lại.";
 
       if (error?.message) {
@@ -534,7 +499,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
       } else if (error?.responseData?.message) {
         errorMessage = error.responseData.message;
       } else if (error?.errors) {
-        // Validation errors
+
         const errorMessages = Object.values(error.errors).flat();
         errorMessage = errorMessages.join(", ");
       }
@@ -545,7 +510,6 @@ const CheckoutPage = ({ setCurrentPage }) => {
     }
   };
 
-  // Loading state (including buy now product loading)
   if (loading || loadingBuyNowProduct) {
     return (
       <section style={{ padding: "4rem 0" }}>
@@ -564,7 +528,6 @@ const CheckoutPage = ({ setCurrentPage }) => {
     );
   }
 
-  // Error state - hiển thị khi không có items
   if (error && !isBuyNowMode && !cart) {
     return (
       <section style={{ padding: "4rem 0" }}>
@@ -589,7 +552,6 @@ const CheckoutPage = ({ setCurrentPage }) => {
     );
   }
 
-  // Kiểm tra có items để checkout không
   const hasCheckoutItems = isBuyNowMode
     ? buyNowItem && buyNowProduct
     : cart && (cart.cartItems?.length > 0 || cart.items?.length > 0);
@@ -618,34 +580,28 @@ const CheckoutPage = ({ setCurrentPage }) => {
     );
   }
 
-  // Tính tổng tiền dựa trên mode
   const orderSubtotal =
     isBuyNowMode && buyNowProduct
       ? (buyNowProduct.price || 0) * buyNowItem.quantity
       : cart?.totalAmount || cart?.total || 0;
 
-  // NEW LOGIC: Allow BOTH auto promotion and manual code simultaneously
-  // Both discounts are applied together for maximum customer benefit
   const manualCodeDiscount =
     promotionValid && promotionDiscount > 0 ? promotionDiscount : 0;
   const autoPromoDiscount = automaticDiscount > 0 ? automaticDiscount : 0;
   const totalOrderDiscount = manualCodeDiscount + autoPromoDiscount;
 
-  // Shipping discount (applied separately to shipping fee only)
-  // Priority: Manual promo code > Auto shipping discount
   const manualShippingDiscount =
     shippingPromotionValid && shippingPromotionDiscount > 0
-      ? Math.min(shippingPromotionDiscount, shippingFee) // Cap at shippingFee
+      ? Math.min(shippingPromotionDiscount, shippingFee)
       : 0;
   const autoShippingDiscountAmount =
     !shippingPromotionValid && autoShippingDiscount > 0
-      ? Math.min(autoShippingDiscount, shippingFee) // Cap at shippingFee
+      ? Math.min(autoShippingDiscount, shippingFee)
       : 0;
   const shippingDiscountAmount = manualShippingDiscount + autoShippingDiscountAmount;
   const effectiveShippingFee = Math.max(0, shippingFee - shippingDiscountAmount);
 
-  // Combined totals for display
-  const totalDiscount = totalOrderDiscount; // For backward compatibility
+  const totalDiscount = totalOrderDiscount;
   const finalTotal = Math.max(0, orderSubtotal - totalOrderDiscount + effectiveShippingFee);
 
   return (
@@ -680,9 +636,9 @@ const CheckoutPage = ({ setCurrentPage }) => {
             gap: "2rem",
             alignItems: "start",
           }}>
-          {/* Left: Shipping Address & Order Items & Payment */}
+          {}
           <div>
-            {/* Shipping Address Section */}
+            {}
             <div
               style={{
                 backgroundColor: "white",
@@ -703,7 +659,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                 <MapPin size={24} /> Địa chỉ giao hàng
               </h3>
 
-              {/* Existing Addresses */}
+              {}
               {shippingAddresses.length > 0 && (
                 <div style={{ marginBottom: "1.5rem" }}>
                   {shippingAddresses.map((address) => (
@@ -775,7 +731,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                 </div>
               )}
 
-              {/* Add New Address Button */}
+              {}
               {!showAddressForm && (
                 <button
                   onClick={() => setShowAddressForm(true)}
@@ -791,7 +747,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                 </button>
               )}
 
-              {/* Address Form */}
+              {}
               {showAddressForm && (
                 <form
                   onSubmit={handleCreateAddress}
@@ -946,7 +902,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
               )}
             </div>
 
-            {/* Order Items Section */}
+            {}
             <div
               style={{
                 backgroundColor: "white",
@@ -984,7 +940,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   gap: "1rem",
                 }}>
                 {checkoutItems.map((item, index) => {
-                  // Lấy thông tin sản phẩm từ item (hỗ trợ cả cart item và buy now item)
+
                   const product = item.product || buyNowProduct;
                   const productName =
                     item.productName ||
@@ -1079,7 +1035,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
               </div>
             </div>
 
-            {/* Payment Method & Notes Section */}
+            {}
             <div
               style={{
                 backgroundColor: "white",
@@ -1153,7 +1109,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                 />
               </div>
 
-              {/* Promotion Code Section */}
+              {}
               <div
                 style={{
                   marginTop: "1.5rem",
@@ -1172,7 +1128,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   Mã giảm giá
                 </h4>
 
-                {/* Show automatic discount info - now shows even if coupon applied */}
+                {}
                 {automaticDiscount > 0 && automaticDiscountInfo && (
                   <div
                     style={{
@@ -1335,7 +1291,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   </div>
                 )}
 
-                {/* Shipping Promotion Code Input */}
+                {}
                 {shippingFee > 0 && (
                   <>
                     <div style={{ marginTop: "1rem" }}>
@@ -1481,7 +1437,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
             </div>
           </div>
 
-          {/* Right: Order Summary */}
+          {}
           <div>
             <div
               style={{
@@ -1558,7 +1514,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   </div>
                 )}
 
-                {/* Shipping Discount Line - Manual Promo Code */}
+                {}
                 {manualShippingDiscount > 0 && shippingPromotionValid && (
                   <div
                     style={{
@@ -1572,7 +1528,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   </div>
                 )}
 
-                {/* Shipping Discount Line - Auto Applied */}
+                {}
                 {autoShippingDiscountAmount > 0 && autoShippingDiscountInfo && (
                   <div
                     style={{
@@ -1591,7 +1547,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   </div>
                 )}
 
-                {/* Display BOTH discounts - auto promotion AND manual code can stack */}
+                {}
                 {autoPromoDiscount > 0 && automaticDiscountInfo && (
                   <div
                     style={{
@@ -1623,7 +1579,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   </div>
                 )}
 
-                {/* Show total discount when both are applied */}
+                {}
                 {totalDiscount > 0 &&
                   autoPromoDiscount > 0 &&
                   manualCodeDiscount > 0 && (
@@ -1717,7 +1673,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
 
               <button
                 onClick={() => {
-                  // Clear BuyNow context khi quay lại
+
                   if (isBuyNowMode) {
                     clearBuyNow();
                   }

@@ -41,13 +41,12 @@ const ImportInvoices = () => {
     });
     const [dateRange, setDateRange] = useState(null);
     const [supplierFilter, setSupplierFilter] = useState(null);
-    const [printedFilter, setPrintedFilter] = useState(null); // null, true, false
+    const [printedFilter, setPrintedFilter] = useState(null);
     const [suppliers, setSuppliers] = useState([]);
     const [selectedInvoice, setSelectedInvoice] = useState(null);
     const [drawerVisible, setDrawerVisible] = useState(false);
     const [printingId, setPrintingId] = useState(null);
 
-    // Fetch suppliers for filter dropdown
     useEffect(() => {
         const fetchSuppliers = async () => {
             try {
@@ -60,7 +59,6 @@ const ImportInvoices = () => {
         fetchSuppliers();
     }, []);
 
-    // Fetch invoices
     const fetchInvoices = useCallback(async () => {
         setLoading(true);
         try {
@@ -80,7 +78,6 @@ const ImportInvoices = () => {
             const response = await invoiceService.getImportInvoices(params);
             let filteredInvoices = response.content || [];
 
-            // Filter by printed status on frontend
             if (printedFilter !== null) {
                 filteredInvoices = filteredInvoices.filter(inv => inv.invoicePrinted === printedFilter);
             }
@@ -102,7 +99,6 @@ const ImportInvoices = () => {
         fetchInvoices();
     }, [fetchInvoices]);
 
-    // Handle table pagination change
     const handleTableChange = (newPagination) => {
         setPagination((prev) => ({
             ...prev,
@@ -111,7 +107,6 @@ const ImportInvoices = () => {
         }));
     };
 
-    // Handle view invoice detail
     const handleViewDetail = async (invoice) => {
         try {
             const detail = await invoiceService.getImportInvoiceById(invoice.purchaseOrderId);
@@ -122,7 +117,6 @@ const ImportInvoices = () => {
         }
     };
 
-    // Handle print invoice
     const handlePrint = async (invoice) => {
         if (invoice.invoicePrinted) {
             message.warning("Hóa đơn đã được in trước đó");
@@ -134,7 +128,6 @@ const ImportInvoices = () => {
             const printData = await invoiceService.printImportInvoice(invoice.purchaseOrderId);
             message.success("In hóa đơn thành công!");
 
-            // Update invoice state immediately in table list
             setInvoices((prev) =>
                 prev.map((inv) =>
                     inv.purchaseOrderId === invoice.purchaseOrderId
@@ -147,7 +140,6 @@ const ImportInvoices = () => {
                 )
             );
 
-            // Also update selectedInvoice if it's the same one (for drawer)
             if (selectedInvoice && selectedInvoice.purchaseOrderId === invoice.purchaseOrderId) {
                 setSelectedInvoice({
                     ...selectedInvoice,
@@ -156,17 +148,15 @@ const ImportInvoices = () => {
                 });
             }
 
-            // Close the drawer after successful print
             setDrawerVisible(false);
 
-            // Open print window
             openPrintWindow(printData);
         } catch (error) {
             if (error.status === 409) {
                 message.error("Hóa đơn đã được in trước đó");
-                // Refresh list to sync state
+
                 fetchInvoices();
-                // Close drawer
+
                 setDrawerVisible(false);
             } else {
                 message.error(error.message || "Không thể in hóa đơn");
@@ -176,7 +166,6 @@ const ImportInvoices = () => {
         }
     };
 
-    // Open print window with invoice data
     const openPrintWindow = (invoice) => {
         const printWindow = window.open("", "_blank", "width=800,height=600");
         if (!printWindow) {
@@ -225,14 +214,14 @@ const ImportInvoices = () => {
           <p>Mã phiếu nhập: #${invoice.purchaseOrderId}</p>
           <p>Ngày: ${formatDate(invoice.orderDate, "DD/MM/YYYY HH:mm")}</p>
         </div>
-        
+
         <div class="info">
           <p><strong>Nhà cung cấp:</strong> ${invoice.supplierName || "N/A"}</p>
           <p><strong>Điện thoại:</strong> ${invoice.supplierPhone || "N/A"}</p>
           <p><strong>Email:</strong> ${invoice.supplierEmail || "N/A"}</p>
           <p><strong>Địa chỉ:</strong> ${invoice.supplierAddress || "N/A"}</p>
         </div>
-        
+
         <table>
           <thead>
             <tr>
@@ -248,18 +237,18 @@ const ImportInvoices = () => {
             ${itemsHtml}
           </tbody>
         </table>
-        
+
         <div class="summary">
           <div class="total"><strong>TỔNG TIỀN NHẬP:</strong> ${formatCurrency(invoice.totalAmount)}</div>
         </div>
-        
+
         <div class="no-print printed-notice">
           <p><strong>✅ Phiếu nhập đã được đánh dấu là đã in trong hệ thống.</strong></p>
           <p>Bạn có thể đóng cửa sổ này sau khi in xong.</p>
           <button onclick="window.print()" style="padding:10px 30px;font-size:16px;cursor:pointer;margin-top:10px">In phiếu nhập</button>
           <button onclick="window.close()" style="padding:10px 30px;font-size:16px;cursor:pointer;margin-top:10px;margin-left:10px;background:#f5f5f5">Đóng</button>
         </div>
-        
+
         <script>
           // Auto-close window after printing
           window.onafterprint = function() {
@@ -276,7 +265,6 @@ const ImportInvoices = () => {
         printWindow.document.close();
     };
 
-    // Reset filters
     const handleResetFilters = () => {
         setDateRange(null);
         setSupplierFilter(null);
@@ -284,7 +272,6 @@ const ImportInvoices = () => {
         setPagination((prev) => ({ ...prev, current: 1 }));
     };
 
-    // Table columns
     const columns = [
         {
             title: "Mã phiếu nhập",
@@ -394,7 +381,7 @@ const ImportInvoices = () => {
                 }}
                 bodyStyle={{ padding: 16 }}
             >
-                {/* Filters */}
+                { }
                 <div
                     style={{
                         marginBottom: 16,
@@ -449,7 +436,7 @@ const ImportInvoices = () => {
                     </Button>
                 </div>
 
-                {/* Table */}
+                { }
                 <Table
                     columns={columns}
                     dataSource={invoices}
@@ -469,7 +456,7 @@ const ImportInvoices = () => {
                 />
             </Card>
 
-            {/* Detail Drawer */}
+            { }
             <Drawer
                 title={`Chi tiết phiếu nhập #${selectedInvoice?.purchaseOrderId || ""}`}
                 open={drawerVisible}

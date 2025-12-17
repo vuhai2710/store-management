@@ -55,7 +55,6 @@ const OrderStatusChart = ({ ordersByStatus = {} }) => {
       }
     });
 
-    // If no data, show empty state
     if (labels.length === 0) {
       labels.push("Chưa có dữ liệu");
       data.push(1);

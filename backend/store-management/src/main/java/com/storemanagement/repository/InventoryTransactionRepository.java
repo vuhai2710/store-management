@@ -70,9 +70,6 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
             Pageable pageable
     );
 
-    /**
-     * Advanced filter with referenceType, productName, sku support
-     */
     @Query("SELECT it FROM InventoryTransaction it " +
            "WHERE (:transactionType IS NULL OR it.transactionType = :transactionType) " +
            "AND (:referenceType IS NULL OR it.referenceType = :referenceType) " +

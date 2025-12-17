@@ -8,11 +8,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * DTO for products that are currently on sale (via active PRODUCT-scope
- * promotions).
- * Used for the homepage Flash Sale slider.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,11 +20,9 @@ public class ProductOnSaleDTO {
     private BigDecimal discountedPrice;
     private LocalDateTime promotionEndTime;
 
-    // Discount details
-    private String discountLabel; // e.g. "-20%" or "-200,000đ"
-    private String promotionName; // The promotion code/name
+    private String discountLabel;
+    private String promotionName;
 
-    // Optional additional info
     private Integer remainingStock;
-    private Integer discountPercentage; // If percentage type
+    private Integer discountPercentage;
 }

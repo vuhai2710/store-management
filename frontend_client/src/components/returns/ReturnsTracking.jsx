@@ -4,29 +4,18 @@ import { useDebounce } from "../../hooks/useDebounce";
 import { Search, Eye, ArrowLeftRight } from "lucide-react";
 import { formatDate, formatPrice } from "../../utils/formatUtils";
 
-/**
- * Shared ReturnsTracking component used by:
- * - Orders page "Đổi/Trả" tab (embedded=true)
- * - ReturnHistoryPage via avatar menu (embedded=false)
- * 
- * @param {boolean} embedded - If true, renders without title for embedding in tabs
- * @param {function} onViewDetail - Callback when user clicks to view return detail (receives returnId)
- */
 const ReturnsTracking = ({ embedded = false, onViewDetail }) => {
     const { getMyReturns, loading } = useReturnService();
     const [returns, setReturns] = useState([]);
     const [filteredReturns, setFilteredReturns] = useState([]);
     const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
 
-    // Search state
     const [searchKeyword, setSearchKeyword] = useState("");
     const debouncedKeyword = useDebounce(searchKeyword, 300);
 
-    // Filter states
     const [statusFilter, setStatusFilter] = useState("ALL");
     const [typeFilter, setTypeFilter] = useState("ALL");
 
-    // Status options - match backend: REQUESTED, APPROVED, REJECTED, COMPLETED
     const statusOptions = [
         { value: "ALL", label: "Tất cả trạng thái" },
         { value: "REQUESTED", label: "Chờ xử lý" },
@@ -45,7 +34,6 @@ const ReturnsTracking = ({ embedded = false, onViewDetail }) => {
         fetchReturns();
     }, []);
 
-    // Apply filters when returns or filter values change
     useEffect(() => {
         let result = [...returns];
 
@@ -57,7 +45,6 @@ const ReturnsTracking = ({ embedded = false, onViewDetail }) => {
             result = result.filter((item) => item.returnType === typeFilter);
         }
 
-        // Apply keyword search
         if (debouncedKeyword && debouncedKeyword.trim()) {
             const keyword = debouncedKeyword.toLowerCase().trim();
             result = result.filter(
@@ -73,7 +60,7 @@ const ReturnsTracking = ({ embedded = false, onViewDetail }) => {
 
     const fetchReturns = async () => {
         try {
-            const data = await getMyReturns({ pageNo: 1, pageSize: 100 }); // Fetch more for client-side filtering
+            const data = await getMyReturns({ pageNo: 1, pageSize: 100 });
             setReturns(data.content || []);
             setPagination({
                 page: data.pageNo,
@@ -127,7 +114,7 @@ const ReturnsTracking = ({ embedded = false, onViewDetail }) => {
                 <h1 className="text-2xl font-bold mb-6">Lịch sử Đổi / Trả hàng</h1>
             )}
 
-            {/* Filters */}
+            {}
             <div className="bg-white rounded shadow p-4 mb-4">
                 <div className="flex flex-wrap gap-4 items-center">
                     <div className="flex-1 min-w-[200px]">
@@ -190,13 +177,13 @@ const ReturnsTracking = ({ embedded = false, onViewDetail }) => {
                     </div>
                 </div>
 
-                {/* Filter summary */}
+                {}
                 <div className="mt-3 text-sm text-gray-500">
                     Hiển thị {filteredReturns.length} / {returns.length} yêu cầu
                 </div>
             </div>
 
-            {/* Returns Table */}
+            {}
             {filteredReturns.length === 0 ? (
                 <div className="bg-white rounded shadow p-8 text-center">
                     <ArrowLeftRight

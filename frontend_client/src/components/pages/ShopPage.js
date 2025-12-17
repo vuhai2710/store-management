@@ -1,4 +1,4 @@
-// src/components/pages/ShopPage.js
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import styles from "../../styles/styles";
 import ProductCard from "../shared/ProductCard";
@@ -34,17 +34,15 @@ const ShopPage = ({
   const [totalElements, setTotalElements] = useState(0);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [maxPriceForDisplay, setMaxPriceForDisplay] = useState(10000000); // 10 million VND
+  const [maxPriceForDisplay, setMaxPriceForDisplay] = useState(10000000);
   const [selectedBrand, setSelectedBrand] = useState("");
   const [brands, setBrands] = useState([]);
   const [latestProducts, setLatestProducts] = useState([]);
-  const [productsOnSale, setProductsOnSale] = useState([]); // Flash Sale products
+  const [productsOnSale, setProductsOnSale] = useState([]);
 
-  // Debounced price filter inputs - prevents API calls on every keystroke
   const debouncedMinPrice = useDebounce(minPrice, 500);
   const debouncedMaxPrice = useDebounce(maxPrice, 500);
 
-  // Refs to maintain focus on price inputs
   const minPriceInputRef = useRef(null);
   const maxPriceInputRef = useRef(null);
 
@@ -59,7 +57,6 @@ const ShopPage = ({
     return null;
   };
 
-  // Style cho nút Category Filter
   const filterButtonStyle = (isActive) => ({
     padding: "0.5rem 1rem",
     borderRadius: "0.375rem",
@@ -74,7 +71,6 @@ const ShopPage = ({
     marginBottom: "0.25rem",
   });
 
-  // Fetch categories (only when authenticated)
   useEffect(() => {
     const fetchCategories = async () => {
       if (!isAuthenticated) {
@@ -94,7 +90,6 @@ const ShopPage = ({
     fetchCategories();
   }, [isAuthenticated]);
 
-  // Sync category name when categoryId is set from URL (after categories are loaded)
   useEffect(() => {
     if (selectedCategoryId && categories.length > 0) {
       const categoryFromId = categories.find(
@@ -109,7 +104,6 @@ const ShopPage = ({
     }
   }, [selectedCategoryId, categories, selectedCategory, setSelectedCategory]);
 
-  // Fetch brands (only when authenticated)
   useEffect(() => {
     const fetchBrands = async () => {
       if (!isAuthenticated) {
@@ -129,15 +123,13 @@ const ShopPage = ({
     fetchBrands();
   }, [isAuthenticated]);
 
-  // Reset to first page when search term changes
   useEffect(() => {
     setPageNo(1);
   }, [searchTerm]);
 
-  // Fetch products based on filters (only when authenticated)
   useEffect(() => {
     const fetchProducts = async () => {
-      // Don't fetch if not authenticated
+
       if (!isAuthenticated) {
         setProducts([]);
         setLoading(false);
@@ -149,11 +141,9 @@ const ShopPage = ({
         setLoading(true);
         setError(null);
 
-        // Map sortOption to API parameters
-        // Note: rating and reviewCount sorting is handled client-side since they're computed values
         let sortBy = "idProduct";
         let sortDirection = "ASC";
-        let clientSideSort = null; // For rating/reviewCount sorting
+        let clientSideSort = null;
 
         switch (sortOption) {
           case "price-asc":
@@ -165,25 +155,24 @@ const ShopPage = ({
             sortDirection = "DESC";
             break;
           case "rating-desc":
-            // Rating is computed, use client-side sorting
+
             sortBy = "idProduct";
             sortDirection = "DESC";
             clientSideSort = "rating";
             break;
           case "reviews-desc":
-            // Review count is computed, use client-side sorting
+
             sortBy = "idProduct";
             sortDirection = "DESC";
             clientSideSort = "reviewCount";
             break;
           default:
             sortBy = "idProduct";
-            sortDirection = "DESC"; // Newest first
+            sortDirection = "DESC";
         }
 
-        // Determine which API to call
         let productsData;
-        // Use selectedCategoryId directly if provided (from URL), otherwise lookup from category name
+
         let categoryId = selectedCategoryId;
         if (!categoryId && selectedCategory && selectedCategory !== "All" && selectedCategory !== "Tất cả") {
           categoryId = categories.find(
@@ -192,7 +181,7 @@ const ShopPage = ({
         }
 
         if (searchTerm) {
-          // Search by name
+
           productsData = await productsService.searchProductsByName({
             name: searchTerm,
             pageNo,
@@ -201,7 +190,7 @@ const ShopPage = ({
             sortDirection,
           });
         } else if (categoryId) {
-          // Filter by category
+
           productsData = await productsService.getProductsByCategory(
             categoryId,
             {
@@ -212,7 +201,7 @@ const ShopPage = ({
             }
           );
         } else if (selectedBrand) {
-          // Filter by brand
+
           productsData = await productsService.getProductsByBrand(
             selectedBrand,
             {
@@ -223,7 +212,7 @@ const ShopPage = ({
             }
           );
         } else if (debouncedMinPrice || debouncedMaxPrice) {
-          // Filter by price range (using debounced values)
+
           productsData = await productsService.getProductsByPriceRange({
             minPrice: debouncedMinPrice ? parseInt(debouncedMinPrice) : 0,
             maxPrice: debouncedMaxPrice
@@ -235,7 +224,7 @@ const ShopPage = ({
             sortDirection,
           });
         } else {
-          // Get all products
+
           productsData = await productsService.getProducts({
             pageNo,
             pageSize,
@@ -244,25 +233,22 @@ const ShopPage = ({
           });
         }
 
-        // Get products and sort
         let fetchedProducts = productsData?.content || [];
 
-        // Client-side sorting for rating and review count (computed values not in DB)
         if (clientSideSort === "rating") {
           fetchedProducts = [...fetchedProducts].sort((a, b) => {
             const aRating = a.averageRating || 0;
             const bRating = b.averageRating || 0;
-            return bRating - aRating; // Descending
+            return bRating - aRating;
           });
         } else if (clientSideSort === "reviewCount") {
           fetchedProducts = [...fetchedProducts].sort((a, b) => {
             const aReviews = a.reviewCount || 0;
             const bReviews = b.reviewCount || 0;
-            return bReviews - aReviews; // Descending
+            return bReviews - aReviews;
           });
         }
 
-        // Final sort: out-of-stock products always appear last (after any other sorting)
         fetchedProducts = [...fetchedProducts].sort((a, b) => {
           const aOutOfStock =
             a.status === "OUT_OF_STOCK" || a.stockQuantity === 0;
@@ -277,21 +263,19 @@ const ShopPage = ({
         setTotalPages(productsData?.totalPages || 1);
         setTotalElements(productsData?.totalElements || 0);
 
-        // If current page exceeds available pages after a new filter/search, reset to page 1
         if (
           (productsData?.totalPages || 1) > 0 &&
           pageNo > (productsData?.totalPages || 1)
         ) {
           setPageNo(1);
-          return; // let the effect re-fetch with page 1
+          return;
         }
 
-        // Update max price for display if needed
         if (productsData?.content && productsData.content.length > 0) {
           const prices = productsData.content.map((p) => p.price || 0);
           const currentMax = Math.max(...prices);
           if (currentMax > maxPriceForDisplay) {
-            setMaxPriceForDisplay(Math.ceil(currentMax / 1000000) * 1000000); // Round up to nearest million
+            setMaxPriceForDisplay(Math.ceil(currentMax / 1000000) * 1000000);
           }
         }
       } catch (error) {
@@ -316,7 +300,6 @@ const ShopPage = ({
     categories,
   ]);
 
-  // Fetch latest products for sidebar
   useEffect(() => {
     const fetchLatestProducts = async () => {
       if (!isAuthenticated) {
@@ -339,7 +322,6 @@ const ShopPage = ({
     fetchLatestProducts();
   }, [isAuthenticated]);
 
-  // Fetch products on sale for sidebar Flash Sale section
   useEffect(() => {
     const fetchProductsOnSale = async () => {
       if (!isAuthenticated) {
@@ -349,7 +331,7 @@ const ShopPage = ({
 
       try {
         const onSaleData = await productsService.getProductsOnSale();
-        // Only show top 5 in sidebar
+
         setProductsOnSale((onSaleData || []).slice(0, 5));
       } catch (error) {
         console.error("Error fetching products on sale:", error);
@@ -360,7 +342,6 @@ const ShopPage = ({
     fetchProductsOnSale();
   }, [isAuthenticated]);
 
-  // Price filter handlers - just update state, debounce will handle API call
   const handleMinPriceChange = useCallback((e) => {
     setMinPrice(e.target.value);
   }, []);
@@ -369,7 +350,6 @@ const ShopPage = ({
     setMaxPrice(e.target.value);
   }, []);
 
-  // Reset page when debounced price changes
   useEffect(() => {
     setPageNo(1);
   }, [debouncedMinPrice, debouncedMaxPrice]);
@@ -383,18 +363,17 @@ const ShopPage = ({
   const handleCategoryChange = (category, categoryId = null) => {
     setSelectedCategory(category);
 
-    // Update categoryId state and URL
     if (category === "All" || category === "Tất cả") {
-      // Clear category filter
+
       if (setSelectedCategoryId) {
         setSelectedCategoryId(null);
       }
-      // Remove categoryId from URL
+
       const url = new URL(window.location.href);
       url.searchParams.delete('categoryId');
       window.history.pushState({}, '', url.pathname + url.search);
     } else if (categoryId) {
-      // Set category ID and update URL
+
       if (setSelectedCategoryId) {
         setSelectedCategoryId(categoryId);
       }
@@ -403,12 +382,12 @@ const ShopPage = ({
       window.history.pushState({}, '', url.toString());
     }
 
-    setPageNo(1); // Reset to first page when filter changes
+    setPageNo(1);
   };
 
   const handleBrandChange = (brand) => {
     setSelectedBrand(brand === "All" ? "" : brand);
-    setPageNo(1); // Reset to first page when filter changes
+    setPageNo(1);
   };
 
   const handlePageChange = (newPage) => {
@@ -416,10 +395,8 @@ const ShopPage = ({
     window.scrollTo(0, 0);
   };
 
-  // Note: Price filtering is now done server-side via API
   const filteredProducts = products;
 
-  // Show login prompt if not authenticated
   if (!isAuthenticated) {
     return (
       <section style={{ padding: "4rem 0", backgroundColor: "#F8FAFC" }}>
@@ -500,7 +477,7 @@ const ShopPage = ({
   return (
     <section style={{ padding: "4rem 0", backgroundColor: "#F8FAFC" }}>
       <div style={styles.container}>
-        {/* Breadcrumb và Header */}
+        {}
         <div
           style={{
             display: "flex",
@@ -521,11 +498,11 @@ const ShopPage = ({
           </div>
         </div>
 
-        {/* Main Layout: Sidebar and Products */}
+        {}
         <div style={styles.shopLayout}>
-          {/* Sidebar (Modern Filters) */}
+          {}
           <div style={styles.sidebar}>
-            {/* Bộ lọc Danh mục */}
+            {}
             <div style={styles.sidebarSection}>
               <h3
                 style={{
@@ -565,7 +542,7 @@ const ShopPage = ({
               </ul>
             </div>
 
-            {/* Bộ lọc Brand */}
+            {}
             {brands.length > 0 && (
               <div style={styles.sidebarSection}>
                 <h3
@@ -602,7 +579,7 @@ const ShopPage = ({
               </div>
             )}
 
-            {/* Bộ lọc Giá (Input Min/Max) */}
+            {}
             <div style={styles.sidebarSection}>
               <h3
                 style={{
@@ -690,7 +667,7 @@ const ShopPage = ({
               </div>
             </div>
 
-            {/* Flash Sale - Products On Sale */}
+            {}
             {productsOnSale.length > 0 && (
               <div style={styles.sidebarSection}>
                 <h3
@@ -746,13 +723,13 @@ const ShopPage = ({
                             style={{
                               width: "100%",
                               height: "100%",
-                              objectFit: "contain", // changed cover to contain to fit images better
+                              objectFit: "contain",
                             }}
                           />
                         ) : (
                           "📦"
                         )}
-                        {/* Discount badge */}
+                        {}
                         {product.discountLabel && (
                           <span
                             style={{
@@ -809,7 +786,7 @@ const ShopPage = ({
               </div>
             )}
 
-            {/* Sản phẩm mới nhất */}
+            {}
             {latestProducts.length > 0 && (
               <div style={{ ...styles.sidebarSection, borderBottom: "none" }}>
                 <h3
@@ -893,9 +870,9 @@ const ShopPage = ({
             )}
           </div>
 
-          {/* Vùng hiển thị Sản phẩm */}
+          {}
           <div>
-            {/* Toolbar trên lưới sản phẩm */}
+            {}
             <div
               style={{
                 display: "flex",
@@ -912,7 +889,7 @@ const ShopPage = ({
                 sản phẩm
               </p>
 
-              {/* Sorting Dropdown */}
+              {}
               <div
                 style={{
                   display: "flex",
@@ -943,7 +920,7 @@ const ShopPage = ({
                 </select>
               </div>
 
-              {/* View Toggles */}
+              {}
               <div style={{ display: "flex", gap: "0.5rem", color: "#6c757d" }}>
                 <Grid3X3
                   size={20}
@@ -953,7 +930,7 @@ const ShopPage = ({
               </div>
             </div>
 
-            {/* Error Message */}
+            {}
             {error && (
               <div
                 style={{
@@ -967,7 +944,7 @@ const ShopPage = ({
               </div>
             )}
 
-            {/* Lưới sản phẩm */}
+            {}
             {loading ? (
               <div
                 style={{
@@ -1012,7 +989,7 @@ const ShopPage = ({
               </div>
             )}
 
-            {/* Pagination */}
+            {}
             {totalPages > 1 && (
               <div
                 style={{

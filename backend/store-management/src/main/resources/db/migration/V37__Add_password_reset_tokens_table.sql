@@ -1,6 +1,3 @@
--- V37__Add_password_reset_tokens_table.sql
--- Create password_reset_tokens table for secure password reset flow
-
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

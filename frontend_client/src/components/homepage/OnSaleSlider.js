@@ -1,4 +1,4 @@
-// src/components/homepage/OnSaleSlider.js
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Clock, Flame } from 'lucide-react';
 import { formatPrice, getImageUrl } from '../../utils/formatUtils';
@@ -6,10 +6,6 @@ import { productsService } from '../../services/productsService';
 import { useAuth } from '../../hooks/useAuth';
 import styles from '../../styles/styles';
 
-/**
- * OnSaleSlider - Slider component for products on sale (Flash Sale)
- * Fetches data once on mount, countdown updates locally without refetching
- */
 const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) => {
     const { isAuthenticated } = useAuth();
     const [products, setProducts] = useState([]);
@@ -20,10 +16,8 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
     const sliderRef = useRef(null);
     const autoScrollRef = useRef(null);
 
-    // Items to show based on screen width
     const itemsToShow = 4;
 
-    // Fetch products on sale ONCE on mount
     useEffect(() => {
         const fetchProductsOnSale = async () => {
             try {
@@ -47,14 +41,13 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
         fetchProductsOnSale();
     }, [isAuthenticated]);
 
-    // Calculate time left for countdown
     const calculateTimeLeft = useCallback((endTime) => {
         if (!endTime) return undefined;
 
         let end;
-        // Handle different date formats from API
+
         if (Array.isArray(endTime)) {
-            // Java LocalDateTime comes as array: [year, month, day, hour, minute, second, nano]
+
             const [yearRaw, monthRaw, dayRaw, hourRaw = 0, minuteRaw = 0, secondRaw = 0] = endTime;
             const year = Number(yearRaw);
             const month = Number(monthRaw);
@@ -86,7 +79,7 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
                 }
             }
             if (isNaN(end.getTime())) {
-                // dd/MM/yyyy HH:mm:ss (common in VN locale)
+
                 const m = endTime.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/);
                 if (m) {
                     const day = Number(m[1]);
@@ -101,10 +94,7 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
         } else if (endTime instanceof Date) {
             end = endTime;
         } else if (typeof endTime === 'object') {
-            // Some serializers send LocalDateTime as an object
-            // Examples:
-            // - { year, monthValue, dayOfMonth, hour, minute, second, nano }
-            // - { year, month, day, hour, minute, second }
+
             const year = Number(endTime.year);
             const month = Number(endTime.monthValue ?? endTime.month);
             const day = Number(endTime.dayOfMonth ?? endTime.day);
@@ -122,13 +112,13 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
         }
 
         if (isNaN(end.getTime())) {
-            return undefined; // Invalid date
+            return undefined;
         }
 
         const difference = end - new Date();
 
         if (difference <= 0) {
-            return null; // Expired
+            return null;
         }
 
         return {
@@ -139,7 +129,6 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
         };
     }, []);
 
-    // Update countdown timers every second WITHOUT refetching
     useEffect(() => {
         if (products.length === 0) return;
 
@@ -175,7 +164,6 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
         return () => clearInterval(timer);
     }, [products, calculateTimeLeft]);
 
-    // Auto-scroll
     useEffect(() => {
         if (products.length <= itemsToShow) return;
 
@@ -193,7 +181,6 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
         };
     }, [products.length, itemsToShow]);
 
-    // Navigate to previous slide
     const handlePrev = () => {
         if (autoScrollRef.current) {
             clearInterval(autoScrollRef.current);
@@ -201,7 +188,6 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
         setCurrentIndex(prev => (prev === 0 ? Math.max(0, products.length - itemsToShow) : prev - 1));
     };
 
-    // Navigate to next slide
     const handleNext = () => {
         if (autoScrollRef.current) {
             clearInterval(autoScrollRef.current);
@@ -210,7 +196,6 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
         setCurrentIndex(prev => (prev >= maxIndex ? 0 : prev + 1));
     };
 
-    // Format countdown display
     const formatCountdown = (timeLeft) => {
         if (!timeLeft) return null;
 
@@ -242,7 +227,6 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
         );
     };
 
-    // Styles
     const countdownItemStyle = {
         display: 'flex',
         flexDirection: 'column',
@@ -392,7 +376,7 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
     return (
         <section style={{ padding: '4rem 0', background: 'linear-gradient(135deg, #fff5f5 0%, #fff0f0 100%)' }}>
             <div style={styles.container}>
-                {/* Header */}
+                {}
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -428,7 +412,7 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
                         </div>
                     </div>
 
-                    {/* Overall countdown indicator */}
+                    {}
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -449,9 +433,9 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
                     </div>
                 </div>
 
-                {/* Slider Container */}
+                {}
                 <div style={{ position: 'relative' }}>
-                    {/* Previous Button */}
+                    {}
                     {products.length > itemsToShow && (
                         <button
                             onClick={handlePrev}
@@ -469,7 +453,7 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
                         </button>
                     )}
 
-                    {/* Products Track */}
+                    {}
                     <div style={{ overflow: 'hidden', borderRadius: '0.75rem' }}>
                         <div
                             ref={sliderRef}
@@ -494,7 +478,7 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
                                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
                                     }}
                                 >
-                                    {/* Discount Badge */}
+                                    {}
                                     {product.discountLabel && (
                                         <div style={discountBadgeStyle}>
                                             <Flame size={14} />
@@ -502,7 +486,7 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
                                         </div>
                                     )}
 
-                                    {/* Product Image */}
+                                    {}
                                     <div style={{
                                         height: '180px',
                                         backgroundColor: '#f8f9fa',
@@ -532,9 +516,9 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
                                         }
                                     </div>
 
-                                    {/* Product Info */}
+                                    {}
                                     <div style={{ padding: '1rem' }}>
-                                        {/* Product Name */}
+                                        {}
                                         <h3 style={{
                                             fontSize: '0.95rem',
                                             fontWeight: '600',
@@ -550,7 +534,7 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
                                             {product.name}
                                         </h3>
 
-                                        {/* Prices */}
+                                        {}
                                         <div style={{ marginBottom: '0.75rem' }}>
                                             <span style={{
                                                 fontSize: '1.125rem',
@@ -569,7 +553,7 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
                                             </span>
                                         </div>
 
-                                        {/* Countdown */}
+                                        {}
                                         <div style={{
                                             borderTop: '1px solid #e9ecef',
                                             paddingTop: '0.75rem',
@@ -584,7 +568,7 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
                                             )}
                                         </div>
 
-                                        {/* Stock indicator */}
+                                        {}
                                         {product.remainingStock && product.remainingStock < 10 && (
                                             <div style={{
                                                 marginTop: '0.5rem',
@@ -605,7 +589,7 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
                         </div>
                     </div>
 
-                    {/* Next Button */}
+                    {}
                     {products.length > itemsToShow && (
                         <button
                             onClick={handleNext}
@@ -624,7 +608,7 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
                     )}
                 </div>
 
-                {/* Dots indicator */}
+                {}
                 {products.length > itemsToShow && (
                     <div style={{
                         display: 'flex',
@@ -651,7 +635,7 @@ const OnSaleSlider = ({ handleViewProductDetail, onLoginClick, onShopClick }) =>
                 )}
             </div>
 
-            {/* CSS Animation for spinner */}
+            {}
             <style>
                 {`
           @keyframes spin {

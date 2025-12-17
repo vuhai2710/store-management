@@ -21,30 +21,23 @@ const RequestReturnPage = ({ orderId, setCurrentPage }) => {
   const [reason, setReason] = useState("");
   const [returnPeriodDays, setReturnPeriodDays] = useState(7);
 
-  // Kiểm tra xem đơn hàng có trong thời gian cho phép đổi/trả không
-  // Sử dụng SNAPSHOT từ order (completedAt + returnWindowDays) thay vì config toàn cục
   const isWithinReturnPeriod = useCallback((orderData, fallbackDays) => {
-    // Lấy returnWindowDays từ order snapshot, fallback về config nếu không có
+
     const orderReturnWindowDays = orderData?.returnWindowDays ?? fallbackDays;
 
-    // 0 = không giới hạn, null = đơn cũ chưa có snapshot → cho phép
     if (orderReturnWindowDays === 0 || orderReturnWindowDays == null)
       return true;
 
-    // Lấy baseTime: completedAt → deliveredAt → orderDate (cùng logic với BE)
     const baseTimeStr =
       orderData?.completedAt || orderData?.deliveredAt || orderData?.orderDate;
-    if (!baseTimeStr) return true; // Không có ngày → cho phép
+    if (!baseTimeStr) return true;
 
-    // Parse đúng format dd/MM/yyyy HH:mm:ss từ backend
     const baseTime = parseBackendDate(baseTimeStr);
     if (!baseTime) return true;
 
-    // Tính deadline
     const deadline = new Date(baseTime);
     deadline.setDate(deadline.getDate() + orderReturnWindowDays);
 
-    // So sánh theo ngày
     const now = new Date();
     const todayStart = new Date(
       now.getFullYear(),
@@ -80,10 +73,9 @@ const RequestReturnPage = ({ orderId, setCurrentPage }) => {
     }
   }, [orderId]);
 
-  // Kiểm tra thời hạn sau khi có order data
   useEffect(() => {
     if (order) {
-      // Sử dụng returnWindowDays từ order snapshot
+
       const orderReturnWindowDays = order.returnWindowDays ?? returnPeriodDays;
 
       if (!isWithinReturnPeriod(order, returnPeriodDays)) {

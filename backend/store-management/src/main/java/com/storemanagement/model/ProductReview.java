@@ -33,17 +33,16 @@ public class ProductReview extends BaseEntity {
     private OrderDetail orderDetail;
 
     @Column(name = "rating", nullable = false)
-    private Integer rating; // 1-5
+    private Integer rating;
 
     @Column(name = "comment", columnDefinition = "TEXT", nullable = false)
     private String comment;
-    
+
     @Column(name = "admin_reply", columnDefinition = "TEXT")
     private String adminReply;
-    
+
     @Column(name = "edit_count", nullable = false)
     @Builder.Default
     private Integer editCount = 0;
 }
-
 

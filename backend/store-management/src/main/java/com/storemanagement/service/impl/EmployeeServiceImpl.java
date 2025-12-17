@@ -40,7 +40,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeDTO createEmployee(EmployeeDTO request) {
-        // Validate email khi tạo (email là bắt buộc khi create)
+
         if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
             throw new RuntimeException("Email không được để trống");
         }
@@ -111,14 +111,12 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         EmployeeDetailDTO detailDTO = employeeMapper.toDetailDTO(employee);
 
-        // Get order statistics
         Long totalOrders = orderRepository.countOrdersByEmployeeId(id);
         BigDecimal totalAmount = orderRepository.sumOrderAmountByEmployeeId(id);
         Long pendingOrders = orderRepository.countOrdersByEmployeeIdAndStatus(id, Order.OrderStatus.PENDING);
         Long completedOrders = orderRepository.countOrdersByEmployeeIdAndStatus(id, Order.OrderStatus.COMPLETED);
         Long cancelledOrders = orderRepository.countOrdersByEmployeeIdAndStatus(id, Order.OrderStatus.CANCELED);
 
-        // Get return/exchange statistics
         Long totalReturnOrders = orderReturnRepository.countReturnOrdersByEmployeeId(id);
         Long totalExchangeOrders = orderReturnRepository.countExchangeOrdersByEmployeeId(id);
 
@@ -149,8 +147,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         User user = employee.getUser();
 
         if (request.getUsername() != null && !user.getUsername().equals(request.getUsername())) {
-            // Chỉ validate username unique khi username thay đổi và đã được sử dụng bởi
-            // user khác
+
             userRepository.findByUsername(request.getUsername())
                     .ifPresent(existingUser -> {
                         if (!existingUser.getIdUser().equals(user.getIdUser())) {
@@ -160,8 +157,6 @@ public class EmployeeServiceImpl implements EmployeeService {
             user.setUsername(request.getUsername());
         }
 
-        // Email KHÔNG được phép cập nhật - chỉ được set 1 lần khi tạo user
-        // Email là unique constraint, không cho phép thay đổi sau khi tạo
         if (request.getEmail() != null) {
             throw new RuntimeException("Email không được phép cập nhật. Email chỉ được set khi tạo tài khoản.");
         }
@@ -218,14 +213,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Thông tin nhân viên không tồn tại"));
 
-        // Email KHÔNG được phép cập nhật - chỉ được set 1 lần khi tạo user
-        // Email là unique constraint, không cho phép thay đổi sau khi tạo
         if (request.getEmail() != null) {
             throw new RuntimeException("Email không được phép cập nhật. Email chỉ được set khi tạo tài khoản.");
         }
 
         if (request.getPhoneNumber() != null && !employee.getPhoneNumber().equals(request.getPhoneNumber())) {
-            // Chỉ validate phone number unique khi phone number thay đổi
+
             if (employeeRepository.existsByPhoneNumber(request.getPhoneNumber())) {
                 throw new RuntimeException("Số điện thoại đã được sử dụng: " + request.getPhoneNumber());
             }
@@ -255,7 +248,6 @@ public class EmployeeServiceImpl implements EmployeeService {
             LocalDateTime dateTo,
             Pageable pageable) {
 
-        // Verify employee exists
         employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Nhân viên không tồn tại với ID: " + employeeId));
 

@@ -9,7 +9,7 @@ CREATE TABLE notifications (
     is_read TINYINT(1) DEFAULT 0 COMMENT 'Đã đọc chưa',
     sent_email TINYINT(1) DEFAULT 0 COMMENT 'Đã gửi email chưa',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     PRIMARY KEY (id_notification),
     FOREIGN KEY (id_user) REFERENCES users(id_user) ON DELETE CASCADE,
     INDEX idx_user_read (id_user, is_read),

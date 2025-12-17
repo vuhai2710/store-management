@@ -42,7 +42,6 @@ import { APP_CONFIG } from "../../constants";
 const { Option } = Select;
 const { Text } = Typography;
 
-// Debounce hook for realtime search
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -59,7 +58,6 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
-// Status options with labels
 const STATUS_OPTIONS = [
   { value: "ALL", label: "Tất cả trạng thái" },
   { value: "REQUESTED", label: "Chờ xử lý" },
@@ -69,7 +67,6 @@ const STATUS_OPTIONS = [
   { value: "CANCELED", label: "Đã hủy" },
 ];
 
-// Type options
 const TYPE_OPTIONS = [
   { value: "ALL", label: "Tất cả loại" },
   { value: "RETURN", label: "Trả hàng" },
@@ -89,7 +86,6 @@ const ReturnListPage = () => {
   const [customerKeyword, setCustomerKeyword] = useState("");
   const navigate = useNavigate();
 
-  // Use refs to store current filter values for fetchData
   const filtersRef = useRef({
     status: "ALL",
     type: "ALL",
@@ -97,15 +93,12 @@ const ReturnListPage = () => {
     customerKeyword: "",
   });
 
-  // Debounced search keywords for realtime search
   const debouncedKeyword = useDebounce(searchKeyword, 300);
   const debouncedCustomerKeyword = useDebounce(customerKeyword, 300);
 
-  // Settings state
   const [returnWindowDays, setReturnWindowDays] = useState(7);
   const [savingSettings, setSavingSettings] = useState(false);
 
-  // Load return window setting
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -134,7 +127,6 @@ const ReturnListPage = () => {
     }
   };
 
-  // Fetch data function - uses refs for filters to avoid stale closures
   const fetchData = useCallback(
     async (page, size) => {
       try {
@@ -150,22 +142,18 @@ const ReturnListPage = () => {
           pageSize: size,
         };
 
-        // Only add status if not "ALL"
         if (status && status !== "ALL") {
           params.status = status;
         }
 
-        // Only add returnType if not "ALL"
         if (type && type !== "ALL") {
           params.returnType = type;
         }
 
-        // Add keyword for search (mã phiếu, mã đơn)
         if (keyword && keyword.trim()) {
           params.keyword = keyword.trim();
         }
 
-        // Add customerKeyword for customer search (tên/id khách)
         if (custKeyword && custKeyword.trim()) {
           params.customerKeyword = custKeyword.trim();
         }
@@ -174,14 +162,13 @@ const ReturnListPage = () => {
         const response = await getReturns(params);
         console.log("Admin returns response:", response);
 
-        // Always set data from response, even if empty
         setData(response.content || []);
         setCurrentPage(response.pageNo || 1);
         setPageSize(response.pageSize || 10);
         setTotalElements(response.totalElements || 0);
       } catch (error) {
         console.error("Error fetching returns:", error);
-        // On error, show empty data
+
         setData([]);
         setTotalElements(0);
       }
@@ -189,7 +176,6 @@ const ReturnListPage = () => {
     [getReturns]
   );
 
-  // Update refs when filters change
   useEffect(() => {
     filtersRef.current = {
       status: statusFilter,
@@ -197,18 +183,16 @@ const ReturnListPage = () => {
       keyword: debouncedKeyword,
       customerKeyword: debouncedCustomerKeyword,
     };
-    // Reset to page 1 and fetch when filters change
+
     setCurrentPage(1);
     fetchData(1, pageSize);
-  }, [statusFilter, typeFilter, debouncedKeyword, debouncedCustomerKeyword]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [statusFilter, typeFilter, debouncedKeyword, debouncedCustomerKeyword]);
 
-  // Handle table pagination change
   const handleTableChange = useCallback(
     (paginationConfig) => {
       const newPage = paginationConfig.current;
       const newPageSize = paginationConfig.pageSize;
 
-      // If pageSize changed, update and fetch page 1
       if (newPageSize !== pageSize) {
         setPageSize(newPageSize);
         setCurrentPage(1);
@@ -216,14 +200,12 @@ const ReturnListPage = () => {
         return;
       }
 
-      // Just page change - fetch directly
       setCurrentPage(newPage);
       fetchData(newPage, newPageSize);
     },
     [fetchData, pageSize]
   );
 
-  // Handle filter changes
   const handleStatusChange = useCallback((value) => {
     setStatusFilter(value);
   }, []);
@@ -315,7 +297,6 @@ const ReturnListPage = () => {
     });
   };
 
-  // Status color and label helper
   const getStatusDisplay = (status) => {
     const statusMap = {
       REQUESTED: { color: "gold", label: "Chờ xử lý" },
@@ -432,7 +413,6 @@ const ReturnListPage = () => {
     [navigate]
   );
 
-  // Custom empty component
   const emptyComponent = useMemo(
     () => (
       <Empty
@@ -463,7 +443,7 @@ const ReturnListPage = () => {
 
   return (
     <Card title="Quản lý Đơn Đổi/Trả hàng">
-      {/* Settings Section */}
+      { }
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }} align="middle">
         <Col>
           <Space>
@@ -491,7 +471,7 @@ const ReturnListPage = () => {
 
       <Divider style={{ margin: "12px 0" }} />
 
-      {/* Filters */}
+      { }
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={12} md={4}>
           <Select

@@ -30,7 +30,7 @@ public class TestController {
     @GetMapping("/python-service")
     public ResponseEntity<Map<String, Object>> testPythonService(@RequestParam(required = false) Long userId) {
         Map<String, Object> result = new HashMap<>();
-        
+
         try {
             if (userId != null) {
                 var recommendations = recommenderClient.getUserRecommendations(userId);
@@ -48,50 +48,47 @@ public class TestController {
             result.put("error", e.getClass().getSimpleName());
             log.error("Error testing Python service", e);
         }
-        
+
         return ResponseEntity.ok(result);
     }
-    
+
     @GetMapping("/most-viewed")
     public ResponseEntity<Map<String, Object>> testMostViewed(@RequestParam Integer userId) {
         Map<String, Object> result = new HashMap<>();
-        
+
         try {
-            // Lấy customerId
+
             Integer customerId = customerRepository.findByUser_IdUser(userId)
                     .map(c -> c.getIdCustomer())
                     .orElse(null);
-            
-            // Lấy excluded products
-            List<Integer> purchased = customerId != null ? 
+
+            List<Integer> purchased = customerId != null ?
                     orderRepository.findPurchasedProductIdsByCustomerId(customerId) : List.of();
-            List<Integer> inCart = customerId != null ? 
+            List<Integer> inCart = customerId != null ?
                     cartRepository.findProductIdsInCartByCustomerId(customerId) : List.of();
-            
-            // Lấy top most viewed (lấy nhiều để test)
+
             List<Object[]> topViewed = productViewRepository.findTopMostViewedProductsByUserNative(userId, 20);
-            
-            // Filter excluded products
+
             List<Map<String, Object>> topViewedFiltered = new ArrayList<>();
             List<Map<String, Object>> topViewedExcluded = new ArrayList<>();
-            
+
             for (Object[] row : topViewed) {
                 Integer productId = ((Number) row[0]).intValue();
                 Long viewCount = ((Number) row[1]).longValue();
-                
+
                 Map<String, Object> item = Map.of(
                     "productId", productId,
                     "viewCount", viewCount,
                     "excluded", purchased.contains(productId) || inCart.contains(productId)
                 );
-                
+
                 if (purchased.contains(productId) || inCart.contains(productId)) {
                     topViewedExcluded.add(item);
                 } else {
                     topViewedFiltered.add(item);
                 }
             }
-            
+
             result.put("status", "success");
             result.put("userId", userId);
             result.put("customerId", customerId);
@@ -101,16 +98,16 @@ public class TestController {
             result.put("topViewedFiltered", topViewedFiltered);
             result.put("topViewedExcluded", topViewedExcluded);
             result.put("topViewedRaw", topViewed.stream()
-                    .map(r -> Map.of("productId", ((Number) r[0]).intValue(), 
+                    .map(r -> Map.of("productId", ((Number) r[0]).intValue(),
                                      "viewCount", ((Number) r[1]).longValue()))
                     .toList());
-            
+
         } catch (Exception e) {
             result.put("status", "error");
             result.put("message", e.getMessage());
             log.error("Error testing most viewed", e);
         }
-        
+
         return ResponseEntity.ok(result);
     }
 }

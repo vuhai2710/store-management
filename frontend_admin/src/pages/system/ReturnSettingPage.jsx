@@ -28,14 +28,6 @@ import { systemSettingService } from "../../services/systemSettingService";
 
 const { Title, Text, Paragraph } = Typography;
 
-/**
- * Trang cài đặt đổi trả
- * Chỉ ADMIN mới có quyền truy cập
- *
- * Backend API:
- * - GET  /api/v1/settings/return-window
- * - PUT  /api/v1/settings/return-window?days=<number>
- */
 const ReturnSettingPage = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -44,11 +36,9 @@ const ReturnSettingPage = () => {
   const [currentAutoFreeShippingPromotion, setCurrentAutoFreeShippingPromotion] = useState("");
   const [error, setError] = useState(null);
 
-  // Giá trị mặc định cho các field optional (chỉ hiển thị UI, không gửi API)
   const [refundDays, setRefundDays] = useState(7);
   const [exchangeSizeDays, setExchangeSizeDays] = useState(7);
 
-  // Fetch current settings on mount
   const fetchCurrentSettings = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -57,7 +47,7 @@ const ReturnSettingPage = () => {
       const autoPromo = await systemSettingService.getAutoFreeShippingPromotion();
       setCurrentReturnDays(returnDays);
       setCurrentAutoFreeShippingPromotion(autoPromo || "");
-      // Các field optional lấy giá trị theo return days làm mặc định
+
       setRefundDays(returnDays);
       setExchangeSizeDays(returnDays);
       form.setFieldsValue({
@@ -79,7 +69,6 @@ const ReturnSettingPage = () => {
     fetchCurrentSettings();
   }, [fetchCurrentSettings]);
 
-  // Handle save - CHỈ gửi returnWindowDays lên backend
   const handleSave = async () => {
     try {
       const values = await form.validateFields(["returnWindowDays", "autoFreeShippingPromotion"]);
@@ -101,7 +90,7 @@ const ReturnSettingPage = () => {
     } catch (err) {
       console.error("Failed to update return window setting:", err);
       if (err.errorFields) {
-        // Form validation error
+
         return;
       }
       message.error(
@@ -113,7 +102,6 @@ const ReturnSettingPage = () => {
     }
   };
 
-  // Reset form về giá trị ban đầu
   const handleReset = () => {
     form.setFieldsValue({
       returnWindowDays: currentReturnDays,
@@ -123,7 +111,6 @@ const ReturnSettingPage = () => {
     });
   };
 
-  // Check if form is valid for submit button
   const isFormValid = () => {
     const returnDays = form.getFieldValue("returnWindowDays");
     return returnDays && returnDays >= 1 && returnDays <= 365;
@@ -165,7 +152,7 @@ const ReturnSettingPage = () => {
               exchangeSizeWindowDays: exchangeSizeDays,
             }}
             onValuesChange={() => {
-              // Force re-render để cập nhật trạng thái nút Lưu
+
               form.validateFields(["returnWindowDays"]).catch(() => {});
             }}>
             <Row gutter={[24, 16]}>
@@ -196,7 +183,7 @@ const ReturnSettingPage = () => {
                 </Card>
               </Col>
 
-              {/* Số ngày đổi trả - BẮT BUỘC */}
+              { }
               <Col xs={24}>
                 <Card
                   type="inner"
@@ -237,7 +224,7 @@ const ReturnSettingPage = () => {
                 </Card>
               </Col>
 
-              {/* Số ngày hoàn tiền - OPTIONAL, chỉ hiển thị */}
+              { }
               <Col xs={24} md={12}>
                 <Card
                   type="inner"
@@ -271,7 +258,7 @@ const ReturnSettingPage = () => {
                 </Card>
               </Col>
 
-              {/* Số ngày đổi kích thước - OPTIONAL, chỉ hiển thị */}
+              { }
               <Col xs={24} md={12}>
                 <Card
                   type="inner"

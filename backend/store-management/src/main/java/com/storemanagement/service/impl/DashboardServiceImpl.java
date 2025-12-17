@@ -21,12 +21,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Dashboard service implementation.
- * Provides optimized queries for dashboard KPIs.
- * 
- * IMPORTANT: Revenue = Products only (EXCLUDES shipping fee)
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -50,30 +44,22 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDate firstDayOfMonth = today.withDayOfMonth(1);
         LocalDateTime startOfMonth = firstDayOfMonth.atStartOfDay();
 
-        // === 1. Today's Revenue (Net = Products - Discount, EXCLUDES shipping) ===
         BigDecimal todayRevenue = getNetRevenue(startOfToday, endOfToday);
 
-        // === 2. Today's Orders ===
         Long ordersToday = getOrderCount(startOfToday, endOfToday, null);
         Long completedOrdersToday = getOrderCount(startOfToday, endOfToday, Order.OrderStatus.COMPLETED);
 
-        // === 3. Month Revenue ===
         BigDecimal monthRevenue = getNetRevenue(startOfMonth, endOfToday);
 
-        // === 4. Month Orders ===
         Long ordersThisMonth = getOrderCount(startOfMonth, endOfToday, null);
         Long completedOrdersThisMonth = getOrderCount(startOfMonth, endOfToday, Order.OrderStatus.COMPLETED);
 
-        // === 5. Active Return Requests ===
         Long activeReturnRequests = getActiveReturnRequests();
 
-        // === 6. Top Products (by quantity sold this month) ===
         List<TopProductDTO> topProducts = getTopProducts(startOfMonth, endOfToday, topProductsLimit);
 
-        // === 7. Recent Orders ===
         List<RecentOrderDTO> recentOrders = getRecentOrders(recentOrdersLimit);
 
-        // === 8. Revenue Chart (last N days) ===
         List<DailyRevenueDTO> revenueChart = getDailyRevenue(chartDays);
 
         return DashboardOverviewDTO.builder()
@@ -90,16 +76,8 @@ public class DashboardServiceImpl implements DashboardService {
                 .build();
     }
 
-    /**
-     * Get net revenue for a period.
-     * Net Revenue = SUM(quantity * price) - SUM(discount) for COMPLETED orders.
-     * EXCLUDES shipping fee.
-     * 
-     * Note: Uses separate queries to avoid counting discount multiple times
-     * when orders have multiple order details.
-     */
     private BigDecimal getNetRevenue(LocalDateTime startDate, LocalDateTime endDate) {
-        // Get product revenue (SUM of quantity * price)
+
         String productRevenueQuery = """
                 SELECT COALESCE(SUM(od.quantity * od.price), 0)
                 FROM Order o
@@ -118,8 +96,6 @@ public class DashboardServiceImpl implements DashboardService {
             productRevenue = BigDecimal.ZERO;
         }
 
-        // Get total discount (SUM of order.discount - NOT from order_details to avoid
-        // multiplication)
         String discountQuery = """
                 SELECT COALESCE(SUM(o.discount), 0)
                 FROM Order o
@@ -137,7 +113,6 @@ public class DashboardServiceImpl implements DashboardService {
             totalDiscount = BigDecimal.ZERO;
         }
 
-        // Net Revenue = Product Revenue - Discount (minimum 0)
         BigDecimal netRevenue = productRevenue.subtract(totalDiscount);
         if (netRevenue.compareTo(BigDecimal.ZERO) < 0) {
             netRevenue = BigDecimal.ZERO;
@@ -146,9 +121,6 @@ public class DashboardServiceImpl implements DashboardService {
         return netRevenue;
     }
 
-    /**
-     * Get order count for a period.
-     */
     private Long getOrderCount(LocalDateTime startDate, LocalDateTime endDate, Order.OrderStatus status) {
         String query;
         if (status != null) {
@@ -176,9 +148,6 @@ public class DashboardServiceImpl implements DashboardService {
         return (Long) queryObj.getSingleResult();
     }
 
-    /**
-     * Get count of active return requests (REQUESTED status).
-     */
     private Long getActiveReturnRequests() {
         String query = """
                 SELECT COUNT(r)
@@ -192,9 +161,6 @@ public class DashboardServiceImpl implements DashboardService {
         return (Long) queryObj.getSingleResult();
     }
 
-    /**
-     * Get top selling products.
-     */
     private List<TopProductDTO> getTopProducts(LocalDateTime startDate, LocalDateTime endDate, int limit) {
         String query = """
                 SELECT p.idProduct, p.productCode, p.productName, p.imageUrl,
@@ -233,9 +199,6 @@ public class DashboardServiceImpl implements DashboardService {
         return topProducts;
     }
 
-    /**
-     * Get recent orders.
-     */
     private List<RecentOrderDTO> getRecentOrders(int limit) {
         String query = """
                 SELECT o.idOrder, c.customerName, o.orderDate, o.status, o.totalAmount, o.finalAmount
@@ -268,15 +231,10 @@ public class DashboardServiceImpl implements DashboardService {
         return recentOrders;
     }
 
-    /**
-     * Get daily revenue for last N days.
-     * Uses separate subqueries to avoid counting discount multiple times.
-     */
     private List<DailyRevenueDTO> getDailyRevenue(int days) {
         LocalDate today = LocalDate.now();
         LocalDate startDate = today.minusDays(days - 1);
 
-        // Get product revenue per day
         String productRevenueQuery = """
                 SELECT DATE(o.order_date) as order_day,
                        COALESCE(SUM(od.quantity * od.price), 0) as product_revenue
@@ -294,7 +252,6 @@ public class DashboardServiceImpl implements DashboardService {
         @SuppressWarnings("unchecked")
         List<Object[]> prodResults = prodQuery.getResultList();
 
-        // Get discount and order count per day (from orders table only)
         String discountQuery = """
                 SELECT DATE(o.order_date) as order_day,
                        COALESCE(SUM(o.discount), 0) as total_discount,
@@ -312,7 +269,6 @@ public class DashboardServiceImpl implements DashboardService {
         @SuppressWarnings("unchecked")
         List<Object[]> discResults = discQuery.getResultList();
 
-        // Create a map for discount data
         java.util.Map<LocalDate, Object[]> discountMap = new java.util.HashMap<>();
         for (Object[] row : discResults) {
             java.sql.Date sqlDate = (java.sql.Date) row[0];
@@ -328,7 +284,6 @@ public class DashboardServiceImpl implements DashboardService {
             LocalDate date = sqlDate.toLocalDate();
             BigDecimal productRevenue = row[1] != null ? new BigDecimal(row[1].toString()) : BigDecimal.ZERO;
 
-            // Get discount for this day
             BigDecimal discount = BigDecimal.ZERO;
             Long orderCount = 0L;
             if (discountMap.containsKey(date)) {
@@ -337,7 +292,6 @@ public class DashboardServiceImpl implements DashboardService {
                 orderCount = discRow[2] != null ? ((Number) discRow[2]).longValue() : 0L;
             }
 
-            // Calculate net revenue (minimum 0)
             BigDecimal netRevenue = productRevenue.subtract(discount);
             if (netRevenue.compareTo(BigDecimal.ZERO) < 0) {
                 netRevenue = BigDecimal.ZERO;

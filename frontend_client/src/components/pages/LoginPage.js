@@ -1,4 +1,4 @@
-// src/components/pages/LoginPage.js
+
 import React, { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, LogIn, AlertCircle } from "lucide-react";
 import styles from "../../styles/styles";
@@ -31,7 +31,7 @@ const LoginPage = ({ setCurrentPage }) => {
       ...prev,
       [name]: value,
     }));
-    // Xóa lỗi khi người dùng bắt đầu nhập
+
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -65,11 +65,11 @@ const LoginPage = ({ setCurrentPage }) => {
       try {
         setIsLoading(true);
         await login(formData.username, formData.password, rememberMe);
-        // Redirect to home page after successful login
+
         setCurrentPage("home");
       } catch (error) {
         console.error("Login error:", error);
-        // error là Error instance từ AuthContext với message đã được format
+
         const errorMessage =
           error?.message || "Tài khoản hoặc mật khẩu không đúng";
         setApiError(errorMessage);
@@ -89,7 +89,6 @@ const LoginPage = ({ setCurrentPage }) => {
       return;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(forgotPasswordEmail)) {
       setForgotPasswordError("Email không hợp lệ");
@@ -170,7 +169,7 @@ const LoginPage = ({ setCurrentPage }) => {
             boxShadow: "0 24px 60px rgba(15, 23, 42, 0.16)",
             overflow: "hidden",
           }}>
-          {/* Header */}
+          {}
           <div
             style={{
               background:
@@ -205,9 +204,9 @@ const LoginPage = ({ setCurrentPage }) => {
             </p>
           </div>
 
-          {/* Form */}
+          {}
           <form onSubmit={handleSubmit} style={{ padding: "2rem" }}>
-            {/* Username Field */}
+            {}
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -230,7 +229,7 @@ const LoginPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {/* Password Field */}
+            {}
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -267,7 +266,7 @@ const LoginPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {/* Remember & Forgot Password */}
+            {}
             <div
               style={{
                 display: "flex",
@@ -305,7 +304,7 @@ const LoginPage = ({ setCurrentPage }) => {
               </button>
             </div>
 
-            {/* API Error Message */}
+            {}
             {apiError && (
               <div
                 style={{
@@ -325,7 +324,7 @@ const LoginPage = ({ setCurrentPage }) => {
               </div>
             )}
 
-            {/* Submit Button */}
+            {}
             <Button
               type="submit"
               disabled={isLoading}
@@ -334,7 +333,7 @@ const LoginPage = ({ setCurrentPage }) => {
               {isLoading ? "Đang đăng nhập..." : "Đăng Nhập"}
             </Button>
 
-            {/* Divider */}
+            {}
             <div
               style={{
                 display: "flex",
@@ -358,7 +357,7 @@ const LoginPage = ({ setCurrentPage }) => {
                 }}></div>
             </div>
 
-            {/* Register Link */}
+            {}
             <div
               style={{
                 textAlign: "center",
@@ -381,7 +380,7 @@ const LoginPage = ({ setCurrentPage }) => {
               </button>
             </div>
 
-            {/* Back to Home */}
+            {}
             <div style={{ textAlign: "center", marginTop: "1rem" }}>
               <button
                 type="button"
@@ -398,7 +397,7 @@ const LoginPage = ({ setCurrentPage }) => {
             </div>
           </form>
 
-          {/* Forgot Password Modal */}
+          {}
           {showForgotPassword && (
             <div
               style={{

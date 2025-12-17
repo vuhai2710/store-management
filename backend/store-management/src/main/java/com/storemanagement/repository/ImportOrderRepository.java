@@ -13,13 +13,10 @@ import java.time.LocalDateTime;
 @Repository
 public interface ImportOrderRepository extends JpaRepository<ImportOrder, Integer> {
 
-    // Lấy danh sách đơn nhập hàng theo supplier
     Page<ImportOrder> findBySupplier_IdSupplier(Integer supplierId, Pageable pageable);
 
-    // Lấy danh sách đơn nhập hàng trong khoảng thời gian
     Page<ImportOrder> findByOrderDateBetween(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
 
-    // Lấy danh sách đơn nhập hàng theo supplier và khoảng thời gian
     @Query("SELECT io FROM ImportOrder io WHERE io.supplier.idSupplier = :supplierId " +
            "AND io.orderDate BETWEEN :startDate AND :endDate")
     Page<ImportOrder> findBySupplierAndDateRange(
@@ -28,21 +25,16 @@ public interface ImportOrderRepository extends JpaRepository<ImportOrder, Intege
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable);
 
-    // Lấy đơn nhập hàng với chi tiết (JOIN FETCH)
     @Query("SELECT io FROM ImportOrder io " +
            "LEFT JOIN FETCH io.importOrderDetails " +
            "LEFT JOIN FETCH io.supplier " +
            "WHERE io.idImportOrder = :id")
     ImportOrder findByIdWithDetails(@Param("id") Integer id);
 
-    /**
-     * Search import orders by keyword (supplier name, order ID)
-     */
     @Query("SELECT io FROM ImportOrder io WHERE " +
            "(:keyword IS NULL OR :keyword = '' OR " +
            "CAST(io.idImportOrder AS string) LIKE CONCAT('%', :keyword, '%') OR " +
            "LOWER(io.supplier.supplierName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<ImportOrder> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 }
-
 

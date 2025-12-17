@@ -4,12 +4,7 @@ import { API_ENDPOINTS } from '../constants/apiEndpoints';
 const unwrap = (resp) => resp?.data ?? resp;
 
 export const productsService = {
-  /**
-   * Get products with pagination and filters
-   * GET /api/v1/products
-   * @param {Object} params - Query parameters
-   * @returns {Promise<PageResponse<ProductDTO>>}
-   */
+
   getProducts: async ({
     pageNo = 1,
     pageSize = 10,
@@ -41,7 +36,7 @@ export const productsService = {
       const resp = await api.get(API_ENDPOINTS.PRODUCTS.BASE, { params });
       return unwrap(resp);
     } catch (error) {
-      // If 401, return empty result (public endpoint should not require auth)
+
       if (error?.status === 401) {
         console.warn('Products endpoint requires authentication, returning empty result');
         return { content: [], totalPages: 0, totalElements: 0 };
@@ -51,23 +46,11 @@ export const productsService = {
     }
   },
 
-  /**
-   * Get product by ID
-   * GET /api/v1/products/{id}
-   * @param {number} id - Product ID
-   * @returns {Promise<ProductDTO>}
-   */
   getProductById: async (id) => {
     const resp = await api.get(API_ENDPOINTS.PRODUCTS.BY_ID(id));
     return unwrap(resp);
   },
 
-  /**
-   * Search products by name
-   * GET /api/v1/products/search/name
-   * @param {Object} params - Query parameters
-   * @returns {Promise<PageResponse<ProductDTO>>}
-   */
   searchProductsByName: async ({
     name,
     pageNo = 1,
@@ -80,13 +63,6 @@ export const productsService = {
     return unwrap(resp);
   },
 
-  /**
-   * Get products by category
-   * GET /api/v1/products/category/{categoryId}
-   * @param {number} categoryId - Category ID
-   * @param {Object} params - Query parameters
-   * @returns {Promise<PageResponse<ProductDTO>>}
-   */
   getProductsByCategory: async (categoryId, {
     pageNo = 1,
     pageSize = 10,
@@ -98,13 +74,6 @@ export const productsService = {
     return unwrap(resp);
   },
 
-  /**
-   * Get products by brand
-   * GET /api/v1/products/brand/{brand}
-   * @param {string} brand - Brand name
-   * @param {Object} params - Query parameters
-   * @returns {Promise<PageResponse<ProductDTO>>}
-   */
   getProductsByBrand: async (brand, {
     pageNo = 1,
     pageSize = 10,
@@ -116,12 +85,6 @@ export const productsService = {
     return unwrap(resp);
   },
 
-  /**
-   * Get products by price range
-   * GET /api/v1/products/price
-   * @param {Object} params - Query parameters
-   * @returns {Promise<PageResponse<ProductDTO>>}
-   */
   getProductsByPriceRange: async ({
     minPrice,
     maxPrice,
@@ -137,12 +100,6 @@ export const productsService = {
     return unwrap(resp);
   },
 
-  /**
-   * Get best selling products
-   * GET /api/v1/products/best-sellers
-   * @param {Object} params - Query parameters
-   * @returns {Promise<PageResponse<ProductDTO>>}
-   */
   getBestSellingProducts: async ({
     status,
     pageNo = 1,
@@ -154,12 +111,6 @@ export const productsService = {
     return unwrap(resp);
   },
 
-  /**
-   * Get top 5 best selling products
-   * GET /api/v1/products/best-sellers/top-5
-   * @param {Object} params - Query parameters
-   * @returns {Promise<ProductDTO[]>}
-   */
   getTop5BestSellingProducts: async ({ status } = {}) => {
     try {
       const params = {};
@@ -167,7 +118,7 @@ export const productsService = {
       const resp = await api.get(API_ENDPOINTS.PRODUCTS.TOP_5_BEST_SELLERS, { params });
       return unwrap(resp);
     } catch (error) {
-      // If 401, return empty array (public endpoint should not require auth)
+
       if (error?.status === 401) {
         console.warn('Best sellers endpoint requires authentication, returning empty array');
         return [];
@@ -177,12 +128,6 @@ export const productsService = {
     }
   },
 
-  /**
-   * Get new products
-   * GET /api/v1/products/new
-   * @param {Object} params - Query parameters
-   * @returns {Promise<PageResponse<ProductDTO>>}
-   */
   getNewProducts: async ({
     pageNo = 1,
     pageSize = 10,
@@ -194,7 +139,7 @@ export const productsService = {
       const resp = await api.get(API_ENDPOINTS.PRODUCTS.NEW_PRODUCTS, { params });
       return unwrap(resp);
     } catch (error) {
-      // If 401, return empty result (public endpoint should not require auth)
+
       if (error?.status === 401) {
         console.warn('New products endpoint requires authentication, returning empty result');
         return { content: [], totalPages: 0, totalElements: 0 };
@@ -204,50 +149,27 @@ export const productsService = {
     }
   },
 
-  /**
-   * Get related products
-   * GET /api/v1/products/{id}/related
-   * @param {number} id - Product ID
-   * @param {Object} params - Query parameters
-   * @returns {Promise<ProductDTO[]>}
-   */
   getRelatedProducts: async (id, { limit = 8 } = {}) => {
     const params = { limit };
     const resp = await api.get(API_ENDPOINTS.PRODUCTS.RELATED(id), { params });
     return unwrap(resp);
   },
 
-  /**
-   * Get all brands
-   * GET /api/v1/products/brands
-   * @returns {Promise<string[]>}
-   */
   getAllBrands: async () => {
     const resp = await api.get(API_ENDPOINTS.PRODUCTS.BRANDS);
     return unwrap(resp);
   },
 
-  /**
-   * Get product images
-   * GET /api/v1/products/{id}/images
-   * @param {number} id - Product ID
-   * @returns {Promise<ProductImageDTO[]>}
-   */
   getProductImages: async (id) => {
     const resp = await api.get(API_ENDPOINTS.PRODUCTS.IMAGES(id));
     return unwrap(resp);
   },
 
-  /**
-   * Get recommended products for user
-   * GET /api/v1/products/recommend
-   * @returns {Promise<ProductDTO[]>}
-   */
   getRecommendedProducts: async () => {
     try {
       const resp = await api.get(API_ENDPOINTS.PRODUCTS.RECOMMEND);
       const unwrapped = unwrap(resp);
-      // ApiResponse format: { code, message, data: [...] }
+
       return unwrapped?.data || unwrapped || [];
     } catch (error) {
       console.error('Error fetching recommended products:', error);
@@ -255,17 +177,11 @@ export const productsService = {
     }
   },
 
-  /**
-   * Get similar products
-   * GET /api/v1/products/{id}/similar
-   * @param {number} id - Product ID
-   * @returns {Promise<ProductDTO[]>}
-   */
   getSimilarProducts: async (id) => {
     try {
       const resp = await api.get(API_ENDPOINTS.PRODUCTS.SIMILAR(id));
       const unwrapped = unwrap(resp);
-      // ApiResponse format: { code, message, data: [...] }
+
       return unwrapped?.data || unwrapped || [];
     } catch (error) {
       console.error('Error fetching similar products:', error);
@@ -273,17 +189,12 @@ export const productsService = {
     }
   },
 
-  /**
-   * Get products on sale (with active promotions and in stock)
-   * GET /api/v1/products/on-sale
-   * @returns {Promise<ProductOnSaleDTO[]>}
-   */
   getProductsOnSale: async () => {
     try {
       const resp = await api.get(API_ENDPOINTS.PRODUCTS.ON_SALE);
       return unwrap(resp);
     } catch (error) {
-      // If 401, return empty array
+
       if (error?.status === 401) {
         console.warn('Products on sale endpoint requires authentication, returning empty array');
         return [];
