@@ -8,7 +8,7 @@ public interface EmailService {
 
     void sendForgotPasswordEmail(String to, String username, String newPassword);
 
+    void sendPasswordResetEmail(String to, String username, String resetLink, int expiryMinutes);
+
     void sendNotificationEmail(String to, String title, String message);
 }
-
-

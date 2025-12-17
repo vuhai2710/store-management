@@ -26,6 +26,7 @@ import Users from "./pages/Users";
 import Unauthorized from "./pages/Unauthorized";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Orders from "./pages/Orders";
@@ -60,6 +61,7 @@ const PublicRoutes = () => (
   <Routes>
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/unauthorized" element={<Unauthorized />} />
     <Route path="*" element={<Navigate to="/login" replace />} />
   </Routes>

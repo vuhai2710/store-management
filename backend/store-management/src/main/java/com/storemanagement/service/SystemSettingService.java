@@ -6,6 +6,10 @@ public interface SystemSettingService {
 
     void updateReturnWindow(int days);
 
+    String getAutoFreeShippingPromotion();
+
+    void updateAutoFreeShippingPromotion(String code);
+
     int getReviewEditWindowHours();
 
     void updateReviewEditWindow(int hours);

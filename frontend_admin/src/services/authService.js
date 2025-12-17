@@ -99,6 +99,20 @@ export const authService = {
     }
   },
 
+  // Reset password - Đặt lại mật khẩu
+  resetPassword: async (token, newPassword, confirmPassword) => {
+    try {
+      const response = await api.post("/auth/reset-password", {
+        token,
+        newPassword,
+        confirmPassword,
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Get user from localStorage
   getUserFromStorage: () => {
     const userStr = localStorage.getItem("user");

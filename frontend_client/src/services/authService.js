@@ -20,7 +20,7 @@ export const authService = {
     try {
       const response = await api.post(API_ENDPOINTS.AUTH.REGISTER, registerData);
       const data = unwrap(response);
-      
+
       // Backend returns { token, refreshToken, user }
       if (data?.token) {
         localStorage.setItem('token', data.token);
@@ -48,7 +48,7 @@ export const authService = {
     try {
       const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, credentials);
       const data = unwrap(response);
-      
+
       // Backend returns { token, refreshToken, user }
       if (data?.token) {
         // Use localStorage if rememberMe is true, otherwise use sessionStorage
@@ -110,6 +110,27 @@ export const authService = {
   forgotPassword: async (email) => {
     try {
       const response = await api.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email });
+      return unwrap(response);
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Reset password - Đặt lại mật khẩu
+   * POST /api/v1/auth/reset-password
+   * @param {string} token - Reset token from email
+   * @param {string} newPassword - New password
+   * @param {string} confirmPassword - Password confirmation
+   * @returns {Promise<{message: string}>}
+   */
+  resetPassword: async (token, newPassword, confirmPassword) => {
+    try {
+      const response = await api.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, {
+        token,
+        newPassword,
+        confirmPassword,
+      });
       return unwrap(response);
     } catch (error) {
       throw error;

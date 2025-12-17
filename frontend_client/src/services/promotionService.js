@@ -62,7 +62,24 @@ export const promotionService = {
     });
     return unwrap(resp);
   },
+
+  /**
+   * Calculate automatic shipping discount based on SHIPPING scope promotion rules
+   * POST /api/v1/promotions/calculate-auto-shipping
+   * @param {Object} request - Calculate request
+   * @param {number} request.totalAmount - Order total amount (for minOrderAmount check)
+   * @param {number} request.shippingFee - Shipping fee to apply discount to
+   * @returns {Promise<{applicable: boolean, discount: number, discountType: string, ruleName: string, ruleId: number}>}
+   */
+  calculateAutoShippingDiscount: async (request) => {
+    const resp = await api.post(API_ENDPOINTS.PROMOTIONS.CALCULATE_AUTO_SHIPPING, {
+      totalAmount: request.totalAmount,
+      shippingFee: request.shippingFee,
+    });
+    return unwrap(resp);
+  },
 };
+
 
 
 

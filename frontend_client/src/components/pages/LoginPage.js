@@ -101,7 +101,7 @@ const LoginPage = ({ setCurrentPage }) => {
       const response = await authService.forgotPassword(forgotPasswordEmail);
       setForgotPasswordSuccess(
         response?.message ||
-          "Mật khẩu mới đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư."
+        "Vui lòng kiểm tra email để đặt lại mật khẩu."
       );
       setForgotPasswordEmail("");
       setTimeout(() => {
@@ -444,7 +444,7 @@ const LoginPage = ({ setCurrentPage }) => {
                     marginBottom: "1.5rem",
                     fontSize: "0.875rem",
                   }}>
-                  Nhập email đã đăng ký để nhận mật khẩu mới
+                  Nhập email đã đăng ký để nhận link đặt lại mật khẩu
                 </p>
 
                 <form onSubmit={handleForgotPassword}>

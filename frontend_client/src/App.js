@@ -19,6 +19,7 @@ import CartPage from "./components/pages/CartPage";
 import ProductDetailPage from "./components/pages/ProductDetailPage";
 import LoginPage from "./components/pages/LoginPage";
 import RegisterPage from "./components/pages/RegisterPage";
+import ResetPasswordPage from "./components/pages/ResetPasswordPage";
 import CheckoutPage from "./components/pages/CheckoutPage";
 import OrdersPage from "./components/pages/OrdersPage";
 import ProfilePage from "./components/pages/ProfilePage";
@@ -88,10 +89,13 @@ function AppContent() {
       setCurrentPage("payment-success");
     } else if (path.startsWith("/payment/cancel")) {
       setCurrentPage("payment-cancel");
+    } else if (path.startsWith("/reset-password") || urlParams.get('token')) {
+      // Check for reset password page
+      setCurrentPage("reset-password");
     }
 
     // If categoryId is in URL, set it and navigate to shop
-    if (categoryIdFromUrl) {
+    if (categoryIdFromUrl && !urlParams.get('token')) {
       setSelectedCategoryId(parseInt(categoryIdFromUrl));
       setCurrentPage("shop");
     }
@@ -429,6 +433,9 @@ function AppContent() {
       case "register":
         return <RegisterPage setCurrentPage={setCurrentPage} />;
 
+      case "reset-password":
+        return <ResetPasswordPage setCurrentPage={setCurrentPage} />;
+
       case "orders":
         return (
           <ProtectedRoute>
@@ -504,8 +511,8 @@ function AppContent() {
     }
   };
 
-  // ✅ KIỂM TRA: Nếu là trang Login hoặc Register thì KHÔNG hiển thị Header/Footer
-  const isAuthPage = currentPage === "login" || currentPage === "register";
+  // ✅ KIỂM TRA: Nếu là trang Login, Register, hoặc Reset Password thì KHÔNG hiển thị Header/Footer
+  const isAuthPage = currentPage === "login" || currentPage === "register" || currentPage === "reset-password";
 
   // Show loading if auth is loading
   if (authLoading) {

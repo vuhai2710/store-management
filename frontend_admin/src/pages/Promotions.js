@@ -292,6 +292,7 @@ const Promotions = () => {
       discountType: "PERCENTAGE",
       customerType: "ALL",
       isActive: true,
+      scope: "ORDER",
     });
     setIsRuleModalVisible(true);
   };
@@ -313,6 +314,7 @@ const Promotions = () => {
       priority: record.priority != null ? Number(record.priority) : 0,
       dateRange: startDate && endDate ? [startDate, endDate] : null,
       isActive: record.isActive !== undefined ? record.isActive : true,
+      scope: record.scope || "ORDER",
     });
     setIsRuleModalVisible(true);
   };
@@ -336,6 +338,7 @@ const Promotions = () => {
       isActive: values.isActive ?? true,
       priority:
         values.priority != null && values.priority !== "" ? values.priority : 0,
+      scope: values.scope || "ORDER",
     };
 
     setRuleSubmitting(true);
@@ -515,6 +518,16 @@ const Promotions = () => {
           <div>Từ: {formatDate(record.startDate)}</div>
           <div>Đến: {formatDate(record.endDate)}</div>
         </div>
+      ),
+    },
+    {
+      title: "Phạm vi",
+      dataIndex: "scope",
+      key: "scope",
+      render: (scope) => (
+        <Tag color={scope === "SHIPPING" ? "cyan" : "purple"}>
+          {scope === "SHIPPING" ? "Phí vận chuyển" : "Đơn hàng"}
+        </Tag>
       ),
     },
     {
@@ -969,9 +982,26 @@ const Promotions = () => {
             </Col>
           </Row>
 
-          <Form.Item name="isActive" label="Trạng thái" valuePropName="checked">
-            <Switch checkedChildren="Hoạt động" unCheckedChildren="Tạm dừng" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="scope"
+                label="Phạm vi áp dụng"
+                rules={[
+                  { required: true, message: "Vui lòng chọn phạm vi áp dụng" },
+                ]}>
+                <Select placeholder="Chọn phạm vi áp dụng">
+                  <Option value="ORDER">Đơn hàng (giảm giá sản phẩm)</Option>
+                  <Option value="SHIPPING">Phí vận chuyển (freeship tự động)</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="isActive" label="Trạng thái" valuePropName="checked">
+                <Switch checkedChildren="Hoạt động" unCheckedChildren="Tạm dừng" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <div style={{ textAlign: "right" }}>
             <Space>

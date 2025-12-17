@@ -55,14 +55,19 @@ public class Promotion extends BaseEntity {
     @Builder.Default
     private PromotionScope scope = PromotionScope.ORDER;
 
+    // Products linked to this promotion (only used when scope = PRODUCT)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "promotion_products", joinColumns = @JoinColumn(name = "id_promotion"), inverseJoinColumns = @JoinColumn(name = "id_product"))
+    @Builder.Default
+    private java.util.Set<Product> products = new java.util.HashSet<>();
+
     public enum DiscountType {
         PERCENTAGE, FIXED_AMOUNT
     }
 
     public enum PromotionScope {
-        ORDER,    // Giảm giá đơn hàng (default)
-        SHIPPING  // Giảm giá phí vận chuyển
+        ORDER, // Giảm giá đơn hàng (default)
+        SHIPPING, // Giảm giá phí vận chuyển
+        PRODUCT // Giảm giá sản phẩm cụ thể (Flash Sale)
     }
 }
-
-

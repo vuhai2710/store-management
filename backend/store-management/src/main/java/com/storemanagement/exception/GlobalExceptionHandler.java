@@ -75,11 +75,25 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(409).body(response);
     }
 
-    // NOT FOUND
+    // NOT FOUND - EntityNotFoundException
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNotFound(EntityNotFoundException ex) {
         ApiResponse<Void> response = ApiResponse.error(404, ex.getMessage());
         return ResponseEntity.status(404).body(response);
+    }
+
+    // NOT FOUND - ResourceNotFoundException (custom)
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(ResourceNotFoundException ex) {
+        ApiResponse<Void> response = ApiResponse.error(404, ex.getMessage());
+        return ResponseEntity.status(404).body(response);
+    }
+
+    // INVALID TOKEN
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidToken(InvalidTokenException ex) {
+        ApiResponse<Void> response = ApiResponse.error(400, ex.getMessage());
+        return ResponseEntity.badRequest().body(response);
     }
 
     // BUSINESS EXCEPTION

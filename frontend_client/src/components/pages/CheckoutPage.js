@@ -55,6 +55,10 @@ const CheckoutPage = ({ setCurrentPage }) => {
   const [shippingPromotionError, setShippingPromotionError] = useState(null);
   const [loadingShippingPromotion, setLoadingShippingPromotion] = useState(false);
 
+  // Auto Shipping Discount (no code required)
+  const [autoShippingDiscount, setAutoShippingDiscount] = useState(0);
+  const [autoShippingDiscountInfo, setAutoShippingDiscountInfo] = useState(null);
+
   // Buy Now product (loaded from API if needed)
   const [buyNowProduct, setBuyNowProduct] = useState(null);
   const [loadingBuyNowProduct, setLoadingBuyNowProduct] = useState(false);
@@ -317,6 +321,53 @@ const CheckoutPage = ({ setCurrentPage }) => {
 
     calculateAutomaticDiscount();
   }, [cart, isBuyNowMode, buyNowItem, buyNowProduct]);
+
+  // Calculate automatic shipping discount when shipping fee or order total changes
+  useEffect(() => {
+    const calculateAutoShipping = async () => {
+      // Skip if no shipping fee or if manual shipping promo code is applied
+      if (shippingFee <= 0 || shippingPromotionValid) {
+        setAutoShippingDiscount(0);
+        setAutoShippingDiscountInfo(null);
+        return;
+      }
+
+      // Calculate order total
+      let orderTotal = 0;
+      if (isBuyNowMode && buyNowItem && buyNowProduct) {
+        orderTotal = (buyNowProduct.price || 0) * buyNowItem.quantity;
+      } else if (cart) {
+        orderTotal = cart.totalAmount || cart.total || 0;
+      }
+
+      if (orderTotal <= 0) {
+        setAutoShippingDiscount(0);
+        setAutoShippingDiscountInfo(null);
+        return;
+      }
+
+      try {
+        const response = await promotionService.calculateAutoShippingDiscount({
+          totalAmount: orderTotal,
+          shippingFee: shippingFee,
+        });
+
+        if (response && response.applicable && response.discount > 0) {
+          setAutoShippingDiscount(Number(response.discount));
+          setAutoShippingDiscountInfo(response);
+        } else {
+          setAutoShippingDiscount(0);
+          setAutoShippingDiscountInfo(null);
+        }
+      } catch (error) {
+        console.error("Error calculating auto shipping discount:", error);
+        setAutoShippingDiscount(0);
+        setAutoShippingDiscountInfo(null);
+      }
+    };
+
+    calculateAutoShipping();
+  }, [shippingFee, cart, isBuyNowMode, buyNowItem, buyNowProduct, shippingPromotionValid]);
 
   const handleAddressFormChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -581,10 +632,16 @@ const CheckoutPage = ({ setCurrentPage }) => {
   const totalOrderDiscount = manualCodeDiscount + autoPromoDiscount;
 
   // Shipping discount (applied separately to shipping fee only)
-  const shippingDiscountAmount =
+  // Priority: Manual promo code > Auto shipping discount
+  const manualShippingDiscount =
     shippingPromotionValid && shippingPromotionDiscount > 0
       ? Math.min(shippingPromotionDiscount, shippingFee) // Cap at shippingFee
       : 0;
+  const autoShippingDiscountAmount =
+    !shippingPromotionValid && autoShippingDiscount > 0
+      ? Math.min(autoShippingDiscount, shippingFee) // Cap at shippingFee
+      : 0;
+  const shippingDiscountAmount = manualShippingDiscount + autoShippingDiscountAmount;
   const effectiveShippingFee = Math.max(0, shippingFee - shippingDiscountAmount);
 
   // Combined totals for display
@@ -1501,8 +1558,8 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   </div>
                 )}
 
-                {/* Shipping Discount Line */}
-                {shippingDiscountAmount > 0 && shippingPromotionValid && (
+                {/* Shipping Discount Line - Manual Promo Code */}
+                {manualShippingDiscount > 0 && shippingPromotionValid && (
                   <div
                     style={{
                       display: "flex",
@@ -1511,7 +1568,26 @@ const CheckoutPage = ({ setCurrentPage }) => {
                       color: "#17a2b8",
                     }}>
                     <span>🚚 Giảm phí vận chuyển ({shippingPromotionCode})</span>
-                    <span>-{formatPrice(shippingDiscountAmount)}</span>
+                    <span>-{formatPrice(manualShippingDiscount)}</span>
+                  </div>
+                )}
+
+                {/* Shipping Discount Line - Auto Applied */}
+                {autoShippingDiscountAmount > 0 && autoShippingDiscountInfo && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "0.5rem",
+                      color: "#17a2b8",
+                    }}>
+                    <span>
+                      🚚 Freeship tự động{" "}
+                      {autoShippingDiscountInfo.ruleName
+                        ? `(${autoShippingDiscountInfo.ruleName})`
+                        : ""}
+                    </span>
+                    <span>-{formatPrice(autoShippingDiscountAmount)}</span>
                   </div>
                 )}
 

@@ -85,3 +85,9 @@ ghn:
 
 recommender:
   base-url: http://localhost:5000
+
+# Password Reset Configuration
+password-reset:
+  admin-url: http://localhost:3000/reset-password
+  client-url: http://localhost:3001/reset-password
+  token-expiry-minutes: 30

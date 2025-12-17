@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface SystemSettingRepository extends JpaRepository<SystemSetting, Integer> {
 
     Optional<SystemSetting> findByKey(String key);
+
+    void deleteByKey(String key);
 }

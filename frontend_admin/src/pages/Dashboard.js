@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useSelector } from "react-redux";
 import {
   Row,
   Col,
@@ -34,6 +35,8 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from "recharts";
+
+import { USER_ROLES } from "../constants/roles";
 import { dashboardService } from "../services/dashboardService";
 
 const { Title, Text } = Typography;
@@ -43,7 +46,10 @@ const { Title, Text } = Typography;
  *
  * IMPORTANT: Revenue = Products only (EXCLUDES shipping fee)
  */
+
 const Dashboard = () => {
+  const user = useSelector((state) => state.auth?.user);
+  const userRole = user?.role;
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState(null);
@@ -90,13 +96,18 @@ const Dashboard = () => {
   }, []);
 
   // Initial load
+
   useEffect(() => {
-    loadDashboard();
-  }, [loadDashboard]);
+    if (userRole === USER_ROLES.ADMIN) {
+      loadDashboard();
+    }
+  }, [loadDashboard, userRole]);
 
   // Handle refresh
   const handleRefresh = () => {
-    loadDashboard(true);
+    if (userRole === USER_ROLES.ADMIN) {
+      loadDashboard(true);
+    }
   };
 
   // Custom chart tooltip
@@ -110,8 +121,7 @@ const Dashboard = () => {
             border: "1px solid #E2E8F0",
             borderRadius: "8px",
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          }}
-        >
+          }}>
           <p style={{ margin: 0, fontWeight: 600 }}>{label}</p>
           <p style={{ margin: "4px 0 0", color: "#2563EB" }}>
             Doanh thu thuần: {formatFullCurrency(payload[0].value)}
@@ -138,8 +148,7 @@ const Dashboard = () => {
           style={{
             fontWeight: 600,
             color: index < 3 ? "#f59e0b" : "#64748B",
-          }}
-        >
+          }}>
           {index + 1}
         </span>
       ),
@@ -281,8 +290,7 @@ const Dashboard = () => {
           justifyContent: "space-between",
           flexWrap: "wrap",
           gap: 12,
-        }}
-      >
+        }}>
         <div>
           <Title
             level={2}
@@ -290,8 +298,7 @@ const Dashboard = () => {
               marginBottom: 4,
               fontWeight: 700,
               color: "#0F172A",
-            }}
-          >
+            }}>
             <CalendarOutlined style={{ marginRight: 12 }} />
             Bảng điều khiển
           </Title>
@@ -302,8 +309,7 @@ const Dashboard = () => {
         <Button
           icon={<ReloadOutlined spin={refreshing} />}
           onClick={handleRefresh}
-          loading={refreshing}
-        >
+          loading={refreshing}>
           Làm mới
         </Button>
       </div>
@@ -318,8 +324,7 @@ const Dashboard = () => {
               border: "1px solid #10b981",
               boxShadow: "0 8px 24px rgba(16, 185, 129, 0.15)",
               background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
-            }}
-          >
+            }}>
             <Statistic
               title={
                 <Space>
@@ -345,8 +350,7 @@ const Dashboard = () => {
               border: "1px solid #2563EB",
               boxShadow: "0 8px 24px rgba(37, 99, 235, 0.12)",
               background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
-            }}
-          >
+            }}>
             <Statistic
               title={
                 <Space>
@@ -368,8 +372,7 @@ const Dashboard = () => {
               borderRadius: 12,
               border: "1px solid #E2E8F0",
               boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
-            }}
-          >
+            }}>
             <Statistic
               title={
                 <Space>
@@ -390,8 +393,7 @@ const Dashboard = () => {
               borderRadius: 12,
               border: "1px solid #E2E8F0",
               boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
-            }}
-          >
+            }}>
             <Statistic
               title={
                 <Space>
@@ -412,8 +414,7 @@ const Dashboard = () => {
               borderRadius: 12,
               border: "1px solid #E2E8F0",
               boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
-            }}
-          >
+            }}>
             <Statistic
               title={
                 <Space>
@@ -444,8 +445,7 @@ const Dashboard = () => {
                 data?.activeReturnRequests > 0
                   ? "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)"
                   : undefined,
-            }}
-          >
+            }}>
             <Statistic
               title={
                 <Space>
@@ -480,8 +480,7 @@ const Dashboard = () => {
               border: "1px solid #E2E8F0",
               boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
             }}
-            bodyStyle={{ padding: 16 }}
-          >
+            bodyStyle={{ padding: 16 }}>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={chartData}>
@@ -529,8 +528,7 @@ const Dashboard = () => {
               border: "1px solid #E2E8F0",
               boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
             }}
-            bodyStyle={{ padding: 0 }}
-          >
+            bodyStyle={{ padding: 0 }}>
             <Table
               columns={topProductsColumns}
               dataSource={data?.topProducts || []}
@@ -556,8 +554,7 @@ const Dashboard = () => {
           border: "1px solid #E2E8F0",
           boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
         }}
-        bodyStyle={{ padding: 0 }}
-      >
+        bodyStyle={{ padding: 0 }}>
         <Table
           columns={recentOrdersColumns}
           dataSource={data?.recentOrders || []}

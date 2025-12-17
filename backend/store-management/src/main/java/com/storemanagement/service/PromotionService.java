@@ -1,11 +1,13 @@
 package com.storemanagement.service;
 
 import com.storemanagement.dto.PageResponse;
+import com.storemanagement.dto.product.ProductOnSaleDTO;
 import com.storemanagement.dto.promotion.*;
 import com.storemanagement.model.Promotion;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public interface PromotionService {
 
@@ -23,6 +25,18 @@ public interface PromotionService {
      * @return the shipping discount amount (capped at shippingFee)
      */
     BigDecimal calculateShippingDiscount(BigDecimal shippingFee, String shippingPromotionCode);
+
+    /**
+     * Calculate automatic shipping discount based on active SHIPPING scope rules
+     * This is for auto-apply shipping promotions (no code required)
+     * 
+     * @param shippingFee  the shipping fee to apply discount to
+     * @param orderTotal   the order total to check against minOrderAmount
+     * @param customerType the customer type (VIP, REGULAR, ALL)
+     * @return CalculateDiscountResponseDTO with discount details
+     */
+    CalculateDiscountResponseDTO calculateAutoShippingDiscount(BigDecimal shippingFee, BigDecimal orderTotal,
+            String customerType);
 
     PromotionDTO createPromotion(PromotionDTO promotionDTO);
 
@@ -50,4 +64,13 @@ public interface PromotionService {
     void deletePromotionRule(Integer id);
 
     void recordPromotionUsage(Integer promotionId, Integer orderId, Integer customerId);
+
+    /**
+     * Get all products currently on sale (with active PRODUCT-scope promotions and
+     * stock > 0).
+     * Used for the homepage Flash Sale slider.
+     * 
+     * @return List of products on sale with discount details
+     */
+    List<ProductOnSaleDTO> getProductsOnSale();
 }

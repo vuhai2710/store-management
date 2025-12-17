@@ -38,7 +38,7 @@ const AppSidebar = () => {
         key: "/dashboard",
         icon: <DashboardOutlined />,
         label: "Dashboard",
-        roles: [USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE, USER_ROLES.CUSTOMER], // All roles
+        roles: [USER_ROLES.ADMIN], // Only Admin can see Dashboard
       },
       {
         key: "/orders",

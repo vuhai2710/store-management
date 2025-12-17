@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   Form,
+  Input,
   InputNumber,
   Button,
   Typography,
@@ -40,6 +41,7 @@ const ReturnSettingPage = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [currentReturnDays, setCurrentReturnDays] = useState(7);
+  const [currentAutoFreeShippingPromotion, setCurrentAutoFreeShippingPromotion] = useState("");
   const [error, setError] = useState(null);
 
   // Giá trị mặc định cho các field optional (chỉ hiển thị UI, không gửi API)
@@ -52,12 +54,15 @@ const ReturnSettingPage = () => {
     setError(null);
     try {
       const returnDays = await systemSettingService.getReturnWindow();
+      const autoPromo = await systemSettingService.getAutoFreeShippingPromotion();
       setCurrentReturnDays(returnDays);
+      setCurrentAutoFreeShippingPromotion(autoPromo || "");
       // Các field optional lấy giá trị theo return days làm mặc định
       setRefundDays(returnDays);
       setExchangeSizeDays(returnDays);
       form.setFieldsValue({
         returnWindowDays: returnDays,
+        autoFreeShippingPromotion: autoPromo || "",
         refundWindowDays: returnDays,
         exchangeSizeWindowDays: returnDays,
       });
@@ -77,8 +82,8 @@ const ReturnSettingPage = () => {
   // Handle save - CHỈ gửi returnWindowDays lên backend
   const handleSave = async () => {
     try {
-      const values = await form.validateFields(["returnWindowDays"]);
-      const { returnWindowDays } = values;
+      const values = await form.validateFields(["returnWindowDays", "autoFreeShippingPromotion"]);
+      const { returnWindowDays, autoFreeShippingPromotion } = values;
 
       if (!returnWindowDays || returnWindowDays < 1 || returnWindowDays > 365) {
         message.error("Số ngày đổi trả phải từ 1 đến 365");
@@ -87,7 +92,11 @@ const ReturnSettingPage = () => {
 
       setSaving(true);
       await systemSettingService.updateReturnWindow(returnWindowDays);
+      await systemSettingService.updateAutoFreeShippingPromotion(autoFreeShippingPromotion);
       setCurrentReturnDays(returnWindowDays);
+      setCurrentAutoFreeShippingPromotion(
+        autoFreeShippingPromotion ? String(autoFreeShippingPromotion).trim() : ""
+      );
       message.success("Cập nhật cài đặt đổi trả thành công!");
     } catch (err) {
       console.error("Failed to update return window setting:", err);
@@ -108,6 +117,7 @@ const ReturnSettingPage = () => {
   const handleReset = () => {
     form.setFieldsValue({
       returnWindowDays: currentReturnDays,
+      autoFreeShippingPromotion: currentAutoFreeShippingPromotion,
       refundWindowDays: refundDays,
       exchangeSizeWindowDays: exchangeSizeDays,
     });
@@ -150,6 +160,7 @@ const ReturnSettingPage = () => {
             layout="vertical"
             initialValues={{
               returnWindowDays: currentReturnDays,
+              autoFreeShippingPromotion: currentAutoFreeShippingPromotion,
               refundWindowDays: refundDays,
               exchangeSizeWindowDays: exchangeSizeDays,
             }}
@@ -158,6 +169,33 @@ const ReturnSettingPage = () => {
               form.validateFields(["returnWindowDays"]).catch(() => {});
             }}>
             <Row gutter={[24, 16]}>
+              <Col xs={24}>
+                <Card
+                  type="inner"
+                  title={
+                    <Space>
+                      <SettingOutlined style={{ color: "#1890ff" }} />
+                      <span>Mã freeship tự động (optional)</span>
+                    </Space>
+                  }
+                  extra={
+                    <Text type="secondary">
+                      Hiện tại: <strong>{currentAutoFreeShippingPromotion || "(trống)"}</strong>
+                    </Text>
+                  }>
+                  <Form.Item
+                    name="autoFreeShippingPromotion"
+                    label="Mã khuyến mãi freeship tự động"
+                    extra="Để trống để tắt hiển thị freeship auto trên trang chủ.">
+                    <Input
+                      placeholder="VD: FREESHIP / 500.000đ / FS30K..."
+                      allowClear
+                      size="large"
+                    />
+                  </Form.Item>
+                </Card>
+              </Col>
+
               {/* Số ngày đổi trả - BẮT BUỘC */}
               <Col xs={24}>
                 <Card

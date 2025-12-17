@@ -54,9 +54,15 @@ const Login = () => {
         return;
       }
 
-      // Nếu là ADMIN hoặc EMPLOYEE, điều hướng bình thường
+      // Điều hướng dựa theo role
       message.success("Đăng nhập thành công!");
-      navigate("/dashboard");
+      if (user?.role === USER_ROLES.EMPLOYEE) {
+        // EMPLOYEE vào thẳng trang quản lý đơn hàng
+        navigate("/orders");
+      } else {
+        // ADMIN vào trang dashboard
+        navigate("/dashboard");
+      }
     } catch (error) {
       console.error("Lỗi đăng nhập:", error);
       // error is the rejected value from authSlice (already formatted message)
@@ -75,7 +81,7 @@ const Login = () => {
       setForgotPasswordLoading(true);
       const response = await authService.forgotPassword(values.email);
       message.success(
-        response?.message || "Mật khẩu mới đã được gửi đến email của bạn!"
+        response?.message || "Vui lòng kiểm tra email để đặt lại mật khẩu!"
       );
       setForgotPasswordVisible(false);
       forgotPasswordForm.resetFields();
@@ -83,7 +89,7 @@ const Login = () => {
       const errorMessage =
         error?.response?.data?.message ||
         error?.message ||
-        "Không thể gửi mật khẩu mới. Vui lòng thử lại!";
+        "Không thể gửi email. Vui lòng thử lại!";
       message.error(errorMessage);
     } finally {
       setForgotPasswordLoading(false);
@@ -230,7 +236,7 @@ const Login = () => {
                 type="primary"
                 htmlType="submit"
                 loading={forgotPasswordLoading}>
-                Gửi mật khẩu mới
+                Gửi link đặt lại
               </Button>
             </Space>
           </Form.Item>

@@ -8,7 +8,12 @@ import com.storemanagement.model.User;
 
 public interface AuthenticationService {
     AuthenticationResponseDTO authenticate(LoginDTO request) throws JOSEException;
+
     AuthenticationResponseDTO register(RegisterDTO request) throws JOSEException;
+
     String generateToken(User user) throws JOSEException;
+
     String forgotPassword(String email);
+
+    String resetPassword(String token, String newPassword, String confirmPassword);
 }

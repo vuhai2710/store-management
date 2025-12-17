@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
     REGISTER: "/auth/register",
     LOGOUT: "/auth/logout",
     FORGOT_PASSWORD: "/auth/forgot-password",
+    RESET_PASSWORD: "/auth/reset-password",
   },
 
   // Categories
@@ -33,6 +34,7 @@ export const API_ENDPOINTS = {
     IMAGES: (id) => `/products/${id}/images`,
     RECOMMEND: "/products/recommend",
     SIMILAR: (id) => `/products/${id}/similar`,
+    ON_SALE: "/products/on-sale",
   },
 
   // Cart
@@ -105,6 +107,7 @@ export const API_ENDPOINTS = {
   PROMOTIONS: {
     VALIDATE: "/promotions/validate",
     CALCULATE: "/promotions/calculate",
+    CALCULATE_AUTO_SHIPPING: "/promotions/calculate-auto-shipping",
   },
 
   // Reviews

@@ -1,12 +1,13 @@
 // src/components/pages/HomePage.js
 import React, { useState, useEffect } from 'react';
-import { Truck, RefreshCw, Headset, Clock, ShoppingBag } from 'lucide-react';
+import { Truck, RefreshCw, Headset } from 'lucide-react';
 import styles from '../../styles/styles';
 import ProductCard from '../shared/ProductCard';
 import LoadingSpinner from '../common/LoadingSpinner';
+import OnSaleSlider from '../homepage/OnSaleSlider';
+import api from '../../services/api';
 import { productsService } from '../../services/productsService';
 import { categoriesService } from '../../services/categoriesService';
-import { formatPrice } from '../../utils/formatUtils';
 import { useAuth } from '../../hooks/useAuth';
 
 // Component NHẬN handleViewProductDetail + setSelectedCategory + handleCategoryNavigation
@@ -19,6 +20,31 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const [homepagePolicy, setHomepagePolicy] = useState({
+    returnWindowDays: 7,
+    autoFreeShippingPromotion: null,
+  });
+
+  useEffect(() => {
+    const fetchHomepagePolicy = async () => {
+      try {
+        const response = await api.get('/settings/homepage-policy');
+        setHomepagePolicy({
+          returnWindowDays: response.data?.returnWindowDays || 7,
+          autoFreeShippingPromotion: response.data?.autoFreeShippingPromotion || null,
+        });
+      } catch (err) {
+        console.error('Error fetching homepage policy:', err);
+        setHomepagePolicy({
+          returnWindowDays: 7,
+          autoFreeShippingPromotion: null,
+        });
+      }
+    };
+
+    fetchHomepagePolicy();
+  }, []);
 
   // Fetch data from API only when authenticated
   useEffect(() => {
@@ -72,50 +98,6 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
 
     fetchData();
   }, [isAuthenticated]);
-
-  // --- CHỨC NĂNG MÔ PHỎNG: Đồng hồ đếm ngược cho Deal of the Week ---
-  const calculateTimeLeft = () => {
-    const difference = +new Date('2025-12-31') - +new Date();
-    let timeLeft = {};
-
-    if (difference > 0) {
-      timeLeft = {
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((difference / 1000 / 60) % 60),
-        seconds: Math.floor((difference / 1000) % 60),
-      };
-    }
-    return timeLeft;
-  };
-
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  });
-
-  const timerComponents = [];
-
-  Object.keys(timeLeft).forEach((interval) => {
-    if (!timeLeft[interval] && interval !== 'seconds') {
-      // return;
-    }
-
-    timerComponents.push(
-      <span key={interval} style={{ backgroundColor: '#fff', color: '#dc3545', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', fontWeight: 'bold', minWidth: '60px', textAlign: 'center' }}>
-        {timeLeft[interval] !== undefined ? timeLeft[interval] : 0}
-        <div style={{ fontSize: '0.75rem', fontWeight: 'normal', color: '#6c757d' }}>{interval.toUpperCase()}</div>
-      </span>
-    );
-  });
-  // --- END Đồng hồ đếm ngược ---
-
-  const dealProduct = bestSellers[0] || newProducts[0]; // Get first product from best sellers or new products
 
   // Style cho Service Icons
   const serviceIconStyle = {
@@ -184,13 +166,20 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
             <div style={serviceIconStyle}>
               <Truck size={36} style={{ color: '#2563EB', marginBottom: '0.75rem' }} />
-              <h4 style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>MIỄN PHÍ VẬN CHUYỂN</h4>
-              <p style={{ color: '#6c757d', fontSize: '0.875rem' }}>Trên mọi đơn hàng
-                500.000đ</p>
+              <h4 style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>
+                {homepagePolicy.autoFreeShippingPromotion
+                  ? 'MIỄN PHÍ VẬN CHUYỂN'
+                  : 'MIỄN PHÍ VẬN CHUYỂN'}
+              </h4>
+              {homepagePolicy.autoFreeShippingPromotion ? (
+                <p style={{ color: '#6c757d', fontSize: '0.875rem' }}>
+                  Trên mọi đơn hàng {homepagePolicy.autoFreeShippingPromotion}
+                </p>
+              ) : null}
             </div>
             <div style={serviceIconStyle}>
               <RefreshCw size={36} style={{ color: '#2563EB', marginBottom: '0.75rem' }} />
-              <h4 style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>ĐỔI TRẢ 30 NGÀY</h4>
+              <h4 style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>ĐỔI TRẢ {homepagePolicy.returnWindowDays} NGÀY</h4>
               <p style={{ color: '#6c757d', fontSize: '0.875rem' }}>Đổi trả dễ dàng</p>
             </div>
             <div style={serviceIconStyle}>
@@ -274,47 +263,13 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </section>
       )}
 
-      {/* 5. Deal of the Week (Banner ưu đãi) */}
-      {isAuthenticated && dealProduct && (
-        <section style={{ padding: '4rem 0', backgroundColor: '#f0f4f8' }}>
-          <div style={styles.container}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '3rem', alignItems: 'center', backgroundColor: '#fff', padding: '3rem', borderRadius: '0.75rem', boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)' }}>
-
-              {/* Left: Product Info & Countdown */}
-              <div>
-                <span style={{ fontSize: '1rem', color: '#dc3545', fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>🔥 ƯU ĐÃI TUẦN NÀY</span>
-                <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-                  {dealProduct.productName || dealProduct.name}
-                </h2>
-                <p style={{ fontSize: '1.25rem', color: '#6c757d', marginBottom: '1.5rem' }}>
-                  {dealProduct.description || 'Tiết kiệm lớn với sản phẩm tuyệt vời này. Số lượng có hạn!'}
-                </p>
-
-                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', alignItems: 'center' }}>
-                  <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563EB' }}>
-                    Chỉ {formatPrice(dealProduct.price)}
-                  </p>
-                </div>
-
-                {/* Countdown Timer */}
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  {timerComponents.length ? timerComponents : <span>Ưu đãi đã kết thúc!</span>}
-                </div>
-              </div>
-
-              {/* Right: Product Image & Action */}
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '8rem', marginBottom: '1rem' }}>📦</div>
-                <button
-                  onClick={() => { handleAddToCart(dealProduct); setCurrentPage('cart'); }}
-                  style={{ ...styles.buttonPrimary, padding: '1rem 3rem', fontSize: '1.125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', gap: '0.5rem' }}
-                >
-                  <ShoppingBag size={20} /> MUA NGAY
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
+      {/* 5. Flash Sale Slider - Products on Sale */}
+      {isAuthenticated && (
+        <OnSaleSlider
+          handleViewProductDetail={handleViewProductDetail}
+          onLoginClick={() => setCurrentPage('login')}
+          onShopClick={() => setCurrentPage('shop')}
+        />
       )}
 
       {/* 6. Best Sellers */}

@@ -4,9 +4,11 @@ import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.dto.product.ProductDTO;
 import com.storemanagement.dto.product.ProductImageDTO;
+import com.storemanagement.dto.product.ProductOnSaleDTO;
 import com.storemanagement.service.ProductImageService;
 import com.storemanagement.service.ProductService;
 import com.storemanagement.service.ProductViewService;
+import com.storemanagement.service.PromotionService;
 import com.storemanagement.utils.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -31,6 +33,7 @@ public class ProductController {
     private final ProductService productService;
     private final ProductImageService productImageService;
     private final ProductViewService productViewService;
+    private final PromotionService promotionService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
@@ -212,6 +215,14 @@ public class ProductController {
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
         PageResponse<ProductDTO> productPage = productService.getNewProducts(pageable, limit);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách sản phẩm mới thành công", productPage));
+    }
+
+    @GetMapping("/on-sale")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
+    public ResponseEntity<ApiResponse<List<ProductOnSaleDTO>>> getProductsOnSale() {
+        List<ProductOnSaleDTO> productsOnSale = promotionService.getProductsOnSale();
+        return ResponseEntity
+                .ok(ApiResponse.success("Lấy danh sách sản phẩm đang giảm giá thành công", productsOnSale));
     }
 
     @GetMapping("/{id}/related")

@@ -44,4 +44,25 @@ public class PromotionController {
         CalculateDiscountResponseDTO response = promotionService.calculateAutomaticDiscount(request, customerType);
         return ResponseEntity.ok(ApiResponse.success("Calculate automatic discount", response));
     }
+
+    /**
+     * Calculate automatic shipping discount based on SHIPPING scope promotion rules
+     * This is for auto-apply shipping discounts (no code required)
+     */
+    @PostMapping("/calculate-auto-shipping")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<CalculateDiscountResponseDTO>> calculateAutoShippingDiscount(
+            @RequestBody @Valid CalculateDiscountRequestDTO request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        String customerType = customerService.getCustomerByUsername(username)
+                .getCustomerType() != null ? customerService.getCustomerByUsername(username).getCustomerType().name()
+                        : "REGULAR";
+
+        CalculateDiscountResponseDTO response = promotionService.calculateAutoShippingDiscount(
+                request.getShippingFee(),
+                request.getTotalAmount(),
+                customerType);
+        return ResponseEntity.ok(ApiResponse.success("Calculate automatic shipping discount", response));
+    }
 }

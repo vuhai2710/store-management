@@ -272,6 +272,24 @@ export const productsService = {
       return [];
     }
   },
+
+  /**
+   * Get products on sale (with active promotions and in stock)
+   * GET /api/v1/products/on-sale
+   * @returns {Promise<ProductOnSaleDTO[]>}
+   */
+  getProductsOnSale: async () => {
+    try {
+      const resp = await api.get(API_ENDPOINTS.PRODUCTS.ON_SALE);
+      return unwrap(resp);
+    } catch (error) {
+      // If 401, return empty array
+      if (error?.status === 401) {
+        console.warn('Products on sale endpoint requires authentication, returning empty array');
+        return [];
+      }
+      console.error('Error fetching products on sale:', error);
+      return [];
+    }
+  },
 };
-
-

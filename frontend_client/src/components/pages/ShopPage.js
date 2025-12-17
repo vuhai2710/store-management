@@ -38,6 +38,7 @@ const ShopPage = ({
   const [selectedBrand, setSelectedBrand] = useState("");
   const [brands, setBrands] = useState([]);
   const [latestProducts, setLatestProducts] = useState([]);
+  const [productsOnSale, setProductsOnSale] = useState([]); // Flash Sale products
 
   // Debounced price filter inputs - prevents API calls on every keystroke
   const debouncedMinPrice = useDebounce(minPrice, 500);
@@ -336,6 +337,27 @@ const ShopPage = ({
     };
 
     fetchLatestProducts();
+  }, [isAuthenticated]);
+
+  // Fetch products on sale for sidebar Flash Sale section
+  useEffect(() => {
+    const fetchProductsOnSale = async () => {
+      if (!isAuthenticated) {
+        setProductsOnSale([]);
+        return;
+      }
+
+      try {
+        const onSaleData = await productsService.getProductsOnSale();
+        // Only show top 5 in sidebar
+        setProductsOnSale((onSaleData || []).slice(0, 5));
+      } catch (error) {
+        console.error("Error fetching products on sale:", error);
+        setProductsOnSale([]);
+      }
+    };
+
+    fetchProductsOnSale();
   }, [isAuthenticated]);
 
   // Price filter handlers - just update state, debounce will handle API call
@@ -668,6 +690,125 @@ const ShopPage = ({
               </div>
             </div>
 
+            {/* Flash Sale - Products On Sale */}
+            {productsOnSale.length > 0 && (
+              <div style={styles.sidebarSection}>
+                <h3
+                  style={{
+                    fontSize: "1.25rem",
+                    fontWeight: "bold",
+                    marginBottom: "1rem",
+                    color: "#dc3545",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}>
+                  🔥 Flash Sale
+                </h3>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.75rem",
+                  }}>
+                  {productsOnSale.map((product) => (
+                    <div
+                      key={product.productId}
+                      style={{
+                        ...styles.latestProductItem,
+                        cursor: "pointer",
+                        backgroundColor: "#fff5f5",
+                        padding: "0.75rem",
+                        borderRadius: "0.5rem",
+                        border: "1px solid #ffe0e0",
+                      }}
+                      onClick={() =>
+                        handleViewProductDetail(product.productId)
+                      }>
+                      <div
+                        style={{
+                          width: "60px",
+                          height: "60px",
+                          backgroundColor: "#fff",
+                          borderRadius: "0.5rem",
+                          flexShrink: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "1.5rem",
+                          overflow: "hidden",
+                          position: "relative",
+                        }}>
+                        {product.image ? (
+                          <img
+                            src={getImageUrl(product.image)}
+                            alt={product.name}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "contain", // changed cover to contain to fit images better
+                            }}
+                          />
+                        ) : (
+                          "📦"
+                        )}
+                        {/* Discount badge */}
+                        {product.discountLabel && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              top: "-4px",
+                              right: "-4px",
+                              backgroundColor: "#dc3545",
+                              color: "#fff",
+                              fontSize: "0.6rem",
+                              fontWeight: "bold",
+                              padding: "2px 4px",
+                              borderRadius: "4px",
+                            }}>
+                            {product.discountLabel}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h4
+                          style={{
+                            fontSize: "0.8rem",
+                            fontWeight: "600",
+                            color: "#212529",
+                            margin: 0,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}>
+                          {product.name}
+                        </h4>
+                        <div style={{ marginTop: "0.25rem" }}>
+                          <span
+                            style={{
+                              color: "#dc3545",
+                              fontWeight: "bold",
+                              fontSize: "0.875rem",
+                            }}>
+                            {formatPrice(product.discountedPrice)}
+                          </span>
+                          <span
+                            style={{
+                              color: "#999",
+                              fontSize: "0.75rem",
+                              textDecoration: "line-through",
+                              marginLeft: "0.5rem",
+                            }}>
+                            {formatPrice(product.originalPrice)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Sản phẩm mới nhất */}
             {latestProducts.length > 0 && (
               <div style={{ ...styles.sidebarSection, borderBottom: "none" }}>
@@ -677,7 +818,7 @@ const ShopPage = ({
                     fontWeight: "bold",
                     marginBottom: "1rem",
                   }}>
-                  Latest Additions
+                  Mua gần đây
                 </h3>
                 <div
                   style={{

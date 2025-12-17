@@ -46,24 +46,82 @@ const ChatWidget = () => {
 
   // Initialize conversation when authenticated and widget is opened
   useEffect(() => {
-    if (isAuthenticated && isOpen && !conversation) {
-      initializeConversation();
+    if (isAuthenticated && isOpen) {
+      console.log("[ChatWidget] Widget opened, conversation:", conversation ? "exists" : "null");
+      if (!conversation) {
+        // No conversation yet, initialize fully
+        console.log("[ChatWidget] No conversation, calling initializeConversation");
+        initializeConversation();
+      } else {
+        // Conversation exists from early init, just load messages
+        const convId = conversation.idConversation || conversation.id;
+        console.log("[ChatWidget] Conversation exists, convId:", convId, "messages:", messages.length);
+        if (convId && messages.length === 0) {
+          console.log("[ChatWidget] Loading messages for conversation:", convId);
+          loadMessages(convId);
+        }
+        // Mark conversation as viewed
+        chatService
+          .markConversationAsViewed(convId)
+          .then(() => {
+            console.log("[ChatWidget] Conversation marked as viewed");
+            setUnreadCount(0); // Reset unread count when viewing
+          })
+          .catch((err) => {
+            console.error("[ChatWidget] Error marking as viewed:", err);
+          });
+      }
     }
-
-    // Mark conversation as viewed when opening widget
-    if (isAuthenticated && isOpen && conversation) {
-      chatService
-        .markConversationAsViewed(
-          conversation.idConversation || conversation.id
-        )
-        .then(() => {
-          console.log("[ChatWidget] Conversation marked as viewed");
-        })
-        .catch((err) => {
-          console.error("[ChatWidget] Error marking as viewed:", err);
-        });
-    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, isOpen, conversation]);
+
+  // *** KEY FIX: Subscribe to WebSocket immediately when authenticated ***
+  // This ensures client can receive messages from admin even before opening the chat widget
+  useEffect(() => {
+    if (isAuthenticated && customer) {
+      // Get or create conversation early to establish WebSocket subscription
+      initializeEarlyConversation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, customer]);
+
+  // Early initialization - just get/create conversation and connect WebSocket
+  // Don't load messages until widget is opened
+  const initializeEarlyConversation = async () => {
+    try {
+      console.log("[ChatWidget] Early initialization - getting conversation for WebSocket subscription");
+
+      // Get or create conversation
+      let conversationData = null;
+      try {
+        conversationData = await chatService.getMyConversation();
+      } catch (err) {
+        // Fallback: create conversation if not found
+        try {
+          conversationData = await chatService.createConversation();
+        } catch (createErr) {
+          console.error("[ChatWidget] Could not get/create conversation:", createErr);
+          return;
+        }
+      }
+
+      if (conversationData) {
+        const convId = conversationData?.idConversation || conversationData?.id;
+        conversationIdRef.current = convId;
+        setConversation(conversationData);
+
+        // Connect to WebSocket for real-time messages
+        // This is the key fix - subscribe even before widget is opened
+        if (!stompClientRef.current || !connected) {
+          connectWebSocket(convId);
+        }
+
+        console.log("[ChatWidget] Early initialization complete, connected to conversation:", convId);
+      }
+    } catch (error) {
+      console.error("[ChatWidget] Early initialization error:", error);
+    }
+  };
 
   // Cleanup when user logs out
   useEffect(() => {
@@ -75,6 +133,7 @@ const ChatWidget = () => {
       setError("");
       setIsOpen(false);
       setIsMinimized(false);
+      setUnreadCount(0);
     }
   }, [isAuthenticated]);
 
@@ -93,14 +152,30 @@ const ChatWidget = () => {
     };
   }, []);
 
-  // Initialize conversation
+  // Initialize conversation (when widget is opened)
   const initializeConversation = async () => {
     try {
       setLoading(true);
       setError("");
 
-      // Disconnect existing WebSocket if any
-      disconnectWebSocket();
+      // If conversation already exists from early initialization, just load messages
+      if (conversation && conversationIdRef.current) {
+        const convId = conversation.idConversation || conversation.id;
+        await loadMessages(convId);
+
+        // Ensure WebSocket is connected
+        if (!stompClientRef.current || !connected) {
+          connectWebSocket(convId);
+        }
+
+        // Mark conversation as viewed
+        chatService
+          .markConversationAsViewed(convId)
+          .catch((err) =>
+            console.error("Error marking conversation as viewed:", err)
+          );
+        return;
+      }
 
       // Get or create conversation
       let conversationData = null;
@@ -118,8 +193,10 @@ const ChatWidget = () => {
       // Load messages
       if (convId) {
         await loadMessages(convId);
-        // Connect to WebSocket
-        connectWebSocket(convId);
+        // Connect to WebSocket if not already connected
+        if (!stompClientRef.current || !connected) {
+          connectWebSocket(convId);
+        }
         // Mark conversation as viewed
         chatService
           .markConversationAsViewed(convId)
@@ -351,14 +428,15 @@ const ChatWidget = () => {
   // Toggle widget
   const toggleWidget = () => {
     if (isOpen) {
-      // Close widget: disconnect WebSocket and reset state
-      disconnectWebSocket();
-      setConversation(null);
+      // Close widget: keep WebSocket connected to receive realtime messages
+      // Only reset UI state, don't disconnect or clear conversation
       setMessages([]);
       setNewMessage("");
       setError("");
       setIsOpen(false);
       setIsMinimized(false);
+      // Note: Do NOT disconnect WebSocket or clear conversation
+      // This allows receiving messages from admin even when widget is closed
     } else {
       // Open widget: will initialize conversation via useEffect
       setIsOpen(true);

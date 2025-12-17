@@ -18,7 +18,9 @@ public class SystemSettingServiceImpl implements SystemSettingService {
 
     private static final String RETURN_WINDOW_DAYS_KEY = "RETURN_WINDOW_DAYS";
     private static final int DEFAULT_RETURN_WINDOW_DAYS = 7;
-    
+
+    private static final String AUTO_FREE_SHIPPING_PROMOTION_KEY = "AUTO_FREE_SHIPPING_PROMOTION";
+
     private static final String REVIEW_EDIT_WINDOW_HOURS_KEY = "REVIEW_EDIT_WINDOW_HOURS";
     private static final int DEFAULT_REVIEW_EDIT_WINDOW_HOURS = 24;
 
@@ -40,7 +42,6 @@ public class SystemSettingServiceImpl implements SystemSettingService {
                 .orElse(DEFAULT_RETURN_WINDOW_DAYS);
     }
 
-
     @Override
     public void updateReturnWindow(int days) {
         if (days <= 0) {
@@ -58,6 +59,38 @@ public class SystemSettingServiceImpl implements SystemSettingService {
 
         systemSettingRepository.save(setting);
         log.info("Updated RETURN_WINDOW_DAYS to {} days", days);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getAutoFreeShippingPromotion() {
+        return systemSettingRepository.findByKey(AUTO_FREE_SHIPPING_PROMOTION_KEY)
+                .map(SystemSetting::getValue)
+                .map(String::trim)
+                .filter(v -> !v.isEmpty())
+                .orElse(null);
+    }
+
+    @Override
+    public void updateAutoFreeShippingPromotion(String code) {
+        String normalized = code == null ? null : code.trim();
+        if (normalized == null || normalized.isEmpty()) {
+            systemSettingRepository.deleteByKey(AUTO_FREE_SHIPPING_PROMOTION_KEY);
+            log.info("Cleared AUTO_FREE_SHIPPING_PROMOTION");
+            return;
+        }
+
+        SystemSetting setting = systemSettingRepository.findByKey(AUTO_FREE_SHIPPING_PROMOTION_KEY)
+                .orElseGet(() -> SystemSetting.builder()
+                        .key(AUTO_FREE_SHIPPING_PROMOTION_KEY)
+                        .description("Mã khuyến mãi freeship tự động áp dụng trên trang chủ")
+                        .build());
+
+        setting.setValue(normalized);
+        setting.setUpdatedAt(LocalDateTime.now());
+
+        systemSettingRepository.save(setting);
+        log.info("Updated AUTO_FREE_SHIPPING_PROMOTION to {}", normalized);
     }
 
     @Override

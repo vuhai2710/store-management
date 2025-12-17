@@ -1,6 +1,7 @@
 package com.storemanagement.service.impl;
 
 import com.storemanagement.dto.PageResponse;
+import com.storemanagement.dto.product.ProductOnSaleDTO;
 import com.storemanagement.dto.promotion.*;
 import com.storemanagement.mapper.PromotionMapper;
 import com.storemanagement.mapper.PromotionRuleMapper;
@@ -30,6 +31,7 @@ public class PromotionServiceImpl implements PromotionService {
     private final PromotionRepository promotionRepository;
     private final PromotionUsageRepository promotionUsageRepository;
     private final PromotionRuleRepository promotionRuleRepository;
+    private final ProductRepository productRepository;
     private final CustomerRepository customerRepository;
     private final OrderRepository orderRepository;
     private final PromotionMapper promotionMapper;
@@ -142,9 +144,11 @@ public class PromotionServiceImpl implements PromotionService {
                 totalAmount, promotionCode, customerType);
 
         if (promotionCode != null && !promotionCode.trim().isEmpty()) {
+            // Only accept ORDER scope promotions for order discount
             ValidatePromotionRequestDTO validateRequest = ValidatePromotionRequestDTO.builder()
                     .code(promotionCode.trim())
                     .totalAmount(totalAmount)
+                    .expectedScope(Promotion.PromotionScope.ORDER) // Only ORDER scope
                     .build();
 
             ValidatePromotionResponseDTO validateResponse = validatePromotion(validateRequest);
@@ -152,6 +156,9 @@ public class PromotionServiceImpl implements PromotionService {
             if (validateResponse.getValid()) {
                 log.info("Applying promotion code: {}, discount: {}", promotionCode, validateResponse.getDiscount());
                 return validateResponse.getDiscount();
+            } else {
+                log.info("Promotion code rejected for order: {}, reason: {}", promotionCode,
+                        validateResponse.getMessage());
             }
         }
 
@@ -203,6 +210,57 @@ public class PromotionServiceImpl implements PromotionService {
 
         log.info("Shipping promotion code not valid: {}", validateResponse.getMessage());
         return BigDecimal.ZERO;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CalculateDiscountResponseDTO calculateAutoShippingDiscount(BigDecimal shippingFee, BigDecimal orderTotal,
+            String customerType) {
+        log.info("Calculating automatic shipping discount: shippingFee={}, orderTotal={}, customerType={}",
+                shippingFee, orderTotal, customerType);
+
+        // If no shipping fee, no discount
+        if (shippingFee == null || shippingFee.compareTo(BigDecimal.ZERO) <= 0) {
+            return CalculateDiscountResponseDTO.builder()
+                    .applicable(false)
+                    .discount(BigDecimal.ZERO)
+                    .build();
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Find applicable SHIPPING scope rules
+        List<PromotionRule> shippingRules = promotionRuleRepository.findApplicableShippingRules(
+                now,
+                orderTotal != null ? orderTotal : BigDecimal.ZERO,
+                customerType != null ? customerType : "REGULAR");
+
+        if (shippingRules.isEmpty()) {
+            log.info("No applicable auto shipping discount rules found");
+            return CalculateDiscountResponseDTO.builder()
+                    .applicable(false)
+                    .discount(BigDecimal.ZERO)
+                    .build();
+        }
+
+        // Get the first rule (highest priority)
+        PromotionRule rule = shippingRules.get(0);
+
+        // Calculate discount (applied to shippingFee, not orderTotal)
+        BigDecimal discount = calculateDiscountFromRule(rule, shippingFee);
+
+        // Cap discount at shippingFee (cannot reduce below 0)
+        discount = discount.min(shippingFee);
+
+        log.info("Auto shipping discount applied: rule={}, discount={}", rule.getRuleName(), discount);
+
+        return CalculateDiscountResponseDTO.builder()
+                .applicable(true)
+                .discount(discount)
+                .discountType(rule.getDiscountType())
+                .ruleName(rule.getRuleName())
+                .ruleId(rule.getIdRule())
+                .build();
     }
 
     private BigDecimal calculateDiscountFromPromotion(Promotion promotion, BigDecimal totalAmount) {
@@ -368,6 +426,9 @@ public class PromotionServiceImpl implements PromotionService {
         rule.setEndDate(ruleDTO.getEndDate());
         rule.setIsActive(ruleDTO.getIsActive());
         rule.setPriority(ruleDTO.getPriority());
+        if (ruleDTO.getScope() != null) {
+            rule.setScope(ruleDTO.getScope());
+        }
 
         rule = promotionRuleRepository.save(rule);
 
@@ -390,5 +451,130 @@ public class PromotionServiceImpl implements PromotionService {
     public void recordPromotionUsage(Integer promotionId, Integer orderId, Integer customerId) {
         log.info("recordPromotionUsage called (no-op): promotionId={}, orderId={}, customerId={}",
                 promotionId, orderId, customerId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductOnSaleDTO> getProductsOnSale() {
+        log.info("Fetching products on sale based on automatic promotion rules");
+        LocalDateTime now = LocalDateTime.now();
+
+        // Find all active promotion rules (automatic discounts)
+        List<PromotionRule> activeRules = promotionRuleRepository.findByIsActiveTrue().stream()
+                .filter(rule -> rule.getStartDate() != null && rule.getEndDate() != null)
+                .filter(rule -> !now.isBefore(rule.getStartDate()) && !now.isAfter(rule.getEndDate()))
+                .filter(rule -> rule.getScope() == PromotionRule.PromotionScope.ORDER) // Only ORDER scope for product
+                                                                                       // discounts
+                .toList();
+
+        log.info("Found {} active promotion rules", activeRules.size());
+
+        if (activeRules.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+
+        // Get the best rule (highest priority or highest discount)
+        PromotionRule bestRule = activeRules.stream()
+                .max((a, b) -> {
+                    // First compare by priority
+                    int priorityCompare = Integer.compare(
+                            a.getPriority() != null ? a.getPriority() : 0,
+                            b.getPriority() != null ? b.getPriority() : 0);
+                    if (priorityCompare != 0)
+                        return priorityCompare;
+                    // Then by discount value
+                    return a.getDiscountValue().compareTo(b.getDiscountValue());
+                })
+                .orElse(null);
+
+        if (bestRule == null) {
+            return new java.util.ArrayList<>();
+        }
+
+        log.info("Using promotion rule: {} with {}% discount, minOrderAmount: {}",
+                bestRule.getRuleName(), bestRule.getDiscountValue(), bestRule.getMinOrderAmount());
+
+        // Find products where price >= minOrderAmount of the rule, and stock > 0
+        BigDecimal minPrice = bestRule.getMinOrderAmount() != null ? bestRule.getMinOrderAmount() : BigDecimal.ZERO;
+
+        List<Product> eligibleProducts = productRepository.findAll().stream()
+                .filter(p -> p.getStockQuantity() != null && p.getStockQuantity() > 0)
+                .filter(p -> p.getPrice() != null && p.getPrice().compareTo(minPrice) >= 0)
+                .limit(20) // Limit to 20 products for performance
+                .toList();
+
+        log.info("Found {} products eligible for automatic discount", eligibleProducts.size());
+
+        // Build list of products on sale
+        java.util.List<ProductOnSaleDTO> productsOnSale = new java.util.ArrayList<>();
+
+        for (Product product : eligibleProducts) {
+            BigDecimal originalPrice = product.getPrice();
+
+            // Use the same discount calculation as checkout (calculateDiscountFromRule)
+            BigDecimal discountAmount = calculateDiscountFromRule(bestRule, originalPrice);
+            BigDecimal discountedPrice = originalPrice.subtract(discountAmount);
+
+            // Ensure discounted price is not negative
+            if (discountedPrice.compareTo(BigDecimal.ZERO) < 0) {
+                discountedPrice = BigDecimal.ZERO;
+            }
+
+            // Build discount label
+            String discountLabel;
+            Integer discountPercentage = null;
+            if (bestRule.getDiscountType() == PromotionRule.DiscountType.PERCENTAGE) {
+                discountLabel = "-" + bestRule.getDiscountValue().stripTrailingZeros().toPlainString() + "%";
+                discountPercentage = bestRule.getDiscountValue().intValue();
+            } else {
+                discountLabel = "-" + formatCurrency(bestRule.getDiscountValue());
+            }
+
+            // Get product image URL
+            String imageUrl = product.getImageUrl();
+            if ((imageUrl == null || imageUrl.isEmpty()) && product.getImages() != null
+                    && !product.getImages().isEmpty()) {
+                imageUrl = product.getImages().stream()
+                        .filter(img -> img.getIsPrimary() != null && img.getIsPrimary())
+                        .findFirst()
+                        .map(ProductImage::getImageUrl)
+                        .orElseGet(() -> product.getImages().get(0).getImageUrl());
+            }
+
+            ProductOnSaleDTO dto = ProductOnSaleDTO.builder()
+                    .productId(product.getIdProduct())
+                    .name(product.getProductName())
+                    .image(imageUrl)
+                    .originalPrice(originalPrice)
+                    .discountedPrice(discountedPrice)
+                    .promotionEndTime(bestRule.getEndDate())
+                    .discountLabel(discountLabel)
+                    .promotionName(bestRule.getRuleName())
+                    .remainingStock(product.getStockQuantity())
+                    .discountPercentage(discountPercentage)
+                    .build();
+
+            productsOnSale.add(dto);
+        }
+
+        // Sort by discount percentage (highest first), then by price
+        productsOnSale.sort((a, b) -> {
+            if (a.getDiscountPercentage() != null && b.getDiscountPercentage() != null) {
+                int discountCompare = b.getDiscountPercentage().compareTo(a.getDiscountPercentage());
+                if (discountCompare != 0)
+                    return discountCompare;
+            }
+            return b.getOriginalPrice().compareTo(a.getOriginalPrice());
+        });
+
+        log.info("Returning {} products on sale", productsOnSale.size());
+        return productsOnSale;
+    }
+
+    private String formatCurrency(BigDecimal amount) {
+        if (amount == null)
+            return "0đ";
+        java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+        return formatter.format(amount.longValue()) + "đ";
     }
 }

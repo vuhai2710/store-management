@@ -54,4 +54,16 @@ public interface PromotionRepository extends JpaRepository<Promotion, Integer> {
        @Query("SELECT p FROM Promotion p WHERE p.code = :code AND p.isActive = true AND p.scope = :scope")
        Optional<Promotion> findByCodeAndIsActiveTrueAndScope(@Param("code") String code,
                      @Param("scope") Promotion.PromotionScope scope);
+
+       /**
+        * Find all active PRODUCT-scope promotions that are currently valid.
+        * Used for the Flash Sale slider.
+        */
+       @Query("SELECT DISTINCT p FROM Promotion p " +
+                     "LEFT JOIN FETCH p.products pr " +
+                     "WHERE p.scope = 'PRODUCT' " +
+                     "AND p.isActive = true " +
+                     "AND p.startDate <= :now AND p.endDate >= :now " +
+                     "AND (p.usageLimit IS NULL OR p.usageCount < p.usageLimit)")
+       List<Promotion> findActiveProductPromotions(@Param("now") LocalDateTime now);
 }

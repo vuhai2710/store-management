@@ -61,8 +61,8 @@ public class PromotionRule extends BaseEntity {
     }
 
     public enum PromotionScope {
-        ORDER,    // Giảm giá đơn hàng (default)
-        SHIPPING  // Giảm giá phí vận chuyển
+        ORDER, // Giảm giá đơn hàng (default)
+        SHIPPING, // Giảm giá phí vận chuyển
+        PRODUCT // Giảm giá sản phẩm cụ thể (Flash Sale)
     }
 }
-

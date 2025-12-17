@@ -49,4 +49,13 @@ export const chatService = {
     const resp = await api.put(API_ENDPOINTS.CHAT.MARK_VIEWED(conversationId));
     return unwrap(resp);
   },
+
+  // Get or create conversation for a specific customer (Admin/Employee only)
+  // This allows admin to initiate chat with a customer
+  getOrCreateConversationForCustomer: async (customerId) => {
+    const resp = await api.post(
+      API_ENDPOINTS.CHAT.CREATE_CONVERSATION_FOR_CUSTOMER(customerId)
+    );
+    return unwrap(resp);
+  },
 };
