@@ -1,5 +1,6 @@
-// src/components/pages/ProfilePage.js
+
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import {
   User,
   Mail,
@@ -51,7 +52,6 @@ const ProfilePage = ({ setCurrentPage }) => {
     wardCode: null,
   });
 
-  // GHN location data
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
@@ -65,14 +65,12 @@ const ProfilePage = ({ setCurrentPage }) => {
     confirmPassword: "",
   });
 
-  // Fetch profile and shipping addresses
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch customer profile
         const profileData = await customerService.getMyProfile();
         setProfile(profileData);
         setProfileForm({
@@ -81,7 +79,6 @@ const ProfilePage = ({ setCurrentPage }) => {
           address: profileData.address || "",
         });
 
-        // Fetch user profile for avatar
         try {
           const userData = await userService.getMyProfile();
           if (userData?.avatarUrl) {
@@ -89,21 +86,19 @@ const ProfilePage = ({ setCurrentPage }) => {
           }
         } catch (userError) {
           console.error("Error fetching user profile:", userError);
-          // User profile might not exist or be accessible, that's okay
+
         }
 
-        // Fetch shipping addresses
         const addressesData = await shippingAddressService.getAllAddresses();
         setShippingAddresses(addressesData || []);
 
-        // Fetch provinces from GHN
         try {
           setLoadingProvinces(true);
           const provincesData = await ghnService.getProvinces();
           setProvinces(provincesData || []);
         } catch (ghnError) {
           console.error("Error fetching provinces:", ghnError);
-          // Don't fail if GHN is not available
+
         } finally {
           setLoadingProvinces(false);
         }
@@ -118,7 +113,6 @@ const ProfilePage = ({ setCurrentPage }) => {
     fetchData();
   }, []);
 
-  // Fetch districts when province is selected
   useEffect(() => {
     const fetchDistricts = async () => {
       if (!addressForm.provinceId) {
@@ -133,7 +127,7 @@ const ProfilePage = ({ setCurrentPage }) => {
           addressForm.provinceId
         );
         setDistricts(districtsData || []);
-        setWards([]); // Reset wards when province changes
+        setWards([]);
         setAddressForm((prev) => ({
           ...prev,
           districtId: null,
@@ -150,7 +144,6 @@ const ProfilePage = ({ setCurrentPage }) => {
     fetchDistricts();
   }, [addressForm.provinceId]);
 
-  // Fetch wards when district is selected
   useEffect(() => {
     const fetchWards = async () => {
       if (!addressForm.districtId) {
@@ -190,10 +183,10 @@ const ProfilePage = ({ setCurrentPage }) => {
       setProfile(updatedProfile);
       setEditingProfile(false);
       await refreshUser();
-      alert("Cập nhật thông tin thành công");
+      toast.success("Cập nhật thông tin thành công");
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert(
+      toast.error(
         error?.message || "Không thể cập nhật thông tin. Vui lòng thử lại."
       );
     } finally {
@@ -229,10 +222,10 @@ const ProfilePage = ({ setCurrentPage }) => {
       });
       setDistricts([]);
       setWards([]);
-      alert("Tạo địa chỉ thành công");
+      toast.success("Tạo địa chỉ thành công");
     } catch (error) {
       console.error("Error creating address:", error);
-      alert(error?.message || "Không thể tạo địa chỉ. Vui lòng thử lại.");
+      toast.error(error?.message || "Không thể tạo địa chỉ. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -264,10 +257,12 @@ const ProfilePage = ({ setCurrentPage }) => {
       });
       setDistricts([]);
       setWards([]);
-      alert("Cập nhật địa chỉ thành công");
+      toast.success("Cập nhật địa chỉ thành công");
     } catch (error) {
       console.error("Error updating address:", error);
-      alert(error?.message || "Không thể cập nhật địa chỉ. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể cập nhật địa chỉ. Vui lòng thử lại."
+      );
     } finally {
       setLoading(false);
     }
@@ -286,10 +281,10 @@ const ProfilePage = ({ setCurrentPage }) => {
           (addr) => (addr.idShippingAddress || addr.id) !== addressId
         )
       );
-      alert("Xóa địa chỉ thành công");
+      toast.success("Xóa địa chỉ thành công");
     } catch (error) {
       console.error("Error deleting address:", error);
-      alert(error?.message || "Không thể xóa địa chỉ. Vui lòng thử lại.");
+      toast.error(error?.message || "Không thể xóa địa chỉ. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -308,10 +303,10 @@ const ProfilePage = ({ setCurrentPage }) => {
             : { ...addr, isDefault: false }
         )
       );
-      alert("Đặt địa chỉ mặc định thành công");
+      toast.success("Đặt địa chỉ mặc định thành công");
     } catch (error) {
       console.error("Error setting default address:", error);
-      alert(
+      toast.error(
         error?.message || "Không thể đặt địa chỉ mặc định. Vui lòng thử lại."
       );
     } finally {
@@ -323,12 +318,12 @@ const ProfilePage = ({ setCurrentPage }) => {
     e.preventDefault();
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp");
+      toast.warning("Mật khẩu xác nhận không khớp");
       return;
     }
 
     if (passwordForm.newPassword.length < 4) {
-      alert("Mật khẩu mới phải có ít nhất 4 ký tự");
+      toast.warning("Mật khẩu mới phải có ít nhất 4 ký tự");
       return;
     }
 
@@ -344,10 +339,12 @@ const ProfilePage = ({ setCurrentPage }) => {
         newPassword: "",
         confirmPassword: "",
       });
-      alert("Đổi mật khẩu thành công");
+      toast.success("Đổi mật khẩu thành công");
     } catch (error) {
       console.error("Error changing password:", error);
-      alert(error?.message || "Không thể đổi mật khẩu. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể đổi mật khẩu. Vui lòng thử lại."
+      );
     } finally {
       setLoading(false);
     }
@@ -359,38 +356,34 @@ const ProfilePage = ({ setCurrentPage }) => {
       return;
     }
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
-      alert("Vui lòng chọn file ảnh");
+      toast.warning("Vui lòng chọn file ảnh");
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert("File ảnh quá lớn. Vui lòng chọn file nhỏ hơn 5MB");
+      toast.warning("File ảnh quá lớn. Vui lòng chọn file nhỏ hơn 5MB");
       return;
     }
 
     try {
       setAvatarLoading(true);
 
-      // Upload avatar
       const userData = await userService.uploadAvatar(file);
 
-      // Update avatar state
       if (userData?.avatarUrl) {
         setAvatar(userData.avatarUrl);
-        await refreshUser(); // Refresh user data in context
-        alert("Upload ảnh đại diện thành công");
+        await refreshUser();
+        toast.success("Upload ảnh đại diện thành công");
       }
     } catch (error) {
       console.error("Error uploading avatar:", error);
-      alert(
+      toast.error(
         error?.message || "Không thể upload ảnh đại diện. Vui lòng thử lại."
       );
     } finally {
       setAvatarLoading(false);
-      // Reset file input
+
       e.target.value = "";
     }
   };
@@ -404,11 +397,13 @@ const ProfilePage = ({ setCurrentPage }) => {
       setAvatarLoading(true);
       await userService.deleteAvatar();
       setAvatar(null);
-      await refreshUser(); // Refresh user data in context
-      alert("Xóa ảnh đại diện thành công");
+      await refreshUser();
+      toast.success("Xóa ảnh đại diện thành công");
     } catch (error) {
       console.error("Error deleting avatar:", error);
-      alert(error?.message || "Không thể xóa ảnh đại diện. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể xóa ảnh đại diện. Vui lòng thử lại."
+      );
     } finally {
       setAvatarLoading(false);
     }
@@ -457,7 +452,7 @@ const ProfilePage = ({ setCurrentPage }) => {
   }
 
   return (
-    <section style={{ padding: "4rem 0", backgroundColor: "#f8f8f8" }}>
+    <section style={{ padding: "4rem 0", backgroundColor: "#F8FAFC" }}>
       <div style={styles.container}>
         <h2
           style={{
@@ -465,10 +460,10 @@ const ProfilePage = ({ setCurrentPage }) => {
             fontWeight: "bold",
             marginBottom: "2rem",
           }}>
-          My Profile
+          Hồ sơ của tôi
         </h2>
 
-        {/* Profile Section */}
+        {}
         <div
           style={{
             backgroundColor: "white",
@@ -509,12 +504,12 @@ const ProfilePage = ({ setCurrentPage }) => {
             )}
           </div>
 
-          {/* Avatar Section */}
+          {}
           <div
             style={{
               marginBottom: "2rem",
               paddingBottom: "2rem",
-              borderBottom: "1px solid #dee2e6",
+              borderBottom: "1px solid #E2E8F0",
             }}>
             <div
               style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
@@ -524,12 +519,12 @@ const ProfilePage = ({ setCurrentPage }) => {
                     width: "120px",
                     height: "120px",
                     borderRadius: "50%",
-                    backgroundColor: "#e9ecef",
+                    backgroundColor: "#E2E8F0",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     overflow: "hidden",
-                    border: "3px solid #dee2e6",
+                    border: "3px solid #E2E8F0",
                     flexShrink: 0,
                   }}>
                   {avatar ? (
@@ -653,7 +648,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                       fontWeight: "600",
                       color: "#495057",
                     }}>
-                    Customer Name *
+                    Họ và tên *
                   </label>
                   <input
                     type="text"
@@ -664,7 +659,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     style={{
                       width: "100%",
                       padding: "0.75rem",
-                      border: "1px solid #dee2e6",
+                      border: "1px solid #E2E8F0",
                       borderRadius: "0.25rem",
                       fontSize: "1rem",
                     }}
@@ -679,7 +674,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                       fontWeight: "600",
                       color: "#495057",
                     }}>
-                    Phone Number *
+                    Số điện thoại *
                   </label>
                   <input
                     type="tel"
@@ -690,7 +685,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     style={{
                       width: "100%",
                       padding: "0.75rem",
-                      border: "1px solid #dee2e6",
+                      border: "1px solid #E2E8F0",
                       borderRadius: "0.25rem",
                       fontSize: "1rem",
                     }}
@@ -706,7 +701,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     fontWeight: "600",
                     color: "#495057",
                   }}>
-                  Address
+                  Địa chỉ
                 </label>
                 <textarea
                   name="address"
@@ -716,7 +711,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                   style={{
                     width: "100%",
                     padding: "0.75rem",
-                    border: "1px solid #dee2e6",
+                    border: "1px solid #E2E8F0",
                     borderRadius: "0.25rem",
                     fontSize: "1rem",
                     resize: "vertical",
@@ -735,7 +730,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     gap: "0.5rem",
                     padding: "0.75rem 1.5rem",
                   }}>
-                  <Save size={16} /> Save
+                  <Save size={16} /> Lưu
                 </button>
                 <button
                   type="button"
@@ -754,7 +749,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     gap: "0.5rem",
                     padding: "0.75rem 1.5rem",
                   }}>
-                  <X size={16} /> Cancel
+                  <X size={16} /> Hủy
                 </button>
               </div>
             </form>
@@ -772,7 +767,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     fontSize: "0.875rem",
                     marginBottom: "0.25rem",
                   }}>
-                  Customer Name
+                  Họ và tên
                 </p>
                 <p
                   style={{
@@ -790,7 +785,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     fontSize: "0.875rem",
                     marginBottom: "0.25rem",
                   }}>
-                  Phone Number
+                  Số điện thoại
                 </p>
                 <p
                   style={{
@@ -810,7 +805,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     fontSize: "0.875rem",
                     marginBottom: "0.25rem",
                   }}>
-                  Address
+                  Địa chỉ
                 </p>
                 <p
                   style={{
@@ -846,7 +841,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     fontSize: "0.875rem",
                     marginBottom: "0.25rem",
                   }}>
-                  Customer Type
+                  Loại khách hàng
                 </p>
                 <p
                   style={{
@@ -861,7 +856,7 @@ const ProfilePage = ({ setCurrentPage }) => {
           )}
         </div>
 
-        {/* Change Password Section */}
+        {}
         <div
           style={{
             backgroundColor: "white",
@@ -885,7 +880,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                 alignItems: "center",
                 gap: "0.5rem",
               }}>
-              <Lock size={24} /> Change Password
+              <Lock size={24} /> Đổi mật khẩu
             </h3>
             {!showPasswordForm && (
               <button
@@ -897,7 +892,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                   gap: "0.5rem",
                   padding: "0.5rem 1rem",
                 }}>
-                <Edit size={16} /> Change Password
+                <Edit size={16} /> Đổi mật khẩu
               </button>
             )}
           </div>
@@ -912,7 +907,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     fontWeight: "600",
                     color: "#495057",
                   }}>
-                  Current Password *
+                  Mật khẩu hiện tại *
                 </label>
                 <input
                   type="password"
@@ -928,7 +923,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                   style={{
                     width: "100%",
                     padding: "0.75rem",
-                    border: "1px solid #dee2e6",
+                    border: "1px solid #E2E8F0",
                     borderRadius: "0.25rem",
                     fontSize: "1rem",
                   }}
@@ -943,7 +938,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     fontWeight: "600",
                     color: "#495057",
                   }}>
-                  New Password *
+                  Mật khẩu mới *
                 </label>
                 <input
                   type="password"
@@ -960,7 +955,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                   style={{
                     width: "100%",
                     padding: "0.75rem",
-                    border: "1px solid #dee2e6",
+                    border: "1px solid #E2E8F0",
                     borderRadius: "0.25rem",
                     fontSize: "1rem",
                   }}
@@ -975,7 +970,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     fontWeight: "600",
                     color: "#495057",
                   }}>
-                  Confirm New Password *
+                  Xác nhận mật khẩu mới *
                 </label>
                 <input
                   type="password"
@@ -992,7 +987,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                   style={{
                     width: "100%",
                     padding: "0.75rem",
-                    border: "1px solid #dee2e6",
+                    border: "1px solid #E2E8F0",
                     borderRadius: "0.25rem",
                     fontSize: "1rem",
                   }}
@@ -1029,14 +1024,14 @@ const ProfilePage = ({ setCurrentPage }) => {
                     gap: "0.5rem",
                     padding: "0.75rem 1.5rem",
                   }}>
-                  <X size={16} /> Cancel
+                  <X size={16} /> Hủy
                 </button>
               </div>
             </form>
           )}
         </div>
 
-        {/* Shipping Addresses Section */}
+        {}
         <div
           style={{
             backgroundColor: "white",
@@ -1059,7 +1054,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                 alignItems: "center",
                 gap: "0.5rem",
               }}>
-              <MapPin size={24} /> Shipping Addresses
+              <MapPin size={24} /> Địa chỉ giao hàng
             </h3>
             {!showAddressForm && (
               <button
@@ -1071,21 +1066,21 @@ const ProfilePage = ({ setCurrentPage }) => {
                   gap: "0.5rem",
                   padding: "0.5rem 1rem",
                 }}>
-                <Plus size={16} /> Add Address
+                <Plus size={16} /> Thêm địa chỉ
               </button>
             )}
           </div>
 
-          {/* Add Address Form */}
+          {}
           {showAddressForm && (
             <form
               onSubmit={handleCreateAddress}
               style={{
                 marginBottom: "2rem",
                 padding: "1.5rem",
-                border: "1px solid #dee2e6",
+                border: "1px solid #E2E8F0",
                 borderRadius: "0.5rem",
-                backgroundColor: "#f8f9fa",
+                backgroundColor: "#F8FAFC",
               }}>
               <h4
                 style={{
@@ -1093,7 +1088,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                   fontWeight: "bold",
                   marginBottom: "1rem",
                 }}>
-                New Shipping Address
+                Địa chỉ giao hàng mới
               </h4>
 
               <div
@@ -1111,7 +1106,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                       fontWeight: "600",
                       color: "#495057",
                     }}>
-                    Recipient Name *
+                    Tên người nhận *
                   </label>
                   <input
                     type="text"
@@ -1122,7 +1117,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     style={{
                       width: "100%",
                       padding: "0.75rem",
-                      border: "1px solid #dee2e6",
+                      border: "1px solid #E2E8F0",
                       borderRadius: "0.25rem",
                       fontSize: "1rem",
                     }}
@@ -1148,7 +1143,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     style={{
                       width: "100%",
                       padding: "0.75rem",
-                      border: "1px solid #dee2e6",
+                      border: "1px solid #E2E8F0",
                       borderRadius: "0.25rem",
                       fontSize: "1rem",
                     }}
@@ -1156,7 +1151,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                 </div>
               </div>
 
-              {/* Province/District/Ward Selection */}
+              {}
               <div
                 style={{
                   display: "grid",
@@ -1193,7 +1188,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     style={{
                       width: "100%",
                       padding: "0.75rem",
-                      border: "1px solid #dee2e6",
+                      border: "1px solid #E2E8F0",
                       borderRadius: "0.25rem",
                       fontSize: "1rem",
                     }}>
@@ -1246,7 +1241,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     style={{
                       width: "100%",
                       padding: "0.75rem",
-                      border: "1px solid #dee2e6",
+                      border: "1px solid #E2E8F0",
                       borderRadius: "0.25rem",
                       fontSize: "1rem",
                       opacity: !addressForm.provinceId ? 0.6 : 1,
@@ -1296,7 +1291,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     style={{
                       width: "100%",
                       padding: "0.75rem",
-                      border: "1px solid #dee2e6",
+                      border: "1px solid #E2E8F0",
                       borderRadius: "0.25rem",
                       fontSize: "1rem",
                       opacity: !addressForm.districtId ? 0.6 : 1,
@@ -1343,7 +1338,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                   style={{
                     width: "100%",
                     padding: "0.75rem",
-                    border: "1px solid #dee2e6",
+                    border: "1px solid #E2E8F0",
                     borderRadius: "0.25rem",
                     fontSize: "1rem",
                     resize: "vertical",
@@ -1368,7 +1363,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                 <label
                   htmlFor="isDefault"
                   style={{ cursor: "pointer", color: "#495057" }}>
-                  Set as default address
+                  Đặt làm địa chỉ mặc định
                 </label>
               </div>
 
@@ -1383,7 +1378,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     gap: "0.5rem",
                     padding: "0.75rem 1.5rem",
                   }}>
-                  <Save size={16} /> Save Address
+                  <Save size={16} /> Lưu địa chỉ
                 </button>
                 <button
                   type="button"
@@ -1403,13 +1398,13 @@ const ProfilePage = ({ setCurrentPage }) => {
                     gap: "0.5rem",
                     padding: "0.75rem 1.5rem",
                   }}>
-                  <X size={16} /> Cancel
+                  <X size={16} /> Hủy
                 </button>
               </div>
             </form>
           )}
 
-          {/* Addresses List */}
+          {}
           {shippingAddresses.length === 0 ? (
             <p
               style={{
@@ -1417,7 +1412,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                 textAlign: "center",
                 padding: "2rem",
               }}>
-              No shipping addresses. Add one to get started.
+              Chưa có địa chỉ giao hàng nào. Hãy thêm một địa chỉ để bắt đầu.
             </p>
           ) : (
             <div
@@ -1431,7 +1426,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                     key={addressId}
                     style={{
                       padding: "1.5rem",
-                      border: "1px solid #dee2e6",
+                      border: "1px solid #E2E8F0",
                       borderRadius: "0.5rem",
                       backgroundColor: address.isDefault ? "#e0f7ff" : "white",
                     }}>
@@ -1456,7 +1451,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                                 fontWeight: "600",
                                 color: "#495057",
                               }}>
-                              Recipient Name *
+                              Tên người nhận *
                             </label>
                             <input
                               type="text"
@@ -1470,7 +1465,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                               style={{
                                 width: "100%",
                                 padding: "0.75rem",
-                                border: "1px solid #dee2e6",
+                                border: "1px solid #E2E8F0",
                                 borderRadius: "0.25rem",
                                 fontSize: "1rem",
                               }}
@@ -1485,7 +1480,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                                 fontWeight: "600",
                                 color: "#495057",
                               }}>
-                              Phone Number *
+                              Số điện thoại *
                             </label>
                             <input
                               type="tel"
@@ -1498,7 +1493,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                               style={{
                                 width: "100%",
                                 padding: "0.75rem",
-                                border: "1px solid #dee2e6",
+                                border: "1px solid #E2E8F0",
                                 borderRadius: "0.25rem",
                                 fontSize: "1rem",
                               }}
@@ -1506,7 +1501,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                           </div>
                         </div>
 
-                        {/* Province/District/Ward Selection */}
+                        {}
                         <div
                           style={{
                             display: "grid",
@@ -1547,7 +1542,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                               style={{
                                 width: "100%",
                                 padding: "0.75rem",
-                                border: "1px solid #dee2e6",
+                                border: "1px solid #E2E8F0",
                                 borderRadius: "0.25rem",
                                 fontSize: "1rem",
                               }}>
@@ -1600,7 +1595,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                               style={{
                                 width: "100%",
                                 padding: "0.75rem",
-                                border: "1px solid #dee2e6",
+                                border: "1px solid #E2E8F0",
                                 borderRadius: "0.25rem",
                                 fontSize: "1rem",
                                 opacity:
@@ -1649,7 +1644,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                               style={{
                                 width: "100%",
                                 padding: "0.75rem",
-                                border: "1px solid #dee2e6",
+                                border: "1px solid #E2E8F0",
                                 borderRadius: "0.25rem",
                                 fontSize: "1rem",
                                 opacity:
@@ -1689,7 +1684,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                             style={{
                               width: "100%",
                               padding: "0.75rem",
-                              border: "1px solid #dee2e6",
+                              border: "1px solid #E2E8F0",
                               borderRadius: "0.25rem",
                               fontSize: "1rem",
                               resize: "vertical",
@@ -1709,7 +1704,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                               padding: "0.5rem 1rem",
                               fontSize: "0.875rem",
                             }}>
-                            <Save size={16} /> Save
+                            <Save size={16} /> Lưu
                           </button>
                           <button
                             type="button"
@@ -1735,7 +1730,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                               padding: "0.5rem 1rem",
                               fontSize: "0.875rem",
                             }}>
-                            <X size={16} /> Cancel
+                            <X size={16} /> Hủy
                           </button>
                         </div>
                       </form>
@@ -1769,7 +1764,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                                     fontSize: "0.75rem",
                                     fontWeight: "600",
                                   }}>
-                                  Default
+                                  Mặc định
                                 </span>
                               )}
                             </div>
@@ -1793,7 +1788,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                                 style={{
                                   padding: "0.5rem",
                                   backgroundColor: "#e0f7ff",
-                                  color: "#007bff",
+                                  color: "#2563EB",
                                   border: "none",
                                   borderRadius: "0.25rem",
                                   cursor: "pointer",
@@ -1819,7 +1814,6 @@ const ProfilePage = ({ setCurrentPage }) => {
                                 };
                                 setAddressForm(formData);
 
-                                // Fetch districts if provinceId exists
                                 if (formData.provinceId) {
                                   try {
                                     setLoadingDistricts(true);
@@ -1829,7 +1823,6 @@ const ProfilePage = ({ setCurrentPage }) => {
                                       );
                                     setDistricts(districtsData || []);
 
-                                    // Fetch wards if districtId exists
                                     if (formData.districtId) {
                                       setLoadingWards(true);
                                       const wardsData =
@@ -1851,7 +1844,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                               }}
                               style={{
                                 padding: "0.5rem",
-                                backgroundColor: "#f8f9fa",
+                                backgroundColor: "#F8FAFC",
                                 color: "#495057",
                                 border: "none",
                                 borderRadius: "0.25rem",

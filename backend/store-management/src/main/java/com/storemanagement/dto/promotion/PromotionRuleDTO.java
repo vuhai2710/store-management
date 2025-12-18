@@ -22,9 +22,11 @@ public class PromotionRuleDTO extends BaseDTO {
     private PromotionRule.DiscountType discountType;
     private BigDecimal discountValue;
     private BigDecimal minOrderAmount;
-    private String customerType; // VIP, REGULAR, ALL
+    private String customerType;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private Boolean isActive;
     private Integer priority;
+    private PromotionRule.PromotionScope scope;
 }
+

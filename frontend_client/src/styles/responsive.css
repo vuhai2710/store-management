@@ -1,11 +1,8 @@
-/* Global Responsive Styles for Client Website */
 
-/* Base styles */
 * {
   box-sizing: border-box;
 }
 
-/* Container */
 .container {
   width: 100%;
   max-width: 1200px;
@@ -13,20 +10,17 @@
   padding: 0 16px;
 }
 
-/* Tablets (768px - 1024px) */
 @media screen and (max-width: 1024px) {
   .container {
     max-width: 100%;
     padding: 0 16px;
   }
 
-  /* Grid adjustments */
   .product-grid {
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 16px !important;
   }
 
-  /* Font sizes */
   h1 {
     font-size: 2rem !important;
   }
@@ -40,13 +34,11 @@
   }
 }
 
-/* Mobile devices (max-width: 768px) */
 @media screen and (max-width: 768px) {
   .container {
     padding: 0 12px;
   }
 
-  /* Header */
   header {
     padding: 12px 0 !important;
   }
@@ -56,15 +48,13 @@
   }
 
   header nav {
-    display: none; /* Hide desktop menu */
+    display: none;
   }
 
-  /* Mobile menu */
   .mobile-menu-toggle {
     display: block !important;
   }
 
-  /* Hero section */
   .hero-section {
     padding: 40px 0 !important;
   }
@@ -77,13 +67,11 @@
     font-size: 1rem !important;
   }
 
-  /* Product grid */
   .product-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 12px !important;
   }
 
-  /* Product card */
   .product-card {
     font-size: 14px !important;
   }
@@ -100,14 +88,12 @@
     font-size: 1rem !important;
   }
 
-  /* Buttons */
   button,
   .button {
     padding: 10px 16px !important;
     font-size: 14px !important;
   }
 
-  /* Forms */
   input,
   select,
   textarea {
@@ -115,7 +101,6 @@
     padding: 10px !important;
   }
 
-  /* Cart table */
   table {
     font-size: 12px !important;
   }
@@ -125,12 +110,10 @@
     padding: 8px 4px !important;
   }
 
-  /* Hide less important columns */
   .cart-table .hide-mobile {
     display: none !important;
   }
 
-  /* Footer */
   footer {
     padding: 32px 0 !important;
   }
@@ -140,12 +123,10 @@
     gap: 24px !important;
   }
 
-  /* Sections */
   section {
     padding: 40px 0 !important;
   }
 
-  /* Typography */
   h1 {
     font-size: 1.75rem !important;
   }
@@ -166,7 +147,6 @@
     font-size: 0.875rem !important;
   }
 
-  /* Spacing */
   .mb-4 {
     margin-bottom: 24px !important;
   }
@@ -179,7 +159,6 @@
     margin-bottom: 12px !important;
   }
 
-  /* Product detail */
   .product-detail-grid {
     grid-template-columns: 1fr !important;
     gap: 24px !important;
@@ -189,33 +168,28 @@
     max-height: 300px !important;
   }
 
-  /* Checkout */
   .checkout-grid {
     grid-template-columns: 1fr !important;
     gap: 24px !important;
   }
 
-  /* Categories */
   .category-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 12px !important;
   }
 
-  /* Filters */
   .filters {
-    display: none; /* Hide desktop filters */
+    display: none;
   }
 
   .mobile-filters {
     display: block !important;
   }
 
-  /* Breadcrumb */
   .breadcrumb {
     font-size: 12px !important;
   }
 
-  /* Pagination */
   .pagination {
     font-size: 12px !important;
   }
@@ -226,38 +200,32 @@
   }
 }
 
-/* Small mobile devices (max-width: 480px) */
 @media screen and (max-width: 480px) {
   .container {
     padding: 0 8px;
   }
 
-  /* Product grid - single column on very small screens */
   .product-grid {
     grid-template-columns: 1fr !important;
     gap: 12px !important;
   }
 
-  /* Product card */
   .product-card img {
     height: 200px !important;
   }
 
-  /* Buttons - full width */
   button,
   .button {
     width: 100% !important;
     padding: 12px !important;
   }
 
-  /* Forms - full width */
   input,
   select,
   textarea {
     width: 100% !important;
   }
 
-  /* Typography */
   h1 {
     font-size: 1.5rem !important;
   }
@@ -270,17 +238,14 @@
     font-size: 1.125rem !important;
   }
 
-  /* Hero */
   .hero-section {
     padding: 24px 0 !important;
   }
 
-  /* Sections */
   section {
     padding: 24px 0 !important;
   }
 
-  /* Cart */
   .cart-actions {
     flex-direction: column !important;
     gap: 12px !important;
@@ -290,12 +255,10 @@
     width: 100% !important;
   }
 
-  /* Checkout */
   .checkout-summary {
     position: static !important;
   }
 
-  /* Product detail */
   .product-actions {
     flex-direction: column !important;
     gap: 12px !important;
@@ -305,19 +268,16 @@
     width: 100% !important;
   }
 
-  /* Quantity selector */
   .quantity-selector {
     width: 100% !important;
     justify-content: space-between !important;
   }
 
-  /* Categories */
   .category-grid {
     grid-template-columns: 1fr !important;
   }
 }
 
-/* Utility classes */
 .hide-mobile {
   display: block;
 }
@@ -336,13 +296,11 @@
   }
 }
 
-/* Responsive images */
 img {
   max-width: 100%;
   height: auto;
 }
 
-/* Responsive tables */
 @media screen and (max-width: 768px) {
   .responsive-table {
     display: block;
@@ -355,7 +313,6 @@ img {
   }
 }
 
-/* Flexbox helpers */
 .flex-wrap {
   flex-wrap: wrap !important;
 }

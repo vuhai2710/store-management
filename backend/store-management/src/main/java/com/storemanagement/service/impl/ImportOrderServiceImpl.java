@@ -40,6 +40,56 @@ public class ImportOrderServiceImpl implements ImportOrderService {
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final PdfService pdfService;
 
+    /**
+     * Tính toán lại totalAmount từ danh sách details.
+     * totalAmount = SUM(quantity * importPrice) của tất cả details.
+     * Đảm bảo totalAmount luôn chính xác và nhất quán với subtotal của từng detail.
+     */
+    private void recalculateTotalAmount(PurchaseOrderDTO dto) {
+        if (dto.getImportOrderDetails() == null || dto.getImportOrderDetails().isEmpty()) {
+            dto.setTotalAmount(BigDecimal.ZERO);
+            return;
+        }
+        
+        BigDecimal computedTotal = dto.getImportOrderDetails().stream()
+                .map(detail -> {
+                    // Tính subtotal cho từng detail: quantity * importPrice
+                    BigDecimal subtotal = detail.getImportPrice()
+                            .multiply(BigDecimal.valueOf(detail.getQuantity()))
+                            .setScale(2, RoundingMode.HALF_UP);
+                    // Cập nhật subtotal trong detail DTO (đảm bảo consistency)
+                    detail.setSubtotal(subtotal);
+                    return subtotal;
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+        
+        dto.setTotalAmount(computedTotal);
+    }
+
+    /**
+     * Set employee name và recalculate totalAmount cho một DTO.
+     */
+    private void enrichPurchaseOrderDTO(PurchaseOrderDTO dto) {
+        // Recalculate totalAmount from details
+        recalculateTotalAmount(dto);
+        
+        // Set employee name: nếu có idEmployee thì lấy tên nhân viên, không thì là Quản trị viên
+        if (dto.getIdEmployee() != null) {
+            employeeRepository.findById(dto.getIdEmployee())
+                    .ifPresent(emp -> dto.setEmployeeName(emp.getEmployeeName()));
+        } else {
+            dto.setEmployeeName("Quản trị viên");
+        }
+    }
+
+    /**
+     * Set employee name và recalculate totalAmount cho danh sách DTOs.
+     */
+    private void enrichPurchaseOrderDTOs(List<PurchaseOrderDTO> dtos) {
+        dtos.forEach(this::enrichPurchaseOrderDTO);
+    }
+
     @Override
     public PurchaseOrderDTO createImportOrder(PurchaseOrderDTO purchaseOrderDTO, Integer employeeId) {
         log.info("Creating import order for supplier: {}", purchaseOrderDTO.getIdSupplier());
@@ -162,11 +212,8 @@ public class ImportOrderServiceImpl implements ImportOrderService {
         // Map và trả về DTO
         PurchaseOrderDTO result = importOrderMapper.toDTO(savedOrder);
         
-        // Set employee name nếu có
-        if (savedOrder.getIdEmployee() != null) {
-            employeeRepository.findById(savedOrder.getIdEmployee())
-                    .ifPresent(emp -> result.setEmployeeName(emp.getEmployeeName()));
-        }
+        // Enrich DTO: recalculate totalAmount từ details và set employee name
+        enrichPurchaseOrderDTO(result);
 
         return result;
     }
@@ -182,28 +229,27 @@ public class ImportOrderServiceImpl implements ImportOrderService {
 
         PurchaseOrderDTO dto = importOrderMapper.toDTO(importOrder);
         
-        // Set employee name nếu có
-        if (importOrder.getIdEmployee() != null) {
-            employeeRepository.findById(importOrder.getIdEmployee())
-                    .ifPresent(emp -> dto.setEmployeeName(emp.getEmployeeName()));
-        }
+        // Enrich DTO: recalculate totalAmount từ details và set employee name
+        enrichPurchaseOrderDTO(dto);
 
         return dto;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<PurchaseOrderDTO> getAllImportOrders(Pageable pageable) {
-        Page<ImportOrder> orderPage = importOrderRepository.findAll(pageable);
+    public PageResponse<PurchaseOrderDTO> getAllImportOrders(String keyword, Pageable pageable) {
+        Page<ImportOrder> orderPage;
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            orderPage = importOrderRepository.searchByKeyword(keyword.trim(), pageable);
+        } else {
+            orderPage = importOrderRepository.findAll(pageable);
+        }
+        
         List<PurchaseOrderDTO> dtos = importOrderMapper.toDTOList(orderPage.getContent());
         
-        // Set employee names
-        dtos.forEach(dto -> {
-            if (dto.getIdEmployee() != null) {
-                employeeRepository.findById(dto.getIdEmployee())
-                        .ifPresent(emp -> dto.setEmployeeName(emp.getEmployeeName()));
-            }
-        });
+        // Enrich DTOs: recalculate totalAmount từ details và set employee names
+        enrichPurchaseOrderDTOs(dtos);
 
         return PageUtils.toPageResponse(orderPage, dtos);
     }
@@ -218,13 +264,8 @@ public class ImportOrderServiceImpl implements ImportOrderService {
         Page<ImportOrder> orderPage = importOrderRepository.findBySupplier_IdSupplier(supplierId, pageable);
         List<PurchaseOrderDTO> dtos = importOrderMapper.toDTOList(orderPage.getContent());
         
-        // Set employee names
-        dtos.forEach(dto -> {
-            if (dto.getIdEmployee() != null) {
-                employeeRepository.findById(dto.getIdEmployee())
-                        .ifPresent(emp -> dto.setEmployeeName(emp.getEmployeeName()));
-            }
-        });
+        // Enrich DTOs: recalculate totalAmount từ details và set employee names
+        enrichPurchaseOrderDTOs(dtos);
 
         return PageUtils.toPageResponse(orderPage, dtos);
     }
@@ -235,13 +276,8 @@ public class ImportOrderServiceImpl implements ImportOrderService {
         Page<ImportOrder> orderPage = importOrderRepository.findByOrderDateBetween(startDate, endDate, pageable);
         List<PurchaseOrderDTO> dtos = importOrderMapper.toDTOList(orderPage.getContent());
         
-        // Set employee names
-        dtos.forEach(dto -> {
-            if (dto.getIdEmployee() != null) {
-                employeeRepository.findById(dto.getIdEmployee())
-                        .ifPresent(emp -> dto.setEmployeeName(emp.getEmployeeName()));
-            }
-        });
+        // Enrich DTOs: recalculate totalAmount từ details và set employee names
+        enrichPurchaseOrderDTOs(dtos);
 
         return PageUtils.toPageResponse(orderPage, dtos);
     }
@@ -257,13 +293,8 @@ public class ImportOrderServiceImpl implements ImportOrderService {
         Page<ImportOrder> orderPage = importOrderRepository.findBySupplierAndDateRange(supplierId, startDate, endDate, pageable);
         List<PurchaseOrderDTO> dtos = importOrderMapper.toDTOList(orderPage.getContent());
         
-        // Set employee names
-        dtos.forEach(dto -> {
-            if (dto.getIdEmployee() != null) {
-                employeeRepository.findById(dto.getIdEmployee())
-                        .ifPresent(emp -> dto.setEmployeeName(emp.getEmployeeName()));
-            }
-        });
+        // Enrich DTOs: recalculate totalAmount từ details và set employee names
+        enrichPurchaseOrderDTOs(dtos);
 
         return PageUtils.toPageResponse(orderPage, dtos);
     }

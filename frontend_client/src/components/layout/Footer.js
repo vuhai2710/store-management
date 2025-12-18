@@ -1,16 +1,24 @@
-// src/components/layout/Footer.js
+
 import React from "react";
 import styles from "../../styles/styles";
 
 const Footer = () => (
   <footer
-    style={{ backgroundColor: "#212529", color: "white", padding: "3rem 0" }}>
+    style={{
+      backgroundColor: "#020617",
+      color: "#E5E7EB",
+      padding: "3rem 0 2rem",
+    }}>
     <div style={{ ...styles.container, marginBottom: "2rem" }}>
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
           gap: "2rem",
+          backgroundColor: "#020617",
+          borderRadius: "1rem",
+          padding: "2rem 2.5rem",
+          boxShadow: "0 20px 45px rgba(15,23,42,0.55)",
         }}>
         <div>
           <h3
@@ -18,16 +26,17 @@ const Footer = () => (
               fontSize: "1.25rem",
               fontWeight: "bold",
               marginBottom: "1rem",
+              color: "#F9FAFB",
             }}>
             Electronic Store
           </h3>
-          <p style={{ color: "#adb5bd", fontSize: "0.875rem" }}>
+          <p style={{ color: "#9CA3AF", fontSize: "0.875rem" }}>
             Address: số 3 Cầu Giấy
           </p>
-          <p style={{ color: "#adb5bd", fontSize: "0.875rem" }}>
+          <p style={{ color: "#9CA3AF", fontSize: "0.875rem" }}>
             Phone: +84 123456789
           </p>
-          <p style={{ color: "#adb5bd", fontSize: "0.875rem" }}>
+          <p style={{ color: "#9CA3AF", fontSize: "0.875rem" }}>
             Email: hello@electronicstore.com
           </p>
         </div>
@@ -44,7 +53,7 @@ const Footer = () => (
               flexDirection: "column",
               gap: "0.5rem",
               fontSize: "0.875rem",
-              color: "#adb5bd",
+              color: "#9CA3AF",
             }}>
             <li>
               <button
@@ -135,7 +144,7 @@ const Footer = () => (
           </h4>
           <p
             style={{
-              color: "#adb5bd",
+              color: "#9CA3AF",
               fontSize: "0.875rem",
               marginBottom: "0.75rem",
             }}>
@@ -147,10 +156,10 @@ const Footer = () => (
             style={{
               width: "100%",
               padding: "0.5rem 0.75rem",
-              borderRadius: "0.25rem",
-              color: "#212529",
+              borderRadius: "0.75rem",
+              color: "#0F172A",
               marginBottom: "0.5rem",
-              border: "none",
+              border: "1px solid #E2E8F0",
             }}
           />
           <button
@@ -166,10 +175,10 @@ const Footer = () => (
     </div>
     <div
       style={{
-        borderTop: "1px solid #495057",
+        borderTop: "1px solid #1F2937",
         paddingTop: "1.5rem",
         textAlign: "center",
-        color: "#adb5bd",
+        color: "#9CA3AF",
         fontSize: "0.875rem",
       }}>
       <p>Copyright © 2025 All rights reserved | Made with Nhóm 6</p>

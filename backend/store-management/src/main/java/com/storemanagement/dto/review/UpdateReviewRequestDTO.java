@@ -20,3 +20,4 @@ public class UpdateReviewRequestDTO {
     @NotBlank(message = "Comment không được để trống")
     private String comment;
 }
+

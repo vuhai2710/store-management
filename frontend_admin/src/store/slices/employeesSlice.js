@@ -1,62 +1,76 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { employeesService } from '../../services/employeesService';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { employeesService } from "../../services/employeesService";
 
 export const fetchEmployees = createAsyncThunk(
-  'employees/fetchEmployees',
+  "employees/fetchEmployees",
   async (params, { rejectWithValue }) => {
     try {
       const response = await employeesService.getEmployees(params);
       return response;
     } catch (error) {
-      return rejectWithValue(error.message || 'Lỗi khi tải danh sách nhân viên');
+      return rejectWithValue(
+        error.message || "Lỗi khi tải danh sách nhân viên"
+      );
     }
   }
 );
 
 export const fetchEmployeeById = createAsyncThunk(
-  'employees/fetchEmployeeById',
+  "employees/fetchEmployeeById",
   async (id, { rejectWithValue }) => {
     try {
       const response = await employeesService.getEmployeeById(id);
       return response;
     } catch (error) {
-      return rejectWithValue(error.message || 'Lỗi khi tải chi tiết nhân viên');
+      return rejectWithValue(error.message || "Lỗi khi tải chi tiết nhân viên");
+    }
+  }
+);
+
+export const fetchEmployeeDetailById = createAsyncThunk(
+  "employees/fetchEmployeeDetailById",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await employeesService.getEmployeeDetailById(id);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message || "Lỗi khi tải chi tiết nhân viên");
     }
   }
 );
 
 export const createEmployee = createAsyncThunk(
-  'employees/createEmployee',
+  "employees/createEmployee",
   async (employeeData, { rejectWithValue }) => {
     try {
       const response = await employeesService.createEmployee(employeeData);
       return response;
     } catch (error) {
-      return rejectWithValue(error.message || 'Lỗi khi tạo nhân viên');
+      return rejectWithValue(error.message || "Lỗi khi tạo nhân viên");
     }
   }
 );
 
 export const updateEmployee = createAsyncThunk(
-  'employees/updateEmployee',
+  "employees/updateEmployee",
   async ({ id, employeeData }, { rejectWithValue }) => {
     try {
       const response = await employeesService.updateEmployee(id, employeeData);
       return response;
     } catch (error) {
-      return rejectWithValue(error.message || 'Lỗi khi cập nhật nhân viên');
+      return rejectWithValue(error.message || "Lỗi khi cập nhật nhân viên");
     }
   }
 );
 
 export const deleteEmployee = createAsyncThunk(
-  'employees/deleteEmployee',
+  "employees/deleteEmployee",
   async (id, { rejectWithValue }) => {
     try {
       await employeesService.deleteEmployee(id);
       return id;
     } catch (error) {
-      return rejectWithValue(error.message || 'Lỗi khi xóa nhân viên');
+      return rejectWithValue(error.message || "Lỗi khi xóa nhân viên");
     }
   }
 );
@@ -64,6 +78,7 @@ export const deleteEmployee = createAsyncThunk(
 const initialState = {
   employees: [],
   currentEmployee: null,
+  employeeDetail: null,
   loading: false,
   error: null,
   pagination: {
@@ -72,14 +87,14 @@ const initialState = {
     total: 0,
   },
   sort: {
-    sortBy: 'idEmployee',
-    sortDirection: 'DESC',
+    sortBy: "idEmployee",
+    sortDirection: "DESC",
   },
   filters: {},
 };
 
 const employeesSlice = createSlice({
-  name: 'employees',
+  name: "employees",
   initialState,
   reducers: {
     clearError: (state) => {
@@ -87,6 +102,9 @@ const employeesSlice = createSlice({
     },
     clearCurrentEmployee: (state) => {
       state.currentEmployee = null;
+    },
+    clearEmployeeDetail: (state) => {
+      state.employeeDetail = null;
     },
     setFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
@@ -108,9 +126,10 @@ const employeesSlice = createSlice({
         state.loading = false;
         state.employees = action.payload.data;
         state.pagination.total = action.payload.total;
-        // Nếu BE trả về page/pageSize đã chuẩn hóa, có thể sync current/pageSize:
+
         if (action.payload.page) state.pagination.current = action.payload.page;
-        if (action.payload.pageSize) state.pagination.pageSize = action.payload.pageSize;
+        if (action.payload.pageSize)
+          state.pagination.pageSize = action.payload.pageSize;
         state.error = null;
       })
       .addCase(fetchEmployees.rejected, (state, action) => {
@@ -130,13 +149,28 @@ const employeesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      .addCase(fetchEmployeeDetailById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchEmployeeDetailById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.employeeDetail = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchEmployeeDetailById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       .addCase(createEmployee.fulfilled, (state, action) => {
         state.employees.unshift(action.payload);
         state.pagination.total += 1;
       })
       .addCase(updateEmployee.fulfilled, (state, action) => {
         const updated = action.payload;
-        const idx = state.employees.findIndex((e) => e.idEmployee === updated.idEmployee);
+        const idx = state.employees.findIndex(
+          (e) => e.idEmployee === updated.idEmployee
+        );
         if (idx !== -1) state.employees[idx] = updated;
         if (state.currentEmployee?.idEmployee === updated.idEmployee) {
           state.currentEmployee = updated;
@@ -144,7 +178,9 @@ const employeesSlice = createSlice({
       })
       .addCase(deleteEmployee.fulfilled, (state, action) => {
         const removedId = action.payload;
-        state.employees = state.employees.filter((e) => e.idEmployee !== removedId);
+        state.employees = state.employees.filter(
+          (e) => e.idEmployee !== removedId
+        );
         state.pagination.total = Math.max(0, state.pagination.total - 1);
       });
   },
@@ -153,10 +189,9 @@ const employeesSlice = createSlice({
 export const {
   clearError,
   clearCurrentEmployee,
+  clearEmployeeDetail,
   setFilters,
   setPagination,
   setSort,
 } = employeesSlice.actions;
 export default employeesSlice.reducer;
-
-

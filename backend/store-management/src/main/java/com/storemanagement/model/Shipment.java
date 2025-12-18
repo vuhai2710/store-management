@@ -64,7 +64,8 @@ public class Shipment {
     }
 
     public enum ShippingMethod {
-        GHN,         // Giao hàng qua GHN
-        SELF_PICKUP  // Khách tự đến lấy
+        GHN,
+        SELF_PICKUP
     }
 }
+

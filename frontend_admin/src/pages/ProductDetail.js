@@ -8,7 +8,7 @@ import { fetchProductReviews, deleteReview, clearProductReviews, replyToReview }
 import { productsService } from "../services/productsService";
 import ImageLightbox from "../components/common/ImageLightbox";
 import StatusBadge from "../components/common/StatusBadge";
-import { formatCurrency, formatDate } from "../utils/formatUtils";
+import { formatCurrency, formatDate, getImageUrl } from "../utils/formatUtils";
 import { usePagination } from "../hooks/usePagination";
 
 const { Title } = Typography;
@@ -30,7 +30,6 @@ const ProductDetail = () => {
   const [replyContent, setReplyContent] = useState("");
   const [selectedReviewForReply, setSelectedReviewForReply] = useState(null);
 
-  // Pagination cho reviews
   const {
     currentPage: reviewPage,
     pageSize: reviewPageSize,
@@ -94,7 +93,7 @@ const ProductDetail = () => {
     try {
       await dispatch(deleteReview(reviewId)).unwrap();
       message.success("Xóa đánh giá thành công!");
-      // Reload reviews
+
       if (id) {
         loadProductReviews(Number(id), reviewPage, reviewPageSize);
       }
@@ -128,7 +127,6 @@ const ProductDetail = () => {
     }
   };
 
-  // Tính trung bình rating
   const averageRating = productReviews.list.length > 0
     ? productReviews.list.reduce((sum, review) => sum + (review.rating || 0), 0) / productReviews.list.length
     : 0;
@@ -136,8 +134,13 @@ const ProductDetail = () => {
   if (loading && !current) return <Spin />;
 
   const allImages = [
-    ...(current?.imageUrl ? [{ url: current.imageUrl, alt: current.productName }] : []),
-    ...productImages.map((img) => ({ url: img.imageUrl, alt: current?.productName || "Product" })),
+    ...(current?.imageUrl
+      ? [{ url: getImageUrl(current.imageUrl), alt: current.productName }]
+      : []),
+    ...productImages.map((img) => ({
+      url: getImageUrl(img.imageUrl),
+      alt: current?.productName || "Product",
+    })),
   ];
 
   return (
@@ -209,7 +212,7 @@ const ProductDetail = () => {
         onClose={() => setLightboxVisible(false)}
       />
 
-      {/* Reviews Section */}
+      { }
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24}>
           <Card
@@ -327,5 +330,3 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
-
-

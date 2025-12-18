@@ -25,7 +25,7 @@ public class ImportOrder {
     private Supplier supplier;
 
     @Column(name = "id_employee")
-    private Integer idEmployee;  // ID nhân viên tạo đơn
+    private Integer idEmployee;
 
     @Column(name = "order_date")
     private LocalDateTime orderDate;
@@ -37,6 +37,16 @@ public class ImportOrder {
     @Builder.Default
     private List<ImportOrderDetail> importOrderDetails = new ArrayList<>();
 
+    @Column(name = "invoice_printed")
+    @Builder.Default
+    private Boolean invoicePrinted = false;
+
+    @Column(name = "invoice_printed_at")
+    private LocalDateTime invoicePrintedAt;
+
+    @Column(name = "invoice_printed_by")
+    private Integer invoicePrintedBy;
+
     @PrePersist
     protected void onCreate() {
         if (orderDate == null) {
@@ -44,4 +54,3 @@ public class ImportOrder {
         }
     }
 }
-

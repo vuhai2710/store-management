@@ -25,4 +25,3 @@ public class PageResponse<T> {
     private Boolean hasPrevious;
     private Boolean isEmpty;
 }
-

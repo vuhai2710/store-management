@@ -10,11 +10,12 @@ import {
   InboxOutlined,
   TeamOutlined,
   DollarOutlined,
-  BarChartOutlined,
   UserSwitchOutlined,
   FolderOutlined,
   ImportOutlined,
   GiftOutlined,
+  RollbackOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { USER_ROLES } from "../../constants/roles";
 
@@ -22,25 +23,29 @@ const { Sider } = Layout;
 
 const AppSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const user = useSelector((state) => state.auth?.user);
   const userRole = user?.role;
 
-  // Filter menu items based on user role
   const menuItems = useMemo(() => {
     const allMenuItems = [
       {
         key: "/dashboard",
         icon: <DashboardOutlined />,
         label: "Dashboard",
-        roles: [USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE, USER_ROLES.CUSTOMER], // All roles
+        roles: [USER_ROLES.ADMIN],
       },
       {
         key: "/orders",
         icon: <ShoppingCartOutlined />,
         label: "Quản lý Đơn hàng",
+        roles: [USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE],
+      },
+      {
+        key: "/order-returns",
+        icon: <RollbackOutlined />,
+        label: "Đơn Đổi/Trả hàng",
         roles: [USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE],
       },
       {
@@ -98,20 +103,29 @@ const AppSidebar = () => {
         roles: [USER_ROLES.ADMIN],
       },
       {
-        key: "/reports",
-        icon: <BarChartOutlined />,
-        label: "Báo cáo",
-        roles: [USER_ROLES.ADMIN],
-      },
-      {
         key: "/promotions",
         icon: <GiftOutlined />,
         label: "Khuyến mãi & Giảm giá",
         roles: [USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE],
       },
+      {
+        key: "invoices",
+        icon: <FileTextOutlined />,
+        label: "Quản lý Hóa đơn",
+        roles: [USER_ROLES.ADMIN],
+        children: [
+          {
+            key: "/invoices/export",
+            label: "Hóa đơn xuất",
+          },
+          {
+            key: "/invoices/import",
+            label: "Hóa đơn nhập",
+          },
+        ],
+      },
     ];
 
-    // Filter menu items based on user role
     if (!userRole) return [];
     return allMenuItems.filter((item) => item.roles.includes(userRole));
   }, [userRole]);
@@ -127,7 +141,6 @@ const AppSidebar = () => {
   };
 
   const getOpenKeys = () => {
-    // Không cần open keys nữa vì đã bỏ submenu
     return [];
   };
 
@@ -137,21 +150,36 @@ const AppSidebar = () => {
       collapsed={collapsed}
       onCollapse={setCollapsed}
       style={{
-        background: "#001529",
+        background: "#020617",
         minHeight: "100vh",
+        borderRight: "1px solid #0B1120",
       }}>
       <div
         style={{
           height: "64px",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          color: "#fff",
-          fontSize: collapsed ? "16px" : "18px",
-          fontWeight: "bold",
-          borderBottom: "1px solid #002140",
+          justifyContent: collapsed ? "center" : "space-between",
+          padding: collapsed ? "0 12px" : "0 18px",
+          color: "#E5E7EB",
+          fontSize: collapsed ? 16 : 17,
+          fontWeight: 700,
+          borderBottom: "1px solid #111827",
+          background:
+            "linear-gradient(90deg, #020617 0%, #020617 40%, #111827 100%)",
         }}>
-        {collapsed ? "ERP" : "ERP Store"}
+        <span>{collapsed ? "TS" : "TechStore"}</span>
+        {!collapsed && (
+          <span
+            style={{
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: 1.2,
+              color: "#9CA3AF",
+            }}>
+            Admin
+          </span>
+        )}
       </div>
 
       <Menu
@@ -162,7 +190,7 @@ const AppSidebar = () => {
         items={menuItems}
         onClick={handleMenuClick}
         style={{
-          background: "#001529",
+          background: "#020617",
           border: "none",
         }}
       />

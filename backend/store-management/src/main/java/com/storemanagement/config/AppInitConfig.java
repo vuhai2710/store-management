@@ -11,7 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
-//@RequiredArgsConstructor
+
 @Slf4j
 public class AppInitConfig implements ApplicationRunner {
 
@@ -27,28 +27,24 @@ public class AppInitConfig implements ApplicationRunner {
     private static final String ADMIN_PASSWORD = "admin";
     private static final String ADMIN_EMAIL = "admin@gmail.com";
 
-
     @Override
     public void run(ApplicationArguments args) {
-        // Kiểm tra xem đã có admin chưa
+
         if (userRepository.findByUsername(ADMIN_USERNAME).isPresent()) {
             log.info("Admin user already exists, skipping creation");
             return;
         }
 
-        // Tạo user ADMIN mới
         User admin = User.builder()
                 .username(ADMIN_USERNAME)
-                .password(passwordEncoder.encode(ADMIN_PASSWORD)) // Hash password trước khi lưu
+                .password(passwordEncoder.encode(ADMIN_PASSWORD))
                 .email(ADMIN_EMAIL)
                 .role(Role.ADMIN)
-                .isActive(true) // Mặc định active
+                .isActive(true)
                 .build();
 
-        // Lưu vào database
         userRepository.save(admin);
 
-        // Log thông tin để developer biết cách đăng nhập
         log.warn("=========================================");
         log.warn("TÀI KHOẢN ADMIN ĐÃ ĐƯỢC TẠO:");
         log.warn("   Username: {}", ADMIN_USERNAME);

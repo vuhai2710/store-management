@@ -24,20 +24,18 @@ const Register = () => {
 
       const payload = {
         username: values.username?.trim(),
-        password: values.password, // Không trim mật khẩu để giữ nguyên ký tự người dùng nhập
+        password: values.password,
         email: values.email?.trim(),
-        customerName: values.fullName?.trim(), // Backend expects customerName
+        customerName: values.fullName?.trim(),
         phoneNumber: values.phoneNumber?.trim(),
-        address: (values.address || "").trim(), // Optional field
+        address: (values.address || "").trim(),
       };
 
-      // Gọi API đăng ký - Backend cần customerName không phải fullName
       const response = await authService.register(payload);
 
       console.log("Kết quả đăng ký:", response);
       message.success("Đăng ký thành công! Vui lòng đăng nhập.");
 
-      // Chuyển về trang login sau 1.5 giây
       setTimeout(() => {
         navigate("/login");
       }, 1500);

@@ -30,7 +30,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class GHNController {
-    
+
     private final GHNService ghnService;
 
     @GetMapping("/provinces")
@@ -63,7 +63,7 @@ public class GHNController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<GHNCalculateFeeResponseDTO>> calculateFee(
             @RequestBody @Valid GHNCalculateFeeRequestDTO request) {
-        log.info("Calculating shipping fee from GHN: fromDistrictId={}, toDistrictId={}", 
+        log.info("Calculating shipping fee from GHN: fromDistrictId={}, toDistrictId={}",
             request.getFromDistrictId(), request.getToDistrictId());
         GHNCalculateFeeResponseDTO fee = ghnService.calculateShippingFee(request);
         return ResponseEntity.ok(ApiResponse.success("Tính phí vận chuyển thành công", fee));
@@ -102,7 +102,7 @@ public class GHNController {
     public ResponseEntity<ApiResponse<List<GHNServiceDTO>>> getShippingServices(
             @RequestParam Integer fromDistrictId,
             @RequestParam Integer toDistrictId) {
-        log.info("Getting shipping services from GHN: fromDistrictId={}, toDistrictId={}", 
+        log.info("Getting shipping services from GHN: fromDistrictId={}, toDistrictId={}",
             fromDistrictId, toDistrictId);
         List<GHNServiceDTO> services = ghnService.getShippingServices(fromDistrictId, toDistrictId);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách dịch vụ vận chuyển thành công", services));
@@ -112,7 +112,7 @@ public class GHNController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<String>> getExpectedDeliveryTime(
             @RequestBody @Valid GHNExpectedDeliveryTimeRequestDTO request) {
-        log.info("Getting expected delivery time from GHN: fromDistrictId={}, toDistrictId={}", 
+        log.info("Getting expected delivery time from GHN: fromDistrictId={}, toDistrictId={}",
             request.getFromDistrictId(), request.getToDistrictId());
         String leadtime = ghnService.getExpectedDeliveryTime(request);
         return ResponseEntity.ok(ApiResponse.success("Lấy thời gian giao hàng dự kiến thành công", leadtime));
@@ -132,11 +132,11 @@ public class GHNController {
     public ResponseEntity<byte[]> printOrder(@PathVariable String ghnOrderCode) {
         log.info("Printing GHN order: orderCode={}", ghnOrderCode);
         byte[] pdfBytes = ghnService.printOrder(ghnOrderCode);
-        
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDispositionFormData("attachment", "van-don-" + ghnOrderCode + ".pdf");
-        
+
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(pdfBytes);

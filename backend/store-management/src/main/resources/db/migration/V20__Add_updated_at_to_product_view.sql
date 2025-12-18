@@ -1,6 +1,3 @@
--- Migration V20: Add updated_at column to product_view table (if V19 was already run without it)
-
--- Check if column exists before adding (safe migration)
 SET @dbname = DATABASE();
 SET @tablename = "product_view";
 SET @columnname = "updated_at";
@@ -18,4 +15,3 @@ SET @preparedStatement = (SELECT IF(
 PREPARE alterIfNotExists FROM @preparedStatement;
 EXECUTE alterIfNotExists;
 DEALLOCATE PREPARE alterIfNotExists;
-

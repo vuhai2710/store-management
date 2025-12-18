@@ -38,3 +38,4 @@ public class Employee extends BaseEntity {
     @Column(name = "base_salary")
     private BigDecimal baseSalary;
 }
+

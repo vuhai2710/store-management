@@ -47,7 +47,7 @@ public class Order {
     private PaymentMethod paymentMethod;
 
     @Column(name = "final_amount", precision = 15, scale = 2, insertable = false, updatable = false)
-    private BigDecimal finalAmount; // Generated column
+    private BigDecimal finalAmount;
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
@@ -57,7 +57,7 @@ public class Order {
     private ShippingAddress shippingAddress;
 
     @Column(name = "shipping_address_snapshot", columnDefinition = "TEXT")
-    private String shippingAddressSnapshot; // Snapshot của địa chỉ tại thời điểm đặt hàng
+    private String shippingAddressSnapshot;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -67,7 +67,16 @@ public class Order {
     private Shipment shipment;
 
     @Column(name = "delivered_at")
-    private LocalDateTime deliveredAt; // Thời điểm customer xác nhận đã nhận hàng
+    private LocalDateTime deliveredAt;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    @Column(name = "return_window_days")
+    private Integer returnWindowDays;
+
+    @Column(name = "shipping_fee", precision = 12, scale = 2)
+    private BigDecimal shippingFee;
 
     @Column(name = "payment_link_id", length = 255)
     private String paymentLinkId;
@@ -82,6 +91,27 @@ public class Order {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_promotion_rule")
     private PromotionRule promotionRule;
+
+    @Column(name = "shipping_discount", precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal shippingDiscount = BigDecimal.ZERO;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_shipping_promotion")
+    private Promotion shippingPromotion;
+
+    @Column(name = "shipping_promotion_code", length = 50)
+    private String shippingPromotionCode;
+
+    @Column(name = "invoice_printed")
+    @Builder.Default
+    private Boolean invoicePrinted = false;
+
+    @Column(name = "invoice_printed_at")
+    private LocalDateTime invoicePrintedAt;
+
+    @Column(name = "invoice_printed_by")
+    private Integer invoicePrintedBy;
 
     @PrePersist
     protected void onCreate() {

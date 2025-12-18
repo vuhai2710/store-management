@@ -15,6 +15,7 @@ public class GHNConfig {
     public RestTemplate ghnRestTemplate() {
         return new RestTemplate();
     }
+
     private String token;
     private Integer shopId;
     private Integer fromDistrictId;

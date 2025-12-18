@@ -34,11 +34,11 @@ public class ShippingAddress extends BaseEntity {
     private Boolean isDefault = false;
 
     @Column(name = "province_id")
-    private Integer provinceId; // ID tỉnh/thành phố từ GHN API
+    private Integer provinceId;
 
     @Column(name = "district_id")
-    private Integer districtId; // ID quận/huyện từ GHN API
+    private Integer districtId;
 
     @Column(name = "ward_code", length = 50)
-    private String wardCode; // Code phường/xã từ GHN API
+    private String wardCode;
 }

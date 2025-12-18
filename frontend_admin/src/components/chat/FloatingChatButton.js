@@ -10,7 +10,6 @@ const FloatingChatButton = () => {
   const user = useSelector((state) => state.auth?.user);
   const userRole = user?.role;
 
-  // Chỉ hiển thị cho ADMIN và EMPLOYEE
   if (!userRole || (userRole !== USER_ROLES.ADMIN && userRole !== USER_ROLES.EMPLOYEE)) {
     return null;
   }
@@ -38,4 +37,3 @@ const FloatingChatButton = () => {
 };
 
 export default FloatingChatButton;
-

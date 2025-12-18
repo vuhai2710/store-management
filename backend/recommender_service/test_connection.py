@@ -1,11 +1,7 @@
-"""
-Test script to verify database connection and data loading
-"""
 import sys
 from modules import loader
 
 def test_connection():
-    """Test database connection"""
     print("=" * 50)
     print("Testing Database Connection")
     print("=" * 50)
@@ -21,7 +17,6 @@ def test_connection():
     return True
 
 def test_load_products():
-    """Test loading products"""
     print("\n" + "=" * 50)
     print("Testing Product Loading")
     print("=" * 50)
@@ -40,7 +35,6 @@ def test_load_products():
         return None
 
 def test_load_user_history(user_id):
-    """Test loading user history"""
     print("\n" + "=" * 50)
     print(f"Testing User History Loading (user_id: {user_id})")
     print("=" * 50)
@@ -62,7 +56,6 @@ def test_load_user_history(user_id):
         return None
 
 def test_load_global_views():
-    """Test loading global views"""
     print("\n" + "=" * 50)
     print("Testing Global Views Loading")
     print("=" * 50)
@@ -83,19 +76,15 @@ def test_load_global_views():
         return None
 
 if __name__ == "__main__":
-    # Test connection
     if not test_connection():
         sys.exit(1)
     
-    # Test loading products
     products_df = test_load_products()
     if products_df is None:
         sys.exit(1)
     
-    # Test loading global views to see which users have data
     global_views = test_load_global_views()
     
-    # If user_id provided as argument, test that user
     if len(sys.argv) > 1:
         try:
             user_id = int(sys.argv[1])
@@ -107,4 +96,3 @@ if __name__ == "__main__":
         print("To test a specific user, run:")
         print("  python test_connection.py <user_id>")
         print("=" * 50)
-

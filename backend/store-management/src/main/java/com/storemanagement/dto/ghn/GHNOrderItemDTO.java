@@ -11,16 +11,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class GHNOrderItemDTO {
-    
+
     @JsonProperty("name")
     private String name;
-    
+
     @JsonProperty("code")
     private String code;
-    
+
     @JsonProperty("quantity")
     private Integer quantity;
-    
+
     @JsonProperty("price")
     private Integer price;
 }

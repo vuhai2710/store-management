@@ -23,3 +23,4 @@ public interface ProductReviewMapper {
 
     List<ProductReviewDTO> toDTOList(List<ProductReview> reviews);
 }
+

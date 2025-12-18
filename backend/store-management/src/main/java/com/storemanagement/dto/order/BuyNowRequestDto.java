@@ -15,15 +15,15 @@ import lombok.NoArgsConstructor;
 public class BuyNowRequestDto {
     @NotNull(message = "ID sản phẩm không được để trống")
     private Integer productId;
-    
+
     @NotNull(message = "Số lượng không được để trống")
     @Min(value = 1, message = "Số lượng phải lớn hơn 0")
     private Integer quantity;
-    
-    private Integer shippingAddressId; // Optional - nếu không có thì dùng default address hoặc customer.address
-    
+
+    private Integer shippingAddressId;
+
     @NotNull(message = "Phương thức thanh toán không được để trống")
     private Order.PaymentMethod paymentMethod;
-    
-    private String notes; // Optional
+
+    private String notes;
 }

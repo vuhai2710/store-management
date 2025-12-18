@@ -3,6 +3,7 @@ package com.storemanagement.dto.order;
 import com.storemanagement.model.Order;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,9 +39,15 @@ public class OrderDTO {
     private String notes;
 
     private Integer idShippingAddress;
-    private String shippingAddressSnapshot; // Snapshot của địa chỉ tại thời điểm đặt hàng
+    private String shippingAddressSnapshot;
 
-    private LocalDateTime deliveredAt; // Thời điểm customer xác nhận đã nhận hàng
+    private LocalDateTime deliveredAt;
+
+    private LocalDateTime completedAt;
+
+    private Integer returnWindowDays;
+
+    private BigDecimal shippingFee;
 
     private String paymentLinkId;
 
@@ -51,9 +58,16 @@ public class OrderDTO {
     private Integer shippingAddressId;
     private String promotionCode;
 
-
     private Integer idPromotion;
     private Integer idPromotionRule;
+    private String promotionName;
+    private String promotionDiscountType;
+    private java.math.BigDecimal promotionDiscountValue;
+    private String promotionScope;
+
+    private BigDecimal shippingDiscount;
+    private String shippingPromotionCode;
+    private Integer idShippingPromotion;
 
     private Integer customerId;
 
@@ -64,9 +78,8 @@ public class OrderDTO {
     @Valid
     private List<OrderDetailDTO> orderItems;
 
-    // ========== Fields từ BuyNowRequestDto (buy-now) ==========
-    private Integer productId; // ID sản phẩm khi mua trực tiếp
+    private Integer productId;
 
     @Min(value = 1, message = "Số lượng phải lớn hơn 0")
-    private Integer quantity; // Số lượng khi mua trực tiếp
+    private Integer quantity;
 }

@@ -136,7 +136,7 @@ const UserTable = ({
         pagination={pagination}
         onChange={onChange}
         size="middle"
-        scroll={{ x: "max-content" }} // kéo ngang, không ẩn cột nào
+        scroll={{ x: "max-content" }}
         style={{ width: "100%" }}
       />
     </div>

@@ -18,22 +18,22 @@ import java.time.LocalDateTime;
 public class ChatConversationDTO extends BaseDTO {
     @JsonProperty("idConversation")
     private Integer idConversation;
-    
+
     @JsonProperty("idCustomer")
     private Integer idCustomer;
-    
+
     @JsonProperty("customerName")
     private String customerName;
-    
+
     @JsonProperty("status")
     private ConversationStatus status;
-    
+
     @JsonProperty("lastMessage")
-    private String lastMessage;  // Tin nhắn mới nhất
-    
+    private String lastMessage;
+
     @JsonProperty("lastMessageTime")
-    private LocalDateTime lastMessageTime;  // Thời gian tin nhắn mới nhất
-    
+    private LocalDateTime lastMessageTime;
+
     @JsonProperty("unreadCount")
-    private Long unreadCount;  // Số tin nhắn chưa đọc (có thể implement sau)
+    private Long unreadCount;
 }

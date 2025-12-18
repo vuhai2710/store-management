@@ -33,11 +33,11 @@ public interface ProductService {
 
     PageResponse<ProductDTO> getProductsBySupplier(Integer idSupplier, Pageable pageable);
 
-    PageResponse<ProductDTO> searchProducts(String productCode, String productName,
-                                           Integer idCategory, String brand,
-                                           Double minPrice, Double maxPrice,
-                                           String inventoryStatus,
-                                           Pageable pageable);
+    PageResponse<ProductDTO> searchProducts(String keyword,
+            Integer idCategory, String brand,
+            Double minPrice, Double maxPrice,
+            String inventoryStatus,
+            Pageable pageable);
 
     List<ProductDTO> getTop5BestSellingProducts(String orderStatus);
 
@@ -53,4 +53,3 @@ public interface ProductService {
 
     List<ProductDTO> getProductsByIds(List<Long> productIds);
 }
-

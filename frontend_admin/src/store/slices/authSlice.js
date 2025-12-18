@@ -1,24 +1,27 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { authService } from "../../services/authService";
 
-// Async thunks
 export const login = createAsyncThunk(
   "auth/login",
   async (credentials, { rejectWithValue }) => {
     try {
-      // Backend returns { token, authenticated } (NO user field)
+
       const response = await authService.login(credentials);
-      // authService.login already saves token and fetches user info from /users/profile
+
       const user = authService.getUserFromStorage();
       return {
         token: response.token,
         authenticated: response.authenticated,
-        user: user, // User info fetched from /users/profile in authService
+        user: user,
       };
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || error.message || "Đăng nhập thất bại"
-      );
+
+      const status = error.status;
+
+      if (status === 400 || status === 401 || status === 403) {
+        return rejectWithValue("Sai tài khoản hoặc mật khẩu");
+      }
+      return rejectWithValue(error.message || "Đăng nhập thất bại");
     }
   }
 );
@@ -73,7 +76,7 @@ const initialState = {
   isAuthenticated: !!localStorage.getItem("token"),
   user: getUserFromLocalStorage(),
   token: localStorage.getItem("token") || null,
-  loading: true, // Set loading = true khi khởi tạo để check auth trước
+  loading: true,
   error: null,
 };
 
@@ -94,7 +97,7 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Login
+
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -113,14 +116,14 @@ const authSlice = createSlice({
         state.token = null;
         state.error = action.payload;
       })
-      // Logout
+
       .addCase(logout.fulfilled, (state) => {
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
         state.error = null;
       })
-      // Get current user
+
       .addCase(getCurrentUser.fulfilled, (state, action) => {
         state.user = action.payload;
         state.isAuthenticated = true;

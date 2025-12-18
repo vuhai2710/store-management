@@ -2,10 +2,6 @@ import React from "react";
 import { Spin } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 
-/**
- * PageLoading Component
- * Displays a centered loading spinner for page-level loading states
- */
 const PageLoading = ({ tip = "Đang tải..." }) => {
   return (
     <div
@@ -27,5 +23,3 @@ const PageLoading = ({ tip = "Đang tải..." }) => {
 };
 
 export default PageLoading;
-
-

@@ -64,7 +64,8 @@ public class ProductServiceImpl implements ProductService {
         }
 
         Category category = categoryRepository.findById(productDto.getIdCategory())
-                .orElseThrow(() -> new EntityNotFoundException("Danh mục không tồn tại với ID: " + productDto.getIdCategory()));
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Danh mục không tồn tại với ID: " + productDto.getIdCategory()));
 
         String productCode = productDto.getProductCode();
         String sku = productDto.getSku();
@@ -73,7 +74,7 @@ public class ProductServiceImpl implements ProductService {
             if (productCode == null || productCode.trim().isEmpty()) {
 
                 sku = generateUniqueSku(category);
-                productCode = sku; // productCode = SKU trong trường hợp này
+                productCode = sku;
                 log.info("Auto-generated SKU: {}", sku);
             } else {
                 ProductCodeValidator.validate(productCode, CodeType.SKU);
@@ -99,10 +100,10 @@ public class ProductServiceImpl implements ProductService {
         Supplier supplier = null;
         if (productDto.getIdSupplier() != null) {
             supplier = supplierRepository.findById(productDto.getIdSupplier())
-                    .orElseThrow(() -> new EntityNotFoundException("Nhà cung cấp không tồn tại với ID: " + productDto.getIdSupplier()));
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Nhà cung cấp không tồn tại với ID: " + productDto.getIdSupplier()));
         }
 
-        // Map DTO sang Entity
         Product product = productMapper.toEntity(productDto);
         product.setCategory(category);
         product.setSupplier(supplier);
@@ -111,23 +112,22 @@ public class ProductServiceImpl implements ProductService {
         product.setCodeType(productDto.getCodeType());
         product.setBrand(productDto.getBrand());
         product.setDescription(productDto.getDescription());
-        // imageUrl đã được set trong productDto ở bước upload ảnh (nếu có)
+
         if (productDto.getImageUrl() != null) {
             product.setImageUrl(productDto.getImageUrl());
         }
 
+        product.setPrice(java.math.BigDecimal.ZERO);
         product.setStockQuantity(0);
         product.setStatus(ProductStatus.OUT_OF_STOCK);
 
-        log.info("New product will be created with stockQuantity=0 and status=OUT_OF_STOCK. " +
-                "Use ImportOrder to add stock to inventory.");
+        log.info("New product will be created with price=0, stockQuantity=0 and status=OUT_OF_STOCK. " +
+                "Use ImportOrder to add stock and update price.");
 
-        // Lưu vào DB
         Product savedProduct = productRepository.save(product);
         log.info("Product created successfully with ID: {}, Stock: {}, Status: {}",
                 savedProduct.getIdProduct(), savedProduct.getStockQuantity(), savedProduct.getStatus());
 
-        // Fetch lại với JOIN FETCH để có đầy đủ thông tin category và supplier
         Product productWithDetails = productRepository.findByIdWithDetails(savedProduct.getIdProduct())
                 .orElse(savedProduct);
 
@@ -154,7 +154,6 @@ public class ProductServiceImpl implements ProductService {
             product.setCodeType(productDto.getCodeType());
         }
 
-
         if (productDto.getProductCode() != null && !productDto.getProductCode().equals(product.getProductCode())) {
             ProductCodeValidator.validate(productDto.getProductCode(), product.getCodeType());
 
@@ -172,17 +171,19 @@ public class ProductServiceImpl implements ProductService {
         }
 
         if (productDto.getIdCategory() != null &&
-            !productDto.getIdCategory().equals(product.getCategory().getIdCategory())) {
+                !productDto.getIdCategory().equals(product.getCategory().getIdCategory())) {
             Category category = categoryRepository.findById(productDto.getIdCategory())
-                    .orElseThrow(() -> new EntityNotFoundException("Danh mục không tồn tại với ID: " + productDto.getIdCategory()));
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Danh mục không tồn tại với ID: " + productDto.getIdCategory()));
             product.setCategory(category);
         }
 
         if (productDto.getIdSupplier() != null) {
             if (product.getSupplier() == null ||
-                !productDto.getIdSupplier().equals(product.getSupplier().getIdSupplier())) {
+                    !productDto.getIdSupplier().equals(product.getSupplier().getIdSupplier())) {
                 Supplier supplier = supplierRepository.findById(productDto.getIdSupplier())
-                        .orElseThrow(() -> new EntityNotFoundException("Nhà cung cấp không tồn tại với ID: " + productDto.getIdSupplier()));
+                        .orElseThrow(() -> new EntityNotFoundException(
+                                "Nhà cung cấp không tồn tại với ID: " + productDto.getIdSupplier()));
                 product.setSupplier(supplier);
             }
         }
@@ -201,7 +202,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         if (productDto.getStockQuantity() != null &&
-            !productDto.getStockQuantity().equals(product.getStockQuantity())) {
+                !productDto.getStockQuantity().equals(product.getStockQuantity())) {
             log.warn("Attempted to update stockQuantity from DTO (productId={}, oldStock={}, attemptedStock={}). " +
                     "This operation is ignored. Use ImportOrder or InventoryTransaction to update stock.",
                     id, product.getStockQuantity(), productDto.getStockQuantity());
@@ -331,21 +332,22 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public PageResponse<ProductDTO> searchProducts(String productCode, String productName,
-                                                   Integer idCategory, String brand,
-                                                   Double minPrice, Double maxPrice,
-                                                   String inventoryStatus,
-                                                   Pageable pageable) {
-        String normalizedCode = (productCode == null || productCode.trim().isEmpty()) ? null : productCode.trim();
-        String normalizedName = (productName == null || productName.trim().isEmpty()) ? null : productName.trim();
+    public PageResponse<ProductDTO> searchProducts(String keyword,
+            Integer idCategory, String brand,
+            Double minPrice, Double maxPrice,
+            String inventoryStatus,
+            Pageable pageable) {
+        String normalizedKeyword = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
         String normalizedBrand = (brand == null || brand.trim().isEmpty()) ? null : brand.trim();
-        String normalizedInventoryStatus = (inventoryStatus == null || inventoryStatus.trim().isEmpty()) ? null : inventoryStatus.trim();
+        String normalizedInventoryStatus = (inventoryStatus == null || inventoryStatus.trim().isEmpty()) ? null
+                : inventoryStatus.trim();
 
         if (normalizedInventoryStatus != null) {
             try {
                 com.storemanagement.utils.InventoryStatusFilter.valueOf(normalizedInventoryStatus);
             } catch (IllegalArgumentException e) {
-                throw new RuntimeException("Trạng thái tồn kho không hợp lệ. Chấp nhận: COMING_SOON, IN_STOCK, OUT_OF_STOCK");
+                throw new RuntimeException(
+                        "Trạng thái tồn kho không hợp lệ. Chấp nhận: COMING_SOON, IN_STOCK, OUT_OF_STOCK");
             }
         }
 
@@ -360,8 +362,8 @@ public class ProductServiceImpl implements ProductService {
         }
 
         Page<Product> productPage = productRepository.searchProducts(
-            normalizedCode, normalizedName, idCategory, normalizedBrand, minPrice, maxPrice, normalizedInventoryStatus, pageable
-        );
+                normalizedKeyword, idCategory, normalizedBrand, minPrice, maxPrice,
+                normalizedInventoryStatus, pageable);
 
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         enrichProductDtoListWithRating(productDtos);
@@ -381,8 +383,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         Page<Product> productPage = productRepository.searchProducts(
-            null, null, null, null, minPrice, maxPrice, null, pageable
-        );
+                null, null, null, minPrice, maxPrice, null, pageable);
 
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         enrichProductDtoListWithRating(productDtos);
@@ -395,33 +396,32 @@ public class ProductServiceImpl implements ProductService {
         String normalizedStatus = (orderStatus == null || orderStatus.trim().isEmpty()) ? null : orderStatus.trim();
 
         List<Object[]> bestSellingData = productRepository.findBestSellingProductIds(
-            normalizedStatus, 5, 0
-        );
+                normalizedStatus, 5, 0);
 
         if (bestSellingData.isEmpty()) {
             return List.of();
         }
 
         List<Integer> productIds = bestSellingData.stream()
-            .map(row -> ((Number) row[0]).intValue())
-            .toList();
+                .map(row -> ((Number) row[0]).intValue())
+                .toList();
 
         List<Product> allProducts = productRepository.findAllById(productIds);
 
         java.util.Map<Integer, Product> productMap = allProducts.stream()
-            .collect(java.util.stream.Collectors.toMap(Product::getIdProduct, p -> p));
+                .collect(java.util.stream.Collectors.toMap(Product::getIdProduct, p -> p));
 
         List<Product> products = productIds.stream()
-            .map(productMap::get)
-            .filter(java.util.Objects::nonNull)
-            .toList();
+                .map(productMap::get)
+                .filter(java.util.Objects::nonNull)
+                .toList();
 
         products.forEach(p -> {
             if (p.getCategory() != null) {
-                p.getCategory().getCategoryName(); // Trigger lazy load
+                p.getCategory().getCategoryName();
             }
             if (p.getSupplier() != null) {
-                p.getSupplier().getSupplierName(); // Trigger lazy load
+                p.getSupplier().getSupplierName();
             }
         });
         List<ProductDTO> productDtos = productMapper.toDTOList(products);
@@ -439,38 +439,37 @@ public class ProductServiceImpl implements ProductService {
         int offset = pageNo * pageSize;
 
         List<Object[]> bestSellingData = productRepository.findBestSellingProductIds(
-            normalizedStatus, pageSize, offset
-        );
+                normalizedStatus, pageSize, offset);
 
         if (bestSellingData.isEmpty()) {
-            // Không có sản phẩm nào đã bán
+
             return PageResponse.<ProductDTO>builder()
-                .content(List.of())
-                .pageNo(pageNo)
-                .pageSize(pageSize)
-                .totalElements(0L)
-                .totalPages(0)
-                .isFirst(true)
-                .isLast(true)
-                .hasNext(false)
-                .hasPrevious(false)
-                .isEmpty(true)
-                .build();
+                    .content(List.of())
+                    .pageNo(pageNo)
+                    .pageSize(pageSize)
+                    .totalElements(0L)
+                    .totalPages(0)
+                    .isFirst(true)
+                    .isLast(true)
+                    .hasNext(false)
+                    .hasPrevious(false)
+                    .isEmpty(true)
+                    .build();
         }
 
         List<Integer> productIds = bestSellingData.stream()
-            .map(row -> ((Number) row[0]).intValue())
-            .toList();
+                .map(row -> ((Number) row[0]).intValue())
+                .toList();
 
         List<Product> allProducts = productRepository.findAllById(productIds);
 
         java.util.Map<Integer, Product> productMap = allProducts.stream()
-            .collect(java.util.stream.Collectors.toMap(Product::getIdProduct, p -> p));
+                .collect(java.util.stream.Collectors.toMap(Product::getIdProduct, p -> p));
 
         List<Product> products = productIds.stream()
-            .map(productMap::get)
-            .filter(java.util.Objects::nonNull)
-            .toList();
+                .map(productMap::get)
+                .filter(java.util.Objects::nonNull)
+                .toList();
 
         products.forEach(p -> {
             if (p.getCategory() != null) {
@@ -487,30 +486,29 @@ public class ProductServiceImpl implements ProductService {
         int totalPages = (int) Math.ceil((double) totalElements / pageSize);
 
         return PageResponse.<ProductDTO>builder()
-            .content(productDtos)
-            .pageNo(pageNo)
-            .pageSize(pageSize)
-            .totalElements(totalElements)
-            .totalPages(totalPages)
-            .isFirst(pageNo == 0)
-            .isLast(pageNo >= totalPages - 1)
-            .hasNext(pageNo < totalPages - 1)
-            .hasPrevious(pageNo > 0)
-            .isEmpty(productDtos.isEmpty())
-            .build();
+                .content(productDtos)
+                .pageNo(pageNo)
+                .pageSize(pageSize)
+                .totalElements(totalElements)
+                .totalPages(totalPages)
+                .isFirst(pageNo == 0)
+                .isLast(pageNo >= totalPages - 1)
+                .hasNext(pageNo < totalPages - 1)
+                .hasPrevious(pageNo > 0)
+                .isEmpty(productDtos.isEmpty())
+                .build();
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ProductDTO> getNewProducts(Pageable pageable, Integer limit) {
-        // Nếu có limit, tạo Pageable mới với limit làm pageSize
+
         Pageable queryPageable = pageable;
         if (limit != null && limit > 0) {
             queryPageable = org.springframework.data.domain.PageRequest.of(
-                pageable.getPageNumber(),
-                Math.min(limit, pageable.getPageSize()),
-                pageable.getSort()
-            );
+                    pageable.getPageNumber(),
+                    Math.min(limit, pageable.getPageSize()),
+                    pageable.getSort());
         }
 
         Page<Product> productPage = productRepository.findNewProductsByStatus(queryPageable);
@@ -520,17 +518,17 @@ public class ProductServiceImpl implements ProductService {
         if (limit != null && limit > 0 && productDtos.size() > limit) {
             List<ProductDTO> limitedDtos = productDtos.subList(0, limit);
             return PageResponse.<ProductDTO>builder()
-                .content(limitedDtos)
-                .pageNo(pageable.getPageNumber())
-                .pageSize(pageable.getPageSize())
-                .totalElements((long) limitedDtos.size())
-                .totalPages(1)
-                .isFirst(true)
-                .isLast(true)
-                .hasNext(false)
-                .hasPrevious(false)
-                .isEmpty(false)
-                .build();
+                    .content(limitedDtos)
+                    .pageNo(pageable.getPageNumber())
+                    .pageSize(pageable.getPageSize())
+                    .totalElements((long) limitedDtos.size())
+                    .totalPages(1)
+                    .isFirst(true)
+                    .isLast(true)
+                    .hasNext(false)
+                    .hasPrevious(false)
+                    .isEmpty(false)
+                    .build();
         }
 
         return PageUtils.toPageResponse(productPage, productDtos);
@@ -540,7 +538,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public List<ProductDTO> getRelatedProducts(Integer productId, Integer limit) {
         Product currentProduct = productRepository.findById(productId)
-            .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + productId));
+                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + productId));
 
         if (currentProduct.getCategory() == null) {
             return List.of();
@@ -552,8 +550,7 @@ public class ProductServiceImpl implements ProductService {
         Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limitValue);
 
         List<Product> relatedProducts = productRepository.findByCategoryIdAndStatusAndIdProductNot(
-            categoryId, productId, pageable
-        );
+                categoryId, productId, pageable);
         List<ProductDTO> productDtos = productMapper.toDTOList(relatedProducts);
         enrichProductDtoListWithRating(productDtos);
         return productDtos;
@@ -563,11 +560,11 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public List<String> getAllBrands() {
         List<String> brands = productRepository.findDistinctBrandsByStatus();
-        // Filter và sort để đảm bảo không có null hoặc empty
+
         return brands.stream()
-            .filter(brand -> brand != null && !brand.trim().isEmpty())
-            .sorted()
-            .toList();
+                .filter(brand -> brand != null && !brand.trim().isEmpty())
+                .sorted()
+                .toList();
     }
 
     @Override
@@ -576,15 +573,13 @@ public class ProductServiceImpl implements ProductService {
         if (productIds == null || productIds.isEmpty()) {
             return List.of();
         }
-        
-        // Convert Long to Integer for product IDs
+
         List<Integer> intIds = productIds.stream()
-            .map(Long::intValue)
-            .toList();
-        
+                .map(Long::intValue)
+                .toList();
+
         List<Product> products = productRepository.findAllById(intIds);
-        
-        // Trigger lazy loading for category and supplier
+
         products.forEach(p -> {
             if (p.getCategory() != null) {
                 p.getCategory().getCategoryName();
@@ -593,17 +588,15 @@ public class ProductServiceImpl implements ProductService {
                 p.getSupplier().getSupplierName();
             }
         });
-        
-        // Tạo map để giữ thứ tự theo productIds
+
         Map<Integer, Product> productMap = products.stream()
-            .collect(java.util.stream.Collectors.toMap(Product::getIdProduct, p -> p));
-        
-        // Sắp xếp lại theo thứ tự trong productIds
+                .collect(java.util.stream.Collectors.toMap(Product::getIdProduct, p -> p));
+
         List<Product> orderedProducts = intIds.stream()
-            .map(productMap::get)
-            .filter(Objects::nonNull)
-            .toList();
-        
+                .map(productMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+
         return productMapper.toDTOList(orderedProducts);
     }
 

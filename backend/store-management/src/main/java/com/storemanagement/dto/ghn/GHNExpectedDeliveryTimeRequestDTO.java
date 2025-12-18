@@ -11,16 +11,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class GHNExpectedDeliveryTimeRequestDTO {
-    
+
     @JsonProperty("from_district_id")
     private Integer fromDistrictId;
-    
+
     @JsonProperty("to_district_id")
     private Integer toDistrictId;
-    
+
     @JsonProperty("to_ward_code")
     private String toWardCode;
-    
+
     @JsonProperty("service_id")
     private Integer serviceId;
 }

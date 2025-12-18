@@ -92,11 +92,11 @@ const ImportOrderDetail = () => {
     },
     {
       title: "Giá nhập",
-      dataIndex: "price",
-      key: "price",
+      dataIndex: "importPrice",
+      key: "importPrice",
       width: 150,
-      render: (price) => (
-        <Text>{price ? `${Number(price).toLocaleString("vi-VN")} VNĐ` : "0 VNĐ"}</Text>
+      render: (importPrice) => (
+        <Text>{importPrice ? `${Number(importPrice).toLocaleString("vi-VN")} VNĐ` : "0 VNĐ"}</Text>
       ),
     },
     {
@@ -104,9 +104,8 @@ const ImportOrderDetail = () => {
       key: "subtotal",
       width: 150,
       render: (record) => {
-        const quantity = record.quantity || 0;
-        const price = record.price || 0;
-        const subtotal = quantity * price;
+        // Ưu tiên sử dụng subtotal từ API, nếu không có thì tính từ quantity * importPrice
+        const subtotal = record.subtotal || (record.quantity || 0) * (record.importPrice || 0);
         return <Text strong>{Number(subtotal).toLocaleString("vi-VN")} VNĐ</Text>;
       },
     },
@@ -177,8 +176,9 @@ const ImportOrderDetail = () => {
           rowKey={(record, index) => record.idProduct || index}
           pagination={false}
           summary={(pageData) => {
+            // Sử dụng subtotal từ API hoặc tính từ quantity * importPrice
             const total = pageData.reduce(
-              (sum, record) => sum + (record.quantity || 0) * (record.price || 0),
+              (sum, record) => sum + (record.subtotal || (record.quantity || 0) * (record.importPrice || 0)),
               0
             );
             return (

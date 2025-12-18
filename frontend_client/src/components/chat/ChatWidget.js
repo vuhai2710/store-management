@@ -1,4 +1,4 @@
-// src/components/chat/ChatWidget.js
+
 import React, { useState, useEffect, useRef } from "react";
 import { MessageCircle, X, Send, Minimize2, Maximize2 } from "lucide-react";
 import { chatService } from "../../services/chatService";
@@ -26,46 +26,112 @@ const ChatWidget = () => {
   const messagesContainerRef = useRef(null);
   const conversationIdRef = useRef(null);
   const stompClientRef = useRef(null);
+  const connectingRef = useRef(false);
+  const connectedRef = useRef(false);
 
-  // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
-      // Use instant scroll without smooth animation
+
       messagesEndRef.current.scrollIntoView({ behavior: "auto" });
     }
   };
 
   useEffect(() => {
     if (messages.length > 0) {
-      // Small delay to ensure DOM is updated
+
       setTimeout(() => {
         scrollToBottom();
       }, 100);
     }
   }, [messages]);
 
-  // Initialize conversation when authenticated and widget is opened
+  const messagesLoadedRef = useRef(false);
+
   useEffect(() => {
-    if (isAuthenticated && isOpen && !conversation) {
-      initializeConversation();
+    if (!isOpen) {
+      messagesLoadedRef.current = false;
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isAuthenticated && isOpen) {
+      console.log("[ChatWidget] Widget opened, conversation:", conversation ? "exists" : "null");
+      if (!conversation) {
+
+        console.log("[ChatWidget] No conversation, calling initializeConversation");
+        initializeConversation();
+      } else {
+
+        const convId = conversation.idConversation || conversation.id;
+        console.log("[ChatWidget] Conversation exists, convId:", convId, "messagesLoaded:", messagesLoadedRef.current);
+
+        if (convId && !messagesLoadedRef.current) {
+          console.log("[ChatWidget] Loading messages for conversation:", convId);
+          messagesLoadedRef.current = true;
+          loadMessages(convId);
+        }
+
+        chatService
+          .markConversationAsViewed(convId)
+          .then(() => {
+            console.log("[ChatWidget] Conversation marked as viewed");
+            setUnreadCount(0);
+          })
+          .catch((err) => {
+            console.error("[ChatWidget] Error marking as viewed:", err);
+          });
+      }
     }
 
-    // Mark conversation as viewed when opening widget
-    if (isAuthenticated && isOpen && conversation) {
-      chatService
-        .markConversationAsViewed(
-          conversation.idConversation || conversation.id
-        )
-        .then(() => {
-          console.log("[ChatWidget] Conversation marked as viewed");
-        })
-        .catch((err) => {
-          console.error("[ChatWidget] Error marking as viewed:", err);
-        });
-    }
   }, [isAuthenticated, isOpen, conversation]);
 
-  // Cleanup when user logs out
+  useEffect(() => {
+    if (isAuthenticated && customer) {
+
+      initializeEarlyConversation();
+    }
+
+  }, [isAuthenticated, customer]);
+
+  const initializeEarlyConversation = async () => {
+
+    if (connectingRef.current || connectedRef.current) {
+      console.log("[ChatWidget] Already connecting or connected, skipping early init");
+      return;
+    }
+
+    try {
+      console.log("[ChatWidget] Early initialization - getting conversation for WebSocket subscription");
+
+      let conversationData = null;
+      try {
+        conversationData = await chatService.getMyConversation();
+      } catch (err) {
+
+        try {
+          conversationData = await chatService.createConversation();
+        } catch (createErr) {
+          console.error("[ChatWidget] Could not get/create conversation:", createErr);
+          return;
+        }
+      }
+
+      if (conversationData) {
+        const convId = conversationData?.idConversation || conversationData?.id;
+        conversationIdRef.current = convId;
+        setConversation(conversationData);
+
+        if (!stompClientRef.current && !connectingRef.current && !connectedRef.current) {
+          connectWebSocket(convId);
+        }
+
+        console.log("[ChatWidget] Early initialization complete, connected to conversation:", convId);
+      }
+    } catch (error) {
+      console.error("[ChatWidget] Early initialization error:", error);
+    }
+  };
+
   useEffect(() => {
     if (!isAuthenticated) {
       disconnectWebSocket();
@@ -75,10 +141,10 @@ const ChatWidget = () => {
       setError("");
       setIsOpen(false);
       setIsMinimized(false);
+      setUnreadCount(0);
     }
   }, [isAuthenticated]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (stompClientRef.current) {
@@ -93,21 +159,32 @@ const ChatWidget = () => {
     };
   }, []);
 
-  // Initialize conversation
   const initializeConversation = async () => {
     try {
       setLoading(true);
       setError("");
 
-      // Disconnect existing WebSocket if any
-      disconnectWebSocket();
+      if (conversation && conversationIdRef.current) {
+        const convId = conversation.idConversation || conversation.id;
+        await loadMessages(convId);
 
-      // Get or create conversation
+        if (!stompClientRef.current || !connected) {
+          connectWebSocket(convId);
+        }
+
+        chatService
+          .markConversationAsViewed(convId)
+          .catch((err) =>
+            console.error("Error marking conversation as viewed:", err)
+          );
+        return;
+      }
+
       let conversationData = null;
       try {
         conversationData = await chatService.getMyConversation();
       } catch (err) {
-        // Fallback: create conversation if not found or backend error
+
         conversationData = await chatService.createConversation();
       }
 
@@ -115,12 +192,13 @@ const ChatWidget = () => {
       const convId = conversationData?.idConversation || conversationData?.id;
       conversationIdRef.current = convId;
 
-      // Load messages
       if (convId) {
         await loadMessages(convId);
-        // Connect to WebSocket
-        connectWebSocket(convId);
-        // Mark conversation as viewed
+
+        if (!stompClientRef.current || !connected) {
+          connectWebSocket(convId);
+        }
+
         chatService
           .markConversationAsViewed(convId)
           .catch((err) =>
@@ -135,11 +213,10 @@ const ChatWidget = () => {
     }
   };
 
-  // Helper to parse dd/MM/yyyy HH:mm:ss format
   const parseVietnameseDate = (dateString) => {
     if (!dateString) return null;
     try {
-      // Format: "13/11/2025 19:25:46"
+
       const parts = dateString.split(" ");
       if (parts.length !== 2) return null;
 
@@ -153,20 +230,18 @@ const ChatWidget = () => {
     }
   };
 
-  // Load messages
   const loadMessages = async (conversationId) => {
     try {
       const messagesData = await chatService.getConversationMessages(
         conversationId,
         {
           pageNo: 1,
-          pageSize: 50,
+          pageSize: 200,
         }
       );
       const msgs = messagesData?.content || [];
       setMessages(msgs);
 
-      // Find the most recent employee/admin message to get support agent name
       const supportMsg = [...msgs]
         .reverse()
         .find((m) => m.senderType === "EMPLOYEE" || m.senderType === "ADMIN");
@@ -179,7 +254,6 @@ const ChatWidget = () => {
     }
   };
 
-  // Disconnect WebSocket
   const disconnectWebSocket = () => {
     if (stompClientRef.current) {
       try {
@@ -188,45 +262,55 @@ const ChatWidget = () => {
         console.error("Error disconnecting WebSocket:", error);
       } finally {
         stompClientRef.current = null;
+        connectingRef.current = false;
+        connectedRef.current = false;
         setConnected(false);
       }
     }
   };
 
-  // Connect to WebSocket
   const connectWebSocket = (conversationId) => {
+
+    if (connectingRef.current || connectedRef.current) {
+      console.log("[ChatWidget] Already connecting or connected, skipping");
+      return;
+    }
+
     try {
-      // Get token
+      connectingRef.current = true;
+
       const token = authService.getToken();
       if (!token) {
         console.error("No token found for WebSocket connection");
         setError("Vui lòng đăng nhập để sử dụng chat.");
+        connectingRef.current = false;
         return;
       }
 
-      // Create SockJS connection with token in query parameter
-      // Backend supports token via query parameter or STOMP header
+      console.log("[ChatWidget] Connecting to WebSocket for conversation:", conversationId);
+
       const socket = new SockJS(`${WS_URL}?token=${encodeURIComponent(token)}`);
       const client = new Client({
         webSocketFactory: () => socket,
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
-        // Also send token in STOMP connect headers as fallback
+
         connectHeaders: {
           Authorization: `Bearer ${token}`,
         },
         onConnect: (frame) => {
-          console.log("WebSocket connected", frame);
+          console.log("[ChatWidget] WebSocket connected", frame);
+          connectingRef.current = false;
+          connectedRef.current = true;
           setConnected(true);
           setError("");
 
-          // Subscribe to conversation messages
           client.subscribe(`/topic/chat.${conversationId}`, (message) => {
             try {
               const messageData = JSON.parse(message.body);
+              console.log("[ChatWidget] Received message via WebSocket:", messageData);
 
-              // Update support agent name if message is from EMPLOYEE or ADMIN
               if (
                 (messageData.senderType === "EMPLOYEE" ||
                   messageData.senderType === "ADMIN") &&
@@ -235,14 +319,13 @@ const ChatWidget = () => {
                 setSupportAgentName(messageData.senderName);
               }
 
-              // Increment unread count if message is from EMPLOYEE/ADMIN and widget is closed
               const userId = customer?.idUser || user?.idUser;
               if (
                 (messageData.senderType === "EMPLOYEE" ||
                   messageData.senderType === "ADMIN") &&
                 messageData.senderId !== userId
               ) {
-                // Only increment if widget is completely closed (not just minimized)
+
                 setIsOpen((currentIsOpen) => {
                   if (!currentIsOpen) {
                     setUnreadCount((prev) => prev + 1);
@@ -252,7 +335,7 @@ const ChatWidget = () => {
               }
 
               setMessages((prev) => {
-                // Check if message already exists to avoid duplicates
+
                 const exists = prev.some(
                   (m) => m.idMessage === messageData.idMessage
                 );
@@ -266,19 +349,27 @@ const ChatWidget = () => {
         },
         onStompError: (frame) => {
           console.error("STOMP error:", frame);
+          connectingRef.current = false;
+          connectedRef.current = false;
           setConnected(false);
           setError("Lỗi kết nối chat. Vui lòng thử lại.");
         },
         onWebSocketClose: () => {
           console.log("WebSocket closed");
+          connectingRef.current = false;
+          connectedRef.current = false;
           setConnected(false);
         },
         onDisconnect: () => {
           console.log("WebSocket disconnected");
+          connectingRef.current = false;
+          connectedRef.current = false;
           setConnected(false);
         },
         onWebSocketError: (event) => {
           console.error("WebSocket error:", event);
+          connectingRef.current = false;
+          connectedRef.current = false;
           setError("Không thể kết nối chat. Vui lòng thử lại sau.");
         },
       });
@@ -287,15 +378,25 @@ const ChatWidget = () => {
       stompClientRef.current = client;
     } catch (error) {
       console.error("Error connecting to WebSocket:", error);
+      connectingRef.current = false;
+      connectedRef.current = false;
       setError("Không thể kết nối chat. Vui lòng thử lại sau.");
     }
   };
 
-  // Send message
   const sendMessage = async (e) => {
     e.preventDefault();
 
-    if (!newMessage.trim() || !stompClientRef.current || !connected) {
+    if (!newMessage.trim()) {
+      return;
+    }
+
+    if (!stompClientRef.current || !connectedRef.current) {
+      console.log("[ChatWidget] Cannot send - not connected", {
+        hasClient: !!stompClientRef.current,
+        connected: connectedRef.current
+      });
+      setError("Chưa kết nối. Vui lòng đợi...");
       return;
     }
 
@@ -305,8 +406,7 @@ const ChatWidget = () => {
     }
 
     try {
-      // Backend expects senderId to be idUser (from JWT token), not idCustomer
-      // CustomerDTO contains idUser field
+
       const userId = customer?.idUser || user?.idUser;
 
       console.log("[ChatWidget] Sending message:", {
@@ -334,13 +434,11 @@ const ChatWidget = () => {
 
       console.log("[ChatWidget] Message data to send:", messageData);
 
-      // Send message via WebSocket
       stompClientRef.current.publish({
         destination: "/app/chat.send",
         body: JSON.stringify(messageData),
       });
 
-      // Clear input
       setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
@@ -348,38 +446,34 @@ const ChatWidget = () => {
     }
   };
 
-  // Toggle widget
   const toggleWidget = () => {
     if (isOpen) {
-      // Close widget: disconnect WebSocket and reset state
-      disconnectWebSocket();
-      setConversation(null);
+
       setMessages([]);
       setNewMessage("");
       setError("");
       setIsOpen(false);
       setIsMinimized(false);
+
     } else {
-      // Open widget: will initialize conversation via useEffect
+
       setIsOpen(true);
       setIsMinimized(false);
-      setUnreadCount(0); // Reset unread count when opening
+      setUnreadCount(0);
     }
   };
 
-  // Toggle minimize
   const toggleMinimize = () => {
     setIsMinimized(!isMinimized);
   };
 
-  // Don't render if not authenticated
   if (!isAuthenticated) {
     return null;
   }
 
   return (
     <>
-      {/* Chat Button (Bottom Right) */}
+      {}
       {!isOpen && (
         <div
           style={{
@@ -391,11 +485,12 @@ const ChatWidget = () => {
           <div style={{ position: "relative", display: "inline-block" }}>
             <button
               onClick={toggleWidget}
+              aria-label="Mở chat hỗ trợ"
               style={{
                 width: "60px",
                 height: "60px",
                 borderRadius: "50%",
-                backgroundColor: "#007bff",
+                backgroundColor: "#2563EB",
                 color: "white",
                 border: "none",
                 cursor: "pointer",
@@ -443,7 +538,7 @@ const ChatWidget = () => {
         </div>
       )}
 
-      {/* Chat Widget (Bottom Right) */}
+      {}
       {isOpen && (
         <div
           style={{
@@ -457,17 +552,17 @@ const ChatWidget = () => {
             backgroundColor: "white",
             borderRadius: "0.5rem",
             boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-            border: "1px solid #dee2e6",
+            border: "1px solid #E2E8F0",
             display: "flex",
             flexDirection: "column",
             zIndex: 1001,
             transition: "all 0.3s",
           }}>
-          {/* Header */}
+          {}
           <div
             style={{
               padding: "1rem",
-              backgroundColor: "#007bff",
+              backgroundColor: "#2563EB",
               color: "white",
               borderRadius: "0.5rem 0.5rem 0 0",
               display: "flex",
@@ -531,15 +626,15 @@ const ChatWidget = () => {
             </div>
           </div>
 
-          {/* Chat Content */}
+          {}
           {!isMinimized && (
             <>
-              {/* Chat Header - Hiển thị đang chat với ai */}
+              {}
               <div
                 style={{
                   padding: "0.75rem 1rem",
                   backgroundColor: "#e9ecef",
-                  borderBottom: "1px solid #dee2e6",
+                  borderBottom: "1px solid #E2E8F0",
                   fontSize: "0.875rem",
                   fontWeight: "500",
                   color: "#495057",
@@ -555,18 +650,17 @@ const ChatWidget = () => {
                 )}
               </div>
 
-              {/* Messages */}
+              {}
               <div
                 ref={messagesContainerRef}
                 onWheel={(e) => {
-                  // Prevent scroll propagation to parent page
+
                   const container = e.currentTarget;
                   const { scrollTop, scrollHeight, clientHeight } = container;
                   const isAtTop = scrollTop === 0;
                   const isAtBottom =
                     Math.abs(scrollHeight - clientHeight - scrollTop) < 1;
 
-                  // Only allow propagation if scrolling beyond boundaries
                   const scrollingUp = e.deltaY < 0;
                   const scrollingDown = e.deltaY > 0;
 
@@ -574,13 +668,15 @@ const ChatWidget = () => {
                     (isAtTop && scrollingUp) ||
                     (isAtBottom && scrollingDown)
                   ) {
-                    // Allow propagation when at boundaries
+
                     return;
                   }
 
-                  // Stop propagation when scrolling within content
                   e.stopPropagation();
                 }}
+                role="log"
+                aria-live="polite"
+                aria-relevant="additions text"
                 style={{
                   flex: 1,
                   overflowY: "auto",
@@ -589,7 +685,7 @@ const ChatWidget = () => {
                   display: "flex",
                   flexDirection: "column",
                   gap: "0.75rem",
-                  backgroundColor: "#f8f9fa",
+                  backgroundColor: "#F8FAFC",
                   maxHeight: "100%",
                   position: "relative",
                 }}>
@@ -637,18 +733,17 @@ const ChatWidget = () => {
                   const userId = customer?.idUser || user?.idUser;
                   const isMyMessage = isCustomer && message.senderId === userId;
 
-                  // Helper function để render nội dung tin nhắn (hỗ trợ link và ảnh)
                   const renderMessageContent = (text) => {
-                    // Regex để detect URL
+
                     const urlRegex = /(https?:\/\/[^\s]+)/g;
-                    // Regex để detect URL ảnh
+
                     const imageRegex = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i;
 
                     const parts = text.split(urlRegex);
 
                     return parts.map((part, i) => {
                       if (urlRegex.test(part)) {
-                        // Nếu là URL ảnh, hiển thị ảnh
+
                         if (imageRegex.test(part)) {
                           return (
                             <div key={i} style={{ marginTop: "0.5rem" }}>
@@ -666,7 +761,7 @@ const ChatWidget = () => {
                             </div>
                           );
                         }
-                        // Nếu là link thường, hiển thị link
+
                         return (
                           <a
                             key={i}
@@ -674,7 +769,7 @@ const ChatWidget = () => {
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                              color: isMyMessage ? "#fff" : "#007bff",
+                              color: isMyMessage ? "#fff" : "#2563EB",
                               textDecoration: "underline",
                               wordBreak: "break-all",
                             }}>
@@ -686,7 +781,6 @@ const ChatWidget = () => {
                     });
                   };
 
-                  // Format thời gian
                   const formatTime = (dateString) => {
                     if (!dateString) return "";
                     try {
@@ -714,7 +808,7 @@ const ChatWidget = () => {
                           maxWidth: "70%",
                           padding: "0.75rem 1rem",
                           borderRadius: "0.5rem",
-                          backgroundColor: isMyMessage ? "#007bff" : "white",
+                          backgroundColor: isMyMessage ? "#2563EB" : "white",
                           color: isMyMessage ? "white" : "#495057",
                           boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
                         }}>
@@ -762,12 +856,12 @@ const ChatWidget = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message Input */}
+              {}
               <form
                 onSubmit={sendMessage}
                 style={{
                   padding: "1rem",
-                  borderTop: "1px solid #dee2e6",
+                  borderTop: "1px solid #E2E8F0",
                   display: "flex",
                   gap: "0.5rem",
                 }}>
@@ -775,15 +869,24 @@ const ChatWidget = () => {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Nhập tin nhắn..."
-                  disabled={!connected}
+                  placeholder={connected ? "Nhập tin nhắn..." : "Đang kết nối..."}
+                  aria-label="Nội dung tin nhắn"
                   style={{
                     flex: 1,
                     padding: "0.75rem",
-                    border: "1px solid #dee2e6",
+                    border: "1px solid #E2E8F0",
                     borderRadius: "0.5rem",
                     fontSize: "0.875rem",
                     outline: "none",
+                    backgroundColor: "#fff",
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "#2563EB";
+                    e.target.style.boxShadow = "0 0 0 2px rgba(37, 99, 235, 0.2)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "#E2E8F0";
+                    e.target.style.boxShadow = "none";
                   }}
                 />
                 <button
@@ -792,7 +895,7 @@ const ChatWidget = () => {
                   style={{
                     padding: "0.75rem 1rem",
                     backgroundColor:
-                      connected && newMessage.trim() ? "#007bff" : "#6c757d",
+                      connected && newMessage.trim() ? "#2563EB" : "#6c757d",
                     color: "white",
                     border: "none",
                     borderRadius: "0.5rem",
@@ -804,7 +907,8 @@ const ChatWidget = () => {
                     alignItems: "center",
                     justifyContent: "center",
                     opacity: connected && newMessage.trim() ? 1 : 0.6,
-                  }}>
+                  }}
+                  aria-label="Gửi tin nhắn">
                   <Send size={18} />
                 </button>
               </form>

@@ -12,6 +12,7 @@ import {
   Form,
   Input,
   Upload,
+  Typography,
 } from "antd";
 import {
   UserOutlined,
@@ -30,6 +31,8 @@ import { customersService } from "../services/customersService";
 import { setUser } from "../store/slices/authSlice";
 import { USER_ROLES } from "../constants/roles";
 
+const { Title, Text } = Typography;
+
 const Profile = () => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
@@ -46,11 +49,10 @@ const Profile = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      // Lấy thông tin user cơ bản
+
       const userData = await authService.getCurrentUser();
       console.log("User data:", userData);
-      
-      // Nếu là EMPLOYEE hoặc CUSTOMER, lấy thêm thông tin chi tiết
+
       let detailedData = null;
       if (userData.role === USER_ROLES.EMPLOYEE) {
         try {
@@ -67,8 +69,7 @@ const Profile = () => {
           console.warn("Could not fetch customer details:", err);
         }
       }
-      
-      // Merge user data với detailed data
+
       setProfile({
         ...userData,
         ...(detailedData || {}),
@@ -112,8 +113,7 @@ const Profile = () => {
     const formValues = {
       email: profile?.email,
     };
-    
-    // Thêm các trường theo role
+
     if (role === USER_ROLES.EMPLOYEE) {
       formValues.employeeName = profile?.employeeName;
       formValues.phoneNumber = profile?.phoneNumber;
@@ -123,7 +123,7 @@ const Profile = () => {
       formValues.phoneNumber = profile?.phoneNumber || profile?.phone;
       formValues.address = profile?.address;
     }
-    
+
     form.setFieldsValue(formValues);
     setIsEditModalVisible(true);
   };
@@ -133,9 +133,8 @@ const Profile = () => {
       const role = profile?.role;
       let response = null;
 
-      // Gọi đúng API theo role
       if (role === USER_ROLES.ADMIN) {
-        // ADMIN: PUT /api/v1/users/{id}
+
         if (!profile?.idUser) {
           message.error("Không tìm thấy thông tin người dùng");
           return;
@@ -144,31 +143,30 @@ const Profile = () => {
           email: values.email,
         });
       } else if (role === USER_ROLES.EMPLOYEE) {
-        // EMPLOYEE: PUT /api/v1/employees/me
+
         response = await employeesService.updateMyProfile({
           employeeName: values.employeeName,
           phoneNumber: values.phoneNumber,
           address: values.address,
-          // Note: Email không được phép cập nhật cho EMPLOYEE
+
         });
       } else if (role === USER_ROLES.CUSTOMER) {
-        // CUSTOMER: PUT /api/v1/customers/me
+
         response = await customersService.updateMyCustomerInfo({
           customerName: values.customerName,
           phoneNumber: values.phoneNumber,
           address: values.address,
-          // Note: Email không được phép cập nhật cho CUSTOMER
+
         });
       } else {
         message.error("Không xác định được vai trò người dùng");
         return;
       }
 
-      // Update user in Redux store (nếu response có user data)
       if (response?.data) {
-        // Nếu response có user data, update Redux
+
         const updatedUser = response.data;
-        // Merge với user data hiện tại
+
         dispatch(setUser({
           ...profile,
           ...updatedUser,
@@ -206,19 +204,19 @@ const Profile = () => {
   const handleAvatarUpload = async (file) => {
     try {
       const response = await authService.updateAvatar(file);
-      // API interceptor đã unwrap response.data.data thành response.data
+
       const updatedUser = response?.data || response;
       if (updatedUser) {
-        // Update Redux state
+
         dispatch(setUser(updatedUser));
-        // Update localStorage
+
         localStorage.setItem('user', JSON.stringify(updatedUser));
-        // Refresh profile
+
         await fetchProfile();
         message.success('Cập nhật ảnh đại diện thành công!');
         setIsAvatarModalVisible(false);
       }
-      return false; // Prevent default upload
+      return false;
     } catch (error) {
       message.error(error?.response?.data?.message || 'Cập nhật ảnh đại diện thất bại!');
       return false;
@@ -227,7 +225,14 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "100px 0" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: 260,
+        }}
+      >
         <Spin size="large" />
       </div>
     );
@@ -235,30 +240,75 @@ const Profile = () => {
 
   if (!profile) {
     return (
-      <Card>
-        <p>Không tìm thấy thông tin người dùng</p>
-      </Card>
+      <div style={{ padding: "8px 0" }}>
+        <Card
+          style={{
+            borderRadius: 12,
+            border: "1px solid #E2E8F0",
+            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+          }}
+        >
+          <Text>Không tìm thấy thông tin người dùng</Text>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <div style={{ padding: "24px" }}>
+    <div style={{ padding: "8px 0" }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <Title
+            level={2}
+            style={{
+              marginBottom: 4,
+              fontWeight: 700,
+              color: "#0F172A",
+            }}
+          >
+            Thông tin cá nhân
+          </Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>
+            Xem và cập nhật hồ sơ tài khoản của bạn tại TechStore
+          </Text>
+        </div>
+        <Button
+          type="primary"
+          icon={<EditOutlined />}
+          onClick={handleEdit}
+          style={{
+            borderRadius: 9999,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          Chỉnh sửa
+        </Button>
+      </div>
+
       <Card
-        title={
-          <Space>
-            <UserOutlined />
-            <span>Thông tin cá nhân</span>
-          </Space>
-        }
-        extra={
-          <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
-            Chỉnh sửa
-          </Button>
-        }>
+        style={{
+          borderRadius: 12,
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+          background: "#FFFFFF",
+        }}
+        bodyStyle={{ padding: 24 }}
+      >
         <div style={{ display: "flex", gap: "24px", marginBottom: "24px" }}>
           <div style={{ position: 'relative', cursor: 'pointer' }} onClick={handleAvatarClick}>
-            <Avatar 
-              size={120} 
+            <Avatar
+              size={120}
               icon={<UserOutlined />}
               src={getAvatarUrl()}
               style={{ border: '2px solid #1890ff' }}
@@ -329,7 +379,7 @@ const Profile = () => {
         </div>
       </Card>
 
-      {/* Edit Modal */}
+      { }
       <Modal
         title="Chỉnh sửa thông tin"
         open={isEditModalVisible}
@@ -413,7 +463,7 @@ const Profile = () => {
         </Form>
       </Modal>
 
-      {/* View Avatar Modal */}
+      { }
       <Modal
         title="Ảnh đại diện"
         open={isViewAvatarModalVisible}
@@ -432,9 +482,9 @@ const Profile = () => {
         width={400}
       >
         {getAvatarUrl() ? (
-          <img 
-            src={getAvatarUrl()} 
-            alt="Avatar" 
+          <img
+            src={getAvatarUrl()}
+            alt="Avatar"
             style={{ width: '100%', height: 'auto' }}
           />
         ) : (
@@ -445,7 +495,7 @@ const Profile = () => {
         )}
       </Modal>
 
-      {/* Edit Avatar Modal */}
+      { }
       <Modal
         title="Sửa ảnh đại diện"
         open={isAvatarModalVisible}
@@ -464,9 +514,9 @@ const Profile = () => {
         {getAvatarUrl() && (
           <div style={{ marginTop: 16, textAlign: 'center' }}>
             <p>Ảnh hiện tại:</p>
-            <img 
-              src={getAvatarUrl()} 
-              alt="Current Avatar" 
+            <img
+              src={getAvatarUrl()}
+              alt="Current Avatar"
               style={{ maxWidth: '200px', maxHeight: '200px', marginTop: 8 }}
             />
           </div>

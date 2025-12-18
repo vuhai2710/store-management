@@ -7,9 +7,13 @@ import com.storemanagement.dto.auth.RegisterDTO;
 import com.storemanagement.dto.auth.LoginDTO;
 import com.storemanagement.dto.auth.AuthenticationResponseDTO;
 import com.storemanagement.dto.user.UserDTO;
+import com.storemanagement.exception.InvalidTokenException;
+import com.storemanagement.exception.ResourceNotFoundException;
 import com.storemanagement.model.Employee;
+import com.storemanagement.model.PasswordResetToken;
 import com.storemanagement.model.User;
 import com.storemanagement.repository.EmployeeRepository;
+import com.storemanagement.repository.PasswordResetTokenRepository;
 import com.storemanagement.repository.UserRepository;
 import com.storemanagement.service.AuthenticationService;
 import com.storemanagement.service.EmailService;
@@ -19,10 +23,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 
@@ -33,13 +40,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserService userService;
     private final UserRepository userRepository;
     private final EmployeeRepository employeeRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${jwt.signerKey}")
     private String SIGNER_KEY;
 
-    // LOGIN
+    @Value("${password-reset.token-expiry-minutes:30}")
+    private int tokenExpiryMinutes;
+
+    @Value("${password-reset.admin-url:http://localhost:3000/reset-password}")
+    private String adminResetUrl;
+
+    @Value("${password-reset.client-url:http://localhost:3001/reset-password}")
+    private String clientResetUrl;
+
     public AuthenticationResponseDTO authenticate(LoginDTO request) throws JOSEException {
         User user = userService.verifyInfo(request.getUsername(), request.getPassword());
         String token = generateToken(user);
@@ -50,7 +66,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .build();
     }
 
-    // REGISTER
     public AuthenticationResponseDTO register(RegisterDTO request) throws JOSEException {
         UserDTO userDTO = userService.createCustomerUser(request);
         User user = userRepository.findById(userDTO.getIdUser())
@@ -65,24 +80,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     public String generateToken(User user) throws JOSEException {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS256);
-        
-        // Lấy employeeId nếu user là employee
+
         Optional<Integer> employeeIdOpt = Optional.empty();
         if ("EMPLOYEE".equals(user.getRole().name())) {
             employeeIdOpt = employeeRepository.findByUser_IdUser(user.getIdUser())
                     .map(Employee::getIdEmployee);
         }
-        
+
         JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
                 .issuer("store-management.com")
                 .expirationTime(Date.from(Instant.now().plus(24, ChronoUnit.HOURS)))
                 .claim("role", user.getRole().name())
                 .claim("idUser", user.getIdUser());
-        
-        // Chỉ thêm employeeId nếu user là employee
+
         employeeIdOpt.ifPresent(employeeId -> claimsBuilder.claim("employeeId", employeeId));
-        
+
         JWTClaimsSet jwtClaimsSet = claimsBuilder.build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
@@ -93,67 +106,97 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
+    @Transactional
     public String forgotPassword(String email) {
         log.info("Processing forgot password for email: {}", email);
-        
-        // Bước 1: Tìm user theo email
+
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email: " + email));
-        
-        // Bước 2: Generate random password
-        String newPassword = generateRandomPassword(10);
-        log.info("Generated new password for user: {}", user.getUsername());
-        
-        // Bước 3: Hash và update password
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với email: " + email));
+
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            throw new RuntimeException("Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.");
+        }
+
+        passwordResetTokenRepository.invalidateAllTokensForUser(user);
+
+        String resetToken = generateResetToken();
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(tokenExpiryMinutes);
+
+        PasswordResetToken tokenEntity = PasswordResetToken.builder()
+                .user(user)
+                .token(resetToken)
+                .expiresAt(expiresAt)
+                .used(false)
+                .build();
+        passwordResetTokenRepository.save(tokenEntity);
+        log.info("Created password reset token for user: {}", user.getUsername());
+
+        String resetLink = buildResetLink(user, resetToken);
+
+        try {
+            emailService.sendPasswordResetEmail(email, user.getUsername(), resetLink, tokenExpiryMinutes);
+            log.info("Sent password reset email to: {}", email);
+        } catch (Exception e) {
+            log.error("Error sending password reset email: {}", e.getMessage(), e);
+            throw new RuntimeException("Không thể gửi email. Vui lòng thử lại sau.");
+        }
+
+        return "Vui lòng kiểm tra email để đặt lại mật khẩu";
+    }
+
+    @Override
+    @Transactional
+    public String resetPassword(String token, String newPassword, String confirmPassword) {
+        log.info("Processing password reset with token");
+
+        if (!newPassword.equals(confirmPassword)) {
+            throw new RuntimeException("Mật khẩu xác nhận không khớp");
+        }
+
+        PasswordResetToken resetToken = passwordResetTokenRepository
+                .findByToken(token)
+                .orElseThrow(() -> InvalidTokenException.invalid());
+
+        if (resetToken.getUsed()) {
+            throw InvalidTokenException.alreadyUsed();
+        }
+
+        if (resetToken.isExpired()) {
+            throw InvalidTokenException.expired();
+        }
+
+        User user = resetToken.getUser();
         String hashedPassword = passwordEncoder.encode(newPassword);
         user.setPassword(hashedPassword);
         userRepository.save(user);
-        log.info("Updated password for user: {}", user.getUsername());
-        
-        // Bước 4: Gửi email
-        try {
-            emailService.sendForgotPasswordEmail(email, user.getUsername(), newPassword);
-            log.info("Sent forgot password email to: {}", email);
-        } catch (Exception e) {
-            log.error("Error sending forgot password email: {}", e.getMessage(), e);
-            throw new RuntimeException("Không thể gửi email. Vui lòng thử lại sau.");
-        }
-        
-        return "Mật khẩu mới đã được gửi đến email: " + email;
+
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+
+        log.info("Password reset successfully for user: {}", user.getUsername());
+
+        return "Đặt lại mật khẩu thành công. Vui lòng đăng nhập với mật khẩu mới.";
     }
 
-    private String generateRandomPassword(int length) {
-        if (length < 8) {
-            length = 8; // Tối thiểu 8 ký tự để đảm bảo bảo mật
-        }
-        
-        String upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        String lowerCase = "abcdefghijklmnopqrstuvwxyz";
-        String numbers = "0123456789";
-        String allChars = upperCase + lowerCase + numbers;
-        
+    private String generateResetToken() {
         SecureRandom random = new SecureRandom();
-        StringBuilder password = new StringBuilder(length);
-        
-        // Đảm bảo có ít nhất 1 ký tự mỗi loại
-        password.append(upperCase.charAt(random.nextInt(upperCase.length())));
-        password.append(lowerCase.charAt(random.nextInt(lowerCase.length())));
-        password.append(numbers.charAt(random.nextInt(numbers.length())));
-        
-        // Fill remaining characters
-        for (int i = 3; i < length; i++) {
-            password.append(allChars.charAt(random.nextInt(allChars.length())));
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private String buildResetLink(User user, String token) {
+        String baseUrl;
+        switch (user.getRole()) {
+            case ADMIN:
+            case EMPLOYEE:
+                baseUrl = adminResetUrl;
+                break;
+            case CUSTOMER:
+            default:
+                baseUrl = clientResetUrl;
+                break;
         }
-        
-        // Shuffle để random vị trí
-        char[] passwordArray = password.toString().toCharArray();
-        for (int i = passwordArray.length - 1; i > 0; i--) {
-            int j = random.nextInt(i + 1);
-            char temp = passwordArray[i];
-            passwordArray[i] = passwordArray[j];
-            passwordArray[j] = temp;
-        }
-        
-        return new String(passwordArray);
+        return baseUrl + "?token=" + token;
     }
 }

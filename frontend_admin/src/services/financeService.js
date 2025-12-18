@@ -37,12 +37,10 @@ export const financeService = {
   },
 
   exportFinancialReport: async (params = {}) => {
-    const response = await api.get('/finance/reports/export', { 
+    const response = await api.get('/finance/reports/export', {
       params,
       responseType: 'blob'
     });
     return response.data;
   },
 };
-
-

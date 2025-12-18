@@ -16,7 +16,6 @@ public interface ShipmentMapper {
 
     List<ShipmentDTO> toDTOList(List<Shipment> entities);
 
-    // ShipmentDTO → Shipment
     @Mapping(target = "idShipment", ignore = true)
     @Mapping(target = "order", ignore = true)
     Shipment toEntity(ShipmentDTO dto);

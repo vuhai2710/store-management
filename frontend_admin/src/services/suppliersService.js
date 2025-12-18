@@ -7,14 +7,46 @@ export const suppliersService = {
   getAllSuppliers: async () => {
     try {
       const resp = await api.get(API_ENDPOINTS.SUPPLIERS.GET_ALL);
-      return unwrap(resp); // -> array
+      return unwrap(resp);
     } catch {
       const resp = await api.get(API_ENDPOINTS.SUPPLIERS.BASE, {
-        params: { pageNo: 1, pageSize: 1000, sortBy: "idSupplier", sortDirection: "ASC" },
+        params: {
+          pageNo: 1,
+          pageSize: 1000,
+          sortBy: "idSupplier",
+          sortDirection: "ASC",
+        },
       });
       const data = unwrap(resp);
-      return Array.isArray(data?.content) ? data.content : (Array.isArray(data) ? data : []);
+      return Array.isArray(data?.content)
+        ? data.content
+        : Array.isArray(data)
+        ? data
+        : [];
     }
+  },
+
+  getSuppliersPaginated: async (params = {}) => {
+    const {
+      pageNo = 1,
+      pageSize = 10,
+      sortBy = "idSupplier",
+      sortDirection = "ASC",
+      keyword,
+    } = params;
+    const queryParams = { pageNo, pageSize, sortBy, sortDirection };
+    if (keyword && keyword.trim()) {
+      queryParams.keyword = keyword.trim();
+    }
+    const resp = await api.get(API_ENDPOINTS.SUPPLIERS.BASE, {
+      params: queryParams,
+    });
+    return unwrap(resp);
+  },
+
+  getSupplierById: async (id) => {
+    const resp = await api.get(API_ENDPOINTS.SUPPLIERS.BY_ID(id));
+    return unwrap(resp);
   },
 
   createSupplier: async (supplierData) => {

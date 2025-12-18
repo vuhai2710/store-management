@@ -10,12 +10,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class PayOSWebhookDTO {
-    
+
     private String code;
-    
+
     private String desc;
-    
+
     private PayOSWebhookDataDTO data;
-    
+
     private String signature;
 }

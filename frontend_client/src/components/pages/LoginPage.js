@@ -1,9 +1,11 @@
-// src/components/pages/LoginPage.js
+
 import React, { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, LogIn, AlertCircle } from "lucide-react";
 import styles from "../../styles/styles";
 import { useAuth } from "../../hooks/useAuth";
 import LoadingSpinner from "../common/LoadingSpinner";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
 import { authService } from "../../services/authService";
 
 const LoginPage = ({ setCurrentPage }) => {
@@ -29,7 +31,7 @@ const LoginPage = ({ setCurrentPage }) => {
       ...prev,
       [name]: value,
     }));
-    // Xóa lỗi khi người dùng bắt đầu nhập
+
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -63,14 +65,14 @@ const LoginPage = ({ setCurrentPage }) => {
       try {
         setIsLoading(true);
         await login(formData.username, formData.password, rememberMe);
-        // Redirect to home page after successful login
+
         setCurrentPage("home");
       } catch (error) {
         console.error("Login error:", error);
-        setApiError(
-          error?.message ||
-            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
-        );
+
+        const errorMessage =
+          error?.message || "Tài khoản hoặc mật khẩu không đúng";
+        setApiError(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -87,7 +89,6 @@ const LoginPage = ({ setCurrentPage }) => {
       return;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(forgotPasswordEmail)) {
       setForgotPasswordError("Email không hợp lệ");
@@ -99,7 +100,7 @@ const LoginPage = ({ setCurrentPage }) => {
       const response = await authService.forgotPassword(forgotPasswordEmail);
       setForgotPasswordSuccess(
         response?.message ||
-          "Mật khẩu mới đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư."
+        "Vui lòng kiểm tra email để đặt lại mật khẩu."
       );
       setForgotPasswordEmail("");
       setTimeout(() => {
@@ -119,16 +120,17 @@ const LoginPage = ({ setCurrentPage }) => {
   const inputStyle = {
     width: "100%",
     padding: "0.875rem 1rem 0.875rem 3rem",
-    border: "1px solid #dee2e6",
-    borderRadius: "0.5rem",
-    fontSize: "1rem",
+    border: "1px solid #E2E8F0",
+    borderRadius: "0.75rem",
+    fontSize: "0.95rem",
     outline: "none",
-    transition: "border-color 0.3s, box-shadow 0.3s",
+    backgroundColor: "#FFFFFF",
+    transition: "border-color 0.2s ease, box-shadow 0.2s ease",
   };
 
   const inputWrapperStyle = {
     position: "relative",
-    marginBottom: "1.5rem",
+    marginBottom: "1.25rem",
   };
 
   const iconStyle = {
@@ -136,14 +138,14 @@ const LoginPage = ({ setCurrentPage }) => {
     left: "1rem",
     top: "50%",
     transform: "translateY(-50%)",
-    color: "#6c757d",
+    color: "#9CA3AF",
     pointerEvents: "none",
   };
 
   const errorStyle = {
-    color: "#dc3545",
-    fontSize: "0.875rem",
-    marginTop: "0.25rem",
+    color: "#DC2626",
+    fontSize: "0.8rem",
+    marginTop: "0.35rem",
   };
 
   return (
@@ -153,23 +155,25 @@ const LoginPage = ({ setCurrentPage }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        padding: "2rem 0",
+        background:
+          "radial-gradient(circle at top, rgba(37,99,235,0.12), transparent 55%), #F8FAFC",
+        padding: "2.5rem 1rem",
       }}>
       <div style={styles.container}>
         <div
           style={{
-            maxWidth: "450px",
+            maxWidth: "480px",
             margin: "0 auto",
             backgroundColor: "white",
             borderRadius: "1rem",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)",
+            boxShadow: "0 24px 60px rgba(15, 23, 42, 0.16)",
             overflow: "hidden",
           }}>
-          {/* Header */}
+          {}
           <div
             style={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              background:
+                "linear-gradient(135deg, #2563EB 0%, #1E293B 60%, #020617 100%)",
               padding: "2rem",
               textAlign: "center",
               color: "white",
@@ -200,96 +204,69 @@ const LoginPage = ({ setCurrentPage }) => {
             </p>
           </div>
 
-          {/* Form */}
+          {}
           <form onSubmit={handleSubmit} style={{ padding: "2rem" }}>
-            {/* Username Field */}
+            {}
             <div style={inputWrapperStyle}>
               <label
                 style={{
                   display: "block",
                   marginBottom: "0.5rem",
                   fontWeight: "600",
-                  color: "#495057",
-                  fontSize: "0.875rem",
+                  color: "#0F172A",
+                  fontSize: "0.8rem",
                 }}>
                 Tên đăng nhập
               </label>
-              <div style={{ position: "relative" }}>
-                <Mail size={20} style={iconStyle} />
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  placeholder="Nhập tên đăng nhập hoặc email"
-                  style={{
-                    ...inputStyle,
-                    borderColor: errors.username ? "#dc3545" : "#dee2e6",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-                  onBlur={(e) =>
-                    (e.target.style.borderColor = errors.username
-                      ? "#dc3545"
-                      : "#dee2e6")
-                  }
-                />
-              </div>
-              {errors.username && <p style={errorStyle}>{errors.username}</p>}
+              <Input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="Nhập tên đăng nhập hoặc email"
+                leftIcon={<Mail size={20} />}
+                error={errors.username}
+              />
             </div>
 
-            {/* Password Field */}
+            {}
             <div style={inputWrapperStyle}>
               <label
                 style={{
                   display: "block",
                   marginBottom: "0.5rem",
                   fontWeight: "600",
-                  color: "#495057",
-                  fontSize: "0.875rem",
+                  color: "#0F172A",
+                  fontSize: "0.8rem",
                 }}>
                 Mật khẩu
               </label>
-              <div style={{ position: "relative" }}>
-                <Lock size={20} style={iconStyle} />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Nhập mật khẩu"
-                  style={{
-                    ...inputStyle,
-                    paddingRight: "3rem",
-                    borderColor: errors.password ? "#dc3545" : "#dee2e6",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-                  onBlur={(e) =>
-                    (e.target.style.borderColor = errors.password
-                      ? "#dc3545"
-                      : "#dee2e6")
-                  }
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: "absolute",
-                    right: "1rem",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#6c757d",
-                    padding: "0.25rem",
-                  }}>
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-              {errors.password && <p style={errorStyle}>{errors.password}</p>}
+              <Input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Nhập mật khẩu"
+                leftIcon={<Lock size={20} />}
+                rightIcon={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "#6c757d",
+                      padding: "0.25rem",
+                    }}>
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                }
+                error={errors.password}
+              />
             </div>
 
-            {/* Remember & Forgot Password */}
+            {}
             <div
               style={{
                 display: "flex",
@@ -319,7 +296,7 @@ const LoginPage = ({ setCurrentPage }) => {
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#667eea",
+                  color: "#2563EB",
                   cursor: "pointer",
                   fontWeight: "600",
                 }}>
@@ -327,58 +304,36 @@ const LoginPage = ({ setCurrentPage }) => {
               </button>
             </div>
 
-            {/* API Error Message */}
+            {}
             {apiError && (
               <div
                 style={{
-                  padding: "0.75rem",
+                  padding: "0.875rem 1rem",
                   marginBottom: "1rem",
-                  backgroundColor: "#f8d7da",
-                  color: "#721c24",
-                  borderRadius: "0.25rem",
+                  backgroundColor: "#FEE2E2",
+                  color: "#DC2626",
+                  borderRadius: "0.5rem",
                   fontSize: "0.875rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  border: "1px solid #FECACA",
                 }}>
-                {apiError}
+                <AlertCircle size={20} style={{ flexShrink: 0 }} />
+                <span>{apiError}</span>
               </div>
             )}
 
-            {/* Submit Button */}
-            <button
+            {}
+            <Button
               type="submit"
               disabled={isLoading}
-              style={{
-                width: "100%",
-                padding: "1rem",
-                background: isLoading
-                  ? "#6c757d"
-                  : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "white",
-                border: "none",
-                borderRadius: "0.5rem",
-                fontSize: "1rem",
-                fontWeight: "bold",
-                cursor: isLoading ? "not-allowed" : "pointer",
-                transition: "transform 0.2s, box-shadow 0.2s",
-                marginBottom: "1rem",
-                opacity: isLoading ? 0.6 : 1,
-              }}
-              onMouseEnter={(e) => {
-                if (!isLoading) {
-                  e.target.style.transform = "translateY(-2px)";
-                  e.target.style.boxShadow =
-                    "0 4px 12px rgba(102, 126, 234, 0.4)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isLoading) {
-                  e.target.style.transform = "translateY(0)";
-                  e.target.style.boxShadow = "none";
-                }
-              }}>
+              fullWidth
+              style={{ marginBottom: "1rem" }}>
               {isLoading ? "Đang đăng nhập..." : "Đăng Nhập"}
-            </button>
+            </Button>
 
-            {/* Divider */}
+            {}
             <div
               style={{
                 display: "flex",
@@ -391,18 +346,18 @@ const LoginPage = ({ setCurrentPage }) => {
                 style={{
                   flex: 1,
                   height: "1px",
-                  backgroundColor: "#dee2e6",
+                  backgroundColor: "#E2E8F0",
                 }}></div>
               <span style={{ padding: "0 1rem" }}>hoặc</span>
               <div
                 style={{
                   flex: 1,
                   height: "1px",
-                  backgroundColor: "#dee2e6",
+                  backgroundColor: "#E2E8F0",
                 }}></div>
             </div>
 
-            {/* Register Link */}
+            {}
             <div
               style={{
                 textAlign: "center",
@@ -425,7 +380,7 @@ const LoginPage = ({ setCurrentPage }) => {
               </button>
             </div>
 
-            {/* Back to Home */}
+            {}
             <div style={{ textAlign: "center", marginTop: "1rem" }}>
               <button
                 type="button"
@@ -442,7 +397,7 @@ const LoginPage = ({ setCurrentPage }) => {
             </div>
           </form>
 
-          {/* Forgot Password Modal */}
+          {}
           {showForgotPassword && (
             <div
               style={{
@@ -488,7 +443,7 @@ const LoginPage = ({ setCurrentPage }) => {
                     marginBottom: "1.5rem",
                     fontSize: "0.875rem",
                   }}>
-                  Nhập email đã đăng ký để nhận mật khẩu mới
+                  Nhập email đã đăng ký để nhận link đặt lại mật khẩu
                 </p>
 
                 <form onSubmit={handleForgotPassword}>
@@ -511,7 +466,7 @@ const LoginPage = ({ setCurrentPage }) => {
                       style={{
                         width: "100%",
                         padding: "0.75rem",
-                        border: "1px solid #dee2e6",
+                        border: "1px solid #E2E8F0",
                         borderRadius: "0.5rem",
                         fontSize: "1rem",
                         outline: "none",
@@ -563,7 +518,7 @@ const LoginPage = ({ setCurrentPage }) => {
                       }}
                       style={{
                         padding: "0.75rem 1.5rem",
-                        border: "1px solid #dee2e6",
+                        border: "1px solid #E2E8F0",
                         borderRadius: "0.5rem",
                         backgroundColor: "white",
                         color: "#495057",

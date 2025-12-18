@@ -5,7 +5,6 @@ import { createSupplier, updateSupplier } from '../../store/slices/suppliersSlic
 
 const { TextArea } = Input;
 
-// Regex tương thích kiểu +84xxxxxxxxx hoặc 0xxxxxxxxx (10 số)
 const PHONE_REGEX = /^(?:\+?84|0)\d{9}$/;
 
 const SupplierForm = ({ supplier, onSuccess }) => {
@@ -43,7 +42,7 @@ const SupplierForm = ({ supplier, onSuccess }) => {
       }
       onSuccess && onSuccess();
     } catch (e) {
-      // Hiển thị lỗi field từ BE: e.errors = { field: message }
+
       const fieldErrors = e?.errors;
       if (fieldErrors && typeof fieldErrors === 'object') {
         form.setFields(
@@ -113,5 +112,3 @@ const SupplierForm = ({ supplier, onSuccess }) => {
 };
 
 export default SupplierForm;
-
-

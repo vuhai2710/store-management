@@ -42,7 +42,7 @@ const Categories = () => {
     handlePageChange,
     resetPagination,
     pagination: tablePagination,
-  } = usePagination(1, 5); // Default page size: 5
+  } = usePagination(1, 5);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -56,7 +56,7 @@ const Categories = () => {
       sortDirection: "ASC",
     };
     if (searchText?.trim()) {
-      params.name = searchText.trim(); // Backend accepts 'name' as search parameter
+      params.name = searchText.trim();
     }
     dispatch(fetchCategories(params));
   }, [dispatch, currentPage, pageSize, searchText]);
@@ -102,7 +102,7 @@ const Categories = () => {
   const handleSearch = (value) => {
     setSearchText(value);
     dispatch(setFilters({ categoryName: value || null }));
-    resetPagination(); // Reset về page 1
+    resetPagination();
   };
 
   const handleTableChange = (p, _filters, sorter) => {
@@ -187,25 +187,83 @@ const Categories = () => {
   };
 
   return (
-    <div>
-      <div className="page-header" style={{ marginBottom: "24px" }}>
-        <Title level={1}>Quản lý Danh mục</Title>
-        <p>Quản lý danh mục sản phẩm</p>
+    <div style={{ padding: "8px 0" }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <Title
+            level={2}
+            style={{
+              marginBottom: 4,
+              fontWeight: 700,
+              color: "#0F172A",
+            }}
+          >
+            Quản lý danh mục
+          </Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>
+            Quản lý danh mục sản phẩm của TechStore
+          </Text>
+        </div>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleCreateCategory}
+          style={{
+            borderRadius: 9999,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          Thêm danh mục
+        </Button>
       </div>
 
-      <Card>
-        <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", gap: "16px" }}>
+      <Card
+        className="table-container"
+        style={{
+          borderRadius: 12,
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+          background: "#FFFFFF",
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
+        <div
+          style={{
+            marginBottom: 16,
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
           <Input.Search
             placeholder="Tìm kiếm theo tên danh mục"
             allowClear
             enterButton={<SearchOutlined />}
-            size="large"
-            style={{ maxWidth: "400px" }}
+            size="middle"
+            style={{ width: 320, maxWidth: "100%" }}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             onSearch={handleSearch}
           />
-          <Space>
+          <Space
+            wrap
+            style={{
+              display: "flex",
+              gap: 8,
+            }}
+          >
             <Button icon={<ReloadOutlined />} onClick={fetchCategoriesList}>
               Làm mới
             </Button>
@@ -214,9 +272,6 @@ const Categories = () => {
             </Button>
             <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
               Xuất CSV
-            </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateCategory}>
-              Thêm danh mục
             </Button>
           </Space>
         </div>
@@ -252,6 +307,7 @@ const Categories = () => {
                 />
               ),
             }}
+            size="middle"
           />
         )}
       </Card>
@@ -270,4 +326,3 @@ const Categories = () => {
 };
 
 export default Categories;
-

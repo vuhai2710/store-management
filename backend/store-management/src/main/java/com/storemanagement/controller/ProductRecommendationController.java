@@ -25,16 +25,16 @@ public class ProductRecommendationController {
         Long userId = SecurityUtils.getCurrentUserId()
                 .map(Integer::longValue)
                 .orElse(null);
-        
+
         if (userId == null) {
             return ResponseEntity.ok(ApiResponse.success("Không tìm thấy thông tin người dùng", List.of()));
         }
-        
+
         System.out.println("[ProductRecommendationController] Getting recommendations for userId: " + userId);
         List<ProductDTO> recommendations = productRecommendationService.recommendForUser(userId);
         System.out.println("[ProductRecommendationController] Found " + recommendations.size() + " recommendations");
         if (!recommendations.isEmpty()) {
-            System.out.println("[ProductRecommendationController] First few product IDs: " + 
+            System.out.println("[ProductRecommendationController] First few product IDs: " +
                     recommendations.stream().limit(5).map(dto -> dto.getIdProduct()).toList());
         }
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách gợi ý sản phẩm thành công", recommendations));
@@ -46,16 +46,16 @@ public class ProductRecommendationController {
         Long userId = SecurityUtils.getCurrentUserId()
                 .map(Integer::longValue)
                 .orElse(null);
-        
+
         if (userId == null) {
-            return ResponseEntity.ok(ApiResponse.success("Không tìm thấy thông tin người dùng", 
+            return ResponseEntity.ok(ApiResponse.success("Không tìm thấy thông tin người dùng",
                     ProductRecommendationResponseDTO.builder()
                             .mostViewedProducts(List.of())
                             .recommendedProducts(List.of())
                             .allProducts(List.of())
                             .build()));
         }
-        
+
         ProductRecommendationResponseDTO response = productRecommendationService.recommendForUserWithMetadata(userId);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách gợi ý sản phẩm thành công", response));
     }

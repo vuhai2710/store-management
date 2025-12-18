@@ -35,7 +35,7 @@ public class InventoryTransaction {
     private ReferenceType referenceType;
 
     @Column(name = "reference_id")
-    private Integer referenceId;  // ID của purchase_orders / orders
+    private Integer referenceId;
 
     @Column(name = "transaction_date")
     private LocalDateTime transactionDate;
@@ -54,3 +54,4 @@ public class InventoryTransaction {
         }
     }
 }
+

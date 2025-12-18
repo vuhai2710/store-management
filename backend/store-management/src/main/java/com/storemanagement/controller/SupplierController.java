@@ -36,15 +36,15 @@ public class SupplierController {
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "idSupplier") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDirection,
-            @RequestParam(required = false) String name) {
+            @RequestParam(required = false) String keyword) {
 
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortBy));
 
         PageResponse<SupplierDTO> supplierPage;
 
-        if (name != null && !name.trim().isEmpty()) {
-            supplierPage = supplierService.searchSuppliersByName(name, pageable);
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            supplierPage = supplierService.searchSuppliersByName(keyword, pageable);
         } else {
             supplierPage = supplierService.getAllSuppliersPaginated(pageable);
         }

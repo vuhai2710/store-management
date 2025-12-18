@@ -1,4 +1,4 @@
-package com.storemanagement.config; // <-- Kiểm tra dòng này cho đúng package của bạn
+package com.storemanagement.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -9,13 +9,13 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // Cho phép tất cả các đường dẫn
+        registry.addMapping("/**")
                 .allowedOrigins(
-                        "http://localhost:3000", // Cho phép Localhost (để bạn test máy nhà)
-                        "https://store-admin-xi.vercel.app", // <-- QUAN TRỌNG: Link Vercel của bạn
-                        "https://store-client-tu.vercel.app" // (Nếu bạn có link client thì điền luôn vào đây)
+                        "http://localhost:3000",
+                        "https://store-admin-xi.vercel.app",
+                        "https://store-client-tu.vercel.app"
                 )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Cho phép các hành động này
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }

@@ -1,7 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { usersService } from "../../services/usersService";
 
-// Chuẩn hóa PageResponse về FE
 const extractPage = (pageResponse) => {
   const items = Array.isArray(pageResponse?.content)
     ? pageResponse.content
@@ -22,7 +21,6 @@ const extractPage = (pageResponse) => {
     return Number.isFinite(n) ? n : def;
   };
 
-  // current: nếu backend trả number=0 (0-based) -> +1
   let current = toInt(
     pageResponse?.currentPage ??
       pageResponse?.pageNo ??
@@ -58,20 +56,18 @@ export const fetchUsers = createAsyncThunk(
   }
 );
 
-// Thunk cập nhật user (email, isActive...)
 export const updateUser = createAsyncThunk(
   "users/updateUser",
   async ({ id, userData }, { rejectWithValue }) => {
     try {
       const res = await usersService.updateUser(id, userData);
-      return res; // UserDto
+      return res;
     } catch (err) {
       return rejectWithValue(err.message || "Cập nhật user thất bại");
     }
   }
 );
 
-// Thunk đổi vai trò
 export const changeUserRole = createAsyncThunk(
   "users/changeUserRole",
   async ({ id, role }, { rejectWithValue }) => {
@@ -84,33 +80,30 @@ export const changeUserRole = createAsyncThunk(
   }
 );
 
-// Thunk xóa user
 export const deleteUser = createAsyncThunk(
   "users/deleteUser",
   async (id, { rejectWithValue }) => {
     try {
       await usersService.deleteUser(id);
-      return id; // trả về id để cập nhật state
+      return id;
     } catch (err) {
       return rejectWithValue(err.message || "Xóa người dùng thất bại");
     }
   }
 );
 
-// Thunk kích hoạt
 export const activateUser = createAsyncThunk(
   "users/activateUser",
   async (id, { rejectWithValue }) => {
     try {
       await usersService.activateUser(id);
-      return id; // trả về id để cập nhật state
+      return id;
     } catch (err) {
       return rejectWithValue(err.message || "Kích hoạt người dùng thất bại");
     }
   }
 );
 
-// Thunk vô hiệu hóa
 export const deactivateUser = createAsyncThunk(
   "users/deactivateUser",
   async (id, { rejectWithValue }) => {
@@ -148,7 +141,7 @@ const usersSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch list
+
       .addCase(fetchUsers.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -165,7 +158,6 @@ const usersSlice = createSlice({
         state.users = [];
       })
 
-      // Update user
       .addCase(updateUser.pending, (state) => {
         state.error = null;
       })
@@ -179,7 +171,6 @@ const usersSlice = createSlice({
         state.error = action.payload || "Cập nhật user thất bại";
       })
 
-      // Change role
       .addCase(changeUserRole.pending, (state) => {
         state.error = null;
       })
@@ -193,7 +184,6 @@ const usersSlice = createSlice({
         state.error = action.payload || "Đổi vai trò thất bại";
       })
 
-      // Delete user
       .addCase(deleteUser.pending, (state) => {
         state.error = null;
       })
@@ -206,7 +196,6 @@ const usersSlice = createSlice({
         state.error = action.payload || "Xóa người dùng thất bại";
       })
 
-      // Activate
       .addCase(activateUser.fulfilled, (state, action) => {
         const id = action.payload;
         state.users = state.users.map((u) =>
@@ -217,7 +206,6 @@ const usersSlice = createSlice({
         state.error = action.payload || "Kích hoạt người dùng thất bại";
       })
 
-      // Deactivate
       .addCase(deactivateUser.fulfilled, (state, action) => {
         const id = action.payload;
         state.users = state.users.map((u) =>

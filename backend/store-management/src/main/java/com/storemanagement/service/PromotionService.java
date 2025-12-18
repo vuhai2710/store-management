@@ -1,10 +1,13 @@
 package com.storemanagement.service;
 
 import com.storemanagement.dto.PageResponse;
+import com.storemanagement.dto.product.ProductOnSaleDTO;
 import com.storemanagement.dto.promotion.*;
+import com.storemanagement.model.Promotion;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public interface PromotionService {
 
@@ -14,9 +17,16 @@ public interface PromotionService {
 
     BigDecimal calculateDiscountForOrder(BigDecimal totalAmount, String promotionCode, String customerType);
 
+    BigDecimal calculateShippingDiscount(BigDecimal shippingFee, String shippingPromotionCode);
+
+    CalculateDiscountResponseDTO calculateAutoShippingDiscount(BigDecimal shippingFee, BigDecimal orderTotal,
+            String customerType);
+
     PromotionDTO createPromotion(PromotionDTO promotionDTO);
 
-    PageResponse<PromotionDTO> getAllPromotions(Pageable pageable);
+    PageResponse<PromotionDTO> getAllPromotions(String keyword, Pageable pageable);
+
+    PageResponse<PromotionDTO> getAllPromotions(String keyword, Promotion.PromotionScope scope, Pageable pageable);
 
     PromotionDTO getPromotionById(Integer id);
 
@@ -35,4 +45,6 @@ public interface PromotionService {
     void deletePromotionRule(Integer id);
 
     void recordPromotionUsage(Integer promotionId, Integer orderId, Integer customerId);
+
+    List<ProductOnSaleDTO> getProductsOnSale();
 }

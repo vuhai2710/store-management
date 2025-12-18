@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { shipmentService } from "../../services/shipmentService";
 
-// Fetch shipment by ID
 export const fetchShipmentById = createAsyncThunk(
   "shipments/fetchShipmentById",
   async (id, { rejectWithValue }) => {
@@ -14,7 +13,6 @@ export const fetchShipmentById = createAsyncThunk(
   }
 );
 
-// Fetch shipment by order ID
 export const fetchShipmentByOrderId = createAsyncThunk(
   "shipments/fetchShipmentByOrderId",
   async (orderId, { rejectWithValue }) => {
@@ -27,7 +25,6 @@ export const fetchShipmentByOrderId = createAsyncThunk(
   }
 );
 
-// Track shipment
 export const trackShipment = createAsyncThunk(
   "shipments/trackShipment",
   async (id, { rejectWithValue }) => {
@@ -40,7 +37,6 @@ export const trackShipment = createAsyncThunk(
   }
 );
 
-// Sync shipment with GHN
 export const syncShipmentWithGHN = createAsyncThunk(
   "shipments/syncShipmentWithGHN",
   async (id, { rejectWithValue }) => {
@@ -83,7 +79,7 @@ const shipmentsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch shipment by ID
+
       .addCase(fetchShipmentById.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -97,7 +93,7 @@ const shipmentsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Fetch shipment by order ID
+
       .addCase(fetchShipmentByOrderId.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -111,7 +107,7 @@ const shipmentsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Track shipment
+
       .addCase(trackShipment.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -125,7 +121,7 @@ const shipmentsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Sync with GHN
+
       .addCase(syncShipmentWithGHN.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -157,5 +153,3 @@ const shipmentsSlice = createSlice({
 
 export const { clearCurrentShipment } = shipmentsSlice.actions;
 export default shipmentsSlice.reducer;
-
-

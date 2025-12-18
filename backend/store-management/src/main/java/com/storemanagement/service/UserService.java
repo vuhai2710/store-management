@@ -24,8 +24,7 @@ public interface UserService {
     UserDTO changeUserRole(Integer id, String role);
     void deleteUser(Integer id);
     void changePassword(String username, String currentPassword, String newPassword);
-    
-    // Avatar management
+
     UserDTO uploadAvatar(String username, MultipartFile avatar);
     UserDTO updateAvatar(String username, MultipartFile avatar);
     void deleteAvatar(String username);

@@ -1,7 +1,3 @@
-/**
- * Constants - Customer Types
- */
-
 export const CUSTOMER_TYPES = {
   REGULAR: "REGULAR",
   VIP: "VIP",

@@ -31,5 +31,5 @@ public class PurchaseOrderDetailDTO {
     @Min(value = 0, message = "Giá nhập phải lớn hơn hoặc bằng 0")
     private BigDecimal importPrice;
 
-    private BigDecimal subtotal;  // quantity * importPrice
+    private BigDecimal subtotal;
 }

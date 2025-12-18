@@ -29,10 +29,9 @@ public class ChatWebSocketController {
                 request.getSenderType(), request.getSenderId(), request.getConversationId());
 
         try {
-            // Chỉ cần truyền principal xuống service
+
             ChatMessageDTO savedMessage = chatService.sendMessage(request, principal);
 
-            // Broadcast tin nhắn
             String destination = "/topic/chat." + request.getConversationId();
             messagingTemplate.convertAndSend(destination, savedMessage);
 

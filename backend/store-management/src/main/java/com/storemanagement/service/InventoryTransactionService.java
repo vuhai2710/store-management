@@ -44,4 +44,28 @@ public interface InventoryTransactionService {
             LocalDateTime endDate,
             Pageable pageable
     );
+
+    PageResponse<InventoryTransactionDTO> getTransactionsByAdvancedCriteria(
+            TransactionType transactionType,
+            com.storemanagement.utils.ReferenceType referenceType,
+            Integer productId,
+            String productName,
+            String sku,
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            Pageable pageable
+    );
+
+    PageResponse<InventoryTransactionDTO> filterTransactions(
+            TransactionType transactionType,
+            com.storemanagement.utils.ReferenceType referenceType,
+            Integer referenceId,
+            Integer productId,
+            String productName,
+            String sku,
+            String brand,
+            LocalDateTime fromDate,
+            LocalDateTime toDate,
+            Pageable pageable
+    );
 }

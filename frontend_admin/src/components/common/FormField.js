@@ -6,20 +6,6 @@ import { formatCurrency, formatDate } from "../../utils/formatUtils";
 const { TextArea } = Input;
 const { Option } = Select;
 
-/**
- * FormField Component
- * Enhanced form field with validation and error messages
- * 
- * @param {Object} props
- * @param {string} props.type - Field type: 'input' | 'textarea' | 'select' | 'date' | 'number' | 'upload' | 'switch'
- * @param {string} props.name - Field name
- * @param {string} props.label - Field label
- * @param {boolean} props.required - Whether field is required
- * @param {Object} props.validation - Validation rules
- * @param {string} props.placeholder - Placeholder text
- * @param {Array} props.options - Options for select field
- * @param {Object} props.props - Additional props to pass to the field component
- */
 const FormField = ({
   type = "input",
   name,
@@ -32,7 +18,6 @@ const FormField = ({
 }) => {
   const rules = [];
 
-  // Add required rule
   if (required) {
     rules.push({
       required: true,
@@ -40,7 +25,6 @@ const FormField = ({
     });
   }
 
-  // Add custom validation rules
   if (validation.email) {
     rules.push({
       validator: (_, value) => {
@@ -112,7 +96,6 @@ const FormField = ({
     });
   }
 
-  // Add custom validator if provided
   if (validation.validator) {
     rules.push({
       validator: validation.validator,
@@ -196,4 +179,3 @@ const FormField = ({
 };
 
 export default FormField;
-

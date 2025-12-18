@@ -141,5 +141,3 @@ const inventorySlice = createSlice({
 
 export const { clearError, setFilters, setPagination } = inventorySlice.actions;
 export default inventorySlice.reducer;
-
-

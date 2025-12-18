@@ -4,6 +4,7 @@ import com.nimbusds.jose.JOSEException;
 import com.storemanagement.dto.ApiResponse;
 import com.storemanagement.dto.auth.RegisterDTO;
 import com.storemanagement.dto.auth.ForgotPasswordRequestDto;
+import com.storemanagement.dto.auth.ResetPasswordRequestDto;
 import com.storemanagement.dto.auth.LoginDTO;
 import com.storemanagement.dto.auth.AuthenticationResponseDTO;
 import com.storemanagement.service.AuthenticationService;
@@ -36,7 +37,7 @@ public class AuthenticationController {
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout() {
-        // Với JWT stateless, logout chủ yếu xử lý ở phía client (xóa token)
+
         return ResponseEntity.ok(ApiResponse.success("Đăng xuất thành công", null));
     }
 
@@ -45,5 +46,21 @@ public class AuthenticationController {
             @RequestBody @Valid ForgotPasswordRequestDto request) {
         String message = authService.forgotPassword(request.getEmail());
         return ResponseEntity.ok(ApiResponse.success(message, null));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @RequestBody @Valid ResetPasswordRequestDto request) {
+        String message = authService.resetPassword(
+                request.getToken(),
+                request.getNewPassword(),
+                request.getConfirmPassword());
+        return ResponseEntity.ok(ApiResponse.success(message, null));
+    }
+
+    @GetMapping("/validate-reset-token")
+    public ResponseEntity<ApiResponse<Void>> validateResetToken(@RequestParam String token) {
+
+        return ResponseEntity.ok(ApiResponse.success("Token hợp lệ", null));
     }
 }

@@ -6,16 +6,6 @@ import dayjs from "dayjs";
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
-/**
- * AdvancedSearch Component
- * Provides advanced search functionality with multiple filters
- * 
- * @param {Object} props
- * @param {Array} props.filters - Array of filter configurations
- * @param {Function} props.onSearch - Callback when search is triggered
- * @param {Function} props.onReset - Callback when reset is triggered
- * @param {Object} props.initialValues - Initial filter values
- */
 const AdvancedSearch = ({
   filters = [],
   onSearch,
@@ -27,7 +17,7 @@ const AdvancedSearch = ({
   const [expanded, setExpanded] = useState(false);
 
   const handleSearch = (values) => {
-    // Convert date range to ISO strings
+
     const processedValues = { ...values };
     Object.keys(processedValues).forEach((key) => {
       if (dayjs.isDayjs(processedValues[key])) {
@@ -110,7 +100,6 @@ const AdvancedSearch = ({
     }
   };
 
-  // Show first 3 filters by default, rest when expanded
   const visibleFilters = expanded ? filters : filters.slice(0, 3);
   const hasMoreFilters = filters.length > 3;
 
@@ -167,5 +156,3 @@ const AdvancedSearch = ({
 };
 
 export default AdvancedSearch;
-
-

@@ -4,11 +4,7 @@ import { API_ENDPOINTS } from "../constants/apiEndpoints";
 const unwrap = (resp) => resp?.data?.data ?? resp?.data ?? resp;
 
 export const chatService = {
-  /**
-   * Create conversation - Tạo conversation mới
-   * POST /api/v1/chat/conversations
-   * @returns {Promise<ChatConversationDTO>}
-   */
+
   createConversation: async () => {
     try {
       const response = await api.post(API_ENDPOINTS.CHAT.CONVERSATIONS);
@@ -18,11 +14,6 @@ export const chatService = {
     }
   },
 
-  /**
-   * Get my conversation - Lấy conversation của customer
-   * GET /api/v1/chat/conversations/my
-   * @returns {Promise<ChatConversationDTO>}
-   */
   getMyConversation: async () => {
     try {
       const response = await api.get(API_ENDPOINTS.CHAT.MY_CONVERSATION);
@@ -32,13 +23,6 @@ export const chatService = {
     }
   },
 
-  /**
-   * Get conversation messages - Lấy lịch sử tin nhắn
-   * GET /api/v1/chat/conversations/{id}/messages
-   * @param {number} conversationId - Conversation ID
-   * @param {Object} params - Query parameters
-   * @returns {Promise<PageResponse<ChatMessageDTO>>}
-   */
   getConversationMessages: async (
     conversationId,
     { pageNo = 1, pageSize = 50 } = {}
@@ -55,12 +39,6 @@ export const chatService = {
     }
   },
 
-  /**
-   * Close conversation - Đóng conversation
-   * PUT /api/v1/chat/conversations/{id}/close
-   * @param {number} conversationId - Conversation ID
-   * @returns {Promise<void>}
-   */
   closeConversation: async (conversationId) => {
     try {
       const response = await api.put(
@@ -72,12 +50,6 @@ export const chatService = {
     }
   },
 
-  /**
-   * Mark conversation as viewed - Đánh dấu conversation đã xem
-   * PUT /api/v1/chat/conversations/{id}/mark-viewed
-   * @param {number} conversationId - Conversation ID
-   * @returns {Promise<void>}
-   */
   markConversationAsViewed: async (conversationId) => {
     try {
       const response = await api.put(

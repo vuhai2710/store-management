@@ -33,6 +33,7 @@ import {
 } from "../store/slices/productsSlice";
 import ProductForm from "../components/products/ProductForm";
 import { usePagination } from "../hooks/usePagination";
+import { useDebounce } from "../hooks/useDebounce";
 import { categoriesService } from "../services/categoriesService";
 import { suppliersService } from "../services/suppliersService";
 import EmptyState from "../components/common/EmptyState";
@@ -51,31 +52,31 @@ const Products = () => {
     (state) => state.products || {}
   );
 
-  // usePagination(v1): trả về currentPage/pageSize/total + handlers
   const {
     currentPage,
     pageSize,
     setTotal,
     handlePageChange,
-    // handlePageSizeChange, // bỏ vì không dùng
+
     resetPagination,
     pagination: tablePagination,
-  } = usePagination(1, 5); // Default page size: 5
+  } = usePagination(1, 5);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
-  // Filters
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const debouncedKeyword = useDebounce(searchKeyword, 300);
   const [categoryId, setCategoryId] = useState(null);
   const [brand, setBrand] = useState("");
+  const debouncedBrand = useDebounce(brand, 300);
   const [supplierId, setSupplierId] = useState(null);
   const [minPrice, setMinPrice] = useState();
   const [maxPrice, setMaxPrice] = useState();
-  const [inventoryStatusFilter, setInventoryStatusFilter] = useState(null); // Filter by inventory status: 'COMING_SOON', 'IN_STOCK', 'OUT_OF_STOCK', null (all)
+  const debouncedMinPrice = useDebounce(minPrice, 400);
+  const debouncedMaxPrice = useDebounce(maxPrice, 400);
+  const [inventoryStatusFilter, setInventoryStatusFilter] = useState(null);
 
-  // Sort (quản lý riêng vì hook không xử lý sorter)
   const [sortBy, setSortBy] = useState("idProduct");
   const [sortDirection, setSortDirection] = useState("ASC");
 
@@ -101,7 +102,7 @@ const Products = () => {
 
   const fetchList = useCallback(() => {
     if (supplierId) {
-      // dùng endpoint /products/supplier/{supplierId}
+
       dispatch(
         fetchProductsBySupplier({
           supplierId,
@@ -118,12 +119,13 @@ const Products = () => {
           pageSize,
           sortBy,
           sortDirection,
-          code: code?.trim() || undefined,
-          name: name?.trim() || undefined,
+          keyword: debouncedKeyword?.trim() || undefined,
           categoryId: categoryId || undefined,
-          brand: brand?.trim() || undefined,
-          minPrice: minPrice != null ? Number(minPrice) : undefined,
-          maxPrice: maxPrice != null ? Number(maxPrice) : undefined,
+          brand: debouncedBrand?.trim() || undefined,
+          minPrice:
+            debouncedMinPrice != null ? Number(debouncedMinPrice) : undefined,
+          maxPrice:
+            debouncedMaxPrice != null ? Number(debouncedMaxPrice) : undefined,
           inventoryStatus: inventoryStatusFilter || undefined,
         })
       );
@@ -135,43 +137,38 @@ const Products = () => {
     pageSize,
     sortBy,
     sortDirection,
-    code,
-    name,
+    debouncedKeyword,
     categoryId,
-    brand,
-    minPrice,
-    maxPrice,
+    debouncedBrand,
+    debouncedMinPrice,
+    debouncedMaxPrice,
     inventoryStatusFilter,
   ]);
 
-  // Khi đổi nhà cung cấp → về trang 1 và fetch lại
   useEffect(() => {
     if (supplierId != null) {
       handlePageChange(1, pageSize);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [supplierId]);
 
-  // Tải danh sách khi page/sort đổi
   useEffect(() => {
     fetchList();
   }, [fetchList]);
 
-  // Đồng bộ total từ Redux vào hook để Table hiển thị đúng
   useEffect(() => {
     setTotal(pagination.totalElements || 0);
   }, [pagination.totalElements, setTotal]);
 
-  // Nút Tìm kiếm: quay về trang 1 và để effect tự fetch
-  const onSearch = () => {
-    handlePageChange(1, pageSize);
-    // fetchList sẽ được gọi tự động qua useEffect khi currentPage thay đổi
-  };
+  useEffect(() => {
+    if (debouncedKeyword !== undefined) {
+      resetPagination();
+    }
 
-  // Nút Xóa lọc: reset filters + reset phân trang + reset sort
+  }, [debouncedKeyword]);
+
   const onResetFilters = () => {
-    setCode("");
-    setName("");
+    setSearchKeyword("");
     setCategoryId(null);
     setBrand("");
     setSupplierId(null);
@@ -183,7 +180,6 @@ const Products = () => {
     resetPagination();
   };
 
-  // Table onChange: đổi trang/kích thước + cập nhật sorter
   const onTableChange = (p, _filters, sorter) => {
     handlePageChange(p.current, p.pageSize);
     if (sorter && sorter.field) {
@@ -192,7 +188,6 @@ const Products = () => {
     }
   };
 
-  // Handlers cho CRUD modal/bảng
   const handleCreate = () => {
     setEditingProduct(null);
     setIsModalVisible(true);
@@ -216,7 +211,7 @@ const Products = () => {
   const handleView = (idProduct) => {
     navigate(`/products/${idProduct}`);
   };
-  
+
   const handleViewReviews = (idProduct) => {
     navigate(`/products/${idProduct}/reviews`);
   };
@@ -260,7 +255,7 @@ const Products = () => {
         dataIndex: "status",
         key: "status",
         render: (st, record) => {
-          // Determine stock status based on status and stockQuantity
+
           if (st === "OUT_OF_STOCK" || record.stockQuantity === 0) {
             return <Tag color="red">Hết hàng</Tag>;
           } else if (
@@ -352,29 +347,60 @@ const Products = () => {
   }, [list, columns]);
 
   return (
-    <div>
-      <div className="page-header" style={{ marginBottom: 12 }}>
-        <Title level={2}>Quản lý Sản phẩm</Title>
-        <Text>Danh sách, lọc, tạo/sửa/xóa sản phẩm</Text>
+    <div style={{ padding: "8px 0" }}>
+      <div
+        className="page-header"
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}>
+        <div>
+          <Title
+            level={2}
+            style={{
+              marginBottom: 4,
+              fontWeight: 700,
+              color: "#0F172A",
+            }}>
+            Quản lý sản phẩm
+          </Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>
+            Danh sách và quản lý tồn kho sản phẩm TechStore
+          </Text>
+        </div>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleCreate}
+          style={{
+            borderRadius: 9999,
+            display: "flex",
+            alignItems: "center",
+          }}>
+          Thêm sản phẩm
+        </Button>
       </div>
 
-      <Card style={{ marginBottom: 12 }}>
-        <Row gutter={[8, 8]}>
-          <Col xs={24} sm={12} md={6}>
+      <Card
+        style={{
+          marginBottom: 12,
+          borderRadius: 12,
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+          background: "#FFFFFF",
+        }}
+        bodyStyle={{ padding: 16 }}>
+        <Row gutter={[8, 12]}>
+          <Col xs={24} sm={12} md={8}>
             <Input
-              placeholder="Mã sản phẩm"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              onPressEnter={onSearch}
-              allowClear
-            />
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Input
-              placeholder="Tên sản phẩm"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onPressEnter={onSearch}
+              placeholder="Tìm kiếm theo mã hoặc tên sản phẩm..."
+              prefix={<SearchOutlined style={{ color: "#94A3B8" }} />}
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
               allowClear
             />
           </Col>
@@ -415,32 +441,29 @@ const Products = () => {
             />
           </Col>
 
-          <Col xs={24} sm={12} md={6}>
+          <Col xs={24} sm={12} md={4}>
             <Input
               placeholder="Thương hiệu"
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
-              onPressEnter={onSearch}
               allowClear
             />
           </Col>
 
-          <Col xs={12} sm={6} md={4}>
+          <Col xs={12} sm={6} md={3}>
             <InputNumber
               placeholder="Giá từ"
               value={minPrice}
               onChange={(value) => setMinPrice(value)}
-              onPressEnter={onSearch}
               min={0}
               style={{ width: "100%" }}
             />
           </Col>
-          <Col xs={12} sm={6} md={4}>
+          <Col xs={12} sm={6} md={3}>
             <InputNumber
               placeholder="Giá đến"
               value={maxPrice}
               onChange={(value) => setMaxPrice(value)}
-              onPressEnter={onSearch}
               min={0}
               style={{ width: "100%" }}
             />
@@ -463,13 +486,13 @@ const Products = () => {
           </Col>
 
           <Col xs={24} sm={24} md={8}>
-            <Space wrap>
-              <Button
-                type="primary"
-                icon={<SearchOutlined />}
-                onClick={onSearch}>
-                Tìm kiếm
-              </Button>
+            <Space
+              wrap
+              style={{
+                display: "flex",
+                justifyContent: "flex-start",
+                gap: 8,
+              }}>
               <Button icon={<ReloadOutlined />} onClick={onResetFilters}>
                 Xóa lọc
               </Button>
@@ -479,18 +502,19 @@ const Products = () => {
               <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
                 Xuất CSV
               </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleCreate}>
-                Thêm sản phẩm
-              </Button>
             </Space>
           </Col>
         </Row>
       </Card>
 
-      <Card>
+      <Card
+        style={{
+          borderRadius: 12,
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+          background: "#FFFFFF",
+        }}
+        bodyStyle={{ padding: 16 }}>
         {loading && (!list || list.length === 0) ? (
           <LoadingSkeleton type="table" rows={5} />
         ) : (
@@ -518,6 +542,7 @@ const Products = () => {
                 />
               ),
             }}
+            size="middle"
           />
         )}
       </Card>

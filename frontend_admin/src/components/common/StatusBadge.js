@@ -1,15 +1,6 @@
 import React from "react";
 import { Tag, Badge } from "antd";
 
-/**
- * StatusBadge Component
- * Displays status with appropriate color and icon
- * 
- * @param {Object} props
- * @param {string} props.status - Status value
- * @param {Object} props.statusMap - Status mapping object { STATUS: { text, color, icon } }
- * @param {string} props.type - Display type: 'tag' | 'badge' (default: 'tag')
- */
 const StatusBadge = ({ status, statusMap = {}, type = "tag" }) => {
   if (!status) return null;
 
@@ -38,4 +29,3 @@ const StatusBadge = ({ status, statusMap = {}, type = "tag" }) => {
 };
 
 export default StatusBadge;
-

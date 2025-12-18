@@ -1,16 +1,5 @@
--- ============================================================
--- FLYWAY MIGRATION: V1 - Initial Database Schema
--- ============================================================
--- File này chứa toàn bộ schema ban đầu của database
--- Flyway sẽ tự động chạy file này khi ứng dụng khởi động lần đầu
--- ============================================================
-
 SET NAMES utf8mb4;
 
--- ============================================================
--- BẢNG USERS
--- Tài khoản hệ thống: ADMIN / EMPLOYEE / CUSTOMER
--- ============================================================
 CREATE TABLE IF NOT EXISTS users (
   id_user      INT NOT NULL AUTO_INCREMENT,
   username     VARCHAR(100) NOT NULL,
@@ -25,10 +14,6 @@ CREATE TABLE IF NOT EXISTS users (
   UNIQUE KEY uq_users_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================================================
--- BẢNG CUSTOMERS
--- Thông tin khách hàng; liên kết 1-1 (tuỳ chọn) với users
--- ============================================================
 CREATE TABLE IF NOT EXISTS customers (
   id_customer    INT NOT NULL AUTO_INCREMENT,
   id_user        INT DEFAULT NULL COMMENT 'Liên kết tới bảng users',
@@ -46,10 +31,6 @@ CREATE TABLE IF NOT EXISTS customers (
     ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================================================
--- BẢNG EMPLOYEES
--- Thông tin nhân viên; liên kết 1-1 (tuỳ chọn) với users
--- ============================================================
 CREATE TABLE IF NOT EXISTS employees (
   id_employee   INT NOT NULL AUTO_INCREMENT,
   id_user       INT DEFAULT NULL COMMENT 'Liên kết tới bảng users',
@@ -67,10 +48,6 @@ CREATE TABLE IF NOT EXISTS employees (
     ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================================================
--- BẢNG SUPPLIERS
--- Nhà cung cấp/Brand
--- ============================================================
 CREATE TABLE IF NOT EXISTS suppliers (
   id_supplier   INT NOT NULL AUTO_INCREMENT,
   supplier_name VARCHAR(255) NOT NULL,
@@ -83,10 +60,6 @@ CREATE TABLE IF NOT EXISTS suppliers (
   KEY idx_suppliers_name (supplier_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================================================
--- BẢNG CATEGORIES
--- Phân loại sản phẩm, có prefix để sinh SKU
--- ============================================================
 CREATE TABLE IF NOT EXISTS categories (
   id_category    INT NOT NULL AUTO_INCREMENT,
   category_name  VARCHAR(255) NOT NULL,
@@ -97,10 +70,6 @@ CREATE TABLE IF NOT EXISTS categories (
   UNIQUE KEY uq_categories_name (category_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================================================
--- BẢNG PRODUCTS
--- Sản phẩm với mã đặc trưng (IMEI/Serial/SKU/Barcode) + Brand/Supplier
--- ============================================================
 CREATE TABLE IF NOT EXISTS products (
   id_product      INT NOT NULL AUTO_INCREMENT,
   id_category     INT DEFAULT NULL,
@@ -112,7 +81,6 @@ CREATE TABLE IF NOT EXISTS products (
   stock_quantity  INT DEFAULT 0 CHECK (stock_quantity >= 0),
   status          ENUM('IN_STOCK','OUT_OF_STOCK','DISCONTINUED') DEFAULT 'IN_STOCK',
   image_url       VARCHAR(500) DEFAULT NULL,
-  -- Mã sản phẩm đặc trưng
   product_code    VARCHAR(100) NOT NULL DEFAULT '' COMMENT 'Mã: IMEI/Serial/SKU/Barcode',
   code_type       ENUM('IMEI','SERIAL','SKU','BARCODE') DEFAULT 'SKU',
   sku             VARCHAR(50) UNIQUE COMMENT 'SKU: PREFIX-XXXX',
@@ -133,10 +101,6 @@ CREATE TABLE IF NOT EXISTS products (
     ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================================================
--- BẢNG CARTS
--- Mỗi khách hàng có tối đa 1 giỏ hàng
--- ============================================================
 CREATE TABLE IF NOT EXISTS carts (
   id_cart     INT NOT NULL AUTO_INCREMENT,
   id_customer INT NOT NULL,
@@ -149,10 +113,6 @@ CREATE TABLE IF NOT EXISTS carts (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================================================
--- BẢNG CART_ITEMS
--- Ràng buộc duy nhất (id_cart, id_product) để không trùng dòng
--- ============================================================
 CREATE TABLE IF NOT EXISTS cart_items (
   id_cart_item INT NOT NULL AUTO_INCREMENT,
   id_cart      INT NOT NULL,
@@ -171,10 +131,6 @@ CREATE TABLE IF NOT EXISTS cart_items (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================================================
--- BẢNG ORDERS
--- final_amount = total_amount - discount (không âm)
--- ============================================================
 CREATE TABLE IF NOT EXISTS orders (
   id_order        INT NOT NULL AUTO_INCREMENT,
   id_customer     INT DEFAULT NULL,
@@ -201,10 +157,6 @@ CREATE TABLE IF NOT EXISTS orders (
     ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================================================
--- BẢNG ORDER_DETAILS
--- Ràng buộc duy nhất (id_order, id_product) tránh trùng dòng
--- ============================================================
 CREATE TABLE IF NOT EXISTS order_details (
   id_order_detail INT NOT NULL AUTO_INCREMENT,
   id_order        INT NOT NULL,
@@ -223,9 +175,6 @@ CREATE TABLE IF NOT EXISTS order_details (
     ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================================================
--- BẢNG PURCHASE_ORDERS (Đơn nhập)
--- ============================================================
 CREATE TABLE IF NOT EXISTS purchase_orders (
   id_purchase_order INT NOT NULL AUTO_INCREMENT,
   id_supplier       INT DEFAULT NULL,
@@ -245,10 +194,6 @@ CREATE TABLE IF NOT EXISTS purchase_orders (
     ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================================================
--- BẢNG PURCHASE_ORDER_DETAILS
--- Ràng buộc duy nhất (id_purchase_order, id_product)
--- ============================================================
 CREATE TABLE IF NOT EXISTS purchase_order_details (
   id_purchase_order_detail INT NOT NULL AUTO_INCREMENT,
   id_purchase_order        INT NOT NULL,
@@ -267,10 +212,6 @@ CREATE TABLE IF NOT EXISTS purchase_order_details (
     ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================================================
--- BẢNG INVENTORY_TRANSACTIONS
--- Ghi nhận nhập/xuất kho; dùng reference_type + reference_id để tham chiếu mềm
--- ============================================================
 CREATE TABLE IF NOT EXISTS inventory_transactions (
   id_transaction   INT NOT NULL AUTO_INCREMENT,
   id_product       INT NOT NULL,
@@ -293,10 +234,6 @@ CREATE TABLE IF NOT EXISTS inventory_transactions (
     ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================================================
--- BẢNG SHIPMENTS
--- Theo dõi vận chuyển cho đơn hàng (1-1 với orders)
--- ============================================================
 CREATE TABLE IF NOT EXISTS shipments (
   id_shipment     INT NOT NULL AUTO_INCREMENT,
   id_order        INT NOT NULL,
@@ -312,63 +249,3 @@ CREATE TABLE IF NOT EXISTS shipments (
     FOREIGN KEY (id_order) REFERENCES orders (id_order)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

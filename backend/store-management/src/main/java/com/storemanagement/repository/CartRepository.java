@@ -14,10 +14,7 @@ import java.util.Optional;
 public interface CartRepository extends JpaRepository<Cart, Integer> {
     @EntityGraph(attributePaths = {"cartItems", "cartItems.product"})
     Optional<Cart> findByCustomerIdCustomer(Integer customerId);
-    
-    /**
-     * Lấy danh sách product IDs trong giỏ hàng của customer
-     */
+
     @Query(value = "SELECT ci.id_product " +
            "FROM carts c " +
            "INNER JOIN cart_items ci ON c.id_cart = ci.id_cart " +
