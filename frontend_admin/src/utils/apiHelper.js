@@ -1,10 +1,6 @@
-/**
- * Helper để xử lý response và error từ API
- */
-
 export const handleApiError = (error) => {
   if (error.errors) {
-    // Validation errors từ Spring Boot
+
     const errorMessages = Object.entries(error.errors)
       .map(([field, message]) => `${field}: ${message}`)
       .join("\n");
@@ -18,11 +14,8 @@ export const handleApiSuccess = (response, defaultMessage = "Thành công") => {
   return response.message || defaultMessage;
 };
 
-/**
- * Format data để gửi lên server
- */
 export const formatRequestData = (data) => {
-  // Loại bỏ các trường undefined hoặc null
+
   return Object.entries(data).reduce((acc, [key, value]) => {
     if (value !== undefined && value !== null) {
       acc[key] = value;
@@ -31,9 +24,6 @@ export const formatRequestData = (data) => {
   }, {});
 };
 
-/**
- * Parse JWT token để lấy thông tin
- */
 export const parseJwt = (token) => {
   try {
     const base64Url = token.split(".")[1];
@@ -50,9 +40,6 @@ export const parseJwt = (token) => {
   }
 };
 
-/**
- * Kiểm tra JWT token có hết hạn chưa
- */
 export const isTokenExpired = (token) => {
   const decoded = parseJwt(token);
   if (!decoded || !decoded.exp) {
@@ -63,17 +50,11 @@ export const isTokenExpired = (token) => {
   return decoded.exp < currentTime;
 };
 
-/**
- * Lấy role từ token
- */
 export const getRoleFromToken = (token) => {
   const decoded = parseJwt(token);
   return decoded?.role || null;
 };
 
-/**
- * Kiểm tra user có role cụ thể không
- */
 export const hasRole = (requiredRole) => {
   const token = localStorage.getItem("token");
   if (!token) return false;
@@ -82,9 +63,6 @@ export const hasRole = (requiredRole) => {
   return role === requiredRole;
 };
 
-/**
- * Kiểm tra user có một trong các roles không
- */
 export const hasAnyRole = (requiredRoles = []) => {
   const token = localStorage.getItem("token");
   if (!token) return false;

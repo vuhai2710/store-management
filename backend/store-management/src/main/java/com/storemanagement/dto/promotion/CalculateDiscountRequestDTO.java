@@ -18,6 +18,8 @@ public class CalculateDiscountRequestDTO {
     @DecimalMin(value = "0.0", message = "Tổng tiền đơn hàng phải lớn hơn hoặc bằng 0")
     private BigDecimal totalAmount;
 
-    private String customerType; // VIP, REGULAR
-}
+    private String customerType;
 
+    @DecimalMin(value = "0.0", message = "Phí vận chuyển phải lớn hơn hoặc bằng 0")
+    private BigDecimal shippingFee;
+}

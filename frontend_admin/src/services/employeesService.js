@@ -1,36 +1,37 @@
-import api from './api';
-import dayjs from 'dayjs';
+import api from "./api";
+import dayjs from "dayjs";
 
 const mapPage = (pageData) => {
   const data = pageData?.content ?? pageData?.data ?? pageData?.items ?? [];
   const total = pageData?.totalElements ?? pageData?.total ?? data.length;
   const size = pageData?.size ?? pageData?.pageSize ?? 10;
-  const number = pageData?.page ?? pageData?.pageNumber ?? pageData?.number ?? 0;
+  const number =
+    pageData?.page ?? pageData?.pageNumber ?? pageData?.number ?? 0;
 
   return { data, total, page: number + 1, pageSize: size };
 };
 
 const SORT_FIELD_MAP = {
-  idEmployee: 'idEmployee',
-  employeeName: 'employeeName',
-  hireDate: 'hireDate',
-  username: 'user.username',
-  email: 'user.email',
-  isActive: 'user.isActive',
-  createdAt: 'user.createdAt',
-  updatedAt: 'user.updatedAt',
+  idEmployee: "idEmployee",
+  employeeName: "employeeName",
+  hireDate: "hireDate",
+  username: "user.username",
+  email: "user.email",
+  isActive: "user.isActive",
+  createdAt: "user.createdAt",
+  updatedAt: "user.updatedAt",
 };
 
 const toBackendDate = (val) => {
   if (!val) return null;
-  // Hỗ trợ cả dayjs object hoặc string ISO
+
   const d = dayjs(val);
-  return d.isValid() ? d.format('DD/MM/YYYY') : val;
+  return d.isValid() ? d.format("DD/MM/YYYY") : val;
 };
 
 const normalizeEmployeePayload = (data) => {
   const payload = { ...data };
-  if (Object.prototype.hasOwnProperty.call(payload, 'hireDate')) {
+  if (Object.prototype.hasOwnProperty.call(payload, "hireDate")) {
     payload.hireDate = toBackendDate(payload.hireDate);
   }
   return payload;
@@ -38,62 +39,80 @@ const normalizeEmployeePayload = (data) => {
 
 export const employeesService = {
   getEmployees: async (params = {}) => {
-    const { page = 1, pageSize = 10, sortBy = 'idEmployee', sortDirection = 'DESC' } = params;
-    const backendSortBy = SORT_FIELD_MAP[sortBy] || 'idEmployee';
-    const dir = (sortDirection || 'DESC').toString().toUpperCase();
+    const {
+      page = 1,
+      pageSize = 10,
+      sortBy = "idEmployee",
+      sortDirection = "DESC",
+      keyword,
+    } = params;
+    const backendSortBy = SORT_FIELD_MAP[sortBy] || "idEmployee";
+    const dir = (sortDirection || "DESC").toString().toUpperCase();
 
-    const pageable = {
-      page: Math.max(0, (page || 1) - 1),
-      size: pageSize,
-      sort: `${backendSortBy},${dir}`,
+    const queryParams = {
+      pageNo: Math.max(0, (page || 1) - 1),
+      pageSize: pageSize,
+      sortBy: backendSortBy,
+      sortDirection: dir,
     };
 
-    console.log('Calling getEmployees with params:', pageable);
-    const response = await api.get('/employees/paginated', { params: pageable });
-    console.log('API Response getEmployees:', response.data);
+    if (keyword && keyword.trim()) {
+      queryParams.keyword = keyword.trim();
+    }
+
+    console.log("Calling getEmployees with params:", queryParams);
+    const response = await api.get("/employees/paginated", {
+      params: queryParams,
+    });
+    console.log("API Response getEmployees:", response.data);
     return mapPage(response.data);
   },
 
   getEmployeeById: async (id) => {
-    console.log('Calling getEmployeeById with id:', id);
+    console.log("Calling getEmployeeById with id:", id);
     const response = await api.get(`/employees/${id}`);
-    console.log('API Response getEmployeeById:', response.data);
+    console.log("API Response getEmployeeById:", response.data);
+    return response.data;
+  },
+
+  getEmployeeDetailById: async (id) => {
+    console.log("Calling getEmployeeDetailById with id:", id);
+    const response = await api.get(`/employees/${id}/detail`);
+    console.log("API Response getEmployeeDetailById:", response.data);
     return response.data;
   },
 
   createEmployee: async (employeeData) => {
     const body = normalizeEmployeePayload(employeeData);
-    console.log('Calling createEmployee with data:', body);
-    const response = await api.post('/employees', body);
-    console.log('API Response createEmployee:', response.data);
+    console.log("Calling createEmployee with data:", body);
+    const response = await api.post("/employees", body);
+    console.log("API Response createEmployee:", response.data);
     return response.data;
   },
 
   updateEmployee: async (id, employeeData) => {
     const body = normalizeEmployeePayload(employeeData);
-    console.log('Calling updateEmployee with id:', id, 'data:', body);
+    console.log("Calling updateEmployee with id:", id, "data:", body);
     const response = await api.put(`/employees/${id}`, body);
-    console.log('API Response updateEmployee:', response.data);
+    console.log("API Response updateEmployee:", response.data);
     return response.data;
   },
 
   deleteEmployee: async (id) => {
-    console.log('Calling deleteEmployee with id:', id);
+    console.log("Calling deleteEmployee with id:", id);
     const response = await api.delete(`/employees/${id}`);
-    console.log('API Response deleteEmployee:', response.data);
+    console.log("API Response deleteEmployee:", response.data);
     return response.data;
   },
 
-  // Get my profile (EMPLOYEE)
   getMyProfile: async () => {
-    const response = await api.get('/employees/me');
+    const response = await api.get("/employees/me");
     return response.data;
   },
 
-  // Update my profile (EMPLOYEE)
   updateMyProfile: async (employeeData) => {
     const body = normalizeEmployeePayload(employeeData);
-    const response = await api.put('/employees/me', body);
+    const response = await api.put("/employees/me", body);
     return response.data;
   },
 
@@ -101,6 +120,22 @@ export const employeesService = {
   getPositions: async () => [],
   updateEmployeeRole: async () => null,
   getEmployeeActivities: async () => [],
+
+  getEmployeeOrders: async (employeeId, params = {}) => {
+    const { page = 1, pageSize = 10, status, dateFrom, dateTo } = params;
+    const queryParams = {
+      pageNo: Math.max(0, (page || 1) - 1),
+      pageSize: pageSize,
+    };
+    if (status) queryParams.status = status;
+    if (dateFrom) queryParams.dateFrom = dayjs(dateFrom).format("YYYY-MM-DD");
+    if (dateTo) queryParams.dateTo = dayjs(dateTo).format("YYYY-MM-DD");
+
+    console.log("Calling getEmployeeOrders with params:", queryParams);
+    const response = await api.get(`/employees/${employeeId}/orders`, {
+      params: queryParams,
+    });
+    console.log("API Response getEmployeeOrders:", response.data);
+    return mapPage(response.data);
+  },
 };
-
-

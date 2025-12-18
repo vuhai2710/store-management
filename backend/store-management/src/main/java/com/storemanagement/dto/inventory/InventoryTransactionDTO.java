@@ -15,22 +15,22 @@ import java.time.LocalDateTime;
 @Builder
 public class InventoryTransactionDTO {
     private Integer idTransaction;
-    
+
     private Integer idProduct;
     private String productName;
     private String productCode;
     private String sku;
-    
+
     private TransactionType transactionType;
     private Integer quantity;
-    
+
     private ReferenceType referenceType;
     private Integer referenceId;
-    
+
     private LocalDateTime transactionDate;
-    
+
     private Integer idEmployee;
     private String employeeName;
-    
+
     private String notes;
 }

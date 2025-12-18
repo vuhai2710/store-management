@@ -1,8 +1,3 @@
-/**
- * Custom Hook - useAuth
- * Hook để quản lý authentication state
- */
-
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser, setLoading, logout } from "../store/slices/authSlice";
@@ -14,10 +9,9 @@ export const useAuth = () => {
   const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    // Set loading true khi bắt đầu check auth
+
     dispatch(setLoading(true));
-    
-    // Kiểm tra token khi component mount
+
     const checkAuth = async () => {
       try {
         const token = authService.getToken();
@@ -27,24 +21,22 @@ export const useAuth = () => {
           return;
         }
 
-        // Kiểm tra token expired
         if (isTokenExpired && isTokenExpired(token)) {
           dispatch(logout());
           dispatch(setLoading(false));
           return;
         }
 
-        // Lấy user info từ localStorage trước (nhanh hơn)
         const storedUser = authService.getUserFromStorage();
         if (storedUser) {
           dispatch(setUser(storedUser));
           dispatch(setLoading(false));
-          // Optionally validate với backend trong background
+
           authService.getCurrentUser().catch(() => {
-            // Nếu token không hợp lệ, sẽ tự logout
+
           });
         } else {
-          // Fetch từ API nếu không có trong localStorage
+
           try {
             const currentUser = await authService.getCurrentUser();
             dispatch(setUser(currentUser));

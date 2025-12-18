@@ -30,7 +30,6 @@ const ProductDetail = () => {
   const [replyContent, setReplyContent] = useState("");
   const [selectedReviewForReply, setSelectedReviewForReply] = useState(null);
 
-  // Pagination cho reviews
   const {
     currentPage: reviewPage,
     pageSize: reviewPageSize,
@@ -94,7 +93,7 @@ const ProductDetail = () => {
     try {
       await dispatch(deleteReview(reviewId)).unwrap();
       message.success("Xóa đánh giá thành công!");
-      // Reload reviews
+
       if (id) {
         loadProductReviews(Number(id), reviewPage, reviewPageSize);
       }
@@ -128,7 +127,6 @@ const ProductDetail = () => {
     }
   };
 
-  // Tính trung bình rating
   const averageRating = productReviews.list.length > 0
     ? productReviews.list.reduce((sum, review) => sum + (review.rating || 0), 0) / productReviews.list.length
     : 0;
@@ -214,7 +212,7 @@ const ProductDetail = () => {
         onClose={() => setLightboxVisible(false)}
       />
 
-      {/* Reviews Section */}
+      { }
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24}>
           <Card
@@ -332,5 +330,3 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
-
-

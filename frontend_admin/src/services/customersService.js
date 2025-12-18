@@ -1,38 +1,33 @@
 import api from "./api";
 
-// Helper function để parse date từ format dd/MM/yyyy sang ISO string
 const parseBackendDate = (dateString) => {
   if (!dateString) return new Date().toISOString();
 
-  // Nếu đã là ISO string, trả về luôn
   if (dateString.includes("T") || dateString.includes("-")) {
     return dateString;
   }
 
-  // Parse format dd/MM/yyyy từ backend
   const parts = dateString.split("/");
   if (parts.length === 3) {
     const [day, month, year] = parts;
-    // Tạo ISO string: yyyy-MM-dd
+
     return new Date(`${year}-${month}-${day}`).toISOString();
   }
 
   return new Date().toISOString();
 };
 
-// Helper function để transform customer data từ Backend sang Frontend format
-// Keep both original backend fields (customerName, phoneNumber) and transformed fields (name, phone) for compatibility
 const transformCustomer = (customer) => ({
   id: customer.idCustomer,
-  idCustomer: customer.idCustomer, // Keep original ID field
+  idCustomer: customer.idCustomer,
   userId: customer.idUser,
   idUser: customer.idUser,
   name: customer.customerName,
-  customerName: customer.customerName, // Keep original field for backend requests
+  customerName: customer.customerName,
   fullName: customer.customerName,
   email: customer.email,
   phone: customer.phoneNumber,
-  phoneNumber: customer.phoneNumber, // Keep original field for backend requests
+  phoneNumber: customer.phoneNumber,
   address: customer.address,
   username: customer.username,
   customerType: customer.customerType || "REGULAR",
@@ -44,11 +39,7 @@ const transformCustomer = (customer) => ({
   updatedAt: parseBackendDate(customer.updatedAt),
 });
 
-// Helper function để xử lý PageResponse<CustomerDto> từ Backend
-// Note: API interceptor đã extract response.data.data, nên response.data chính là PageResponse
 const handlePageResponse = (pageResponse) => {
-  // pageResponse = { content, pageNo, pageSize, totalElements, totalPages, isFirst, isLast, hasNext, hasPrevious, isEmpty }
-  // Note: Backend returns pageNo as 0-indexed, we need to convert to 1-indexed for frontend
 
   if (!pageResponse) {
     return {
@@ -72,7 +63,7 @@ const handlePageResponse = (pageResponse) => {
   return {
     data: transformedData,
     total: pageResponse.totalElements || 0,
-    pageNo: (pageResponse.pageNo || 0) + 1, // Convert from 0-indexed to 1-indexed
+    pageNo: (pageResponse.pageNo || 0) + 1,
     pageSize: pageResponse.pageSize || 5,
     totalPages: pageResponse.totalPages || 0,
     isFirst: pageResponse.isFirst !== undefined ? pageResponse.isFirst : true,
@@ -84,10 +75,7 @@ const handlePageResponse = (pageResponse) => {
   };
 };
 
-// Helper function để xử lý CustomerDto từ Backend
-// Note: API interceptor đã extract response.data.data, nên response.data chính là CustomerDto
 const handleSingleCustomerResponse = (customerDto) => {
-  // customerDto = CustomerDto object
 
   if (!customerDto) {
     throw new Error("Invalid response from server");
@@ -96,17 +84,19 @@ const handleSingleCustomerResponse = (customerDto) => {
   return transformCustomer(customerDto);
 };
 export const customersService = {
-  // Lấy tất cả customers với phân trang (ADMIN, EMPLOYEE)
-  // Backend: GET /api/v1/customers?pageNo=1&pageSize=5&sortBy=idCustomer&sortDirection=ASC
-  // Returns: ApiResponse<PageResponse<CustomerDto>>
+
   getAllCustomers: async (params = {}) => {
     try {
       const requestParams = {
-        pageNo: params.pageNo || params.page || 1, // Base-1 (Backend expects 1-indexed)
+        pageNo: params.pageNo || params.page || 1,
         pageSize: params.pageSize || params.limit || 5,
         sortBy: params.sortBy || "idCustomer",
         sortDirection: params.sortDirection || "ASC",
       };
+
+      if (params.keyword) {
+        requestParams.keyword = params.keyword;
+      }
 
       console.log("Calling getAllCustomers with params:", requestParams);
       const response = await api.get("/customers", { params: requestParams });
@@ -118,20 +108,11 @@ export const customersService = {
     }
   },
 
-  // Alias cho getAllCustomers - dùng cho pagination/filtering
-  // Tự động chọn endpoint dựa vào params
   getCustomers: async (params = {}) => {
-    // Nếu có name hoặc phone, dùng searchCustomers endpoint
-    if (params.name || params.phone) {
-      return customersService.searchCustomers(params);
-    }
-    // Nếu không có search, dùng getAllCustomers
+
     return customersService.getAllCustomers(params);
   },
 
-  // Lấy customer theo ID (ADMIN, EMPLOYEE)
-  // Backend: GET /api/v1/customers/{id}
-  // Returns: ApiResponse<CustomerDto>
   getCustomerById: async (id) => {
     try {
       console.log("Calling getCustomerById with id:", id);
@@ -144,9 +125,6 @@ export const customersService = {
     }
   },
 
-  // Tìm kiếm customers với phân trang (ADMIN, EMPLOYEE)
-  // Backend: GET /api/v1/customers/search?name=...&phone=...&pageNo=1&pageSize=5&sortBy=idCustomer&sortDirection=ASC
-  // Returns: ApiResponse<PageResponse<CustomerDto>>
   searchCustomers: async (params = {}) => {
     try {
       const requestParams = {
@@ -171,12 +149,9 @@ export const customersService = {
     }
   },
 
-  // Lấy customers theo loại (ADMIN, EMPLOYEE)
-  // Backend: GET /api/v1/customers/type/{type}?pageNo=1&pageSize=5&sortBy=idCustomer&sortDirection=ASC
-  // Returns: ApiResponse<PageResponse<CustomerDto>>
   getCustomersByType: async (type, params = {}) => {
     try {
-      // Đảm bảo type viết hoa như Backend expects (REGULAR, VIP)
+
       const typeUpperCase = type.toUpperCase();
 
       const requestParams = {
@@ -203,23 +178,14 @@ export const customersService = {
     }
   },
 
-  // Cập nhật customer (ADMIN, EMPLOYEE)
-  // Backend: PUT /api/v1/customers/{id}
-  // Body: CustomerDto (customerName, phoneNumber, address, customerType)
-  // Returns: ApiResponse<CustomerDto>
-  // Note: Backend KHÔNG cho phép cập nhật email
-  // Backend validation:
-  //   - phoneNumber: ^0\d{9}$ (10 digits starting with 0)
-  //   - customerType: REGULAR hoặc VIP
   updateCustomer: async (id, customerData) => {
     try {
-      // Transform frontend data to match CustomerDto
-      // Chỉ gửi các trường backend cho phép cập nhật
+
       const requestData = {
         customerName: customerData.customerName || customerData.name,
-        phoneNumber: customerData.phoneNumber || customerData.phone, // Must match: ^0\d{9}$
+        phoneNumber: customerData.phoneNumber || customerData.phone,
         address: customerData.address,
-        customerType: customerData.customerType, // REGULAR hoặc VIP
+        customerType: customerData.customerType,
       };
 
       console.log("Calling updateCustomer with id:", id, "data:", requestData);
@@ -233,11 +199,6 @@ export const customersService = {
     }
   },
 
-  // Tạo mới customer qua Auth Register (ADMIN, EMPLOYEE)
-  // Backend: POST /api/v1/auth/register
-  // Body: AuthenticationRequestDto (username, password, email, customerName, phoneNumber, address)
-  // Returns: ApiResponse<AuthenticationResponseDto> { token, authenticated }
-  // Note: Backend tự động tạo User và Customer
   createCustomer: async (customerData) => {
     try {
       const requestData = {
@@ -253,8 +214,6 @@ export const customersService = {
       const response = await api.post("/auth/register", requestData);
       console.log("API Response createCustomer (register):", response.data);
 
-      // Response: { token, authenticated }
-      // Return success indicator - customer will be created with default REGULAR type
       return {
         success: true,
         token: response.data.token,
@@ -266,14 +225,10 @@ export const customersService = {
     }
   },
 
-  // Alias method for backward compatibility
   registerCustomer: async (formData) => {
     return customersService.createCustomer(formData);
   },
 
-  // Nâng cấp customer lên VIP (ADMIN only)
-  // Backend: PATCH /api/v1/customers/{id}/upgrade-vip
-  // Returns: ApiResponse<CustomerDto>
   upgradeToVip: async (id) => {
     try {
       console.log("Calling upgradeToVip with id:", id);
@@ -286,9 +241,6 @@ export const customersService = {
     }
   },
 
-  // Hạ cấp customer xuống REGULAR (ADMIN only)
-  // Backend: PATCH /api/v1/customers/{id}/downgrade-regular
-  // Returns: ApiResponse<CustomerDto>
   downgradeToRegular: async (id) => {
     try {
       console.log("Calling downgradeToRegular with id:", id);
@@ -301,15 +253,12 @@ export const customersService = {
     }
   },
 
-  // Xóa customer (ADMIN only)
-  // Backend: DELETE /api/v1/customers/{id}
-  // Returns: ApiResponse<Void> (data is null)
   deleteCustomer: async (id) => {
     try {
       console.log("Calling deleteCustomer with id:", id);
       const response = await api.delete(`/customers/${id}`);
       console.log("API Response deleteCustomer:", response.data);
-      // Backend returns ApiResponse with data: null
+
       return response.data;
     } catch (error) {
       console.error("Error deleteCustomer:", error);
@@ -317,9 +266,6 @@ export const customersService = {
     }
   },
 
-  // Lấy thông tin customer của chính mình (CUSTOMER role)
-  // Backend: GET /api/v1/customers/me
-  // Returns: ApiResponse<CustomerDto>
   getMyCustomerInfo: async () => {
     try {
       console.log("Calling getMyCustomerInfo");
@@ -332,19 +278,14 @@ export const customersService = {
     }
   },
 
-  // Cập nhật thông tin customer của chính mình (CUSTOMER role)
-  // Backend: PUT /api/v1/customers/me
-  // Body: CustomerDto (customerName, phoneNumber, address)
-  // Returns: ApiResponse<CustomerDto>
-  // Note: Backend không cho phép cập nhật email
   updateMyCustomerInfo: async (customerData) => {
     try {
-      // Transform frontend data to match CustomerDto
+
       const requestData = {
         customerName: customerData.customerName || customerData.name,
         phoneNumber: customerData.phoneNumber || customerData.phone,
         address: customerData.address,
-        // Note: Email không được phép cập nhật
+
       };
 
       console.log("Calling updateMyCustomerInfo with data:", requestData);

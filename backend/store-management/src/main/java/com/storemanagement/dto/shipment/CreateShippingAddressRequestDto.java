@@ -25,9 +25,9 @@ public class CreateShippingAddressRequestDto {
     @Builder.Default
     private Boolean isDefault = false;
 
-    private Integer provinceId; // ID tỉnh/thành phố từ GHN API
+    private Integer provinceId;
 
-    private Integer districtId; // ID quận/huyện từ GHN API
+    private Integer districtId;
 
-    private String wardCode; // Code phường/xã từ GHN API
+    private String wardCode;
 }

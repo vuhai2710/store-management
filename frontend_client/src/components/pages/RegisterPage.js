@@ -1,5 +1,6 @@
-// src/components/pages/RegisterPage.js
+
 import React, { useState } from "react";
+import { toast } from "react-toastify";
 import { User, Mail, Lock, Eye, EyeOff, UserPlus, Phone } from "lucide-react";
 import styles from "../../styles/styles";
 import { useAuth } from "../../hooks/useAuth";
@@ -171,11 +172,25 @@ const RegisterPage = ({ setCurrentPage }) => {
           phoneNumber: formData.phoneNumber.trim(),
           address: formData.address.trim() || undefined,
         });
-        // Redirect to home page after successful registration
+
+        toast.success("Đăng ký tài khoản thành công! Chào mừng bạn đến với Electronic Store.");
+
         setCurrentPage("home");
       } catch (error) {
         console.error("Register error:", error);
-        setApiError(error?.message || "Đăng ký thất bại. Vui lòng thử lại.");
+
+        const errorMessage = error?.message || "Đăng ký thất bại. Vui lòng thử lại.";
+
+        toast.error(errorMessage);
+
+        setApiError(errorMessage);
+
+        if (error?.fieldErrors) {
+          setErrors((prev) => ({
+            ...prev,
+            ...error.fieldErrors,
+          }));
+        }
       } finally {
         setIsLoading(false);
       }
@@ -234,7 +249,7 @@ const RegisterPage = ({ setCurrentPage }) => {
             boxShadow: "0 24px 60px rgba(15, 23, 42, 0.16)",
             overflow: "hidden",
           }}>
-          {/* Header */}
+          {}
           <div
             style={{
               background:
@@ -269,9 +284,9 @@ const RegisterPage = ({ setCurrentPage }) => {
             </p>
           </div>
 
-          {/* Form */}
+          {}
           <form onSubmit={handleSubmit} style={{ padding: "2rem" }}>
-            {/* Username Field */}
+            {}
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -294,7 +309,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {/* Customer Name Field */}
+            {}
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -317,7 +332,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {/* Email Field */}
+            {}
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -340,7 +355,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {/* Phone Number Field */}
+            {}
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -363,7 +378,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {/* Address Field (Optional) */}
+            {}
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -385,7 +400,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {/* Password Field */}
+            {}
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -422,7 +437,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {/* Confirm Password Field */}
+            {}
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -459,9 +474,9 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {/* Terms and Conditions section removed: registration doesn't depend on checkbox */}
+            {}
 
-            {/* API Error Message */}
+            {}
             {apiError && (
               <div
                 style={{
@@ -476,7 +491,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               </div>
             )}
 
-            {/* Submit Button */}
+            {}
             <Button
               type="submit"
               disabled={isLoading}
@@ -485,7 +500,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               {isLoading ? "Đang đăng ký..." : "Đăng Ký Ngay"}
             </Button>
 
-            {/* Divider */}
+            {}
             <div
               style={{
                 display: "flex",
@@ -509,7 +524,7 @@ const RegisterPage = ({ setCurrentPage }) => {
                 }}></div>
             </div>
 
-            {/* Login Link */}
+            {}
             <div
               style={{
                 textAlign: "center",
@@ -532,7 +547,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               </button>
             </div>
 
-            {/* Back to Home */}
+            {}
             <div style={{ textAlign: "center", marginTop: "1rem" }}>
               <button
                 type="button"

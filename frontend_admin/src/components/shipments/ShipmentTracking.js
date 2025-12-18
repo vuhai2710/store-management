@@ -23,7 +23,7 @@ const ShipmentTracking = ({ shipmentId }) => {
       setSyncing(true);
       await dispatch(syncShipmentWithGHN(shipmentId)).unwrap();
       message.success("Đồng bộ với GHN thành công!");
-      // Refresh tracking
+
       dispatch(trackShipment(shipmentId));
     } catch (error) {
       message.error(error || "Đồng bộ với GHN thất bại!");
@@ -149,5 +149,3 @@ const ShipmentTracking = ({ shipmentId }) => {
 };
 
 export default ShipmentTracking;
-
-

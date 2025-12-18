@@ -1,4 +1,3 @@
-// src/components/chat/ChatWidget.js (Admin version)
 import React, { useState, useEffect, useRef } from "react";
 import { MessageOutlined, CloseOutlined } from "@ant-design/icons";
 import { Badge } from "antd";
@@ -35,7 +34,6 @@ const ChatWidget = () => {
       const convs = response?.content || [];
       setConversations(convs);
 
-      // Calculate total unread count from all conversations
       const unread = convs.reduce((sum, conv) => {
         return sum + (conv.unreadCount || 0);
       }, 0);
@@ -60,16 +58,13 @@ const ChatWidget = () => {
         onConnect: () => {
           console.log("[Admin ChatWidget] WebSocket connected");
 
-          // Subscribe to all conversations (admin can receive from any conversation)
           client.subscribe("/user/queue/chat", (message) => {
             try {
               const messageData = JSON.parse(message.body);
 
-              // If message is from CUSTOMER and widget is closed, increment unread
               if (messageData.senderType === "CUSTOMER" && !visible) {
                 setUnreadCount((prev) => prev + 1);
 
-                // Update conversations list to increment unread for this conversation
                 setConversations((prev) =>
                   prev.map((conv) =>
                     conv.idConversation === messageData.conversationId
@@ -109,8 +104,8 @@ const ChatWidget = () => {
 
   const handleOpen = () => {
     setVisible(true);
-    setUnreadCount(0); // Reset unread count when opening
-    // Reload conversations to get latest unread counts
+    setUnreadCount(0);
+
     loadConversations();
   };
 
@@ -120,7 +115,7 @@ const ChatWidget = () => {
 
   return (
     <>
-      {/* Chat Button (Bottom Right) */}
+      { }
       {!visible && (
         <div
           style={{
@@ -163,7 +158,7 @@ const ChatWidget = () => {
         </div>
       )}
 
-      {/* Chat Window */}
+      { }
       {visible && (
         <div
           style={{
@@ -181,7 +176,7 @@ const ChatWidget = () => {
             flexDirection: "column",
             overflow: "hidden",
           }}>
-          {/* Header */}
+          { }
           <div
             style={{
               padding: "16px",
@@ -214,7 +209,7 @@ const ChatWidget = () => {
             </button>
           </div>
 
-          {/* Chat Window Content */}
+          { }
           <div style={{ flex: 1, overflow: "hidden" }}>
             <ChatWindow visible={true} onClose={handleClose} isWidget={true} />
           </div>

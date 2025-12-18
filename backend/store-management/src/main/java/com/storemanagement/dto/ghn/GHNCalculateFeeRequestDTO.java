@@ -11,41 +11,41 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class GHNCalculateFeeRequestDTO {
-    
+
     @JsonProperty("from_district_id")
     private Integer fromDistrictId;
-    
+
     @JsonProperty("to_district_id")
     private Integer toDistrictId;
-    
+
     @JsonProperty("to_ward_code")
     private String toWardCode;
-    
+
     @JsonProperty("weight")
     @Builder.Default
     private Integer weight = 1000;
-    
+
     @JsonProperty("length")
     @Builder.Default
     private Integer length = 20;
-    
+
     @JsonProperty("width")
     @Builder.Default
     private Integer width = 20;
-    
+
     @JsonProperty("height")
     @Builder.Default
     private Integer height = 20;
-    
+
     @JsonProperty("service_type_id")
     private Integer serviceTypeId;
 
     @JsonProperty("service_id")
     private Integer serviceId;
-    
+
     @JsonProperty("insurance_value")
     private Integer insuranceValue;
-    
+
     @JsonProperty("cod_amount")
     private Integer codAmount;
 }

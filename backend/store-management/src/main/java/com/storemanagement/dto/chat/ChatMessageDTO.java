@@ -16,25 +16,25 @@ import java.time.LocalDateTime;
 public class ChatMessageDTO {
     @JsonProperty("idMessage")
     private Integer idMessage;
-    
+
     @JsonProperty("conversationId")
     private Integer conversationId;
-    
+
     @JsonProperty("senderId")
     private Integer senderId;
-    
+
     @JsonProperty("senderType")
     private SenderType senderType;
-    
+
     @JsonProperty("senderName")
-    private String senderName;  // Tên người gửi (lấy từ User/Customer/Employee)
-    
+    private String senderName;
+
     @JsonProperty("senderRole")
-    private String senderRole;  // Role của người gửi: ADMIN, EMPLOYEE, CUSTOMER
-    
+    private String senderRole;
+
     @JsonProperty("message")
     private String message;
-    
+
     @JsonProperty("createdAt")
     private LocalDateTime createdAt;
 }

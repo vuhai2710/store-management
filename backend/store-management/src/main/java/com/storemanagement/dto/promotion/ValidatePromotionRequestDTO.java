@@ -1,5 +1,6 @@
 package com.storemanagement.dto.promotion;
 
+import com.storemanagement.model.Promotion;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,5 +22,9 @@ public class ValidatePromotionRequestDTO {
     @NotNull(message = "Tổng tiền đơn hàng không được để trống")
     @DecimalMin(value = "0.0", message = "Tổng tiền đơn hàng phải lớn hơn hoặc bằng 0")
     private BigDecimal totalAmount;
-}
 
+    @DecimalMin(value = "0.0", message = "Phí vận chuyển phải lớn hơn hoặc bằng 0")
+    private BigDecimal shippingFee;
+
+    private Promotion.PromotionScope expectedScope;
+}

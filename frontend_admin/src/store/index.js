@@ -6,7 +6,7 @@ import usersReducer from "./slices/usersSlice";
 const rootReducer = combineReducers({
   auth: authReducer,
   customers: customersReducer,
-  users: usersReducer, // thêm vào store
+  users: usersReducer,
 });
 
 export default rootReducer;

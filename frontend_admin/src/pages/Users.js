@@ -7,10 +7,10 @@ import {
   setUsersFilters,
   setUsersPagination,
   deleteUser,
-  activateUser,      // thêm
-  deactivateUser,    // thêm
+  activateUser,
+  deactivateUser,
 } from "../store/slices/usersSlice";
-import UserForm from "../components/users/UserForm"; // thêm
+import UserForm from "../components/users/UserForm";
 
 const { Title } = Typography;
 
@@ -26,22 +26,20 @@ const Users = () => {
 
   const [searchText, setSearchText] = useState("");
 
-  // State modal chỉnh sửa
-  const [openForm, setOpenForm] = useState(false);   // thêm
-  const [editingUser, setEditingUser] = useState(null); // thêm
+  const [openForm, setOpenForm] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
 
-  // Load danh sách
   useEffect(() => {
     dispatch(
       fetchUsers({
-        pageNo: Math.max(1, pagination.current), // đảm bảo >= 1
+        pageNo: Math.max(1, pagination.current),
         pageSize: pagination.pageSize,
         sortBy: filters.sortBy,
         sortDirection: filters.sortDirection,
         isActive: filters.isActive,
       })
     );
-    // Log để thấy API gọi
+
     console.debug("[Users] fetchUsers dispatched", {
       pageNo: Math.max(1, pagination.current),
       pageSize: pagination.pageSize,
@@ -51,7 +49,6 @@ const Users = () => {
     });
   }, [dispatch, pagination.current, pagination.pageSize, filters.sortBy, filters.sortDirection, filters.isActive]);
 
-  // Tìm kiếm client-side theo username/email (FE filter đơn giản)
   const filteredData = useMemo(() => {
     const list = Array.isArray(users) ? users : [];
     if (!searchText) return list;
@@ -66,11 +63,10 @@ const Users = () => {
   const handleTableChange = (pager, tableFilters, sorter) => {
     const newSortBy = sorter?.field || "idUser";
     const newSortDir = sorter?.order === "descend" ? "DESC" : "ASC";
-    // Antd trả current 1-based, giữ nguyên
+
     dispatch(setUsersPagination({ current: pager.current || 1, pageSize: pager.pageSize || 10 }));
     dispatch(setUsersFilters({ sortBy: newSortBy, sortDirection: newSortDir }));
 
-    // isActive filter từ table
     if (tableFilters?.isActive && tableFilters.isActive.length > 0) {
       const v = tableFilters.isActive[0];
       dispatch(setUsersFilters({ isActive: v === true || v === "true" }));
@@ -86,7 +82,7 @@ const Users = () => {
     try {
       await dispatch(deleteUser(record.idUser)).unwrap();
       message.success("Đã xóa người dùng");
-      // optional: đồng bộ phân trang
+
       dispatch(fetchUsers({
         pageNo: Math.max(1, pagination.current),
         pageSize: pagination.pageSize,
@@ -99,7 +95,7 @@ const Users = () => {
     }
   };
 
-  const handleActivate = async (record) => {          // thêm
+  const handleActivate = async (record) => {
     try {
       await dispatch(activateUser(record.idUser)).unwrap();
       message.success("Đã kích hoạt người dùng");
@@ -108,7 +104,7 @@ const Users = () => {
     }
   };
 
-  const handleDeactivate = async (record) => {        // thêm
+  const handleDeactivate = async (record) => {
     try {
       await dispatch(deactivateUser(record.idUser)).unwrap();
       message.success("Đã vô hiệu hóa người dùng");
@@ -163,7 +159,7 @@ const Users = () => {
               }}
               onChange={(e) => {
                 setSearchText(e.target.value);
-                // Reset về page 1 khi thay đổi search text
+
                 if (e.target.value === "") {
                   dispatch(setUsersPagination({ current: 1, pageSize: pagination.pageSize }));
                 }
@@ -223,7 +219,7 @@ const Users = () => {
         </div>
       </Card>
 
-      {/* Modal chỉnh sửa */}
+      { }
       <UserForm
         open={openForm}
         user={editingUser}

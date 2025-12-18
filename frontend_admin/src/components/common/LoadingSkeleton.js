@@ -1,15 +1,6 @@
 import React from "react";
 import { Skeleton, Card, Row, Col } from "antd";
 
-/**
- * LoadingSkeleton Component
- * Displays loading skeletons for tables, cards, and lists
- * 
- * @param {Object} props
- * @param {string} props.type - Type of skeleton: 'table' | 'card' | 'list' | 'custom'
- * @param {number} props.rows - Number of rows (for table/list)
- * @param {number} props.columns - Number of columns (for table)
- */
 const LoadingSkeleton = ({ type = "table", rows = 5, columns = 5 }) => {
   if (type === "table") {
     return (
@@ -63,5 +54,3 @@ const LoadingSkeleton = ({ type = "table", rows = 5, columns = 5 }) => {
 };
 
 export default LoadingSkeleton;
-
-

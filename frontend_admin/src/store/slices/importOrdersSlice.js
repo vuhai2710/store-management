@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { importOrderService } from "../../services/importOrderService";
 
-// Fetch all import orders
 export const fetchImportOrders = createAsyncThunk(
   "importOrders/fetchImportOrders",
   async (params, { rejectWithValue }) => {
@@ -14,7 +13,6 @@ export const fetchImportOrders = createAsyncThunk(
   }
 );
 
-// Fetch import order by ID
 export const fetchImportOrderById = createAsyncThunk(
   "importOrders/fetchImportOrderById",
   async (id, { rejectWithValue }) => {
@@ -27,7 +25,6 @@ export const fetchImportOrderById = createAsyncThunk(
   }
 );
 
-// Fetch import orders by supplier
 export const fetchImportOrdersBySupplier = createAsyncThunk(
   "importOrders/fetchImportOrdersBySupplier",
   async ({ supplierId, ...params }, { rejectWithValue }) => {
@@ -40,7 +37,6 @@ export const fetchImportOrdersBySupplier = createAsyncThunk(
   }
 );
 
-// Fetch import order history
 export const fetchImportOrderHistory = createAsyncThunk(
   "importOrders/fetchImportOrderHistory",
   async (params, { rejectWithValue }) => {
@@ -53,7 +49,6 @@ export const fetchImportOrderHistory = createAsyncThunk(
   }
 );
 
-// Create import order
 export const createImportOrder = createAsyncThunk(
   "importOrders/createImportOrder",
   async (importOrderData, { rejectWithValue }) => {
@@ -100,7 +95,7 @@ const importOrdersSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch import orders
+
       .addCase(fetchImportOrders.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -124,7 +119,7 @@ const importOrdersSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Fetch import order by ID
+
       .addCase(fetchImportOrderById.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -138,7 +133,7 @@ const importOrdersSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Fetch import orders by supplier
+
       .addCase(fetchImportOrdersBySupplier.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -159,7 +154,7 @@ const importOrdersSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Fetch import order history
+
       .addCase(fetchImportOrderHistory.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -180,7 +175,7 @@ const importOrdersSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Create import order
+
       .addCase(createImportOrder.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -200,5 +195,3 @@ const importOrdersSlice = createSlice({
 
 export const { setFilters, clearFilters, clearCurrentImportOrder } = importOrdersSlice.actions;
 export default importOrdersSlice.reducer;
-
-

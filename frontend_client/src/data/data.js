@@ -1,4 +1,3 @@
-// src/data/data.js
 
 export const categories = ['Smartphones', 'Laptops', 'Accessories', 'Wearables', 'Audio', 'Gaming'];
 

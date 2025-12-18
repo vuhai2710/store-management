@@ -1,10 +1,13 @@
-// App.js
+
 import React, { useState, useEffect, useRef } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-// Import context
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { BuyNowProvider } from "./contexts/BuyNowContext";
 
-// Import components
+import { useDebounce } from "./hooks/useDebounce";
+
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import HomePage from "./components/pages/HomePage";
@@ -13,20 +16,22 @@ import CartPage from "./components/pages/CartPage";
 import ProductDetailPage from "./components/pages/ProductDetailPage";
 import LoginPage from "./components/pages/LoginPage";
 import RegisterPage from "./components/pages/RegisterPage";
+import ResetPasswordPage from "./components/pages/ResetPasswordPage";
 import CheckoutPage from "./components/pages/CheckoutPage";
 import OrdersPage from "./components/pages/OrdersPage";
 import ProfilePage from "./components/pages/ProfilePage";
 import PaymentSuccessPage from "./components/pages/PaymentSuccessPage";
 import PaymentCancelPage from "./components/pages/PaymentCancelPage";
+import RequestReturnPage from "./pages/returns/RequestReturnPage";
+import ReturnHistoryPage from "./pages/returns/ReturnHistoryPage";
+import ReturnDetailPage from "./pages/returns/ReturnDetailPage";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import ChatWidget from "./components/chat/ChatWidget";
 import FlyingCartIcon from "./components/common/FlyingCartIcon";
 
-// Import services
 import { cartService } from "./services/cartService";
 
-// Import data (for fallback/initial state)
 import { products, initialCart } from "./data/data";
 
 function AppContent() {
@@ -38,70 +43,93 @@ function AppContent() {
     isLoading: authLoading,
   } = useAuth();
 
-  // --- STATE HOOKS ---
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(() => {
-    // Restore page from localStorage on mount
-    const savedPage = localStorage.getItem('currentPage');
-    return savedPage || 'home';
+
+    const savedPage = localStorage.getItem("currentPage");
+    return savedPage || "home";
   });
   const [selectedProductId, setSelectedProductId] = useState(() => {
-    // Restore selected product from localStorage on mount
-    const savedProductId = localStorage.getItem('selectedProductId');
+
+    const savedProductId = localStorage.getItem("selectedProductId");
     return savedProductId ? parseInt(savedProductId) : null;
   });
-  const [cart, setCart] = useState([]);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [selectedReturnId, setSelectedReturnId] = useState(null);
   const [cartData, setCartData] = useState(null);
+  const cart = cartData?.cartItems || cartData?.items || [];
   const [cartLoading, setCartLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [sortOption, setSortOption] = useState("default");
   const [initializedFromUrl, setInitializedFromUrl] = useState(false);
 
-  // Cart animation state
   const [showFlyingCart, setShowFlyingCart] = useState(false);
   const [animationSource, setAnimationSource] = useState(null);
   const [animationTarget, setAnimationTarget] = useState(null);
   const cartIconRef = useRef(null);
 
-  // Map URL path (từ PayOS redirect) sang currentPage khi load lại
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.startsWith('/payment/success')) {
-      setCurrentPage('payment-success');
-    } else if (path.startsWith('/payment/cancel')) {
-      setCurrentPage('payment-cancel');
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryIdFromUrl = urlParams.get('categoryId');
+    const tokenFromUrl = urlParams.get('token');
+
+    if (path.startsWith("/payment/success")) {
+      setCurrentPage("payment-success");
+    } else if (path.startsWith("/payment/cancel")) {
+      setCurrentPage("payment-cancel");
+    } else if (path.startsWith("/reset-password")) {
+
+      setCurrentPage("reset-password");
+    } else if (tokenFromUrl && !path.startsWith("/reset-password")) {
+
+      console.log("Received auth token from redirect, saving to localStorage");
+      localStorage.setItem("token", tokenFromUrl);
+
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('token');
+      window.history.replaceState({}, '', newUrl.pathname + newUrl.search);
+
+      setCurrentPage("home");
     }
+
+    if (categoryIdFromUrl && !tokenFromUrl) {
+      setSelectedCategoryId(parseInt(categoryIdFromUrl));
+      setCurrentPage("shop");
+    }
+
     setInitializedFromUrl(true);
   }, []);
 
   useEffect(() => {
     if (!initializedFromUrl) return;
 
-    if (currentPage !== 'payment-success' && currentPage !== 'payment-cancel') {
+    if (currentPage !== "payment-success" && currentPage !== "payment-cancel") {
       const path = window.location.pathname;
-      if (path.startsWith('/payment/success') || path.startsWith('/payment/cancel')) {
-        window.history.replaceState({}, '', '/');
+      if (
+        path.startsWith("/payment/success") ||
+        path.startsWith("/payment/cancel")
+      ) {
+        window.history.replaceState({}, "", "/");
       }
     }
   }, [currentPage, initializedFromUrl]);
 
-  // Save currentPage to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('currentPage', currentPage);
+    localStorage.setItem("currentPage", currentPage);
   }, [currentPage]);
 
-  // Save selectedProductId to localStorage whenever it changes
   useEffect(() => {
     if (selectedProductId) {
-      localStorage.setItem('selectedProductId', selectedProductId.toString());
+      localStorage.setItem("selectedProductId", selectedProductId.toString());
     } else {
-      localStorage.removeItem('selectedProductId');
+      localStorage.removeItem("selectedProductId");
     }
   }, [selectedProductId]);
 
-  // --- CART MANAGEMENT ---
-  // Load cart from API when user is authenticated
   useEffect(() => {
     const loadCart = async () => {
       if (isAuthenticated && !authLoading) {
@@ -109,17 +137,14 @@ function AppContent() {
           setCartLoading(true);
           const cartDataResponse = await cartService.getCart();
           setCartData(cartDataResponse);
-          setCart(cartDataResponse.cartItems || cartDataResponse.items || []);
         } catch (error) {
           console.error("Error loading cart:", error);
-          setCart([]);
           setCartData(null);
         } finally {
           setCartLoading(false);
         }
       } else {
-        // Clear cart when user logs out
-        setCart([]);
+
         setCartData(null);
       }
     };
@@ -127,21 +152,33 @@ function AppContent() {
     loadCart();
   }, [isAuthenticated, authLoading]);
 
-  // --- AUTH LOGIC ---
+  const reloadCart = async () => {
+    if (isAuthenticated) {
+      try {
+        setCartLoading(true);
+        const cartDataResponse = await cartService.getCart();
+        setCartData(cartDataResponse);
+      } catch (error) {
+        console.error("Error reloading cart:", error);
+      } finally {
+        setCartLoading(false);
+      }
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
       setCurrentPage("home");
-      setCart([]);
+      setCartData(null);
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
 
-  // --- CART HANDLERS ---
   const handleAddToCart = async (product, sourceElement = null) => {
     if (!isAuthenticated) {
-      // Redirect to login if not authenticated
+
       setCurrentPage("login");
       return;
     }
@@ -151,11 +188,10 @@ function AppContent() {
       const quantity = product.qty || product.quantity || 1;
 
       if (!productId) {
-        alert("Không tìm thấy ID sản phẩm");
+        toast.warning("Không tìm thấy ID sản phẩm");
         return;
       }
 
-      // Get source position for animation
       let sourcePos = null;
       if (sourceElement) {
         const rect = sourceElement.getBoundingClientRect();
@@ -165,11 +201,9 @@ function AppContent() {
         };
       }
 
-      // Get target position (cart icon in header) - use setTimeout to ensure DOM is ready
       const triggerAnimation = () => {
         let targetPos = null;
 
-        // Try cartIconRef first
         if (cartIconRef.current) {
           const rect = cartIconRef.current.getBoundingClientRect();
           targetPos = {
@@ -177,7 +211,7 @@ function AppContent() {
             y: rect.top + rect.height / 2,
           };
         } else {
-          // Fallback: try to find cart icon by querying DOM
+
           const cartButton = document.querySelector('[title="Giỏ hàng"]');
           if (cartButton) {
             const rect = cartButton.getBoundingClientRect();
@@ -188,7 +222,6 @@ function AppContent() {
           }
         }
 
-        // Trigger animation if we have both positions
         if (sourcePos && targetPos) {
           setAnimationSource(sourcePos);
           setAnimationTarget(targetPos);
@@ -196,7 +229,6 @@ function AppContent() {
         }
       };
 
-      // Use requestAnimationFrame to ensure DOM is updated
       requestAnimationFrame(() => {
         setTimeout(triggerAnimation, 50);
       });
@@ -206,14 +238,12 @@ function AppContent() {
         quantity,
       });
 
-      // Reload cart
       try {
         const cartDataResponse = await cartService.getCart();
         setCartData(cartDataResponse);
-        setCart(cartDataResponse.cartItems || cartDataResponse.items || []);
       } catch (cartError) {
         console.error("Error reloading cart:", cartError);
-        // Still continue even if reload fails
+
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -221,8 +251,8 @@ function AppContent() {
         error?.message ||
         error?.response?.data?.message ||
         "Không thể thêm sản phẩm vào giỏ hàng";
-      alert(errorMessage);
-      throw error; // Re-throw to let component handle it
+      toast.error(errorMessage);
+      throw error;
     }
   };
 
@@ -236,14 +266,13 @@ function AppContent() {
         await handleRemoveFromCart(itemId);
       } else {
         await cartService.updateCartItem(itemId, { quantity: newQty });
-        // Reload cart
+
         const cartDataResponse = await cartService.getCart();
         setCartData(cartDataResponse);
-        setCart(cartDataResponse.cartItems || cartDataResponse.items || []);
       }
     } catch (error) {
       console.error("Error updating cart:", error);
-      alert(error?.message || "Không thể cập nhật giỏ hàng");
+      toast.error(error?.message || "Không thể cập nhật giỏ hàng");
     }
   };
 
@@ -257,49 +286,63 @@ function AppContent() {
       const response = await cartService.removeCartItem(itemId);
       console.log("[App] Remove cart item response:", response);
 
-      // Backend returns the updated cart in response.data
       const updatedCart = response?.data || response;
       console.log("[App] Updated cart after remove:", updatedCart);
 
       setCartData(updatedCart);
-      setCart(updatedCart.cartItems || updatedCart.items || []);
     } catch (error) {
       console.error("Error removing from cart:", error);
-      alert(error?.message || "Không thể xóa sản phẩm khỏi giỏ hàng");
+      toast.error(error?.message || "Không thể xóa sản phẩm khỏi giỏ hàng");
     }
   };
 
-  // --- PRODUCT HANDLERS ---
   const handleViewProductDetail = (productId) => {
     setSelectedProductId(productId);
     setCurrentPage("product-detail");
     window.scrollTo(0, 0);
   };
 
-  // Calculate cart subtotal (trước giảm giá) từ cartData hoặc từ items
+  const handleCategoryNavigation = (categoryId, categoryName) => {
+    setSelectedCategoryId(categoryId);
+    setSelectedCategory(categoryName);
+    setCurrentPage("shop");
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('categoryId', categoryId);
+    window.history.pushState({}, '', url.toString());
+
+    window.scrollTo(0, 0);
+  };
+
+  const handleClearCategoryFilter = () => {
+    setSelectedCategoryId(null);
+    setSelectedCategory("All");
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('categoryId');
+    window.history.pushState({}, '', url.pathname);
+  };
+
   const cartSubtotal = cartData?.totalAmount
     ? Number(cartData.totalAmount)
     : cart.reduce((sum, item) => {
-        const price =
-          item.productPrice || item.price || item.product?.price || 0;
-        const quantity = item.quantity || item.qty || 0;
-        const subtotal = item.subtotal || price * quantity;
-        return sum + Number(subtotal);
-      }, 0);
+      const price =
+        item.productPrice || item.price || item.product?.price || 0;
+      const quantity = item.quantity || item.qty || 0;
+      const subtotal = item.subtotal || price * quantity;
+      return sum + Number(subtotal);
+    }, 0);
 
-  // Giảm giá tự động cho giỏ hàng (từ backend)
   const cartAutomaticDiscount = cartData?.automaticDiscount
     ? Number(cartData.automaticDiscount)
     : 0;
 
-  // Tổng sau khi trừ giảm giá tự động
   const cartTotal = Math.max(0, cartSubtotal - cartAutomaticDiscount);
 
   const cartItemCount = cartData?.totalItems
     ? Number(cartData.totalItems)
     : cart.reduce((sum, item) => sum + (item.quantity || item.qty || 0), 0);
 
-  // --- ROUTER/RENDER LOGIC ---
   const renderPage = () => {
     const pageProps = {
       setCurrentPage,
@@ -311,7 +354,7 @@ function AppContent() {
 
     switch (currentPage) {
       case "home":
-        return <HomePage {...pageProps} />;
+        return <HomePage {...pageProps} setSelectedCategory={setSelectedCategory} handleCategoryNavigation={handleCategoryNavigation} />;
 
       case "shop":
         return (
@@ -319,9 +362,12 @@ function AppContent() {
             {...pageProps}
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
+            selectedCategoryId={selectedCategoryId}
+            setSelectedCategoryId={setSelectedCategoryId}
             sortOption={sortOption}
             setSortOption={setSortOption}
-            searchTerm={searchTerm}
+            searchTerm={debouncedSearchTerm}
+            handleClearCategoryFilter={handleClearCategoryFilter}
           />
         );
 
@@ -357,10 +403,48 @@ function AppContent() {
       case "register":
         return <RegisterPage setCurrentPage={setCurrentPage} />;
 
+      case "reset-password":
+        return <ResetPasswordPage setCurrentPage={setCurrentPage} />;
+
       case "orders":
         return (
           <ProtectedRoute>
-            <OrdersPage setCurrentPage={setCurrentPage} />
+            <OrdersPage
+              setCurrentPage={setCurrentPage}
+              setSelectedOrderId={setSelectedOrderId}
+              setSelectedReturnId={setSelectedReturnId}
+              reloadCart={reloadCart}
+            />
+          </ProtectedRoute>
+        );
+
+      case "return-request":
+        return (
+          <ProtectedRoute>
+            <RequestReturnPage
+              setCurrentPage={setCurrentPage}
+              orderId={selectedOrderId}
+            />
+          </ProtectedRoute>
+        );
+
+      case "return-history":
+        return (
+          <ProtectedRoute>
+            <ReturnHistoryPage
+              setCurrentPage={setCurrentPage}
+              setSelectedReturnId={setSelectedReturnId}
+            />
+          </ProtectedRoute>
+        );
+
+      case "return-detail":
+        return (
+          <ProtectedRoute>
+            <ReturnDetailPage
+              setCurrentPage={setCurrentPage}
+              returnId={selectedReturnId}
+            />
           </ProtectedRoute>
         );
 
@@ -397,10 +481,8 @@ function AppContent() {
     }
   };
 
-  // ✅ KIỂM TRA: Nếu là trang Login hoặc Register thì KHÔNG hiển thị Header/Footer
-  const isAuthPage = currentPage === "login" || currentPage === "register";
+  const isAuthPage = currentPage === "login" || currentPage === "register" || currentPage === "reset-password";
 
-  // Show loading if auth is loading
   if (authLoading) {
     return (
       <div
@@ -417,7 +499,7 @@ function AppContent() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#F8FAFC" }}>
-      {/* Chỉ hiển thị Header nếu KHÔNG phải trang auth */}
+      { }
       {!isAuthPage && (
         <Header
           currentPage={currentPage}
@@ -437,13 +519,13 @@ function AppContent() {
 
       <main>{renderPage()}</main>
 
-      {/* Chỉ hiển thị Footer nếu KHÔNG phải trang auth */}
+      { }
       {!isAuthPage && <Footer />}
 
-      {/* Chat Widget - Only show if authenticated */}
+      { }
       {isAuthenticated && <ChatWidget />}
 
-      {/* Flying Cart Animation */}
+      { }
       {showFlyingCart && animationSource && animationTarget && (
         <FlyingCartIcon
           sourcePosition={animationSource}
@@ -455,6 +537,21 @@ function AppContent() {
           }}
         />
       )}
+
+      { }
+      <ToastContainer
+        position="top-right"
+        autoClose={2500}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        className="text-sm"
+      />
     </div>
   );
 }
@@ -463,7 +560,9 @@ export default function OganiApp() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <AppContent />
+        <BuyNowProvider>
+          <AppContent />
+        </BuyNowProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

@@ -88,6 +88,7 @@ const initialState = {
     current: 1,
     pageSize: 5, // Default page size: 5
     total: 0,
+    totalPages: 0, // Track total pages
   },
   filters: {
     search: "",
@@ -124,14 +125,16 @@ const customersSlice = createSlice({
         const pageResponse = action.payload;
         if (pageResponse && pageResponse.data) {
           state.customers = pageResponse.data || [];
-          // pageResponse.pageNo is already 1-indexed from customersService
-          state.pagination.current = pageResponse.pageNo || 1;
-          state.pagination.pageSize = pageResponse.pageSize || 5; // Default page size: 5
+          // Only update total and totalPages from API response
+          // DO NOT update current and pageSize here - they are controlled by the frontend
+          // to prevent infinite useEffect loops
           state.pagination.total = pageResponse.total || 0;
+          state.pagination.totalPages = pageResponse.totalPages || 0;
         } else {
           // Fallback: if not transformed PageResponse, treat as array
           state.customers = Array.isArray(pageResponse) ? pageResponse : [];
           state.pagination.total = state.customers.length;
+          state.pagination.totalPages = 1;
         }
         state.error = null;
       })

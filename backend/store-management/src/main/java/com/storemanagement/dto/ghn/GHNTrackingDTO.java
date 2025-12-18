@@ -13,13 +13,13 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class GHNTrackingDTO {
-    
+
     @JsonProperty("order_code")
     private String orderCode;
-    
+
     @JsonProperty("status")
     private String status;
-    
+
     @JsonProperty("tracking")
     private List<GHNTrackingEventDTO> tracking;
 }

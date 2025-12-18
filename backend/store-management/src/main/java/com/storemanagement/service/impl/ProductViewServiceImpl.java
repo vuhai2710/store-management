@@ -27,14 +27,14 @@ public class ProductViewServiceImpl implements ProductViewService {
                     .productId(productId)
                     .actionType("VIEW")
                     .build();
-            
+
             ProductView saved = productViewRepository.save(productView);
-            log.info("Successfully logged product view: id={}, userId={}, sessionId={}, productId={}", 
+            log.info("Successfully logged product view: id={}, userId={}, sessionId={}, productId={}",
                     saved.getId(), userId, sessionId, productId);
         } catch (Exception e) {
-            log.error("Failed to log product view: userId={}, sessionId={}, productId={}, error: {}", 
+            log.error("Failed to log product view: userId={}, sessionId={}, productId={}, error: {}",
                     userId, sessionId, productId, e.getMessage(), e);
-            throw e; // Re-throw để controller có thể thấy lỗi
+            throw e;
         }
     }
 }

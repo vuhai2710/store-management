@@ -1,8 +1,5 @@
 import React from 'react';
 
-/**
- * Loading Spinner Component
- */
 const LoadingSpinner = ({ size = 40, color = '#2563EB' }) => {
   const spinnerStyle = {
     border: `4px solid #f3f3f3`,
@@ -36,10 +33,3 @@ const LoadingSpinner = ({ size = 40, color = '#2563EB' }) => {
 };
 
 export default LoadingSpinner;
-
-
-
-
-
-
-

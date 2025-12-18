@@ -24,21 +24,20 @@ public class ProductDTO extends BaseDTO {
 
     @NotNull(message = "ID danh mục không được để trống")
     private Integer idCategory;
-    
+
     private String categoryName;
 
     @NotBlank(message = "Tên sản phẩm không được để trống")
     private String productName;
-    
+
     private String brand;
-    
+
     private Integer idSupplier;
-    
+
     private String supplierName;
 
     private String description;
 
-    @NotNull(message = "Giá không được để trống")
     @Min(value = 0, message = "Giá phải lớn hơn hoặc bằng 0")
     private BigDecimal price;
 

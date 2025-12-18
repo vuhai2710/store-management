@@ -24,3 +24,4 @@ public interface ChatConversationRepository extends JpaRepository<ChatConversati
     @Query("SELECT c FROM ChatConversation c ORDER BY c.updatedAt DESC")
     Page<ChatConversation> findAllOrderByUpdatedAtDesc(Pageable pageable);
 }
+

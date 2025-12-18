@@ -56,7 +56,7 @@ file:
 jwt:
   secret: dev-secret-key-for-store-management-min-32-chars-change-in-production
   signerKey: "dev-signer-key-base64-encoded-for-store-management-change-in-production-min-32-chars"
-  expiration: 86400000 # 24 hours in milliseconds
+  expiration: 86400000
 
 logging:
   level:
@@ -65,24 +65,28 @@ logging:
     org.springframework.web: INFO
 
 payos:
-  client-id: "${PAYOS_CLIENT_ID:}" # Điền Client ID từ PayOS dashboard
-  api-key: "${PAYOS_API_KEY:}" # Điền API Key từ PayOS dashboard
-  checksum-key: "${PAYOS_CHECKSUM_KEY:}" # Điền Checksum Key từ PayOS dashboard
-  webhook-url: "${PAYOS_WEBHOOK_URL:https://your-ngrok-url.ngrok.io/api/v1/payments/payos/webhook}" # Điền webhook URL (cần HTTPS)
+  client-id: "${PAYOS_CLIENT_ID:}"
+  api-key: "${PAYOS_API_KEY:}"
+  checksum-key: "${PAYOS_CHECKSUM_KEY:}"
+  webhook-url: "${PAYOS_WEBHOOK_URL:https://your-ngrok-url.ngrok.io/api/v1/payments/payos/webhook}"
   return-url: "http://localhost:8080/api/v1/payments/payos/return"
   cancel-url: "http://localhost:8080/api/v1/payments/payos/cancel"
-  environment: "sandbox" # Options: sandbox, production
+  environment: "sandbox" 
   base-url: "https://api-merchant.payos.vn"
 
 ghn:
-  token: "${GHN_TOKEN:}" # Điền Token API từ GHN dashboard
-  shop-id: ${GHN_SHOP_ID:0} # Điền Shop ID từ GHN dashboard
+  token: "${GHN_TOKEN:}"
+  shop-id: ${GHN_SHOP_ID:0}
   from-district-id: 1541
   base-url: "https://online-gateway.ghn.vn"
-  webhook-url: "${GHN_WEBHOOK_URL:https://your-ngrok-url.ngrok.io/api/v1/ghn/webhook}" # Điền webhook URL (cần HTTPS)
+  webhook-url: "${GHN_WEBHOOK_URL:https://your-ngrok-url.ngrok.io/api/v1/ghn/webhook}"
   enabled: true
   environment: "production"
 
 recommender:
   base-url: http://localhost:5000
 
+password-reset:
+  admin-url: http://localhost:3000/reset-password
+  client-url: http://localhost:3001/reset-password
+  token-expiry-minutes: 30

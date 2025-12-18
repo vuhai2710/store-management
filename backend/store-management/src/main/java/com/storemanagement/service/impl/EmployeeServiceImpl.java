@@ -1,11 +1,16 @@
 package com.storemanagement.service.impl;
 
 import com.storemanagement.dto.employee.EmployeeDTO;
+import com.storemanagement.dto.employee.EmployeeDetailDTO;
+import com.storemanagement.dto.employee.EmployeeOrderDTO;
 import com.storemanagement.dto.PageResponse;
 import com.storemanagement.mapper.EmployeeMapper;
 import com.storemanagement.model.Employee;
+import com.storemanagement.model.Order;
 import com.storemanagement.model.User;
 import com.storemanagement.repository.EmployeeRepository;
+import com.storemanagement.repository.OrderRepository;
+import com.storemanagement.repository.OrderReturnRepository;
 import com.storemanagement.repository.UserRepository;
 import com.storemanagement.service.EmployeeService;
 import com.storemanagement.utils.PageUtils;
@@ -17,7 +22,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,12 +33,14 @@ import java.util.List;
 public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
+    private final OrderReturnRepository orderReturnRepository;
     private final EmployeeMapper employeeMapper;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public EmployeeDTO createEmployee(EmployeeDTO request) {
-        // Validate email khi tạo (email là bắt buộc khi create)
+
         if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
             throw new RuntimeException("Email không được để trống");
         }
@@ -72,8 +82,15 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<EmployeeDTO> getAllEmployeesPaginated(Pageable pageable) {
-        Page<Employee> employeePage = employeeRepository.findAll(pageable);
+    public PageResponse<EmployeeDTO> getAllEmployeesPaginated(String keyword, Pageable pageable) {
+        Page<Employee> employeePage;
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            employeePage = employeeRepository.searchByKeyword(keyword.trim(), pageable);
+        } else {
+            employeePage = employeeRepository.findAll(pageable);
+        }
+
         List<EmployeeDTO> employeeDTOs = employeeMapper.toDTOList(employeePage.getContent());
         return PageUtils.toPageResponse(employeePage, employeeDTOs);
     }
@@ -84,6 +101,34 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Nhân viên không tồn tại với ID: " + id));
         return employeeMapper.toDTO(employee);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EmployeeDetailDTO getEmployeeDetailById(Integer id) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Nhân viên không tồn tại với ID: " + id));
+
+        EmployeeDetailDTO detailDTO = employeeMapper.toDetailDTO(employee);
+
+        Long totalOrders = orderRepository.countOrdersByEmployeeId(id);
+        BigDecimal totalAmount = orderRepository.sumOrderAmountByEmployeeId(id);
+        Long pendingOrders = orderRepository.countOrdersByEmployeeIdAndStatus(id, Order.OrderStatus.PENDING);
+        Long completedOrders = orderRepository.countOrdersByEmployeeIdAndStatus(id, Order.OrderStatus.COMPLETED);
+        Long cancelledOrders = orderRepository.countOrdersByEmployeeIdAndStatus(id, Order.OrderStatus.CANCELED);
+
+        Long totalReturnOrders = orderReturnRepository.countReturnOrdersByEmployeeId(id);
+        Long totalExchangeOrders = orderReturnRepository.countExchangeOrdersByEmployeeId(id);
+
+        detailDTO.setTotalOrdersHandled(totalOrders != null ? totalOrders : 0L);
+        detailDTO.setTotalOrderAmount(totalAmount != null ? totalAmount : BigDecimal.ZERO);
+        detailDTO.setPendingOrders(pendingOrders != null ? pendingOrders : 0L);
+        detailDTO.setCompletedOrders(completedOrders != null ? completedOrders : 0L);
+        detailDTO.setCancelledOrders(cancelledOrders != null ? cancelledOrders : 0L);
+        detailDTO.setTotalReturnOrders(totalReturnOrders != null ? totalReturnOrders : 0L);
+        detailDTO.setTotalExchangeOrders(totalExchangeOrders != null ? totalExchangeOrders : 0L);
+
+        return detailDTO;
     }
 
     @Override
@@ -102,7 +147,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         User user = employee.getUser();
 
         if (request.getUsername() != null && !user.getUsername().equals(request.getUsername())) {
-            // Chỉ validate username unique khi username thay đổi và đã được sử dụng bởi user khác
+
             userRepository.findByUsername(request.getUsername())
                     .ifPresent(existingUser -> {
                         if (!existingUser.getIdUser().equals(user.getIdUser())) {
@@ -112,8 +157,6 @@ public class EmployeeServiceImpl implements EmployeeService {
             user.setUsername(request.getUsername());
         }
 
-        // Email KHÔNG được phép cập nhật - chỉ được set 1 lần khi tạo user
-        // Email là unique constraint, không cho phép thay đổi sau khi tạo
         if (request.getEmail() != null) {
             throw new RuntimeException("Email không được phép cập nhật. Email chỉ được set khi tạo tài khoản.");
         }
@@ -170,14 +213,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Thông tin nhân viên không tồn tại"));
 
-        // Email KHÔNG được phép cập nhật - chỉ được set 1 lần khi tạo user
-        // Email là unique constraint, không cho phép thay đổi sau khi tạo
         if (request.getEmail() != null) {
             throw new RuntimeException("Email không được phép cập nhật. Email chỉ được set khi tạo tài khoản.");
         }
 
         if (request.getPhoneNumber() != null && !employee.getPhoneNumber().equals(request.getPhoneNumber())) {
-            // Chỉ validate phone number unique khi phone number thay đổi
+
             if (employeeRepository.existsByPhoneNumber(request.getPhoneNumber())) {
                 throw new RuntimeException("Số điện thoại đã được sử dụng: " + request.getPhoneNumber());
             }
@@ -196,5 +237,35 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Employee updatedEmployee = employeeRepository.save(employee);
         return employeeMapper.toDTO(updatedEmployee);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<EmployeeOrderDTO> getOrdersByEmployeeId(
+            Integer employeeId,
+            Order.OrderStatus status,
+            LocalDateTime dateFrom,
+            LocalDateTime dateTo,
+            Pageable pageable) {
+
+        employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Nhân viên không tồn tại với ID: " + employeeId));
+
+        Page<Order> orderPage = orderRepository.findByEmployeeIdWithFilters(
+                employeeId, status, dateFrom, dateTo, pageable);
+
+        List<EmployeeOrderDTO> orderDTOs = orderPage.getContent().stream()
+                .map(order -> EmployeeOrderDTO.builder()
+                        .idOrder(order.getIdOrder())
+                        .customerName(order.getCustomer() != null ? order.getCustomer().getCustomerName() : null)
+                        .totalAmount(order.getTotalAmount())
+                        .discount(order.getDiscount())
+                        .finalAmount(order.getFinalAmount())
+                        .status(order.getStatus() != null ? order.getStatus().name() : null)
+                        .createdAt(order.getOrderDate())
+                        .build())
+                .collect(Collectors.toList());
+
+        return PageUtils.toPageResponse(orderPage, orderDTOs);
     }
 }

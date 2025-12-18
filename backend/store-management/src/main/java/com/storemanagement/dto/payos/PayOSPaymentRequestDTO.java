@@ -13,16 +13,16 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class PayOSPaymentRequestDTO {
-    
+
     private Long orderCode;
-    
+
     private BigDecimal amount;
-    
+
     private String description;
-    
+
     private List<PayOSItemDTO> items;
-    
+
     private String returnUrl;
-    
+
     private String cancelUrl;
 }

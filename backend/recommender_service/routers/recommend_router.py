@@ -3,14 +3,10 @@ from modules import hybrid
 
 router = APIRouter()
 
-# Initialize models when module is imported
 hybrid.init_models()
 
 @router.get("/recommend")
 def get_recommendations(userId: int):
-    """
-    Get product recommendations for a user based on their view history.
-    """
     try:
         print(f"[Python Service] Getting recommendations for userId: {userId}")
         recommendations = hybrid.hybrid_recommend(userId, top_k=10)
@@ -27,9 +23,6 @@ def get_recommendations(userId: int):
 
 @router.get("/similar-products")
 def get_similar_products(productId: int):
-    """
-    Get similar products to a given product.
-    """
     try:
         similar = hybrid.similar_products(productId, top_k=10)
         return {
@@ -38,4 +31,3 @@ def get_similar_products(productId: int):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

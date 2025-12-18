@@ -11,6 +11,7 @@ import com.storemanagement.model.Product;
 import com.storemanagement.repository.InventoryTransactionRepository;
 import com.storemanagement.repository.ProductRepository;
 import com.storemanagement.service.PayOSService;
+import com.storemanagement.service.SystemSettingService;
 import com.storemanagement.utils.ProductStatus;
 import com.storemanagement.utils.ReferenceType;
 import com.storemanagement.utils.TransactionType;
@@ -39,6 +40,7 @@ public class PaymentController {
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final ProductRepository productRepository;
     private final ObjectMapper objectMapper;
+    private final SystemSettingService systemSettingService;
 
     @PostMapping("/create/{orderId}")
     @PreAuthorize("hasRole('CUSTOMER')")
@@ -64,7 +66,14 @@ public class PaymentController {
                     orderId);
 
             if (order.getStatus() == Order.OrderStatus.PENDING) {
+                java.time.LocalDateTime now = java.time.LocalDateTime.now();
                 order.setStatus(Order.OrderStatus.COMPLETED);
+                order.setDeliveredAt(now);
+                order.setCompletedAt(now);
+
+                int returnWindowDays = systemSettingService.getReturnWindowDays();
+                order.setReturnWindowDays(returnWindowDays);
+                log.info("Order COMPLETED: completedAt={}, returnWindowDays={} for order: {}", now, returnWindowDays, orderId);
                 orderRepository.save(order);
             }
 
@@ -163,7 +172,14 @@ public class PaymentController {
             if ("00".equals(webhookCode)) {
                 log.info("Payment SUCCESS for order ID: {}. Updating order status to COMPLETED.", order.getIdOrder());
 
+                java.time.LocalDateTime now = java.time.LocalDateTime.now();
                 order.setStatus(Order.OrderStatus.COMPLETED);
+                order.setDeliveredAt(now);
+                order.setCompletedAt(now);
+
+                int returnWindowDays = systemSettingService.getReturnWindowDays();
+                order.setReturnWindowDays(returnWindowDays);
+                log.info("Order COMPLETED: completedAt={}, returnWindowDays={} for order: {}", now, returnWindowDays, order.getIdOrder());
                 orderRepository.save(order);
 
                 if (order.getOrderDetails() != null) {
@@ -183,7 +199,7 @@ public class PaymentController {
                                 .product(product)
                                 .transactionType(TransactionType.OUT)
                                 .quantity(orderDetail.getQuantity())
-                                .referenceType(ReferenceType.SALE_ORDER) // Sử dụng SALE_ORDER thay vì ORDER
+                                .referenceType(ReferenceType.SALE_ORDER)
                                 .referenceId(order.getIdOrder())
                                 .notes("Thanh toán PayOS thành công - Order #" + order.getIdOrder())
                                 .build();
@@ -199,26 +215,22 @@ public class PaymentController {
                         order.getIdOrder());
 
             } else {
-                // Thanh toán thất bại hoặc hủy
+
                 log.info(
                         "Payment FAILED/CANCELLED for order ID: {}. Code: {}, Desc: {}. Updating order status to CANCELED.",
                         order.getIdOrder(), webhookCode, webhookDto.getDesc());
 
-                // Update order status
                 order.setStatus(Order.OrderStatus.CANCELED);
                 orderRepository.save(order);
 
-                // Không trừ stock vì thanh toán thất bại
                 log.info("Order ID: {} updated to CANCELED. Stock NOT deducted.", order.getIdOrder());
             }
 
-            // Return 200 OK cho PayOS
             return ResponseEntity.ok(Map.of("status", "success", "message", "Webhook processed"));
 
         } catch (Exception e) {
             log.error("Error processing PayOS webhook", e);
-            // Return 200 OK để PayOS không retry
-            // Log error để debug sau
+
             return ResponseEntity.ok(Map.of("status", "error", "message", "Internal error: " + e.getMessage()));
         }
     }
@@ -231,7 +243,7 @@ public class PaymentController {
 
         Integer targetOrderId = orderId;
         if (targetOrderId == null && orderCode != null) {
-            // Backward compatibility: khi trước đây orderCode trùng với idOrder
+
             targetOrderId = orderCode.intValue();
         }
 
@@ -253,7 +265,7 @@ public class PaymentController {
 
         Integer targetOrderId = orderId;
         if (targetOrderId == null && orderCode != null) {
-            // Backward compatibility: khi trước đây orderCode trùng với idOrder
+
             targetOrderId = orderCode.intValue();
         }
 
@@ -291,7 +303,14 @@ public class PaymentController {
 
                         if (normalized.contains("PAID") || normalized.contains("SUCCESS")) {
                             if (order.getStatus() == Order.OrderStatus.PENDING) {
+                                java.time.LocalDateTime now = java.time.LocalDateTime.now();
                                 order.setStatus(Order.OrderStatus.COMPLETED);
+                                order.setDeliveredAt(now);
+                                order.setCompletedAt(now);
+
+                                int returnWindowDays = systemSettingService.getReturnWindowDays();
+                                order.setReturnWindowDays(returnWindowDays);
+                                log.info("Order COMPLETED: completedAt={}, returnWindowDays={} for order: {}", now, returnWindowDays, order.getIdOrder());
                                 orderRepository.save(order);
 
                                 if (order.getOrderDetails() != null) {

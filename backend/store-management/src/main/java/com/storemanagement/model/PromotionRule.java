@@ -35,7 +35,7 @@ public class PromotionRule extends BaseEntity {
 
     @Column(name = "customer_type", length = 20)
     @Builder.Default
-    private String customerType = "ALL"; // VIP, REGULAR
+    private String customerType = "ALL";
 
     @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;
@@ -49,10 +49,20 @@ public class PromotionRule extends BaseEntity {
 
     @Column(name = "priority")
     @Builder.Default
-    private Integer priority = 0; // Số càng cao càng ưu tiên
+    private Integer priority = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "scope", nullable = false)
+    @Builder.Default
+    private PromotionScope scope = PromotionScope.ORDER;
 
     public enum DiscountType {
         PERCENTAGE, FIXED_AMOUNT
     }
-}
 
+    public enum PromotionScope {
+        ORDER,
+        SHIPPING,
+        PRODUCT
+    }
+}

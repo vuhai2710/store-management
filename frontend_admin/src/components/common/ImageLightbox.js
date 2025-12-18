@@ -1,17 +1,6 @@
 import React, { useState } from "react";
 import { Image, Modal } from "antd";
 
-/**
- * ImageLightbox Component
- * Displays images in a lightbox gallery
- * 
- * @param {Object} props
- * @param {Array} props.images - Array of image URLs or objects { url, alt, title }
- * @param {number} props.currentIndex - Initial image index
- * @param {boolean} props.visible - Whether lightbox is visible
- * @param {Function} props.onClose - Callback when lightbox is closed
- * @param {string} props.previewType - Preview type: 'modal' | 'preview' (default: 'modal')
- */
 const ImageLightbox = ({
   images = [],
   currentIndex = 0,
@@ -22,7 +11,7 @@ const ImageLightbox = ({
   const [current, setCurrent] = useState(currentIndex);
 
   if (previewType === "preview") {
-    // Use Ant Design Image.PreviewGroup for built-in preview
+
     return (
       <Image.PreviewGroup>
         {images.map((img, index) => {
@@ -44,7 +33,6 @@ const ImageLightbox = ({
     );
   }
 
-  // Custom modal lightbox
   const currentImage = images[current];
   const imageUrl = typeof currentImage === "string" ? currentImage : currentImage?.url;
   const imageAlt = typeof currentImage === "string" ? `Image ${current + 1}` : currentImage?.alt || `Image ${current + 1}`;
@@ -159,4 +147,3 @@ const ImageLightbox = ({
 };
 
 export default ImageLightbox;
-

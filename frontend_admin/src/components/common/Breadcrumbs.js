@@ -3,15 +3,10 @@ import { Breadcrumb } from "antd";
 import { HomeOutlined } from "@ant-design/icons";
 import { useLocation, Link } from "react-router-dom";
 
-/**
- * Breadcrumbs Component
- * Displays breadcrumb navigation based on current route
- */
 const Breadcrumbs = () => {
   const location = useLocation();
   const pathnames = location.pathname.split("/").filter((x) => x);
 
-  // Route mapping to Vietnamese labels
   const routeLabels = {
     dashboard: "Dashboard",
     orders: "Đơn hàng",
@@ -61,5 +56,3 @@ const Breadcrumbs = () => {
 };
 
 export default Breadcrumbs;
-
-

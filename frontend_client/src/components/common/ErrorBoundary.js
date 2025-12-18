@@ -1,9 +1,5 @@
 import React from 'react';
 
-/**
- * Error Boundary Component
- * Catches JavaScript errors in child components
- */
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -62,10 +58,3 @@ class ErrorBoundary extends React.Component {
 }
 
 export default ErrorBoundary;
-
-
-
-
-
-
-

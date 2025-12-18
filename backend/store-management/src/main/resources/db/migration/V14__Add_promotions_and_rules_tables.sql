@@ -1,12 +1,3 @@
--- ============================================================
--- FLYWAY MIGRATION: V14 - Add Promotions and Rules Tables
--- ============================================================
--- Tạo bảng promotions, promotion_usage, promotion_rules để hỗ trợ mã giảm giá và discount tự động
--- ============================================================
-
--- ============================================================
--- BẢNG PROMOTIONS (Mã giảm giá)
--- ============================================================
 CREATE TABLE IF NOT EXISTS promotions (
   id_promotion INT NOT NULL AUTO_INCREMENT,
   code VARCHAR(50) NOT NULL,
@@ -26,9 +17,6 @@ CREATE TABLE IF NOT EXISTS promotions (
   KEY idx_promotions_dates (start_date, end_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Bảng lưu mã giảm giá';
 
--- ============================================================
--- BẢNG PROMOTION_USAGE (Lịch sử sử dụng mã giảm giá)
--- ============================================================
 CREATE TABLE IF NOT EXISTS promotion_usage (
   id_usage INT NOT NULL AUTO_INCREMENT,
   id_promotion INT NOT NULL,
@@ -50,9 +38,6 @@ CREATE TABLE IF NOT EXISTS promotion_usage (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Bảng lưu lịch sử sử dụng mã giảm giá';
 
--- ============================================================
--- BẢNG PROMOTION_RULES (Quy tắc giảm giá tự động)
--- ============================================================
 CREATE TABLE IF NOT EXISTS promotion_rules (
   id_rule INT NOT NULL AUTO_INCREMENT,
   rule_name VARCHAR(255) NOT NULL,
@@ -72,9 +57,6 @@ CREATE TABLE IF NOT EXISTS promotion_rules (
   KEY idx_rules_priority (priority)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Bảng lưu quy tắc giảm giá tự động';
 
--- ============================================================
--- CẬP NHẬT BẢNG ORDERS (Thêm các cột liên quan đến promotion)
--- ============================================================
 ALTER TABLE orders
 ADD COLUMN id_promotion INT NULL COMMENT 'Reference đến promotions (nếu sử dụng mã giảm giá)',
 ADD COLUMN promotion_code VARCHAR(50) NULL COMMENT 'Mã giảm giá được sử dụng',
@@ -87,7 +69,3 @@ ADD CONSTRAINT fk_orders_promotion
 ADD CONSTRAINT fk_orders_promotion_rule
   FOREIGN KEY (id_promotion_rule) REFERENCES promotion_rules(id_rule)
   ON DELETE SET NULL ON UPDATE CASCADE;
-
-
-
-

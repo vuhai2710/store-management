@@ -28,29 +28,32 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             SELECT DISTINCT p FROM Product p
             LEFT JOIN FETCH p.category
             LEFT JOIN FETCH p.supplier
-            WHERE (:productCode IS NULL OR p.productCode = :productCode)
-            AND (:productName IS NULL OR LOWER(p.productName) LIKE LOWER(CONCAT('%', :productName, '%')))
+            WHERE (
+                :keyword IS NULL OR
+                LOWER(p.productCode) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                LOWER(p.sku) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
             AND (:idCategory IS NULL OR p.category.idCategory = :idCategory)
-            AND (:brand IS NULL OR LOWER(p.brand) = LOWER(:brand))
+            AND (:brand IS NULL OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :brand, '%')))
             AND (:minPrice IS NULL OR p.price >= :minPrice)
             AND (:maxPrice IS NULL OR p.price <= :maxPrice)
             AND (
                 :inventoryStatus IS NULL OR
                 (:inventoryStatus = 'COMING_SOON' AND (p.stockQuantity = 0 OR p.stockQuantity IS NULL) AND p.status != 'DISCONTINUED') OR
-                (:inventoryStatus = 'IN_STOCK' AND p.stockQuantity > 0) OR
+                (:inventoryStatus = 'IN_STOCK' AND p.stockQuantity >= 10) OR
+                (:inventoryStatus = 'LOW_STOCK' AND p.stockQuantity > 0 AND p.stockQuantity < 10) OR
                 (:inventoryStatus = 'OUT_OF_STOCK' AND (p.stockQuantity = 0 OR p.stockQuantity IS NULL) AND p.status = 'OUT_OF_STOCK')
             )
             """)
     Page<Product> searchProducts(
-            @Param("productCode") String productCode,
-            @Param("productName") String productName,
+            @Param("keyword") String keyword,
             @Param("idCategory") Integer idCategory,
             @Param("brand") String brand,
             @Param("minPrice") Double minPrice,
             @Param("maxPrice") Double maxPrice,
             @Param("inventoryStatus") String inventoryStatus,
-            Pageable pageable
-    );
+            Pageable pageable);
 
     @Query(value = """
             SELECT od.id_product, SUM(od.quantity) as total_sold
@@ -64,8 +67,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     List<Object[]> findBestSellingProductIds(
             @Param("status") String status,
             @Param("limit") int limit,
-            @Param("offset") int offset
-    );
+            @Param("offset") int offset);
 
     @Query(value = """
             SELECT COUNT(DISTINCT od.id_product)
@@ -88,8 +90,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     List<Product> findByCategoryIdAndStatusAndIdProductNot(
             @Param("categoryId") Integer categoryId,
             @Param("productId") Integer productId,
-            Pageable pageable
-    );
+            Pageable pageable);
 
     @Query("""
             SELECT p FROM Product p
@@ -106,4 +107,3 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             """)
     Optional<Product> findByIdWithDetails(@Param("id") Integer id);
 }
-

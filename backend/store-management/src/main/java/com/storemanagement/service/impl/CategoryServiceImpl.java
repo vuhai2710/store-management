@@ -35,11 +35,9 @@ public class CategoryServiceImpl implements CategoryService {
             throw new RuntimeException("Tên danh mục đã tồn tại: " + categoryDTO.getCategoryName());
         }
 
-        // Map DTO sang Entity
         Category category = categoryMapper.toEntity(categoryDTO);
         category.setCreatedAt(LocalDateTime.now());
 
-        // Lưu vào DB
         Category savedCategory = categoryRepository.save(category);
         log.info("Category created successfully with ID: {}", savedCategory.getIdCategory());
 
@@ -65,7 +63,6 @@ public class CategoryServiceImpl implements CategoryService {
             category.setCodePrefix(categoryDTO.getCodePrefix());
         }
 
-        // Lưu lại
         Category updatedCategory = categoryRepository.save(category);
         log.info("Category updated successfully: {}", updatedCategory.getIdCategory());
 

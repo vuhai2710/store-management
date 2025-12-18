@@ -1,7 +1,8 @@
 package com.storemanagement.utils;
 
 public enum InventoryStatusFilter {
-    COMING_SOON,  // Hàng sắp về
-    IN_STOCK,     // Còn hàng
-    OUT_OF_STOCK  // Hết hàng
+    COMING_SOON,
+    IN_STOCK,
+    LOW_STOCK,
+    OUT_OF_STOCK
 }

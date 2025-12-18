@@ -24,21 +24,17 @@ const Reports = () => {
   const loadReportData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch orders with date range if specified
+
       const params = {
         pageNo: 1,
-        pageSize: 1000, // Get all orders for report
+        pageSize: 1000,
         sortBy: 'orderDate',
         sortDirection: 'DESC',
       };
 
-      // Note: Backend doesn't support date range filter directly in orders endpoint
-      // We'll filter on frontend if date range is selected
       const ordersResponse = await ordersService.getOrders(params);
       let ordersData = ordersResponse?.content || [];
 
-      // Filter by date range if specified
       if (dateRange && dateRange.length === 2) {
         const startDate = dateRange[0];
         const endDate = dateRange[1];
@@ -56,7 +52,6 @@ const Reports = () => {
 
       setOrders(ordersData);
 
-      // Count orders by status
       const statusCount = ordersData.reduce((acc, order) => {
         const status = order.status || 'UNKNOWN';
         acc[status] = (acc[status] || 0) + 1;
@@ -73,7 +68,7 @@ const Reports = () => {
 
   const handleExportExcel = () => {
     message.info('Chức năng xuất Excel đang được phát triển');
-    // TODO: Implement Excel export using a library like xlsx
+
   };
 
   const handlePrintReport = () => {
@@ -111,7 +106,7 @@ const Reports = () => {
               fontSize: 14,
             }}
           >
-            Theo dõi hiệu suất kinh doanh và xuất báo cáo cho TechStore
+            Theo dõi hiệu suất kinh doanh và xuất báo cáo cho ElectronicStore
           </p>
         </div>
       </div>
@@ -231,5 +226,3 @@ const Reports = () => {
 };
 
 export default Reports;
-
-

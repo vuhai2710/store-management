@@ -1,4 +1,4 @@
-// src/components/pages/CartPage.js
+
 import React from 'react';
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import styles from '../../styles/styles';
@@ -6,7 +6,7 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import { formatPrice, getImageUrl } from '../../utils/formatUtils';
 
 const CartPage = ({ cart, cartTotal, cartSubtotal, cartAutomaticDiscount, setCurrentPage, handleUpdateQty, handleRemoveFromCart, cartLoading }) => {
-  
+
   if (cartLoading) {
     return (
       <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
@@ -27,7 +27,7 @@ const CartPage = ({ cart, cartTotal, cartSubtotal, cartAutomaticDiscount, setCur
           <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#FFFFFF', borderRadius: '0.75rem', boxShadow: '0 12px 30px rgba(15,23,42,0.06)' }}>
             <ShoppingBag size={64} style={{ color: '#6c757d', margin: '0 auto 1rem' }} />
             <p style={{ color: '#6c757d', fontSize: '1.125rem', marginBottom: '1.5rem' }}>Giỏ hàng của bạn đang trống</p>
-            <button 
+            <button
               onClick={() => setCurrentPage('shop')}
               style={styles.buttonSecondary}
             >
@@ -67,8 +67,8 @@ const CartPage = ({ cart, cartTotal, cartSubtotal, cartAutomaticDiscount, setCur
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                             <div style={{ width: '80px', height: '80px', backgroundColor: '#e9ecef', borderRadius: '0.25rem', overflow: 'hidden', flexShrink: 0 }}>
                               {productImage ? (
-                                <img 
-                                  src={getImageUrl(productImage)} 
+                                <img
+                                  src={getImageUrl(productImage)}
                                   alt={productName}
                                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                   onError={(e) => {
@@ -106,13 +106,13 @@ const CartPage = ({ cart, cartTotal, cartSubtotal, cartAutomaticDiscount, setCur
                         </td>
                         <td style={{ padding: '1rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <button 
-                              onClick={() => handleUpdateQty(itemId, quantity - 1)} 
-                              style={{ 
-                                backgroundColor: '#e9ecef', 
-                                padding: '0.5rem', 
-                                borderRadius: '0.25rem', 
-                                border: 'none', 
+                            <button
+                              onClick={() => handleUpdateQty(itemId, quantity - 1)}
+                              style={{
+                                backgroundColor: '#e9ecef',
+                                padding: '0.5rem',
+                                borderRadius: '0.25rem',
+                                border: 'none',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -122,13 +122,13 @@ const CartPage = ({ cart, cartTotal, cartSubtotal, cartAutomaticDiscount, setCur
                               <Minus size={16} />
                             </button>
                             <span style={{ width: '3rem', textAlign: 'center', fontWeight: '600' }}>{quantity}</span>
-                            <button 
-                              onClick={() => handleUpdateQty(itemId, quantity + 1)} 
-                              style={{ 
-                                backgroundColor: '#e9ecef', 
-                                padding: '0.5rem', 
-                                borderRadius: '0.25rem', 
-                                border: 'none', 
+                            <button
+                              onClick={() => handleUpdateQty(itemId, quantity + 1)}
+                              style={{
+                                backgroundColor: '#e9ecef',
+                                padding: '0.5rem',
+                                borderRadius: '0.25rem',
+                                border: 'none',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -156,14 +156,14 @@ const CartPage = ({ cart, cartTotal, cartSubtotal, cartAutomaticDiscount, setCur
                           )}
                         </td>
                         <td style={{ padding: '1rem', textAlign: 'center' }}>
-                          <button 
+                          <button
                             onClick={() => handleRemoveFromCart(itemId)}
-                            style={{ 
-                              backgroundColor: '#fdecec', 
-                              color: '#dc3545', 
-                              padding: '0.5rem', 
-                              borderRadius: '0.25rem', 
-                              border: 'none', 
+                            style={{
+                              backgroundColor: '#fdecec',
+                              color: '#dc3545',
+                              padding: '0.5rem',
+                              borderRadius: '0.25rem',
+                              border: 'none',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
@@ -183,7 +183,7 @@ const CartPage = ({ cart, cartTotal, cartSubtotal, cartAutomaticDiscount, setCur
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
-              <div style={{ gridColumn: 'span 2' }}>{/* Empty space for desktop */}</div>
+              <div style={{ gridColumn: 'span 2' }}>{}</div>
               <div style={{ backgroundColor: '#FFFFFF', padding: '1.75rem', borderRadius: '0.75rem', border: '1px solid #E2E8F0', boxShadow: '0 18px 45px rgba(15,23,42,0.10)' }}>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Tổng giỏ hàng</h3>
                 <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -208,13 +208,13 @@ const CartPage = ({ cart, cartTotal, cartSubtotal, cartAutomaticDiscount, setCur
                     {formatPrice(cartTotal)}
                   </span>
                 </div>
-                <button 
+                <button
                   onClick={() => setCurrentPage('checkout')}
                   style={{ ...styles.buttonPrimary, width: '100%', padding: '0.75rem', fontSize: '1rem', fontWeight: 'bold' }}
                 >
                   THANH TOÁN
                 </button>
-                <button 
+                <button
                   onClick={() => setCurrentPage('shop')}
                   style={{ ...styles.buttonSecondary, width: '100%', padding: '0.75rem', marginTop: '0.5rem', fontSize: '0.875rem' }}
                 >

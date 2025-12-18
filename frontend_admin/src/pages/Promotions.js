@@ -20,7 +20,13 @@ import {
   InputNumber,
   Switch,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  ReloadOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import {
   fetchPromotions,
   fetchPromotionRules,
@@ -32,6 +38,7 @@ import {
   deletePromotionRule,
 } from "../store/slices/promotionsSlice";
 import { usePagination } from "../hooks/usePagination";
+import { useDebounce } from "../hooks/useDebounce";
 import { formatCurrency, formatDate } from "../utils/formatUtils";
 import LoadingSkeleton from "../components/common/LoadingSkeleton";
 import EmptyState from "../components/common/EmptyState";
@@ -42,10 +49,39 @@ const { TabPane } = Tabs;
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
+const parseDateFromBackend = (dateString) => {
+  if (!dateString) return null;
+
+  const formats = [
+    "YYYY-MM-DD HH:mm:ss",
+    "YYYY-MM-DDTHH:mm:ss",
+    "YYYY-MM-DD",
+    "DD/MM/YYYY HH:mm:ss",
+    "DD/MM/YYYY HH:mm",
+    "DD/MM/YYYY",
+  ];
+
+  let parsed = dayjs(dateString, formats, true);
+
+  if (!parsed.isValid()) {
+    parsed = dayjs(dateString);
+  }
+
+  return parsed.isValid() ? parsed : null;
+};
+
 const Promotions = () => {
   const dispatch = useDispatch();
   const { promotions, rules } = useSelector((state) => state.promotions || {});
   const [activeTab, setActiveTab] = useState("promotions");
+
+  const [promoSearchKeyword, setPromoSearchKeyword] = useState("");
+  const debouncedPromoKeyword = useDebounce(promoSearchKeyword, 300);
+
+  const [ruleSearchKeyword, setRuleSearchKeyword] = useState("");
+  const debouncedRuleKeyword = useDebounce(ruleSearchKeyword, 300);
+
+  const [promoScopeFilter, setPromoScopeFilter] = useState(null);
 
   const [isPromoModalVisible, setIsPromoModalVisible] = useState(false);
   const [editingPromotion, setEditingPromotion] = useState(null);
@@ -57,21 +93,21 @@ const Promotions = () => {
   const [ruleSubmitting, setRuleSubmitting] = useState(false);
   const [ruleForm] = Form.useForm();
 
-  // Pagination cho promotions
   const {
     currentPage: promoPage,
     pageSize: promoPageSize,
     setTotal: setPromoTotal,
     handlePageChange: handlePromoPageChange,
+    resetPagination: resetPromoPagination,
     pagination: promoPagination,
   } = usePagination(1, 10);
 
-  // Pagination cho rules
   const {
     currentPage: rulePage,
     pageSize: rulePageSize,
     setTotal: setRuleTotal,
     handlePageChange: handleRulePageChange,
+    resetPagination: resetRulePagination,
     pagination: rulePagination,
   } = usePagination(1, 10);
 
@@ -82,9 +118,11 @@ const Promotions = () => {
         pageSize: promoPageSize,
         sortBy: "createdAt",
         sortDirection: "DESC",
+        keyword: debouncedPromoKeyword?.trim() || undefined,
+        scope: promoScopeFilter || undefined,
       })
     );
-  }, [dispatch, promoPage, promoPageSize]);
+  }, [dispatch, promoPage, promoPageSize, debouncedPromoKeyword, promoScopeFilter]);
 
   const fetchRulesList = useCallback(() => {
     dispatch(
@@ -93,9 +131,10 @@ const Promotions = () => {
         pageSize: rulePageSize,
         sortBy: "createdAt",
         sortDirection: "DESC",
+        keyword: debouncedRuleKeyword?.trim() || undefined,
       })
     );
-  }, [dispatch, rulePage, rulePageSize]);
+  }, [dispatch, rulePage, rulePageSize, debouncedRuleKeyword]);
 
   useEffect(() => {
     if (activeTab === "promotions") {
@@ -104,6 +143,20 @@ const Promotions = () => {
       fetchRulesList();
     }
   }, [activeTab, fetchPromotionsList, fetchRulesList]);
+
+  useEffect(() => {
+    if (debouncedPromoKeyword !== undefined) {
+      resetPromoPagination();
+    }
+
+  }, [debouncedPromoKeyword]);
+
+  useEffect(() => {
+    if (debouncedRuleKeyword !== undefined) {
+      resetRulePagination();
+    }
+
+  }, [debouncedRuleKeyword]);
 
   useEffect(() => {
     if (promotions.pagination.totalElements) {
@@ -143,12 +196,17 @@ const Promotions = () => {
     promoForm.setFieldsValue({
       discountType: "PERCENTAGE",
       isActive: true,
+      scope: "ORDER",
     });
     setIsPromoModalVisible(true);
   };
 
   const handleOpenEditPromotion = (record) => {
     setEditingPromotion(record);
+
+    const startDate = parseDateFromBackend(record.startDate);
+    const endDate = parseDateFromBackend(record.endDate);
+
     promoForm.setFieldsValue({
       code: record.code,
       discountType: record.discountType,
@@ -156,13 +214,10 @@ const Promotions = () => {
         record.discountValue != null ? Number(record.discountValue) : null,
       minOrderAmount:
         record.minOrderAmount != null ? Number(record.minOrderAmount) : null,
-      usageLimit:
-        record.usageLimit != null ? Number(record.usageLimit) : null,
-      dateRange: [
-        record.startDate ? dayjs(record.startDate) : null,
-        record.endDate ? dayjs(record.endDate) : null,
-      ],
+      usageLimit: record.usageLimit != null ? Number(record.usageLimit) : null,
+      dateRange: startDate && endDate ? [startDate, endDate] : null,
       isActive: record.isActive !== undefined ? record.isActive : true,
+      scope: record.scope || "ORDER",
     });
     setIsPromoModalVisible(true);
   };
@@ -177,8 +232,7 @@ const Promotions = () => {
       code: values.code?.trim(),
       discountType: values.discountType,
       discountValue: values.discountValue,
-      minOrderAmount:
-        values.minOrderAmount != null ? values.minOrderAmount : 0,
+      minOrderAmount: values.minOrderAmount != null ? values.minOrderAmount : 0,
       usageLimit:
         values.usageLimit != null && values.usageLimit !== ""
           ? values.usageLimit
@@ -186,10 +240,9 @@ const Promotions = () => {
       startDate: values.dateRange[0]
         .startOf("day")
         .format("DD/MM/YYYY HH:mm:ss"),
-      endDate: values.dateRange[1]
-        .endOf("day")
-        .format("DD/MM/YYYY HH:mm:ss"),
+      endDate: values.dateRange[1].endOf("day").format("DD/MM/YYYY HH:mm:ss"),
       isActive: values.isActive ?? true,
+      scope: values.scope || "ORDER",
     };
 
     setPromoSubmitting(true);
@@ -227,12 +280,17 @@ const Promotions = () => {
       discountType: "PERCENTAGE",
       customerType: "ALL",
       isActive: true,
+      scope: "ORDER",
     });
     setIsRuleModalVisible(true);
   };
 
   const handleOpenEditRule = (record) => {
     setEditingRule(record);
+
+    const startDate = parseDateFromBackend(record.startDate);
+    const endDate = parseDateFromBackend(record.endDate);
+
     ruleForm.setFieldsValue({
       ruleName: record.ruleName,
       discountType: record.discountType,
@@ -242,11 +300,9 @@ const Promotions = () => {
         record.minOrderAmount != null ? Number(record.minOrderAmount) : null,
       customerType: record.customerType || "ALL",
       priority: record.priority != null ? Number(record.priority) : 0,
-      dateRange: [
-        record.startDate ? dayjs(record.startDate) : null,
-        record.endDate ? dayjs(record.endDate) : null,
-      ],
+      dateRange: startDate && endDate ? [startDate, endDate] : null,
       isActive: record.isActive !== undefined ? record.isActive : true,
+      scope: record.scope || "ORDER",
     });
     setIsRuleModalVisible(true);
   };
@@ -261,20 +317,16 @@ const Promotions = () => {
       ruleName: values.ruleName?.trim(),
       discountType: values.discountType,
       discountValue: values.discountValue,
-      minOrderAmount:
-        values.minOrderAmount != null ? values.minOrderAmount : 0,
+      minOrderAmount: values.minOrderAmount != null ? values.minOrderAmount : 0,
       customerType: values.customerType || "ALL",
       startDate: values.dateRange[0]
         .startOf("day")
         .format("DD/MM/YYYY HH:mm:ss"),
-      endDate: values.dateRange[1]
-        .endOf("day")
-        .format("DD/MM/YYYY HH:mm:ss"),
+      endDate: values.dateRange[1].endOf("day").format("DD/MM/YYYY HH:mm:ss"),
       isActive: values.isActive ?? true,
       priority:
-        values.priority != null && values.priority !== ""
-          ? values.priority
-          : 0,
+        values.priority != null && values.priority !== "" ? values.priority : 0,
+      scope: values.scope || "ORDER",
     };
 
     setRuleSubmitting(true);
@@ -327,7 +379,9 @@ const Promotions = () => {
       dataIndex: "discountValue",
       key: "discountValue",
       render: (value, record) =>
-        record.discountType === "PERCENTAGE" ? `${value}%` : formatCurrency(value),
+        record.discountType === "PERCENTAGE"
+          ? `${value}%`
+          : formatCurrency(value),
     },
     {
       title: "Đơn tối thiểu",
@@ -355,11 +409,23 @@ const Promotions = () => {
       ),
     },
     {
+      title: "Phạm vi",
+      dataIndex: "scope",
+      key: "scope",
+      render: (scope) => (
+        <Tag color={scope === "SHIPPING" ? "cyan" : "purple"}>
+          {scope === "SHIPPING" ? "Phí vận chuyển" : "Đơn hàng"}
+        </Tag>
+      ),
+    },
+    {
       title: "Trạng thái",
       dataIndex: "isActive",
       key: "isActive",
       render: (isActive) => (
-        <Tag color={isActive ? "green" : "red"}>{isActive ? "Hoạt động" : "Tạm dừng"}</Tag>
+        <Tag color={isActive ? "green" : "red"}>
+          {isActive ? "Hoạt động" : "Tạm dừng"}
+        </Tag>
       ),
     },
     {
@@ -371,16 +437,14 @@ const Promotions = () => {
             type="link"
             icon={<EditOutlined />}
             size="small"
-            onClick={() => handleOpenEditPromotion(record)}
-          >
+            onClick={() => handleOpenEditPromotion(record)}>
             Sửa
           </Button>
           <Popconfirm
             title="Bạn có chắc muốn xóa mã giảm giá này?"
             onConfirm={() => handleDeletePromotion(record.idPromotion)}
             okText="Xóa"
-            cancelText="Hủy"
-          >
+            cancelText="Hủy">
             <Button type="link" danger icon={<DeleteOutlined />} size="small">
               Xóa
             </Button>
@@ -411,7 +475,9 @@ const Promotions = () => {
       dataIndex: "discountValue",
       key: "discountValue",
       render: (value, record) =>
-        record.discountType === "PERCENTAGE" ? `${value}%` : formatCurrency(value),
+        record.discountType === "PERCENTAGE"
+          ? `${value}%`
+          : formatCurrency(value),
     },
     {
       title: "Đơn tối thiểu",
@@ -424,7 +490,10 @@ const Promotions = () => {
       dataIndex: "customerType",
       key: "customerType",
       render: (type) => (
-        <Tag color={type === "VIP" ? "gold" : type === "REGULAR" ? "blue" : "default"}>
+        <Tag
+          color={
+            type === "VIP" ? "gold" : type === "REGULAR" ? "blue" : "default"
+          }>
           {type === "ALL" ? "Tất cả" : type === "VIP" ? "VIP" : "Thường"}
         </Tag>
       ),
@@ -440,11 +509,23 @@ const Promotions = () => {
       ),
     },
     {
+      title: "Phạm vi",
+      dataIndex: "scope",
+      key: "scope",
+      render: (scope) => (
+        <Tag color={scope === "SHIPPING" ? "cyan" : "purple"}>
+          {scope === "SHIPPING" ? "Phí vận chuyển" : "Đơn hàng"}
+        </Tag>
+      ),
+    },
+    {
       title: "Trạng thái",
       dataIndex: "isActive",
       key: "isActive",
       render: (isActive) => (
-        <Tag color={isActive ? "green" : "red"}>{isActive ? "Hoạt động" : "Tạm dừng"}</Tag>
+        <Tag color={isActive ? "green" : "red"}>
+          {isActive ? "Hoạt động" : "Tạm dừng"}
+        </Tag>
       ),
     },
     {
@@ -456,16 +537,14 @@ const Promotions = () => {
             type="link"
             icon={<EditOutlined />}
             size="small"
-            onClick={() => handleOpenEditRule(record)}
-          >
+            onClick={() => handleOpenEditRule(record)}>
             Sửa
           </Button>
           <Popconfirm
             title="Bạn có chắc muốn xóa quy tắc này?"
             onConfirm={() => handleDeleteRule(record.idRule)}
             okText="Xóa"
-            cancelText="Hủy"
-          >
+            cancelText="Hủy">
             <Button type="link" danger icon={<DeleteOutlined />} size="small">
               Xóa
             </Button>
@@ -486,8 +565,7 @@ const Promotions = () => {
           justifyContent: "space-between",
           gap: 12,
           flexWrap: "wrap",
-        }}
-      >
+        }}>
         <div>
           <Title
             level={2}
@@ -495,8 +573,7 @@ const Promotions = () => {
               marginBottom: 4,
               fontWeight: 700,
               color: "#0F172A",
-            }}
-          >
+            }}>
             Quản lý khuyến mãi & giảm giá
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
@@ -512,24 +589,58 @@ const Promotions = () => {
           boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
           background: "#FFFFFF",
         }}
-        bodyStyle={{ padding: 16 }}
-      >
+        bodyStyle={{ padding: 16 }}>
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
           <TabPane tab="Mã giảm giá" key="promotions">
-            <Space style={{ marginBottom: 16 }}>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleOpenCreatePromotion}
-              >
-                Thêm mã giảm giá
-              </Button>
-              <Button icon={<ReloadOutlined />} onClick={fetchPromotionsList}>
-                Làm mới
-              </Button>
-            </Space>
+            <div
+              style={{
+                marginBottom: 16,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 12,
+              }}>
+              <Space>
+                <Input
+                  placeholder="Tìm kiếm mã giảm giá..."
+                  prefix={<SearchOutlined style={{ color: "#94A3B8" }} />}
+                  value={promoSearchKeyword}
+                  onChange={(e) => setPromoSearchKeyword(e.target.value)}
+                  allowClear
+                  style={{ width: 200 }}
+                />
+                <Select
+                  placeholder="Phạm vi"
+                  value={promoScopeFilter}
+                  onChange={(value) => setPromoScopeFilter(value)}
+                  allowClear
+                  style={{ width: 150 }}>
+                  <Option value="ORDER">Đơn hàng</Option>
+                  <Option value="SHIPPING">Phí vận chuyển</Option>
+                </Select>
+              </Space>
+              <Space>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleOpenCreatePromotion}>
+                  Thêm mã giảm giá
+                </Button>
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={() => {
+                    setPromoSearchKeyword("");
+                    setPromoScopeFilter(null);
+                    fetchPromotionsList();
+                  }}>
+                  Làm mới
+                </Button>
+              </Space>
+            </div>
 
-            {promotions.loading && (!promotions.list || promotions.list.length === 0) ? (
+            {promotions.loading &&
+              (!promotions.list || promotions.list.length === 0) ? (
               <LoadingSkeleton type="table" rows={5} />
             ) : promotions.list.length === 0 ? (
               <EmptyState description="Chưa có mã giảm giá nào" />
@@ -553,18 +664,40 @@ const Promotions = () => {
           </TabPane>
 
           <TabPane tab="Quy tắc giảm giá tự động" key="rules">
-            <Space style={{ marginBottom: 16 }}>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleOpenCreateRule}
-              >
-                Thêm quy tắc
-              </Button>
-              <Button icon={<ReloadOutlined />} onClick={fetchRulesList}>
-                Làm mới
-              </Button>
-            </Space>
+            <div
+              style={{
+                marginBottom: 16,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 12,
+              }}>
+              <Input
+                placeholder="Tìm kiếm quy tắc..."
+                prefix={<SearchOutlined style={{ color: "#94A3B8" }} />}
+                value={ruleSearchKeyword}
+                onChange={(e) => setRuleSearchKeyword(e.target.value)}
+                allowClear
+                style={{ maxWidth: 300 }}
+              />
+              <Space>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleOpenCreateRule}>
+                  Thêm quy tắc
+                </Button>
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={() => {
+                    setRuleSearchKeyword("");
+                    fetchRulesList();
+                  }}>
+                  Làm mới
+                </Button>
+              </Space>
+            </div>
 
             {rules.loading && (!rules.list || rules.list.length === 0) ? (
               <LoadingSkeleton type="table" rows={5} />
@@ -600,13 +733,11 @@ const Promotions = () => {
           promoForm.resetFields();
         }}
         footer={null}
-        destroyOnClose
-      >
+        destroyOnClose>
         <Form
           form={promoForm}
           layout="vertical"
-          onFinish={handleSubmitPromotion}
-        >
+          onFinish={handleSubmitPromotion}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -615,8 +746,7 @@ const Promotions = () => {
                 rules={[
                   { required: true, message: "Vui lòng nhập mã giảm giá" },
                   { max: 50, message: "Mã giảm giá không được quá 50 ký tự" },
-                ]}
-              >
+                ]}>
                 <Input placeholder="Nhập mã giảm giá (ví dụ: SPRING10)" />
               </Form.Item>
             </Col>
@@ -626,8 +756,7 @@ const Promotions = () => {
                 label="Loại giảm giá"
                 rules={[
                   { required: true, message: "Vui lòng chọn loại giảm giá" },
-                ]}
-              >
+                ]}>
                 <Select placeholder="Chọn loại giảm giá">
                   <Option value="PERCENTAGE">Phần trăm</Option>
                   <Option value="FIXED_AMOUNT">Số tiền cố định</Option>
@@ -648,8 +777,7 @@ const Promotions = () => {
                     min: 0,
                     message: "Giá trị giảm phải lớn hơn hoặc bằng 0",
                   },
-                ]}
-              >
+                ]}>
                 <InputNumber
                   style={{ width: "100%" }}
                   min={0}
@@ -658,10 +786,7 @@ const Promotions = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="minOrderAmount"
-                label="Đơn tối thiểu"
-              >
+              <Form.Item name="minOrderAmount" label="Đơn tối thiểu">
                 <InputNumber
                   style={{ width: "100%" }}
                   min={0}
@@ -673,10 +798,7 @@ const Promotions = () => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                name="usageLimit"
-                label="Số lần sử dụng tối đa"
-              >
+              <Form.Item name="usageLimit" label="Số lần sử dụng tối đa">
                 <InputNumber
                   style={{ width: "100%" }}
                   min={0}
@@ -693,23 +815,32 @@ const Promotions = () => {
                     required: true,
                     message: "Vui lòng chọn thời gian áp dụng",
                   },
-                ]}
-              >
-                <RangePicker
-                  style={{ width: "100%" }}
-                  format="DD/MM/YYYY"
-                />
+                ]}>
+                <RangePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item
-            name="isActive"
-            label="Trạng thái"
-            valuePropName="checked"
-          >
-            <Switch checkedChildren="Hoạt động" unCheckedChildren="Tạm dừng" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="scope"
+                label="Phạm vi áp dụng"
+                rules={[
+                  { required: true, message: "Vui lòng chọn phạm vi áp dụng" },
+                ]}>
+                <Select placeholder="Chọn phạm vi áp dụng">
+                  <Option value="ORDER">Đơn hàng (giảm giá sản phẩm)</Option>
+                  <Option value="SHIPPING">Phí vận chuyển</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="isActive" label="Trạng thái" valuePropName="checked">
+                <Switch checkedChildren="Hoạt động" unCheckedChildren="Tạm dừng" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <div style={{ textAlign: "right" }}>
             <Space>
@@ -718,15 +849,13 @@ const Promotions = () => {
                   setIsPromoModalVisible(false);
                   setEditingPromotion(null);
                   promoForm.resetFields();
-                }}
-              >
+                }}>
                 Hủy
               </Button>
               <Button
                 type="primary"
                 htmlType="submit"
-                loading={promoSubmitting}
-              >
+                loading={promoSubmitting}>
                 {editingPromotion ? "Cập nhật" : "Tạo mới"}
               </Button>
             </Space>
@@ -735,7 +864,9 @@ const Promotions = () => {
       </Modal>
 
       <Modal
-        title={editingRule ? "Chỉnh sửa quy tắc giảm giá" : "Thêm quy tắc giảm giá"}
+        title={
+          editingRule ? "Chỉnh sửa quy tắc giảm giá" : "Thêm quy tắc giảm giá"
+        }
         open={isRuleModalVisible}
         onCancel={() => {
           setIsRuleModalVisible(false);
@@ -743,13 +874,8 @@ const Promotions = () => {
           ruleForm.resetFields();
         }}
         footer={null}
-        destroyOnClose
-      >
-        <Form
-          form={ruleForm}
-          layout="vertical"
-          onFinish={handleSubmitRule}
-        >
+        destroyOnClose>
+        <Form form={ruleForm} layout="vertical" onFinish={handleSubmitRule}>
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item
@@ -757,8 +883,7 @@ const Promotions = () => {
                 label="Tên quy tắc"
                 rules={[
                   { required: true, message: "Vui lòng nhập tên quy tắc" },
-                ]}
-              >
+                ]}>
                 <Input placeholder="Nhập tên quy tắc" />
               </Form.Item>
             </Col>
@@ -771,8 +896,7 @@ const Promotions = () => {
                 label="Loại giảm giá"
                 rules={[
                   { required: true, message: "Vui lòng chọn loại giảm giá" },
-                ]}
-              >
+                ]}>
                 <Select placeholder="Chọn loại giảm giá">
                   <Option value="PERCENTAGE">Phần trăm</Option>
                   <Option value="FIXED_AMOUNT">Số tiền cố định</Option>
@@ -790,8 +914,7 @@ const Promotions = () => {
                     min: 0,
                     message: "Giá trị giảm phải lớn hơn hoặc bằng 0",
                   },
-                ]}
-              >
+                ]}>
                 <InputNumber
                   style={{ width: "100%" }}
                   min={0}
@@ -803,10 +926,7 @@ const Promotions = () => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                name="minOrderAmount"
-                label="Đơn tối thiểu"
-              >
+              <Form.Item name="minOrderAmount" label="Đơn tối thiểu">
                 <InputNumber
                   style={{ width: "100%" }}
                   min={0}
@@ -815,10 +935,7 @@ const Promotions = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="customerType"
-                label="Loại khách hàng"
-              >
+              <Form.Item name="customerType" label="Loại khách hàng">
                 <Select placeholder="Chọn loại khách hàng">
                   <Option value="ALL">Tất cả</Option>
                   <Option value="REGULAR">Thường</Option>
@@ -830,10 +947,7 @@ const Promotions = () => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                name="priority"
-                label="Độ ưu tiên"
-              >
+              <Form.Item name="priority" label="Độ ưu tiên">
                 <InputNumber
                   style={{ width: "100%" }}
                   min={0}
@@ -850,23 +964,32 @@ const Promotions = () => {
                     required: true,
                     message: "Vui lòng chọn thời gian áp dụng",
                   },
-                ]}
-              >
-                <RangePicker
-                  style={{ width: "100%" }}
-                  format="DD/MM/YYYY"
-                />
+                ]}>
+                <RangePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item
-            name="isActive"
-            label="Trạng thái"
-            valuePropName="checked"
-          >
-            <Switch checkedChildren="Hoạt động" unCheckedChildren="Tạm dừng" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="scope"
+                label="Phạm vi áp dụng"
+                rules={[
+                  { required: true, message: "Vui lòng chọn phạm vi áp dụng" },
+                ]}>
+                <Select placeholder="Chọn phạm vi áp dụng">
+                  <Option value="ORDER">Đơn hàng (giảm giá sản phẩm)</Option>
+                  <Option value="SHIPPING">Phí vận chuyển (freeship tự động)</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="isActive" label="Trạng thái" valuePropName="checked">
+                <Switch checkedChildren="Hoạt động" unCheckedChildren="Tạm dừng" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <div style={{ textAlign: "right" }}>
             <Space>
@@ -875,15 +998,10 @@ const Promotions = () => {
                   setIsRuleModalVisible(false);
                   setEditingRule(null);
                   ruleForm.resetFields();
-                }}
-              >
+                }}>
                 Hủy
               </Button>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={ruleSubmitting}
-              >
+              <Button type="primary" htmlType="submit" loading={ruleSubmitting}>
                 {editingRule ? "Cập nhật" : "Tạo mới"}
               </Button>
             </Space>
@@ -895,4 +1013,3 @@ const Promotions = () => {
 };
 
 export default Promotions;
-

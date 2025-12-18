@@ -10,7 +10,7 @@ const CategoryForm = ({ category, onSuccess }) => {
   useEffect(() => {
     if (category) {
       form.setFieldsValue({
-        name: category.categoryName || category.name, // Backend uses categoryName
+        name: category.categoryName || category.name,
       });
     } else {
       form.resetFields();
@@ -18,9 +18,9 @@ const CategoryForm = ({ category, onSuccess }) => {
   }, [category, form]);
 
   const handleSubmit = async (values) => {
-    // Backend CategoryDTO expects categoryName (not name) and codePrefix (optional)
+
     const payload = {
-      name: values.name?.trim(), // Will be mapped to categoryName in service
+      name: values.name?.trim(),
     };
 
     try {
@@ -33,7 +33,7 @@ const CategoryForm = ({ category, onSuccess }) => {
       }
       onSuccess && onSuccess();
     } catch (e) {
-      // Hiển thị lỗi field từ BE: e.errors = { field: message }
+
       const fieldErrors = e?.errors;
       if (fieldErrors && typeof fieldErrors === "object") {
         form.setFields(
@@ -60,7 +60,7 @@ const CategoryForm = ({ category, onSuccess }) => {
         <Input placeholder="Nhập tên danh mục" />
       </Form.Item>
 
-      {/* Note: Backend CategoryDTO doesn't have description field, only categoryName and codePrefix */}
+      { }
 
       <div style={{ textAlign: "right", marginTop: 16 }}>
         <Space>
@@ -75,5 +75,3 @@ const CategoryForm = ({ category, onSuccess }) => {
 };
 
 export default CategoryForm;
-
-

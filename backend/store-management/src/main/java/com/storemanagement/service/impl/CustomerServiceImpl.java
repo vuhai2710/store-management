@@ -33,12 +33,15 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public CustomerDTO createCustomerForUser(User user, RegisterDTO request) {
+
+        if (customerRepository.findByPhoneNumber(request.getPhoneNumber()).isPresent()) {
+            throw new RuntimeException("Số điện thoại đã được sử dụng");
+        }
+
         Customer customer = customerMapper.toEntity(request);
         customer.setUser(user);
         Customer savedCustomer = customerRepository.save(customer);
-        
-        // Tự động tạo ShippingAddress từ address trong request (nếu có)
-        // Địa chỉ này sẽ được đánh dấu là default
+
         if (request.getAddress() != null && !request.getAddress().trim().isEmpty()) {
             ShippingAddress defaultAddress = ShippingAddress.builder()
                     .customer(savedCustomer)
@@ -49,7 +52,7 @@ public class CustomerServiceImpl implements CustomerService {
                     .build();
             shippingAddressRepository.save(defaultAddress);
         }
-        
+
         return customerMapper.toDTO(savedCustomer);
     }
 
@@ -59,8 +62,15 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public PageResponse<CustomerDTO> getAllCustomersPaginated(Pageable pageable) {
-        Page<Customer> customerPage = customerRepository.findAll(pageable);
+    public PageResponse<CustomerDTO> getAllCustomersPaginated(String keyword, Pageable pageable) {
+        Page<Customer> customerPage;
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            customerPage = customerRepository.searchByKeyword(keyword.trim(), pageable);
+        } else {
+            customerPage = customerRepository.findAll(pageable);
+        }
+
         List<CustomerDTO> customerDtos = customerMapper.toDTOList(customerPage.getContent());
         return PageUtils.toPageResponse(customerPage, customerDtos);
     }
@@ -85,34 +95,29 @@ public class CustomerServiceImpl implements CustomerService {
     public List<CustomerDTO> searchCustomers(String name, String phone) {
         List<Customer> customers = customerRepository.findAll();
 
-        // Nếu không có tham số tìm kiếm, trả về tất cả
         if ((name == null || name.isEmpty()) && (phone == null || phone.isEmpty())) {
             return customerMapper.toDTOList(customers);
         }
 
-        // Sử dụng OR logic: tìm theo name HOẶC phone
         customers = customers.stream()
                 .filter(c -> {
                     boolean matchName = false;
                     boolean matchPhone = false;
 
-                    // Kiểm tra tên nếu có
                     if (name != null && !name.isEmpty()) {
                         matchName = c.getCustomerName().toLowerCase().contains(name.toLowerCase());
                     }
 
-                    // Kiểm tra số điện thoại nếu có
                     if (phone != null && !phone.isEmpty()) {
                         matchPhone = c.getPhoneNumber().contains(phone);
                     }
 
-                    // Trả về true nếu khớp ít nhất 1 điều kiện
                     if ((name != null && !name.isEmpty()) && (phone != null && !phone.isEmpty())) {
-                        return matchName || matchPhone; // Cả 2 tham số có: OR logic
+                        return matchName || matchPhone;
                     } else if (name != null && !name.isEmpty()) {
-                        return matchName; // Chỉ có name
+                        return matchName;
                     } else {
-                        return matchPhone; // Chỉ có phone
+                        return matchPhone;
                     }
                 })
                 .collect(Collectors.toList());
@@ -129,7 +134,6 @@ public class CustomerServiceImpl implements CustomerService {
         List<CustomerDTO> customerDtos = customerMapper.toDTOList(page.getContent());
         return PageUtils.toPageResponse(page, customerDtos);
     }
-
 
     @Override
     public List<CustomerDTO> getCustomersByType(String type) {
@@ -159,13 +163,10 @@ public class CustomerServiceImpl implements CustomerService {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer không tồn tại với ID: " + id));
 
-        // Email KHÔNG được phép cập nhật - chỉ được set 1 lần khi tạo user
-        // Email là unique constraint, không cho phép thay đổi sau khi tạo
         if (customerDto.getEmail() != null) {
             throw new RuntimeException("Email không được phép cập nhật. Email chỉ được set khi tạo tài khoản.");
         }
 
-        // Cập nhật thông tin customer (tên, phone, address, type)
         if (customerDto.getCustomerName() != null) {
             customer.setCustomerName(customerDto.getCustomerName());
         }
@@ -206,13 +207,10 @@ public class CustomerServiceImpl implements CustomerService {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer không tồn tại với ID: " + id));
 
-        // Lưu lại user để xóa sau
         User user = customer.getUser();
 
-        // Xóa customer trước
         customerRepository.delete(customer);
 
-        // Xóa user liên quan nếu có
         if (user != null) {
             userRepository.delete(user);
         }
@@ -232,13 +230,10 @@ public class CustomerServiceImpl implements CustomerService {
         Customer customer = customerRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Customer không tồn tại cho user: " + username));
 
-        // Email KHÔNG được phép cập nhật - chỉ được set 1 lần khi tạo user
-        // Email là unique constraint, không cho phép thay đổi sau khi tạo
         if (customerDto.getEmail() != null) {
             throw new RuntimeException("Email không được phép cập nhật. Email chỉ được set khi tạo tài khoản.");
         }
 
-        // Customer chỉ được cập nhật một số thông tin cơ bản, không được thay đổi customerType
         if (customerDto.getCustomerName() != null) {
             customer.setCustomerName(customerDto.getCustomerName());
         }
@@ -255,22 +250,18 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public CustomerDTO createCustomerWithoutUser(String customerName, String phoneNumber, String address) {
-        // Kiểm tra phone number đã tồn tại chưa
-        // Phone number là unique trong database, không được trùng
+
         customerRepository.findByPhoneNumber(phoneNumber)
                 .ifPresent(c -> {
                     throw new RuntimeException("Số điện thoại đã được sử dụng");
                 });
 
-        // Tạo customer mới không có user account (cho walk-in customers)
-        // Customer này sẽ có id_user = NULL, không thể đăng nhập vào hệ thống
-        // Nhưng vẫn có thể theo dõi lịch sử mua hàng
         Customer customer = Customer.builder()
-                .user(null) // Không có user account - đây là điểm khác biệt với customer thông thường
+                .user(null)
                 .customerName(customerName)
                 .phoneNumber(phoneNumber)
                 .address(address)
-                .customerType(CustomerType.REGULAR) // Mặc định là REGULAR, có thể nâng cấp lên VIP sau
+                .customerType(CustomerType.REGULAR)
                 .build();
 
         Customer savedCustomer = customerRepository.save(customer);

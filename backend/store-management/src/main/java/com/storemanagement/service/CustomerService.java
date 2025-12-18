@@ -12,7 +12,7 @@ import java.util.List;
 public interface CustomerService {
     CustomerDTO createCustomerForUser(User user, RegisterDTO request);
     List<CustomerDTO> getAllCustomers();
-    PageResponse<CustomerDTO> getAllCustomersPaginated(Pageable pageable);
+    PageResponse<CustomerDTO> getAllCustomersPaginated(String keyword, Pageable pageable);
 
     CustomerDTO getCustomerById(Integer id);
     CustomerDTO getCustomerByUsername(String username);
@@ -26,6 +26,6 @@ public interface CustomerService {
     void deleteCustomer(Integer id);
     void deleteCustomerByUser(User user);
     CustomerDTO updateMyCustomerInfo(String username, CustomerDTO customerDTO);
-    
+
     CustomerDTO createCustomerWithoutUser(String customerName, String phoneNumber, String address);
 }

@@ -1,9 +1,3 @@
--- ============================================================
--- FLYWAY MIGRATION: V13 - Add Product Reviews Table
--- ============================================================
--- Tạo bảng product_reviews để lưu đánh giá sản phẩm của khách hàng
--- ============================================================
-
 CREATE TABLE IF NOT EXISTS product_reviews (
   id_review INT NOT NULL AUTO_INCREMENT,
   id_product INT NOT NULL,
@@ -33,7 +27,3 @@ CREATE TABLE IF NOT EXISTS product_reviews (
     FOREIGN KEY (id_order_detail) REFERENCES order_details(id_order_detail)
     ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Bảng lưu đánh giá sản phẩm của khách hàng';
-
-
-
-

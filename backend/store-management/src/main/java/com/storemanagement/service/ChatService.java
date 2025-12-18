@@ -26,4 +26,6 @@ public interface ChatService {
     ChatMessageDTO sendMessage(ChatMessageRequest request, Principal principal);
 
     void markConversationAsViewed(Integer conversationId);
+
+    ChatConversationDTO getOrCreateConversationForCustomer(Integer customerId);
 }

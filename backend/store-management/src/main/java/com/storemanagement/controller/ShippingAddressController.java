@@ -30,7 +30,7 @@ public class ShippingAddressController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
-        
+
         List<ShippingAddressDTO> addresses = shippingAddressService.getAllAddresses(customerId);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách địa chỉ thành công", addresses));
     }
@@ -41,7 +41,7 @@ public class ShippingAddressController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
-        
+
         ShippingAddressDTO address = shippingAddressService.getDefaultAddress(customerId);
         return ResponseEntity.ok(ApiResponse.success("Lấy địa chỉ mặc định thành công", address));
     }
@@ -53,7 +53,7 @@ public class ShippingAddressController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
-        
+
         ShippingAddressDTO address = shippingAddressService.createAddress(customerId, request);
         return ResponseEntity.ok(ApiResponse.success("Tạo địa chỉ thành công", address));
     }
@@ -66,7 +66,7 @@ public class ShippingAddressController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
-        
+
         ShippingAddressDTO address = shippingAddressService.updateAddress(customerId, addressId, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật địa chỉ thành công", address));
     }
@@ -77,7 +77,7 @@ public class ShippingAddressController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
-        
+
         ShippingAddressDTO address = shippingAddressService.setDefaultAddress(customerId, addressId);
         return ResponseEntity.ok(ApiResponse.success("Đặt địa chỉ mặc định thành công", address));
     }
@@ -88,7 +88,7 @@ public class ShippingAddressController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Integer customerId = customerService.getCustomerByUsername(username).getIdCustomer();
-        
+
         shippingAddressService.deleteAddress(customerId, addressId);
         return ResponseEntity.ok(ApiResponse.success("Xóa địa chỉ thành công", null));
     }

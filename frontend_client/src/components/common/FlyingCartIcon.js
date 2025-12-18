@@ -1,16 +1,8 @@
-// src/components/common/FlyingCartIcon.js
+
 import React, { useEffect, useRef } from 'react';
 import { ShoppingBag } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
-/**
- * FlyingCartIcon - Component for animating cart icon flying from source to target
- * 
- * @param {Object} props
- * @param {Object} props.sourcePosition - { x, y } position of source element
- * @param {Object} props.targetPosition - { x, y } position of target element
- * @param {Function} props.onComplete - Callback when animation completes
- */
 const FlyingCartIcon = ({ sourcePosition, targetPosition, onComplete }) => {
   const iconRef = useRef(null);
 
@@ -23,13 +15,11 @@ const FlyingCartIcon = ({ sourcePosition, targetPosition, onComplete }) => {
     const endX = targetPosition.x;
     const endY = targetPosition.y;
 
-    // Set initial position
     icon.style.left = `${startX}px`;
     icon.style.top = `${startY}px`;
     icon.style.opacity = '1';
     icon.style.transform = 'scale(1)';
 
-    // Start animation
     requestAnimationFrame(() => {
       icon.style.transition = 'all 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
       icon.style.left = `${endX}px`;
@@ -38,7 +28,6 @@ const FlyingCartIcon = ({ sourcePosition, targetPosition, onComplete }) => {
       icon.style.transform = 'scale(0.6)';
     });
 
-    // Clean up after animation
     const timer = setTimeout(() => {
       if (onComplete) {
         onComplete();
@@ -58,8 +47,8 @@ const FlyingCartIcon = ({ sourcePosition, targetPosition, onComplete }) => {
         transition: 'all 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
-      <ShoppingBag 
-        size={32} 
+      <ShoppingBag
+        size={32}
         style={{
           color: '#2563EB',
           filter: 'drop-shadow(0 4px 8px rgba(0, 123, 255, 0.4))',
@@ -71,6 +60,3 @@ const FlyingCartIcon = ({ sourcePosition, targetPosition, onComplete }) => {
 };
 
 export default FlyingCartIcon;
-
-
-

@@ -1,5 +1,6 @@
-// src/components/pages/ProfilePage.js
+
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import {
   User,
   Mail,
@@ -51,7 +52,6 @@ const ProfilePage = ({ setCurrentPage }) => {
     wardCode: null,
   });
 
-  // GHN location data
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
@@ -65,14 +65,12 @@ const ProfilePage = ({ setCurrentPage }) => {
     confirmPassword: "",
   });
 
-  // Fetch profile and shipping addresses
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch customer profile
         const profileData = await customerService.getMyProfile();
         setProfile(profileData);
         setProfileForm({
@@ -81,7 +79,6 @@ const ProfilePage = ({ setCurrentPage }) => {
           address: profileData.address || "",
         });
 
-        // Fetch user profile for avatar
         try {
           const userData = await userService.getMyProfile();
           if (userData?.avatarUrl) {
@@ -89,21 +86,19 @@ const ProfilePage = ({ setCurrentPage }) => {
           }
         } catch (userError) {
           console.error("Error fetching user profile:", userError);
-          // User profile might not exist or be accessible, that's okay
+
         }
 
-        // Fetch shipping addresses
         const addressesData = await shippingAddressService.getAllAddresses();
         setShippingAddresses(addressesData || []);
 
-        // Fetch provinces from GHN
         try {
           setLoadingProvinces(true);
           const provincesData = await ghnService.getProvinces();
           setProvinces(provincesData || []);
         } catch (ghnError) {
           console.error("Error fetching provinces:", ghnError);
-          // Don't fail if GHN is not available
+
         } finally {
           setLoadingProvinces(false);
         }
@@ -118,7 +113,6 @@ const ProfilePage = ({ setCurrentPage }) => {
     fetchData();
   }, []);
 
-  // Fetch districts when province is selected
   useEffect(() => {
     const fetchDistricts = async () => {
       if (!addressForm.provinceId) {
@@ -133,7 +127,7 @@ const ProfilePage = ({ setCurrentPage }) => {
           addressForm.provinceId
         );
         setDistricts(districtsData || []);
-        setWards([]); // Reset wards when province changes
+        setWards([]);
         setAddressForm((prev) => ({
           ...prev,
           districtId: null,
@@ -150,7 +144,6 @@ const ProfilePage = ({ setCurrentPage }) => {
     fetchDistricts();
   }, [addressForm.provinceId]);
 
-  // Fetch wards when district is selected
   useEffect(() => {
     const fetchWards = async () => {
       if (!addressForm.districtId) {
@@ -190,10 +183,10 @@ const ProfilePage = ({ setCurrentPage }) => {
       setProfile(updatedProfile);
       setEditingProfile(false);
       await refreshUser();
-      alert("Cập nhật thông tin thành công");
+      toast.success("Cập nhật thông tin thành công");
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert(
+      toast.error(
         error?.message || "Không thể cập nhật thông tin. Vui lòng thử lại."
       );
     } finally {
@@ -229,10 +222,10 @@ const ProfilePage = ({ setCurrentPage }) => {
       });
       setDistricts([]);
       setWards([]);
-      alert("Tạo địa chỉ thành công");
+      toast.success("Tạo địa chỉ thành công");
     } catch (error) {
       console.error("Error creating address:", error);
-      alert(error?.message || "Không thể tạo địa chỉ. Vui lòng thử lại.");
+      toast.error(error?.message || "Không thể tạo địa chỉ. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -264,10 +257,12 @@ const ProfilePage = ({ setCurrentPage }) => {
       });
       setDistricts([]);
       setWards([]);
-      alert("Cập nhật địa chỉ thành công");
+      toast.success("Cập nhật địa chỉ thành công");
     } catch (error) {
       console.error("Error updating address:", error);
-      alert(error?.message || "Không thể cập nhật địa chỉ. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể cập nhật địa chỉ. Vui lòng thử lại."
+      );
     } finally {
       setLoading(false);
     }
@@ -286,10 +281,10 @@ const ProfilePage = ({ setCurrentPage }) => {
           (addr) => (addr.idShippingAddress || addr.id) !== addressId
         )
       );
-      alert("Xóa địa chỉ thành công");
+      toast.success("Xóa địa chỉ thành công");
     } catch (error) {
       console.error("Error deleting address:", error);
-      alert(error?.message || "Không thể xóa địa chỉ. Vui lòng thử lại.");
+      toast.error(error?.message || "Không thể xóa địa chỉ. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -308,10 +303,10 @@ const ProfilePage = ({ setCurrentPage }) => {
             : { ...addr, isDefault: false }
         )
       );
-      alert("Đặt địa chỉ mặc định thành công");
+      toast.success("Đặt địa chỉ mặc định thành công");
     } catch (error) {
       console.error("Error setting default address:", error);
-      alert(
+      toast.error(
         error?.message || "Không thể đặt địa chỉ mặc định. Vui lòng thử lại."
       );
     } finally {
@@ -323,12 +318,12 @@ const ProfilePage = ({ setCurrentPage }) => {
     e.preventDefault();
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp");
+      toast.warning("Mật khẩu xác nhận không khớp");
       return;
     }
 
     if (passwordForm.newPassword.length < 4) {
-      alert("Mật khẩu mới phải có ít nhất 4 ký tự");
+      toast.warning("Mật khẩu mới phải có ít nhất 4 ký tự");
       return;
     }
 
@@ -344,10 +339,12 @@ const ProfilePage = ({ setCurrentPage }) => {
         newPassword: "",
         confirmPassword: "",
       });
-      alert("Đổi mật khẩu thành công");
+      toast.success("Đổi mật khẩu thành công");
     } catch (error) {
       console.error("Error changing password:", error);
-      alert(error?.message || "Không thể đổi mật khẩu. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể đổi mật khẩu. Vui lòng thử lại."
+      );
     } finally {
       setLoading(false);
     }
@@ -359,38 +356,34 @@ const ProfilePage = ({ setCurrentPage }) => {
       return;
     }
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
-      alert("Vui lòng chọn file ảnh");
+      toast.warning("Vui lòng chọn file ảnh");
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert("File ảnh quá lớn. Vui lòng chọn file nhỏ hơn 5MB");
+      toast.warning("File ảnh quá lớn. Vui lòng chọn file nhỏ hơn 5MB");
       return;
     }
 
     try {
       setAvatarLoading(true);
 
-      // Upload avatar
       const userData = await userService.uploadAvatar(file);
 
-      // Update avatar state
       if (userData?.avatarUrl) {
         setAvatar(userData.avatarUrl);
-        await refreshUser(); // Refresh user data in context
-        alert("Upload ảnh đại diện thành công");
+        await refreshUser();
+        toast.success("Upload ảnh đại diện thành công");
       }
     } catch (error) {
       console.error("Error uploading avatar:", error);
-      alert(
+      toast.error(
         error?.message || "Không thể upload ảnh đại diện. Vui lòng thử lại."
       );
     } finally {
       setAvatarLoading(false);
-      // Reset file input
+
       e.target.value = "";
     }
   };
@@ -404,11 +397,13 @@ const ProfilePage = ({ setCurrentPage }) => {
       setAvatarLoading(true);
       await userService.deleteAvatar();
       setAvatar(null);
-      await refreshUser(); // Refresh user data in context
-      alert("Xóa ảnh đại diện thành công");
+      await refreshUser();
+      toast.success("Xóa ảnh đại diện thành công");
     } catch (error) {
       console.error("Error deleting avatar:", error);
-      alert(error?.message || "Không thể xóa ảnh đại diện. Vui lòng thử lại.");
+      toast.error(
+        error?.message || "Không thể xóa ảnh đại diện. Vui lòng thử lại."
+      );
     } finally {
       setAvatarLoading(false);
     }
@@ -468,7 +463,7 @@ const ProfilePage = ({ setCurrentPage }) => {
           Hồ sơ của tôi
         </h2>
 
-        {/* Profile Section */}
+        {}
         <div
           style={{
             backgroundColor: "white",
@@ -509,7 +504,7 @@ const ProfilePage = ({ setCurrentPage }) => {
             )}
           </div>
 
-          {/* Avatar Section */}
+          {}
           <div
             style={{
               marginBottom: "2rem",
@@ -861,7 +856,7 @@ const ProfilePage = ({ setCurrentPage }) => {
           )}
         </div>
 
-        {/* Change Password Section */}
+        {}
         <div
           style={{
             backgroundColor: "white",
@@ -1036,7 +1031,7 @@ const ProfilePage = ({ setCurrentPage }) => {
           )}
         </div>
 
-        {/* Shipping Addresses Section */}
+        {}
         <div
           style={{
             backgroundColor: "white",
@@ -1076,7 +1071,7 @@ const ProfilePage = ({ setCurrentPage }) => {
             )}
           </div>
 
-          {/* Add Address Form */}
+          {}
           {showAddressForm && (
             <form
               onSubmit={handleCreateAddress}
@@ -1156,7 +1151,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                 </div>
               </div>
 
-              {/* Province/District/Ward Selection */}
+              {}
               <div
                 style={{
                   display: "grid",
@@ -1409,7 +1404,7 @@ const ProfilePage = ({ setCurrentPage }) => {
             </form>
           )}
 
-          {/* Addresses List */}
+          {}
           {shippingAddresses.length === 0 ? (
             <p
               style={{
@@ -1506,7 +1501,7 @@ const ProfilePage = ({ setCurrentPage }) => {
                           </div>
                         </div>
 
-                        {/* Province/District/Ward Selection */}
+                        {}
                         <div
                           style={{
                             display: "grid",
@@ -1819,7 +1814,6 @@ const ProfilePage = ({ setCurrentPage }) => {
                                 };
                                 setAddressForm(formData);
 
-                                // Fetch districts if provinceId exists
                                 if (formData.provinceId) {
                                   try {
                                     setLoadingDistricts(true);
@@ -1829,7 +1823,6 @@ const ProfilePage = ({ setCurrentPage }) => {
                                       );
                                     setDistricts(districtsData || []);
 
-                                    // Fetch wards if districtId exists
                                     if (formData.districtId) {
                                       setLoadingWards(true);
                                       const wardsData =
@@ -1895,4 +1888,3 @@ const ProfilePage = ({ setCurrentPage }) => {
 };
 
 export default ProfilePage;
-

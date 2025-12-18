@@ -1,5 +1,3 @@
--- Migration V19: Add product_view table for tracking product views
-
 CREATE TABLE product_view (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NULL,
@@ -11,4 +9,3 @@ CREATE TABLE product_view (
     INDEX idx_product_view_user_created (user_id, created_at),
     INDEX idx_product_view_product_created (product_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-

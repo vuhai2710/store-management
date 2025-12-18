@@ -40,26 +40,35 @@ const Login = () => {
       const result = await dispatch(login(values)).unwrap();
       console.log("Kết quả login:", result);
 
-      // Kiểm tra role của user
       const user = result?.user || authService.getUserFromStorage();
+      console.log("User info:", user);
 
       if (user?.role === USER_ROLES.CUSTOMER) {
-        // Nếu là CUSTOMER, redirect sang frontend_client
-        message.success("Đăng nhập thành công! Đang chuyển hướng...");
-        // Chuyển hướng sang frontend_client với token
+
+        message.success("Đăng nhập thành công! Đang chuyển hướng đến trang khách hàng...");
+
         const token = localStorage.getItem("token");
         const clientUrl = APP_CONFIG.CLIENT_URL;
-        // Chuyển hướng với token trong URL hoặc localStorage (frontend_client sẽ đọc từ localStorage)
-        window.location.href = `${clientUrl}?token=${token}`;
+
+        setTimeout(() => {
+
+          window.location.href = `${clientUrl}?token=${token}`;
+        }, 500);
         return;
       }
 
-      // Nếu là ADMIN hoặc EMPLOYEE, điều hướng bình thường
       message.success("Đăng nhập thành công!");
-      navigate("/dashboard");
+      if (user?.role === USER_ROLES.EMPLOYEE) {
+
+        navigate("/orders");
+      } else {
+
+        navigate("/dashboard");
+      }
     } catch (error) {
       console.error("Lỗi đăng nhập:", error);
-      message.error(error || "Đăng nhập thất bại!");
+
+      message.error(error || "Sai tài khoản hoặc mật khẩu");
     } finally {
       setLoading(false);
     }
@@ -74,7 +83,7 @@ const Login = () => {
       setForgotPasswordLoading(true);
       const response = await authService.forgotPassword(values.email);
       message.success(
-        response?.message || "Mật khẩu mới đã được gửi đến email của bạn!"
+        response?.message || "Vui lòng kiểm tra email để đặt lại mật khẩu!"
       );
       setForgotPasswordVisible(false);
       forgotPasswordForm.resetFields();
@@ -82,7 +91,7 @@ const Login = () => {
       const errorMessage =
         error?.response?.data?.message ||
         error?.message ||
-        "Không thể gửi mật khẩu mới. Vui lòng thử lại!";
+        "Không thể gửi email. Vui lòng thử lại!";
       message.error(errorMessage);
     } finally {
       setForgotPasswordLoading(false);
@@ -186,26 +195,9 @@ const Login = () => {
             </Button>
           </Form.Item>
         </Form>
-
-        <div style={{ textAlign: "center", marginTop: "16px" }}>
-          <Text type="secondary" style={{ fontSize: "13px" }}>
-            Chưa có tài khoản?{" "}
-            <Link
-              onClick={() => navigate("/register")}
-              style={{ fontWeight: "500" }}>
-              Đăng ký ngay
-            </Link>
-          </Text>
-        </div>
-
-        <div style={{ textAlign: "center", marginTop: "16px" }}>
-          <Text type="secondary" style={{ fontSize: "12px" }}>
-            Demo Account: admin / admin
-          </Text>
-        </div>
       </Card>
 
-      {/* Forgot Password Modal */}
+      { }
       <Modal
         title="Quên mật khẩu"
         open={forgotPasswordVisible}
@@ -246,7 +238,7 @@ const Login = () => {
                 type="primary"
                 htmlType="submit"
                 loading={forgotPasswordLoading}>
-                Gửi mật khẩu mới
+                Gửi link đặt lại
               </Button>
             </Space>
           </Form.Item>

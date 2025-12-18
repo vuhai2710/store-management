@@ -11,25 +11,25 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class GHNCreateOrderResponseDTO {
-    
+
     @JsonProperty("order_code")
     private String orderCode;
-    
+
     @JsonProperty("sort_code")
     private String sortCode;
-    
+
     @JsonProperty("trans_type")
     private String transType;
-    
+
     @JsonProperty("ward_encode")
     private String wardEncode;
-    
+
     @JsonProperty("district_encode")
     private String districtEncode;
-    
+
     @JsonProperty("expected_delivery_time")
     private String expectedDeliveryTime;
-    
+
     @JsonProperty("client_order_code")
     private String clientOrderCode;
 }

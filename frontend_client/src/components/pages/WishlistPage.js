@@ -1,4 +1,4 @@
-// src/components/pages/WishlistPage.js
+
 import React from 'react';
 import styles from '../../styles/styles';
 import ProductCard from '../shared/ProductCard';
@@ -10,7 +10,7 @@ const WishlistPage = ({ wishlist, setCurrentPage, handleAddToCart, handleAddToWi
       {wishlist.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#FFFFFF', borderRadius: '0.75rem', boxShadow: '0 12px 30px rgba(15,23,42,0.06)' }}>
           <p style={{ color: '#6c757d', fontSize: '1.125rem', marginBottom: '1.5rem' }}>Danh sách yêu thích của bạn đang trống</p>
-          <button 
+          <button
             onClick={() => setCurrentPage('shop')}
             style={styles.buttonSecondary}
           >
@@ -20,13 +20,13 @@ const WishlistPage = ({ wishlist, setCurrentPage, handleAddToCart, handleAddToWi
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
           {wishlist.map(product => (
-            <ProductCard 
-              key={product.id} 
-              product={product} 
-              handleAddToCart={handleAddToCart} 
-              handleAddToWishlist={handleAddToWishlist} 
+            <ProductCard
+              key={product.id}
+              product={product}
+              handleAddToCart={handleAddToCart}
+              handleAddToWishlist={handleAddToWishlist}
               isInWishlist={isInWishlist}
-              handleViewProductDetail={handleViewProductDetail} // <- TRUYỀN prop
+              handleViewProductDetail={handleViewProductDetail}
             />
           ))}
         </div>

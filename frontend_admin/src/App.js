@@ -1,10 +1,3 @@
-/**
- * App.js - CẬP NHẬT với Authentication Flow
- *
- * File này là bản cập nhật của App.js hiện tại
- * Tích hợp đầy đủ authentication và protected routes
- */
-
 import React, { useEffect } from "react";
 import { Layout } from "antd";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -12,31 +5,27 @@ import ProtectedRoute from "./components/common/ProtectedRoute";
 import { USER_ROLES, APP_CONFIG } from "./constants";
 import { useAuth } from "./hooks";
 
-// Layout Components
 import AppHeader from "./components/layout/AppHeader";
 import AppSidebar from "./components/layout/AppSidebar";
 import Breadcrumbs from "./components/common/Breadcrumbs";
-import ChatWidget from "./components/chat/ChatWidget";
+import FloatingChatButton from "./components/chat/FloatingChatButton";
 
-// Common Components
-// giữ 1 dòng import duy nhất
-
-// Pages
 import Users from "./pages/Users";
 import Unauthorized from "./pages/Unauthorized";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Orders from "./pages/Orders";
 import OrderDetail from "./pages/OrderDetail";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
-import ProductReviews from "./pages/ProductReviews";
 import Customers from "./pages/Customers";
 import CustomerDetail from "./pages/CustomerDetail";
 import Inventory from "./pages/Inventory";
 import Suppliers from "./pages/Suppliers";
+import SupplierDetail from "./pages/SupplierDetail";
 import Categories from "./pages/Categories";
 import ImportOrders from "./pages/ImportOrders";
 import ImportOrderDetail from "./pages/ImportOrderDetail";
@@ -46,14 +35,20 @@ import EmployeeDetail from "./pages/EmployeeDetail";
 import Finance from "./pages/Finance";
 import Reports from "./pages/Reports";
 import Promotions from "./pages/Promotions";
+import ProductReviews from "./pages/ProductReviews";
+import ReturnListPage from "./pages/orderReturns/ReturnListPage";
+import ReturnDetailPage from "./pages/orderReturns/ReturnDetailPage";
+import ReturnSettingPage from "./pages/system/ReturnSettingPage";
+import ExportInvoices from "./pages/ExportInvoices";
+import ImportInvoices from "./pages/ImportInvoices";
 
 const { Content } = Layout;
 
-// Thêm block này
 const PublicRoutes = () => (
   <Routes>
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/unauthorized" element={<Unauthorized />} />
     <Route path="*" element={<Navigate to="/login" replace />} />
   </Routes>
@@ -62,19 +57,34 @@ const PublicRoutes = () => (
 function App() {
   const { user, isAuthenticated, loading } = useAuth();
 
-  // Kiểm tra và redirect CUSTOMER sang frontend_client
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenFromUrl = urlParams.get('token');
+    const path = window.location.pathname;
+
+    if (tokenFromUrl && !path.startsWith('/reset-password')) {
+      console.log("Received auth token from redirect, saving to localStorage");
+      localStorage.setItem("token", tokenFromUrl);
+
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('token');
+      window.history.replaceState({}, '', newUrl.pathname + newUrl.search);
+
+      window.location.reload();
+    }
+  }, []);
+
   useEffect(() => {
     if (!loading && isAuthenticated && user?.role === USER_ROLES.CUSTOMER) {
       const token = localStorage.getItem("token");
       if (token) {
         const clientUrl = APP_CONFIG.CLIENT_URL;
-        // Chuyển hướng sang frontend_client với token
+
         window.location.href = `${clientUrl}?token=${token}`;
       }
     }
   }, [loading, isAuthenticated, user]);
 
-  // Loading state - hiển thị loading screen trước khi check auth
   if (loading) {
     return (
       <div
@@ -97,12 +107,10 @@ function App() {
     );
   }
 
-  // Nếu chưa đăng nhập → render PublicRoutes
   if (!isAuthenticated) {
     return <PublicRoutes />;
   }
 
-  // Nếu là CUSTOMER, hiển thị loading trong khi redirect
   if (user?.role === USER_ROLES.CUSTOMER) {
     return (
       <div
@@ -125,7 +133,6 @@ function App() {
     );
   }
 
-  // Protected routes (đã đăng nhập)
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <AppSidebar />
@@ -140,13 +147,13 @@ function App() {
           }}>
           <Breadcrumbs />
           <Routes>
-            {/* Public trong authenticated area */}
+            { }
             <Route path="/unauthorized" element={<Unauthorized />} />
 
-            {/* Redirect root to dashboard */}
+            { }
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            {/* Dashboard - Tất cả roles */}
+            { }
             <Route
               path="/dashboard"
               element={
@@ -156,7 +163,7 @@ function App() {
               }
             />
 
-            {/* Profile - Tất cả roles */}
+            { }
             <Route
               path="/profile"
               element={
@@ -166,7 +173,7 @@ function App() {
               }
             />
 
-            {/* Orders - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/orders"
               element={
@@ -186,7 +193,27 @@ function App() {
               }
             />
 
-            {/* Products - ADMIN, EMPLOYEE */}
+            { }
+            <Route
+              path="/order-returns"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
+                  <ReturnListPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/order-returns/:id"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
+                  <ReturnDetailPage />
+                </ProtectedRoute>
+              }
+            />
+
+            { }
             <Route
               path="/products"
               element={
@@ -205,17 +232,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/products/:productId/reviews"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
-                  <ProductReviews />
-                </ProtectedRoute>
-              }
-            />
 
-            {/* Customers - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/customers"
               element={
@@ -235,7 +253,7 @@ function App() {
               }
             />
 
-            {/* Inventory - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/inventory"
               element={
@@ -254,8 +272,17 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/suppliers/:id"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
+                  <SupplierDetail />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* Categories - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/categories"
               element={
@@ -266,7 +293,29 @@ function App() {
               }
             />
 
-            {/* Import Orders - ADMIN, EMPLOYEE */}
+            { }
+            <Route
+              path="/promotions"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
+                  <Promotions />
+                </ProtectedRoute>
+              }
+            />
+
+            { }
+            <Route
+              path="/products/:productId/reviews"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
+                  <ProductReviews />
+                </ProtectedRoute>
+              }
+            />
+
+            { }
             <Route
               path="/import-orders"
               element={
@@ -286,7 +335,7 @@ function App() {
               }
             />
 
-            {/* Shipments - ADMIN, EMPLOYEE */}
+            { }
             <Route
               path="/shipments/:id"
               element={
@@ -297,7 +346,7 @@ function App() {
               }
             />
 
-            {/* Employees - ADMIN only */}
+            { }
             <Route
               path="/employees"
               element={
@@ -315,7 +364,7 @@ function App() {
               }
             />
 
-            {/* Finance - ADMIN only */}
+            { }
             <Route
               path="/finance"
               element={
@@ -325,7 +374,7 @@ function App() {
               }
             />
 
-            {/* Reports - ADMIN only */}
+            { }
             <Route
               path="/reports"
               element={
@@ -335,7 +384,7 @@ function App() {
               }
             />
 
-            {/* Trang quản lý người dùng - chỉ ADMIN */}
+            { }
             <Route
               path="/users"
               element={
@@ -345,23 +394,40 @@ function App() {
               }
             />
 
-            {/* Promotions - ADMIN, EMPLOYEE */}
+            { }
             <Route
-              path="/promotions"
+              path="/settings"
               element={
-                <ProtectedRoute
-                  allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.EMPLOYEE]}>
-                  <Promotions />
+                <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                  <ReturnSettingPage />
                 </ProtectedRoute>
               }
             />
 
-            {/* Catch all - redirect to dashboard */}
+            { }
+            <Route
+              path="/invoices/export"
+              element={
+                <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                  <ExportInvoices />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/invoices/import"
+              element={
+                <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                  <ImportInvoices />
+                </ProtectedRoute>
+              }
+            />
+
+            { }
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Content>
       </Layout>
-      <ChatWidget />
+      <FloatingChatButton />
     </Layout>
   );
 }

@@ -1,6 +1,6 @@
-// src/components/pages/LoginPage.js
+
 import React, { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, LogIn, AlertCircle } from "lucide-react";
 import styles from "../../styles/styles";
 import { useAuth } from "../../hooks/useAuth";
 import LoadingSpinner from "../common/LoadingSpinner";
@@ -31,7 +31,7 @@ const LoginPage = ({ setCurrentPage }) => {
       ...prev,
       [name]: value,
     }));
-    // Xóa lỗi khi người dùng bắt đầu nhập
+
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -65,14 +65,14 @@ const LoginPage = ({ setCurrentPage }) => {
       try {
         setIsLoading(true);
         await login(formData.username, formData.password, rememberMe);
-        // Redirect to home page after successful login
+
         setCurrentPage("home");
       } catch (error) {
         console.error("Login error:", error);
-        setApiError(
-          error?.message ||
-            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
-        );
+
+        const errorMessage =
+          error?.message || "Tài khoản hoặc mật khẩu không đúng";
+        setApiError(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -89,7 +89,6 @@ const LoginPage = ({ setCurrentPage }) => {
       return;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(forgotPasswordEmail)) {
       setForgotPasswordError("Email không hợp lệ");
@@ -101,7 +100,7 @@ const LoginPage = ({ setCurrentPage }) => {
       const response = await authService.forgotPassword(forgotPasswordEmail);
       setForgotPasswordSuccess(
         response?.message ||
-          "Mật khẩu mới đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư."
+        "Vui lòng kiểm tra email để đặt lại mật khẩu."
       );
       setForgotPasswordEmail("");
       setTimeout(() => {
@@ -170,7 +169,7 @@ const LoginPage = ({ setCurrentPage }) => {
             boxShadow: "0 24px 60px rgba(15, 23, 42, 0.16)",
             overflow: "hidden",
           }}>
-          {/* Header */}
+          {}
           <div
             style={{
               background:
@@ -205,9 +204,9 @@ const LoginPage = ({ setCurrentPage }) => {
             </p>
           </div>
 
-          {/* Form */}
+          {}
           <form onSubmit={handleSubmit} style={{ padding: "2rem" }}>
-            {/* Username Field */}
+            {}
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -230,7 +229,7 @@ const LoginPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {/* Password Field */}
+            {}
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -267,7 +266,7 @@ const LoginPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {/* Remember & Forgot Password */}
+            {}
             <div
               style={{
                 display: "flex",
@@ -305,22 +304,27 @@ const LoginPage = ({ setCurrentPage }) => {
               </button>
             </div>
 
-            {/* API Error Message */}
+            {}
             {apiError && (
               <div
                 style={{
-                  padding: "0.75rem",
+                  padding: "0.875rem 1rem",
                   marginBottom: "1rem",
-                  backgroundColor: "#f8d7da",
-                  color: "#721c24",
-                  borderRadius: "0.25rem",
+                  backgroundColor: "#FEE2E2",
+                  color: "#DC2626",
+                  borderRadius: "0.5rem",
                   fontSize: "0.875rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  border: "1px solid #FECACA",
                 }}>
-                {apiError}
+                <AlertCircle size={20} style={{ flexShrink: 0 }} />
+                <span>{apiError}</span>
               </div>
             )}
 
-            {/* Submit Button */}
+            {}
             <Button
               type="submit"
               disabled={isLoading}
@@ -329,7 +333,7 @@ const LoginPage = ({ setCurrentPage }) => {
               {isLoading ? "Đang đăng nhập..." : "Đăng Nhập"}
             </Button>
 
-            {/* Divider */}
+            {}
             <div
               style={{
                 display: "flex",
@@ -353,7 +357,7 @@ const LoginPage = ({ setCurrentPage }) => {
                 }}></div>
             </div>
 
-            {/* Register Link */}
+            {}
             <div
               style={{
                 textAlign: "center",
@@ -376,7 +380,7 @@ const LoginPage = ({ setCurrentPage }) => {
               </button>
             </div>
 
-            {/* Back to Home */}
+            {}
             <div style={{ textAlign: "center", marginTop: "1rem" }}>
               <button
                 type="button"
@@ -393,7 +397,7 @@ const LoginPage = ({ setCurrentPage }) => {
             </div>
           </form>
 
-          {/* Forgot Password Modal */}
+          {}
           {showForgotPassword && (
             <div
               style={{
@@ -439,7 +443,7 @@ const LoginPage = ({ setCurrentPage }) => {
                     marginBottom: "1.5rem",
                     fontSize: "0.875rem",
                   }}>
-                  Nhập email đã đăng ký để nhận mật khẩu mới
+                  Nhập email đã đăng ký để nhận link đặt lại mật khẩu
                 </p>
 
                 <form onSubmit={handleForgotPassword}>

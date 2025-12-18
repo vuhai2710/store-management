@@ -5,6 +5,7 @@ import com.storemanagement.utils.TransactionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 
 @Repository
-public interface InventoryTransactionRepository extends JpaRepository<InventoryTransaction, Integer> {
+public interface InventoryTransactionRepository extends JpaRepository<InventoryTransaction, Integer>, JpaSpecificationExecutor<InventoryTransaction> {
 
     Page<InventoryTransaction> findByProduct_IdProduct(Integer productId, Pageable pageable);
 
@@ -64,6 +65,26 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
     Page<InventoryTransaction> findByMultipleCriteria(
             @Param("transactionType") TransactionType transactionType,
             @Param("productId") Integer productId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
+    );
+
+    @Query("SELECT it FROM InventoryTransaction it " +
+           "WHERE (:transactionType IS NULL OR it.transactionType = :transactionType) " +
+           "AND (:referenceType IS NULL OR it.referenceType = :referenceType) " +
+           "AND (:productId IS NULL OR it.product.idProduct = :productId) " +
+           "AND (:productName IS NULL OR :productName = '' OR LOWER(it.product.productName) LIKE LOWER(CONCAT('%', :productName, '%'))) " +
+           "AND (:sku IS NULL OR :sku = '' OR LOWER(it.product.sku) LIKE LOWER(CONCAT('%', :sku, '%'))) " +
+           "AND (:startDate IS NULL OR it.transactionDate >= :startDate) " +
+           "AND (:endDate IS NULL OR it.transactionDate <= :endDate) " +
+           "ORDER BY it.transactionDate DESC")
+    Page<InventoryTransaction> findByAdvancedCriteria(
+            @Param("transactionType") TransactionType transactionType,
+            @Param("referenceType") com.storemanagement.utils.ReferenceType referenceType,
+            @Param("productId") Integer productId,
+            @Param("productName") String productName,
+            @Param("sku") String sku,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable

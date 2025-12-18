@@ -22,8 +22,8 @@ public class FileStorageServiceImpl implements FileStorageService {
     private static final List<String> ALLOWED_IMAGE_TYPES = Arrays.asList(
             "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"
     );
-    
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
     @Value("${file.upload.directory:uploads}")
     private String uploadDirectory;
@@ -47,7 +47,7 @@ public class FileStorageServiceImpl implements FileStorageService {
 
         try {
             Path uploadPath = Paths.get(uploadDirectory, subfolder);
-            
+
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
                 log.info("Created directory: {}", uploadPath);
@@ -80,12 +80,12 @@ public class FileStorageServiceImpl implements FileStorageService {
         }
 
         try {
-            String relativePath = imageUrl.startsWith("/uploads/") 
+            String relativePath = imageUrl.startsWith("/uploads/")
                     ? imageUrl.substring("/uploads/".length())
                     : imageUrl;
 
             Path filePath = Paths.get(uploadDirectory, relativePath);
-            
+
             if (Files.exists(filePath)) {
                 Files.delete(filePath);
                 log.info("File deleted successfully: {}", filePath);

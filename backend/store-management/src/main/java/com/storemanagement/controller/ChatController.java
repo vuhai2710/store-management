@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Slf4j
 public class ChatController {
-    
+
     private final ChatService chatService;
     private final CustomerRepository customerRepository;
 
@@ -33,11 +33,10 @@ public class ChatController {
         Integer userId = SecurityUtils.getCurrentUserId()
                 .orElseThrow(() -> new RuntimeException("Không thể xác định user hiện tại"));
         log.info("Creating conversation for user ID: {}", userId);
-        
-        // Lấy customerId từ userId
+
         Customer customer = customerRepository.findByUser_IdUser(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng với user ID: " + userId));
-        
+
         ChatConversationDTO conversation = chatService.createConversation(customer.getIdCustomer());
         return ResponseEntity.ok(ApiResponse.success("Tạo cuộc hội thoại thành công", conversation));
     }
@@ -48,11 +47,10 @@ public class ChatController {
         Integer userId = SecurityUtils.getCurrentUserId()
                 .orElseThrow(() -> new RuntimeException("Không thể xác định user hiện tại"));
         log.info("Getting conversation for user ID: {}", userId);
-        
-        // Lấy customerId từ userId
+
         Customer customer = customerRepository.findByUser_IdUser(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng với user ID: " + userId));
-        
+
         ChatConversationDTO conversation = chatService.getOrCreateCustomerConversation(customer.getIdCustomer());
         return ResponseEntity.ok(ApiResponse.success("Lấy cuộc hội thoại thành công", conversation));
     }
@@ -62,12 +60,12 @@ public class ChatController {
     public ResponseEntity<ApiResponse<PageResponse<ChatConversationDTO>>> getAllConversations(
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "20") Integer pageSize) {
-        
+
         log.info("Getting all conversations, page: {}, size: {}", pageNo, pageSize);
-        
+
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
         Page<ChatConversationDTO> conversations = chatService.getAllConversations(pageable);
-        
+
         PageResponse<ChatConversationDTO> response = PageResponse.<ChatConversationDTO>builder()
                 .content(conversations.getContent())
                 .pageNo(pageNo)
@@ -80,7 +78,7 @@ public class ChatController {
                 .hasPrevious(conversations.hasPrevious())
                 .isEmpty(conversations.isEmpty())
                 .build();
-        
+
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách cuộc hội thoại thành công", response));
     }
 
@@ -88,7 +86,7 @@ public class ChatController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<ChatConversationDTO>> getConversationById(@PathVariable Integer id) {
         log.info("Getting conversation ID: {}", id);
-        
+
         ChatConversationDTO conversation = chatService.getConversationById(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin cuộc hội thoại thành công", conversation));
     }
@@ -99,12 +97,12 @@ public class ChatController {
             @PathVariable Integer id,
             @RequestParam(required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(required = false, defaultValue = "50") Integer pageSize) {
-        
+
         log.info("Getting messages for conversation ID: {}, page: {}, size: {}", id, pageNo, pageSize);
-        
+
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
         Page<ChatMessageDTO> messages = chatService.getConversationMessages(id, pageable);
-        
+
         PageResponse<ChatMessageDTO> response = PageResponse.<ChatMessageDTO>builder()
                 .content(messages.getContent())
                 .pageNo(pageNo)
@@ -117,7 +115,7 @@ public class ChatController {
                 .hasPrevious(messages.hasPrevious())
                 .isEmpty(messages.isEmpty())
                 .build();
-        
+
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử tin nhắn thành công", response));
     }
 
@@ -125,7 +123,7 @@ public class ChatController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<Void>> closeConversation(@PathVariable Integer id) {
         log.info("Closing conversation ID: {}", id);
-        
+
         chatService.closeConversation(id);
         return ResponseEntity.ok(ApiResponse.success("Đóng cuộc hội thoại thành công", null));
     }
@@ -134,8 +132,18 @@ public class ChatController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<Void>> markConversationAsViewed(@PathVariable Integer id) {
         log.info("Marking conversation ID: {} as viewed", id);
-        
+
         chatService.markConversationAsViewed(id);
         return ResponseEntity.ok(ApiResponse.success("Đã đánh dấu cuộc hội thoại đã xem", null));
+    }
+
+    @PostMapping("/conversations/customer/{customerId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<ChatConversationDTO>> getOrCreateConversationForCustomer(
+            @PathVariable Integer customerId) {
+        log.info("Admin/Employee getting or creating conversation for customer ID: {}", customerId);
+
+        ChatConversationDTO conversation = chatService.getOrCreateConversationForCustomer(customerId);
+        return ResponseEntity.ok(ApiResponse.success("Lấy hoặc tạo cuộc hội thoại thành công", conversation));
     }
 }

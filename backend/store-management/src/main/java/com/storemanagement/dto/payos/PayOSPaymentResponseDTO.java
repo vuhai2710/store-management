@@ -10,12 +10,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class PayOSPaymentResponseDTO {
-    
+
     private String code;
-    
+
     private String desc;
-    
+
     private PayOSPaymentDataDTO data;
-    
+
     private String signature;
 }
