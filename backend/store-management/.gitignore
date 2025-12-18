@@ -106,5 +106,3 @@ secrets.jsonk
 # Documentation (personal notes - optional)
 *.pdf
 !**/documentation/**/*.pdf
-
-.windsurf/

@@ -5,15 +5,15 @@ export const fetchCustomers = createAsyncThunk(
   "customers/fetchCustomers",
   async (params, { rejectWithValue }) => {
     try {
-
+      // If customerType filter is provided, use getCustomersByType endpoint
       if (params?.customerType) {
         const response = await customersService.getCustomersByType(
           params.customerType,
-          params
+          params // Pass pagination params
         );
         return response;
       }
-
+      // Otherwise use normal getCustomers with pagination
       const response = await customersService.getCustomers(params);
       return response;
     } catch (error) {
@@ -43,7 +43,7 @@ export const createCustomer = createAsyncThunk(
   async (customerData, { rejectWithValue }) => {
     try {
       const response = await customersService.createCustomer(customerData);
-
+      // Response from register endpoint: { success, token, authenticated }
       return response;
     } catch (error) {
       return rejectWithValue(error.message || "Lỗi khi đăng ký khách hàng");
@@ -86,9 +86,9 @@ const initialState = {
   error: null,
   pagination: {
     current: 1,
-    pageSize: 5,
+    pageSize: 5, // Default page size: 5
     total: 0,
-    totalPages: 0,
+    totalPages: 0, // Track total pages
   },
   filters: {
     search: "",
@@ -121,15 +121,17 @@ const customersSlice = createSlice({
       })
       .addCase(fetchCustomers.fulfilled, (state, action) => {
         state.loading = false;
-
+        // customersService returns transformed object: { data, total, pageNo (1-indexed), pageSize, totalPages, ... }
         const pageResponse = action.payload;
         if (pageResponse && pageResponse.data) {
           state.customers = pageResponse.data || [];
-
+          // Only update total and totalPages from API response
+          // DO NOT update current and pageSize here - they are controlled by the frontend
+          // to prevent infinite useEffect loops
           state.pagination.total = pageResponse.total || 0;
           state.pagination.totalPages = pageResponse.totalPages || 0;
         } else {
-
+          // Fallback: if not transformed PageResponse, treat as array
           state.customers = Array.isArray(pageResponse) ? pageResponse : [];
           state.pagination.total = state.customers.length;
           state.pagination.totalPages = 1;
@@ -138,7 +140,7 @@ const customersSlice = createSlice({
       })
       .addCase(fetchCustomers.rejected, (state, action) => {
         state.loading = false;
-        state.customers = [];
+        state.customers = []; // Set to empty array on error
         state.error = action.payload;
       })
       .addCase(fetchCustomerById.pending, (state) => {
@@ -160,7 +162,9 @@ const customersSlice = createSlice({
       })
       .addCase(createCustomer.fulfilled, (state, action) => {
         state.loading = false;
-
+        // Register API returns { success, token, authenticated }
+        // We don't have customer data immediately, so just increment total
+        // The list will be reloaded to show new customer
         state.pagination.total += 1;
         state.error = null;
       })

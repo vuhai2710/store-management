@@ -100,16 +100,7 @@ export const productsService = {
     return unwrap(resp);
   },
 
-  getBestSellingProducts: async ({
-    status,
-    pageNo = 1,
-    pageSize = 10,
-  } = {}) => {
-    const params = { pageNo, pageSize };
-    if (status) params.status = status;
-    const resp = await api.get(API_ENDPOINTS.PRODUCTS.BEST_SELLERS, { params });
-    return unwrap(resp);
-  },
+
 
   getTop5BestSellingProducts: async ({ status } = {}) => {
     try {

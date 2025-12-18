@@ -52,37 +52,13 @@ export const ordersService = {
     return response.data;
   },
 
-  updateOrder: async (id, orderData) => {
-    console.warn("updateOrder is deprecated. Use updateOrderStatus instead.");
 
-    throw new Error(
-      "Update order is not supported. Use updateOrderStatus instead."
-    );
-  },
 
-  deleteOrder: async (id) => {
-    console.warn(
-      "deleteOrder is deprecated. Backend doesn't support order deletion."
-    );
-    throw new Error("Delete order is not supported by backend.");
-  },
 
-  getOrderStats: async (params = {}) => {
-    console.warn(
-      "getOrderStats is deprecated. Backend doesn't have stats endpoint."
-    );
 
-    return null;
-  },
 
-  exportOrders: async (params = {}) => {
-    console.warn(
-      "exportOrders is deprecated. Backend doesn't have bulk export endpoint."
-    );
-    throw new Error(
-      "Bulk export is not supported. Use exportOrderToPdf for individual orders."
-    );
-  },
+
+
 
   printInvoice: async (id) => {
     return ordersService.exportOrderToPdf(id);

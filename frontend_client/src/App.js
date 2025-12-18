@@ -56,8 +56,8 @@ function AppContent() {
   });
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [selectedReturnId, setSelectedReturnId] = useState(null);
-  const [cart, setCart] = useState([]);
   const [cartData, setCartData] = useState(null);
+  const cart = cartData?.cartItems || cartData?.items || [];
   const [cartLoading, setCartLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -137,17 +137,14 @@ function AppContent() {
           setCartLoading(true);
           const cartDataResponse = await cartService.getCart();
           setCartData(cartDataResponse);
-          setCart(cartDataResponse.cartItems || cartDataResponse.items || []);
         } catch (error) {
           console.error("Error loading cart:", error);
-          setCart([]);
           setCartData(null);
         } finally {
           setCartLoading(false);
         }
       } else {
 
-        setCart([]);
         setCartData(null);
       }
     };
@@ -161,7 +158,6 @@ function AppContent() {
         setCartLoading(true);
         const cartDataResponse = await cartService.getCart();
         setCartData(cartDataResponse);
-        setCart(cartDataResponse.cartItems || cartDataResponse.items || []);
       } catch (error) {
         console.error("Error reloading cart:", error);
       } finally {
@@ -174,7 +170,7 @@ function AppContent() {
     try {
       await logout();
       setCurrentPage("home");
-      setCart([]);
+      setCartData(null);
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -245,7 +241,6 @@ function AppContent() {
       try {
         const cartDataResponse = await cartService.getCart();
         setCartData(cartDataResponse);
-        setCart(cartDataResponse.cartItems || cartDataResponse.items || []);
       } catch (cartError) {
         console.error("Error reloading cart:", cartError);
 
@@ -274,7 +269,6 @@ function AppContent() {
 
         const cartDataResponse = await cartService.getCart();
         setCartData(cartDataResponse);
-        setCart(cartDataResponse.cartItems || cartDataResponse.items || []);
       }
     } catch (error) {
       console.error("Error updating cart:", error);
@@ -296,7 +290,6 @@ function AppContent() {
       console.log("[App] Updated cart after remove:", updatedCart);
 
       setCartData(updatedCart);
-      setCart(updatedCart.cartItems || updatedCart.items || []);
     } catch (error) {
       console.error("Error removing from cart:", error);
       toast.error(error?.message || "Không thể xóa sản phẩm khỏi giỏ hàng");
@@ -506,7 +499,7 @@ function AppContent() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#F8FAFC" }}>
-      {}
+      { }
       {!isAuthPage && (
         <Header
           currentPage={currentPage}
@@ -526,13 +519,13 @@ function AppContent() {
 
       <main>{renderPage()}</main>
 
-      {}
+      { }
       {!isAuthPage && <Footer />}
 
-      {}
+      { }
       {isAuthenticated && <ChatWidget />}
 
-      {}
+      { }
       {showFlyingCart && animationSource && animationTarget && (
         <FlyingCartIcon
           sourcePosition={animationSource}
@@ -545,7 +538,7 @@ function AppContent() {
         />
       )}
 
-      {}
+      { }
       <ToastContainer
         position="top-right"
         autoClose={2500}

@@ -44,19 +44,7 @@ export const createOrder = createAsyncThunk(
   }
 );
 
-export const updateOrder = createAsyncThunk(
-  "orders/updateOrder",
-  async ({ id, orderData }, { rejectWithValue }) => {
-    try {
-      const response = await ordersService.updateOrder(id, orderData);
-      return response;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi cập nhật đơn hàng"
-      );
-    }
-  }
-);
+
 
 export const updateOrderStatus = createAsyncThunk(
   "orders/updateOrderStatus",
@@ -72,19 +60,7 @@ export const updateOrderStatus = createAsyncThunk(
   }
 );
 
-export const deleteOrder = createAsyncThunk(
-  "orders/deleteOrder",
-  async (id, { rejectWithValue }) => {
-    try {
-      await ordersService.deleteOrder(id);
-      return id;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi xóa đơn hàng"
-      );
-    }
-  }
-);
+
 
 const initialState = {
   orders: [],
@@ -173,20 +149,7 @@ const ordersSlice = createSlice({
         state.pagination.total += 1;
       })
 
-      .addCase(updateOrder.fulfilled, (state, action) => {
 
-        const updatedOrder = action.payload;
-        const orderId = updatedOrder.idOrder || updatedOrder.id;
-        const index = state.orders.findIndex(
-          (order) => (order.idOrder || order.id) === orderId
-        );
-        if (index !== -1) {
-          state.orders[index] = updatedOrder;
-        }
-        if (state.currentOrder && (state.currentOrder.idOrder || state.currentOrder.id) === orderId) {
-          state.currentOrder = updatedOrder;
-        }
-      })
 
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
         const updatedOrder = action.payload;
@@ -203,14 +166,7 @@ const ordersSlice = createSlice({
         }
       })
 
-      .addCase(deleteOrder.fulfilled, (state, action) => {
 
-        const orderId = action.payload;
-        state.orders = state.orders.filter(
-          (order) => (order.idOrder || order.id) !== orderId
-        );
-        state.pagination.total = Math.max(0, state.pagination.total - 1);
-      });
   },
 });
 

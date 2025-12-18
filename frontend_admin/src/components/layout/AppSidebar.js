@@ -10,13 +10,11 @@ import {
   InboxOutlined,
   TeamOutlined,
   DollarOutlined,
-  BarChartOutlined,
   UserSwitchOutlined,
   FolderOutlined,
   ImportOutlined,
   GiftOutlined,
   RollbackOutlined,
-  SettingOutlined,
   FileTextOutlined,
 } from "@ant-design/icons";
 import { USER_ROLES } from "../../constants/roles";
@@ -25,7 +23,6 @@ const { Sider } = Layout;
 
 const AppSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const user = useSelector((state) => state.auth?.user);
@@ -144,7 +141,6 @@ const AppSidebar = () => {
   };
 
   const getOpenKeys = () => {
-
     return [];
   };
 

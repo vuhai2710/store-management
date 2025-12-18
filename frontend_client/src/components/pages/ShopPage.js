@@ -21,7 +21,6 @@ const ShopPage = ({
   setSortOption,
   setCurrentPage,
   searchTerm,
-  handleClearCategoryFilter,
 }) => {
   const { isAuthenticated } = useAuth();
   const [categories, setCategories] = useState([]);
@@ -477,7 +476,7 @@ const ShopPage = ({
   return (
     <section style={{ padding: "4rem 0", backgroundColor: "#F8FAFC" }}>
       <div style={styles.container}>
-        {}
+        { }
         <div
           style={{
             display: "flex",
@@ -498,11 +497,11 @@ const ShopPage = ({
           </div>
         </div>
 
-        {}
+        { }
         <div style={styles.shopLayout}>
-          {}
+          { }
           <div style={styles.sidebar}>
-            {}
+            { }
             <div style={styles.sidebarSection}>
               <h3
                 style={{
@@ -542,7 +541,7 @@ const ShopPage = ({
               </ul>
             </div>
 
-            {}
+            { }
             {brands.length > 0 && (
               <div style={styles.sidebarSection}>
                 <h3
@@ -579,7 +578,7 @@ const ShopPage = ({
               </div>
             )}
 
-            {}
+            { }
             <div style={styles.sidebarSection}>
               <h3
                 style={{
@@ -667,7 +666,7 @@ const ShopPage = ({
               </div>
             </div>
 
-            {}
+            { }
             {productsOnSale.length > 0 && (
               <div style={styles.sidebarSection}>
                 <h3
@@ -729,7 +728,7 @@ const ShopPage = ({
                         ) : (
                           "📦"
                         )}
-                        {}
+                        { }
                         {product.discountLabel && (
                           <span
                             style={{
@@ -786,7 +785,7 @@ const ShopPage = ({
               </div>
             )}
 
-            {}
+            { }
             {latestProducts.length > 0 && (
               <div style={{ ...styles.sidebarSection, borderBottom: "none" }}>
                 <h3
@@ -870,9 +869,9 @@ const ShopPage = ({
             )}
           </div>
 
-          {}
+          { }
           <div>
-            {}
+            { }
             <div
               style={{
                 display: "flex",
@@ -889,7 +888,7 @@ const ShopPage = ({
                 sản phẩm
               </p>
 
-              {}
+              { }
               <div
                 style={{
                   display: "flex",
@@ -920,7 +919,7 @@ const ShopPage = ({
                 </select>
               </div>
 
-              {}
+              { }
               <div style={{ display: "flex", gap: "0.5rem", color: "#6c757d" }}>
                 <Grid3X3
                   size={20}
@@ -930,7 +929,7 @@ const ShopPage = ({
               </div>
             </div>
 
-            {}
+            { }
             {error && (
               <div
                 style={{
@@ -944,7 +943,7 @@ const ShopPage = ({
               </div>
             )}
 
-            {}
+            { }
             {loading ? (
               <div
                 style={{
@@ -989,7 +988,7 @@ const ShopPage = ({
               </div>
             )}
 
-            {}
+            { }
             {totalPages > 1 && (
               <div
                 style={{

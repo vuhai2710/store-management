@@ -39,10 +39,7 @@ export const productsService = {
     return unwrap(resp);
   },
 
-  getProductByCode: async (code) => {
-    const resp = await api.get(API_ENDPOINTS.PRODUCTS.CODE(code));
-    return unwrap(resp);
-  },
+
 
   getProductsByCategory: async (
     categoryId,
@@ -60,21 +57,7 @@ export const productsService = {
     return unwrap(resp);
   },
 
-  getProductsByBrand: async (
-    brand,
-    {
-      pageNo = 1,
-      pageSize = 10,
-      sortBy = "idProduct",
-      sortDirection = "ASC",
-    } = {}
-  ) => {
-    const params = { pageNo, pageSize, sortBy, sortDirection };
-    const resp = await api.get(API_ENDPOINTS.PRODUCTS.BY_BRAND(brand), {
-      params,
-    });
-    return unwrap(resp);
-  },
+
 
   getProductsBySupplier: async (
     supplierId,
@@ -92,29 +75,9 @@ export const productsService = {
     return unwrap(resp);
   },
 
-  getProductsByPriceRange: async (
-    minPrice,
-    maxPrice,
-    { pageNo = 1, pageSize = 10, sortBy = "price", sortDirection = "ASC" } = {}
-  ) => {
-    const params = {
-      minPrice,
-      maxPrice,
-      pageNo,
-      pageSize,
-      sortBy,
-      sortDirection,
-    };
-    const resp = await api.get(API_ENDPOINTS.PRODUCTS.BY_PRICE, { params });
-    return unwrap(resp);
-  },
 
-  getBestSellers: async ({ status, pageNo = 1, pageSize = 10 } = {}) => {
-    const params = { pageNo, pageSize };
-    if (status) params.status = status;
-    const resp = await api.get(API_ENDPOINTS.PRODUCTS.BEST_SELLERS, { params });
-    return unwrap(resp);
-  },
+
+
 
   getTop5BestSellingProducts: async ({ status } = {}) => {
     const params = {};

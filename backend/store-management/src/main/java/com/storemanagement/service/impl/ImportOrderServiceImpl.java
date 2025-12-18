@@ -40,32 +40,41 @@ public class ImportOrderServiceImpl implements ImportOrderService {
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final PdfService pdfService;
 
+    /**
+     * Tính toán lại totalAmount từ danh sách details.
+     * totalAmount = SUM(quantity * importPrice) của tất cả details.
+     * Đảm bảo totalAmount luôn chính xác và nhất quán với subtotal của từng detail.
+     */
     private void recalculateTotalAmount(PurchaseOrderDTO dto) {
         if (dto.getImportOrderDetails() == null || dto.getImportOrderDetails().isEmpty()) {
             dto.setTotalAmount(BigDecimal.ZERO);
             return;
         }
-
+        
         BigDecimal computedTotal = dto.getImportOrderDetails().stream()
                 .map(detail -> {
-
+                    // Tính subtotal cho từng detail: quantity * importPrice
                     BigDecimal subtotal = detail.getImportPrice()
                             .multiply(BigDecimal.valueOf(detail.getQuantity()))
                             .setScale(2, RoundingMode.HALF_UP);
-
+                    // Cập nhật subtotal trong detail DTO (đảm bảo consistency)
                     detail.setSubtotal(subtotal);
                     return subtotal;
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(2, RoundingMode.HALF_UP);
-
+        
         dto.setTotalAmount(computedTotal);
     }
 
+    /**
+     * Set employee name và recalculate totalAmount cho một DTO.
+     */
     private void enrichPurchaseOrderDTO(PurchaseOrderDTO dto) {
-
+        // Recalculate totalAmount from details
         recalculateTotalAmount(dto);
-
+        
+        // Set employee name: nếu có idEmployee thì lấy tên nhân viên, không thì là Quản trị viên
         if (dto.getIdEmployee() != null) {
             employeeRepository.findById(dto.getIdEmployee())
                     .ifPresent(emp -> dto.setEmployeeName(emp.getEmployeeName()));
@@ -74,6 +83,9 @@ public class ImportOrderServiceImpl implements ImportOrderService {
         }
     }
 
+    /**
+     * Set employee name và recalculate totalAmount cho danh sách DTOs.
+     */
     private void enrichPurchaseOrderDTOs(List<PurchaseOrderDTO> dtos) {
         dtos.forEach(this::enrichPurchaseOrderDTO);
     }
@@ -82,32 +94,39 @@ public class ImportOrderServiceImpl implements ImportOrderService {
     public PurchaseOrderDTO createImportOrder(PurchaseOrderDTO purchaseOrderDTO, Integer employeeId) {
         log.info("Creating import order for supplier: {}", purchaseOrderDTO.getIdSupplier());
 
+        // Bước 1: Validate supplier tồn tại
         Supplier supplier = supplierRepository.findById(purchaseOrderDTO.getIdSupplier())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Nhà cung cấp không tồn tại với ID: " + purchaseOrderDTO.getIdSupplier()));
 
+        // Bước 2: Validate products và tính tổng tiền
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<ImportOrderDetail> details = new ArrayList<>();
 
+        // Duyệt qua từng sản phẩm trong đơn nhập hàng
         for (PurchaseOrderDetailDTO detailDto : purchaseOrderDTO.getImportOrderDetails()) {
-
+            // Validate product tồn tại
             Product product = productRepository.findById(detailDto.getIdProduct())
                     .orElseThrow(() -> new EntityNotFoundException(
                             "Sản phẩm không tồn tại với ID: " + detailDto.getIdProduct()));
 
+            // Validate số lượng phải > 0
             if (detailDto.getQuantity() == null || detailDto.getQuantity() <= 0) {
                 throw new RuntimeException("Số lượng phải lớn hơn 0 cho sản phẩm: " + product.getProductName());
             }
 
+            // Validate giá nhập phải >= 0
             if (detailDto.getImportPrice() == null || detailDto.getImportPrice().compareTo(BigDecimal.ZERO) < 0) {
                 throw new RuntimeException("Giá nhập không hợp lệ cho sản phẩm: " + product.getProductName());
             }
 
+            // Tính subtotal cho sản phẩm này: quantity * importPrice
             BigDecimal subtotal = detailDto.getImportPrice()
                     .multiply(BigDecimal.valueOf(detailDto.getQuantity()))
-                    .setScale(2, RoundingMode.HALF_UP);
+                    .setScale(2, RoundingMode.HALF_UP); // Làm tròn 2 chữ số thập phân
             totalAmount = totalAmount.add(subtotal);
 
+            // Tạo ImportOrderDetail entity
             ImportOrderDetail detail = ImportOrderDetail.builder()
                     .product(product)
                     .quantity(detailDto.getQuantity())
@@ -116,63 +135,84 @@ public class ImportOrderServiceImpl implements ImportOrderService {
             details.add(detail);
         }
 
+        // Bước 3: Tạo ImportOrder entity
         ImportOrder importOrder = ImportOrder.builder()
                 .supplier(supplier)
-                .idEmployee(employeeId)
-                .orderDate(LocalDateTime.now())
-                .totalAmount(totalAmount.setScale(2, RoundingMode.HALF_UP))
+                .idEmployee(employeeId) // ID nhân viên tạo đơn (lấy từ JWT token)
+                .orderDate(LocalDateTime.now()) // Thời gian hiện tại
+                .totalAmount(totalAmount.setScale(2, RoundingMode.HALF_UP)) // Tổng tiền (làm tròn 2 chữ số)
                 .build();
 
+        // Bước 4: Link details với order (bidirectional relationship)
+        // Set parent reference cho mỗi detail
         details.forEach(detail -> detail.setImportOrder(importOrder));
-
+        // Set children reference cho order
         importOrder.setImportOrderDetails(details);
 
+        // Bước 5: Lưu đơn nhập hàng vào database
+        // Cascade save sẽ tự động lưu các details
         ImportOrder savedOrder = importOrderRepository.save(importOrder);
         log.info("Import order created with ID: {}, Total: {}", savedOrder.getIdImportOrder(), savedOrder.getTotalAmount());
 
+        // Lấy employee entity nếu có employeeId (để lưu vào inventory transaction)
         Employee employee = null;
         if (employeeId != null) {
             employee = employeeRepository.findById(employeeId).orElse(null);
         }
 
+        // Bước 6: Cập nhật inventory (stock quantity) và tạo inventory_transactions cho từng sản phẩm
+        // Đây là phần quan trọng nhất - tự động cập nhật kho khi nhập hàng
         for (ImportOrderDetail detail : savedOrder.getImportOrderDetails()) {
             Product product = detail.getProduct();
-
+            
+            // Lấy stock quantity hiện tại (nếu null thì = 0)
             Integer oldStockQuantity = product.getStockQuantity() == null ? 0 : product.getStockQuantity();
-
+            // Tính stock quantity mới: cũ + số lượng nhập
             Integer newStockQuantity = oldStockQuantity + detail.getQuantity();
-
+            
+            // Cập nhật stock quantity
             product.setStockQuantity(newStockQuantity);
-
+            
+            // Cập nhật product status nếu cần:
+            // Nếu trước đó là OUT_OF_STOCK và bây giờ có hàng (> 0) -> chuyển sang IN_STOCK
             if (newStockQuantity > 0 && product.getStatus() == ProductStatus.OUT_OF_STOCK) {
                 product.setStatus(ProductStatus.IN_STOCK);
             }
-
+            
+            // Lưu product với stock quantity mới
             productRepository.save(product);
-            log.info("Updated stock for product {}: {} -> {}",
+            log.info("Updated stock for product {}: {} -> {}", 
                     product.getIdProduct(), oldStockQuantity, newStockQuantity);
 
-            String notes = String.format("Nhập hàng từ NCC %s - Đơn nhập #%d",
+            // Bước 7: Tạo inventory_transaction để track lịch sử nhập/xuất kho
+            // Transaction này giúp:
+            // - Xem lịch sử nhập/xuất của từng sản phẩm
+            // - Audit trail (ai nhập, khi nào, từ đâu)
+            // - Báo cáo, thống kê
+            String notes = String.format("Nhập hàng từ NCC %s - Đơn nhập #%d", 
                     supplier.getSupplierName(), savedOrder.getIdImportOrder());
-
+            
             InventoryTransaction transaction = InventoryTransaction.builder()
-                    .product(product)
-                    .transactionType(TransactionType.IN)
-                    .quantity(detail.getQuantity())
-                    .referenceType(ReferenceType.PURCHASE_ORDER)
-                    .referenceId(savedOrder.getIdImportOrder())
-                    .employee(employee)
-                    .notes(notes)
-                    .transactionDate(LocalDateTime.now())
+                    .product(product) // Sản phẩm
+                    .transactionType(TransactionType.IN) // Loại: IN (nhập kho)
+                    .quantity(detail.getQuantity()) // Số lượng nhập
+                    .referenceType(ReferenceType.PURCHASE_ORDER) // Reference: đơn nhập hàng
+                    .referenceId(savedOrder.getIdImportOrder()) // ID đơn nhập hàng
+                    .employee(employee) // Nhân viên tạo đơn
+                    .notes(notes) // Ghi chú
+                    .transactionDate(LocalDateTime.now()) // Thời gian
                     .build();
-
+            
+            // Lưu transaction
             inventoryTransactionRepository.save(transaction);
-            log.info("Created inventory transaction for product {}: IN {} units (PO #{})",
+            log.info("Created inventory transaction for product {}: IN {} units (PO #{})", 
                     product.getIdProduct(), detail.getQuantity(), savedOrder.getIdImportOrder());
         }
 
+        // Map và trả về DTO
         PurchaseOrderDTO result = importOrderMapper.toDTO(savedOrder);
-
+        
+        // Enrich DTO: recalculate totalAmount từ details và set employee name
         enrichPurchaseOrderDTO(result);
 
         return result;
@@ -188,7 +228,8 @@ public class ImportOrderServiceImpl implements ImportOrderService {
         }
 
         PurchaseOrderDTO dto = importOrderMapper.toDTO(importOrder);
-
+        
+        // Enrich DTO: recalculate totalAmount từ details và set employee name
         enrichPurchaseOrderDTO(dto);
 
         return dto;
@@ -198,15 +239,16 @@ public class ImportOrderServiceImpl implements ImportOrderService {
     @Transactional(readOnly = true)
     public PageResponse<PurchaseOrderDTO> getAllImportOrders(String keyword, Pageable pageable) {
         Page<ImportOrder> orderPage;
-
+        
         if (keyword != null && !keyword.trim().isEmpty()) {
             orderPage = importOrderRepository.searchByKeyword(keyword.trim(), pageable);
         } else {
             orderPage = importOrderRepository.findAll(pageable);
         }
-
+        
         List<PurchaseOrderDTO> dtos = importOrderMapper.toDTOList(orderPage.getContent());
-
+        
+        // Enrich DTOs: recalculate totalAmount từ details và set employee names
         enrichPurchaseOrderDTOs(dtos);
 
         return PageUtils.toPageResponse(orderPage, dtos);
@@ -221,7 +263,8 @@ public class ImportOrderServiceImpl implements ImportOrderService {
 
         Page<ImportOrder> orderPage = importOrderRepository.findBySupplier_IdSupplier(supplierId, pageable);
         List<PurchaseOrderDTO> dtos = importOrderMapper.toDTOList(orderPage.getContent());
-
+        
+        // Enrich DTOs: recalculate totalAmount từ details và set employee names
         enrichPurchaseOrderDTOs(dtos);
 
         return PageUtils.toPageResponse(orderPage, dtos);
@@ -232,7 +275,8 @@ public class ImportOrderServiceImpl implements ImportOrderService {
     public PageResponse<PurchaseOrderDTO> getImportOrdersByDateRange(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
         Page<ImportOrder> orderPage = importOrderRepository.findByOrderDateBetween(startDate, endDate, pageable);
         List<PurchaseOrderDTO> dtos = importOrderMapper.toDTOList(orderPage.getContent());
-
+        
+        // Enrich DTOs: recalculate totalAmount từ details và set employee names
         enrichPurchaseOrderDTOs(dtos);
 
         return PageUtils.toPageResponse(orderPage, dtos);
@@ -241,14 +285,15 @@ public class ImportOrderServiceImpl implements ImportOrderService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<PurchaseOrderDTO> getImportOrdersBySupplierAndDateRange(Integer supplierId, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
-
+        // Validate supplier
         if (!supplierRepository.existsById(supplierId)) {
             throw new EntityNotFoundException("Nhà cung cấp không tồn tại với ID: " + supplierId);
         }
 
         Page<ImportOrder> orderPage = importOrderRepository.findBySupplierAndDateRange(supplierId, startDate, endDate, pageable);
         List<PurchaseOrderDTO> dtos = importOrderMapper.toDTOList(orderPage.getContent());
-
+        
+        // Enrich DTOs: recalculate totalAmount từ details và set employee names
         enrichPurchaseOrderDTOs(dtos);
 
         return PageUtils.toPageResponse(orderPage, dtos);

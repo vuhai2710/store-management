@@ -5,7 +5,6 @@ import {
   Menu,
   X,
   Search,
-  Mail,
   LogIn,
   User,
   LogOut,
@@ -240,7 +239,7 @@ const Header = ({
 
   return (
     <header style={styles.headerMain}>
-      {}
+      { }
       <div style={styles.headerTopBar}>
         <div style={styles.container}>
           <div
@@ -250,7 +249,7 @@ const Header = ({
               alignItems: "center",
               fontSize: "0.875rem",
             }}>
-            {}
+            { }
             <div
               style={{
                 display: "flex",
@@ -260,7 +259,7 @@ const Header = ({
               }}>
               {isLoggedIn ? (
                 <>
-                  {}
+                  { }
                   <UserDropdown
                     userName={userName}
                     setCurrentPage={setCurrentPage}
@@ -269,7 +268,7 @@ const Header = ({
                 </>
               ) : (
                 <>
-                  {}
+                  { }
                   <button
                     onClick={() => setCurrentPage("login")}
                     style={{
@@ -285,7 +284,7 @@ const Header = ({
                     onMouseLeave={(e) => (e.target.style.color = "#2563EB")}>
                     <LogIn size={16} /> Đăng nhập
                   </button>
-                  {}
+                  { }
                   <button
                     onClick={() => setCurrentPage("register")}
                     style={{
@@ -308,7 +307,7 @@ const Header = ({
         </div>
       </div>
 
-      {}
+      { }
       <div style={{ ...styles.container, padding: "1rem 1rem" }}>
         <div
           style={{
@@ -317,7 +316,7 @@ const Header = ({
             alignItems: "center",
             gap: "1rem",
           }}>
-          {}
+          { }
           <button
             onClick={() => setCurrentPage("home")}
             aria-label="Về trang chủ"
@@ -333,7 +332,7 @@ const Header = ({
             💻 Electronic Store
           </button>
 
-          {}
+          { }
           <nav style={{ display: "flex", gap: "2rem" }}>
             <button
               onClick={() => setCurrentPage("home")}
@@ -362,7 +361,7 @@ const Header = ({
             )}
           </nav>
 
-          {}
+          { }
           <div
             style={{
               display: "flex",
@@ -405,7 +404,7 @@ const Header = ({
             </button>
           </div>
 
-          {}
+          { }
           <div
             style={{
               display: "flex",
@@ -413,9 +412,9 @@ const Header = ({
               gap: "1.25rem",
               flexShrink: 0,
             }}>
-            {}
+            { }
 
-            {}
+            { }
             <button
               ref={cartIconRef}
               onClick={() => setCurrentPage("cart")}
@@ -468,7 +467,7 @@ const Header = ({
               </span>
             </button>
 
-            {}
+            { }
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label={mobileMenuOpen ? "Đóng menu" : "Mở menu"}
@@ -486,7 +485,7 @@ const Header = ({
           </div>
         </div>
 
-        {}
+        { }
         {mobileMenuOpen && (
           <nav
             id="mobile-nav"

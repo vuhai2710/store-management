@@ -52,26 +52,29 @@ const Customers = () => {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [customerTypeFilter, setCustomerTypeFilter] = useState(null);
 
+  // Debounced search keyword for realtime search
   const debouncedKeyword = useDebounce(searchKeyword, 300);
 
   useEffect(() => {
     const params = {
       pageNo: pagination.current || 1,
-      pageSize: pagination.pageSize || 5,
+      pageSize: pagination.pageSize || 5, // Default page size: 5
       sortBy: "idCustomer",
       sortDirection: "ASC",
     };
 
+    // If filtering by type, add customerType to params
     if (customerTypeFilter) {
       params.customerType = customerTypeFilter;
     }
 
+    // Add search keyword if exists
     if (debouncedKeyword) {
       params.keyword = debouncedKeyword;
     }
 
     dispatch(fetchCustomers(params));
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     dispatch,
     pagination.current,
@@ -80,9 +83,10 @@ const Customers = () => {
     customerTypeFilter,
   ]);
 
+  // Reset page when keyword changes (only when keyword actually changes, not on mount)
   const prevKeywordRef = React.useRef(debouncedKeyword);
   useEffect(() => {
-
+    // Only reset if keyword actually changed (not on initial render)
     if (prevKeywordRef.current !== debouncedKeyword) {
       prevKeywordRef.current = debouncedKeyword;
       dispatch(setPagination({ current: 1 }));
@@ -153,7 +157,7 @@ const Customers = () => {
     try {
       await dispatch(deleteCustomer(customerId)).unwrap();
       message.success("Xóa khách hàng thành công!");
-
+      // Reload data after delete
       if (customerTypeFilter) {
         dispatch(fetchCustomers({ customerType: customerTypeFilter }));
       } else {
@@ -314,7 +318,7 @@ const Customers = () => {
           background: "#FFFFFF",
         }}
         bodyStyle={{ padding: 16 }}>
-        { }
+        {/* Filters */}
         <div
           className="table-toolbar"
           style={{
@@ -367,7 +371,7 @@ const Customers = () => {
           </Space>
         </div>
 
-        { }
+        {/* Table */}
         {loading && (!customers || customers.length === 0) ? (
           <LoadingSkeleton type="table" rows={5} />
         ) : (
@@ -403,7 +407,7 @@ const Customers = () => {
         )}
       </Card>
 
-      { }
+      {/* Customer Form Modal */}
       <Modal
         title={editingCustomer ? "Chỉnh sửa khách hàng" : "Thêm khách hàng mới"}
         open={isModalVisible}
