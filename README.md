@@ -1,127 +1,87 @@
-# 🛍️ Store Management System
+# E-commerce Store Management System
 
-Hệ thống ERP quản lý cửa hàng bán điện tử với các tính năng: Quản lý sản phẩm, đơn hàng, khách hàng, nhân viên, kho, tài chính, tích hợp thanh toán PayOS và vận chuyển GHN.
+> A full-featured **e-commerce management platform** designed for **customers, store staff, and administrators**.  
+>  
+> The system provides:
+> - A **shopping experience for customers** with product browsing, ordering, payment, and return requests.
+> - An **admin & employee dashboard** to manage products, inventory, orders, shipping, and customer support.
+> - An integrated **product recommendation service** that suggests related products based on user behavior.
+>  
+> This project was built for **learning and internship applications**, aiming to simulate a **real-world e-commerce workflow** and demonstrate how frontend, backend, and integrations work together in practice.
 
-## 🎯 Tổng Quan
+---
 
-- ✅ **Quản lý sản phẩm** - CRUD sản phẩm, nhiều ảnh, mã SKU tự động
-- ✅ **Quản lý đơn hàng** - Đặt hàng, thanh toán online/COD, tracking shipment
-- ✅ **Quản lý kho** - Nhập hàng, xuất hàng, inventory transactions
-- ✅ **Quản lý khách hàng** - Thông tin khách hàng, lịch sử mua hàng
-- ✅ **Quản lý nhân viên** - Phân quyền, chấm công, lương
-- ✅ **Tích hợp thanh toán** - PayOS Payment Gateway
-- ✅ **Tích hợp vận chuyển** - Giao Hàng Nhanh (GHN)
-- ✅ **Chat real-time** - WebSocket chat giữa khách hàng và nhân viên
-- ✅ **Báo cáo & thống kê** - Doanh thu, sản phẩm bán chạy, tồn kho
+## Demo
 
-## 🛠 Tech Stack
+> Some images of the client shopping website:
+<p align="center">
+  <img src="assets/client_home.png" alt="Client Home" width="20%" />
+  <img src="assets/client_product_detail.png" alt="Product Detail" width="20%" />
+  <img src="assets/client_cart.png" alt="Cart" width="20%" />
+  <img src="assets/client_checkout.png" alt="Checkout" width="20%" />
+  <img src="assets/client_orders.png" alt="Orders" width="20%" />
+</p>
 
-### Backend
-- Spring Boot 3.5.5, Java 17, MySQL 8.0
-- Spring Security + JWT, WebSocket (STOMP)
-- Hibernate/JPA, Flyway, MapStruct, Maven
+> Some images of the admin / employee dashboard:
+<p align="center">
+  <img src="assets/admin_dashboard.png" alt="Admin Dashboard" width="25%" />
+  <img src="assets/admin_products.png" alt="Product Management" width="25%" />
+  <img src="assets/admin_orders.png" alt="Order Management" width="25%" />
+  <img src="assets/admin_inventory.png" alt="Inventory" width="25%" />
+  <img src="assets/admin_returns.png" alt="Return Management" width="25%" />
+</p>
 
-### Frontend (Admin Panel)
-- ReactJS 18, Redux Toolkit, React Router v6
-- Ant Design, Axios, Recharts
+> System and integration overview:
+<p align="center">
+  <img src="assets/swagger_ui.png" alt="Swagger UI" width="30%" />
+  <img src="assets/erd_diagram.png" alt="Database Diagram" width="30%" />
+  <img src="assets/chat_websocket.png" alt="Chat" width="30%" />
+</p>
 
-### Frontend (Customer Site)
-- ReactJS 18, CSS3, Material-UI / Ant Design
+---
 
-## ⚙️ Yêu Cầu Hệ Thống
+## Main Features
 
-- Java JDK 17+
-- MySQL 8.0+
-- Node.js 16+ và npm 8+
-- Maven 3.8+ (hoặc dùng Maven Wrapper)
+- **User Roles & Access Control**  
+  Supports CUSTOMER, EMPLOYEE, and ADMIN roles with different permissions for shopping, order handling, and system management.
 
-## 🚀 Quick Start
+- **Product Browsing & Ordering**  
+  Customers can browse products, view details, place orders, and track order status through the client interface.
 
-### Backend
+- **Order & Inventory Management**  
+  Admin and employees manage orders, update statuses, and adjust inventory data through the dashboard.
 
-Xem chi tiết hướng dẫn setup tại: **[backend/store-management/README.md](backend/store-management/README.md)**
+- **Payment & Shipping Integration**  
+  Online payment is handled via **PayOS**, while shipping fee calculation and shipment creation are integrated with **GHN**.
 
-```bash
-cd backend/store-management
-# Copy application.yaml.example → application.yaml
-# Chỉnh sửa MySQL password trong application.yaml
-mvnw spring-boot:run
-```
+- **Return & Refund Handling**  
+  Customers can submit return requests, which are reviewed and processed by admins, with inventory updates applied accordingly.
 
-**⚠️ QUAN TRỌNG:** Phải mở project từ `backend/store-management` (KHÔNG phải thư mục root) để IntelliJ nhận diện Maven.
+- **Real-time Customer Support**  
+  A built-in chat feature allows customers to communicate directly with admin or staff using WebSocket-based real-time messaging.
 
-### Frontend Admin Panel (Port 3000)
+- **Product Recommendation (Basic)**  
+  The system suggests related products based on user viewing behavior and product similarity.
 
-Xem chi tiết hướng dẫn setup tại: **[frontend_admin/README.md](frontend_admin/README.md)**
+---
 
-```bash
-cd frontend_admin
-npm install
-npm start
-```
+## Technology Used
 
-### Frontend Customer (Port 3003)
+| Client / UI | Backend | Other Services |
+|-------------|--------|------------|
+| React (Client & Admin) | Spring Boot | MySQL |
+| Ant Design / Tailwind CSS | Spring Data JPA | PayOS (Payment) |
+| Axios | Spring Security (JWT) | GHN (Shipping) |
+| WebSocket | FastAPI | Flyway |
+|  |  | Swagger / Postman |
 
-Xem chi tiết hướng dẫn setup tại: **[frontend_client/README.md](frontend_client/README.md)**
+---
 
-```bash
-cd frontend_client
-npm install
-npm start
-```
+## Installation
 
-## 📍 URLs
-
-- **Frontend (Admin Panel):** http://localhost:3000
-- **Backend API:** http://localhost:8080/api/v1
-- **Customer Frontend:** http://localhost:3003
-
-## 🔐 Default Login
-
-```
-Username: admin
-Password: admin123
-```
-
-## 🏗 Architecture
-
-```
-store_management/
-├── backend/store-management/    # Spring Boot Application
-│   ├── README.md                # Hướng dẫn setup backend
-│   └── ...
-├── frontend_admin/              # ReactJS Admin Panel
-│   ├── README.md                # Hướng dẫn setup frontend admin
-│   └── ...
-└── frontend_client/             # ReactJS Customer Site
-    ├── README.md                # Hướng dẫn setup frontend customer
-    └── ...
-```
-
-## 📚 Documentation
-
-### Backend
-- Hướng dẫn setup: [backend/store-management/README.md](backend/store-management/README.md)
-- API Documentation: Xem các file `*_MODULE.md` trong `backend/store-management/`
-- Integration Guides: `PAYOS_INTEGRATION_GUIDE.md`, `GHN_INTEGRATION_GUIDE.md`
-
-### Frontend
-- Admin Panel: [frontend_admin/README.md](frontend_admin/README.md)
-- Customer Site: [frontend_client/README.md](frontend_client/README.md)
-
-## 🆘 Troubleshooting
-
-**Backend không chạy được:**
-- Kiểm tra MySQL đang chạy
-- Kiểm tra database `store_management` đã tạo
-- Kiểm tra `application.yaml` có đúng credentials
-- Xem chi tiết: [backend/store-management/README.md](backend/store-management/README.md#-troubleshooting)
-
-**Frontend không kết nối backend:**
-- Kiểm tra backend đang chạy tại `http://localhost:8080`
-- Kiểm tra API URL trong code (default: `http://localhost:8080/api/v1`)
-- Xem chi tiết: [frontend_admin/README.md](frontend_admin/README.md#-troubleshooting)
-
-## 📝 License
-
-MIT License
+### Required:
+- JDK version ≥ 17  
+- MySQL version ≥ 8.0  
+- Maven version ≥ 3.8  
+- Node.js ≥ 18 
+- Python ≥ 3.10
