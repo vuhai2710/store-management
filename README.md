@@ -1,7 +1,7 @@
 # Electronics Store Website
 
 > A full-featured **electronics e-commerce platform** designed for **customers, store staff, and administrators**.
->
+
 > The system provides:
 > - A **shopping experience for customers** with product browsing, ordering, payment, and return requests.
 > - An **admin & employee dashboard** to manage products, inventory, orders, shipping, and customer support.
@@ -54,8 +54,7 @@ workflow** and demonstrate how frontend, backend, and integrations work together
   Admin and employees manage orders, update statuses, and adjust inventory data through the dashboard.
 
 - **Payment & Shipping Integration**  
-  Online payment is handled via **PayOS**, while shipping fee calculation and shipment creation are integrated with *
-  *GHN**.
+  Online payment is handled via **PayOS**, while shipping fee calculation and shipment creation are integrated with **GHN**.
 
 - **Return & Refund Handling**  
   Customers can submit return requests, which are reviewed and processed by admins, with inventory updates applied
