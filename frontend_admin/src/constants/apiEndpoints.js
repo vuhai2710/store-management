@@ -40,7 +40,7 @@ export const API_ENDPOINTS = {
     BEST_SELLERS: "/products/best-sellers",
     TOP_5_BEST_SELLERS: "/products/best-sellers/top-5",
     BRANDS: "/products/brands",
-
+    RESTORE: (id) => `/products/${id}/restore`,
   },
 
   ORDERS: {

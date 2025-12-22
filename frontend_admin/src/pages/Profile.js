@@ -279,7 +279,7 @@ const Profile = () => {
             Thông tin cá nhân
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
-            Xem và cập nhật hồ sơ tài khoản của bạn tại TechStore
+            Xem và cập nhật hồ sơ tài khoản của bạn tại Electronics Store
           </Text>
         </div>
         <Button

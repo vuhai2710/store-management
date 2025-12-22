@@ -60,4 +60,5 @@ public class ProductDTO extends BaseDTO {
     private Double averageRating;
 
     private Integer reviewCount;
+    private Boolean isDelete;
 }

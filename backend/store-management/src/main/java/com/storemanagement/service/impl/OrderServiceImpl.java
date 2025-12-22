@@ -91,7 +91,8 @@ public class OrderServiceImpl implements OrderService {
             Product product = item.getProduct();
 
             if (product.getStatus() == ProductStatus.OUT_OF_STOCK ||
-                    product.getStatus() == ProductStatus.DISCONTINUED) {
+                    product.getStatus() == ProductStatus.DISCONTINUED ||
+                    Boolean.TRUE.equals(product.getIsDelete())) {
                 throw new RuntimeException("Sản phẩm " + product.getProductName() + " không còn khả dụng");
             }
 
@@ -105,22 +106,18 @@ public class OrderServiceImpl implements OrderService {
         String shippingAddressSnapshot = null;
 
         if (request.getShippingAddressId() != null) {
-
             shippingAddress = shippingAddressRepository
                     .findByIdShippingAddressAndCustomerIdCustomer(request.getShippingAddressId(), customerId)
                     .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy địa chỉ giao hàng"));
             shippingAddressSnapshot = buildAddressSnapshot(shippingAddress);
         } else {
-
             shippingAddress = shippingAddressRepository
                     .findByCustomerIdCustomerAndIsDefaultTrue(customerId)
                     .orElse(null);
 
             if (shippingAddress != null) {
-
                 shippingAddressSnapshot = buildAddressSnapshot(shippingAddress);
             } else if (customer.getAddress() != null && !customer.getAddress().isEmpty()) {
-
                 shippingAddressSnapshot = customer.getCustomerName() + ", " + customer.getAddress() + ", "
                         + customer.getPhoneNumber();
             }
@@ -141,10 +138,8 @@ public class OrderServiceImpl implements OrderService {
         PromotionRule promotionRule = null;
 
         if (promotionCode != null && !promotionCode.trim().isEmpty()) {
-
             promotion = promotionRepository.findByCodeAndIsActiveTrue(promotionCode.trim()).orElse(null);
         } else {
-
             LocalDateTime now = LocalDateTime.now();
             List<PromotionRule> rules = promotionRuleRepository.findApplicableRules(now, totalAmount, customerType);
             if (!rules.isEmpty()) {
@@ -213,7 +208,6 @@ public class OrderServiceImpl implements OrderService {
                         promotion.getIdPromotion());
             } catch (Exception e) {
                 log.error("Error recording promotion usage for order ID: {}", savedOrder.getIdOrder(), e);
-
             }
         }
 
@@ -267,7 +261,8 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại"));
 
         if (product.getStatus() == ProductStatus.OUT_OF_STOCK ||
-                product.getStatus() == ProductStatus.DISCONTINUED) {
+                product.getStatus() == ProductStatus.DISCONTINUED ||
+                Boolean.TRUE.equals(product.getIsDelete())) {
             throw new RuntimeException("Sản phẩm " + product.getProductName() + " không còn khả dụng");
         }
 
@@ -308,10 +303,8 @@ public class OrderServiceImpl implements OrderService {
         PromotionRule promotionRule = null;
 
         if (promotionCode != null && !promotionCode.trim().isEmpty()) {
-
             promotion = promotionRepository.findByCodeAndIsActiveTrue(promotionCode.trim()).orElse(null);
         } else {
-
             LocalDateTime now = LocalDateTime.now();
             List<PromotionRule> rules = promotionRuleRepository.findApplicableRules(now, totalAmount, customerType);
             if (!rules.isEmpty()) {
@@ -374,7 +367,6 @@ public class OrderServiceImpl implements OrderService {
                         promotion.getIdPromotion());
             } catch (Exception e) {
                 log.error("Error recording promotion usage for order ID: {}", savedOrder.getIdOrder(), e);
-
             }
         }
 
@@ -403,7 +395,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<OrderDTO> getMyOrders(Integer customerId, Order.OrderStatus status, String keyword, Pageable pageable) {
+    public PageResponse<OrderDTO> getMyOrders(Integer customerId, Order.OrderStatus status, String keyword,
+            Pageable pageable) {
         log.info("Getting orders for customer: {}, status filter: {}, keyword: {}", customerId, status, keyword);
 
         Page<Order> orderPage;
@@ -411,11 +404,9 @@ public class OrderServiceImpl implements OrderService {
         if (keyword != null && !keyword.trim().isEmpty()) {
             orderPage = orderRepository.searchMyOrders(customerId, status, keyword.trim(), pageable);
         } else if (status != null) {
-
             orderPage = orderRepository.findByCustomerIdCustomerAndStatusOrderByOrderDateDesc(customerId, status,
                     pageable);
         } else {
-
             orderPage = orderRepository.findByCustomerIdCustomerOrderByOrderDateDesc(customerId, pageable);
         }
 
@@ -489,12 +480,10 @@ public class OrderServiceImpl implements OrderService {
 
         Customer customer;
         if (request.getIdCustomer() != null) {
-
             customer = customerRepository.findById(request.getIdCustomer())
                     .orElseThrow(() -> new EntityNotFoundException(
                             "Không tìm thấy khách hàng với ID: " + request.getIdCustomer()));
         } else {
-
             if (request.getCustomerName() == null || request.getCustomerName().trim().isEmpty()) {
                 throw new RuntimeException("Tên khách hàng không được để trống");
             }
@@ -506,7 +495,6 @@ public class OrderServiceImpl implements OrderService {
                     .orElse(null);
 
             if (customer == null) {
-
                 CustomerDTO newCustomerDTO = customerService.createCustomerWithoutUser(
                         request.getCustomerName(),
                         request.getCustomerPhone(),
@@ -515,7 +503,6 @@ public class OrderServiceImpl implements OrderService {
                         .orElseThrow(() -> new RuntimeException("Lỗi khi tạo khách hàng mới"));
                 log.info("Tạo customer mới (walk-in) với ID: {}", customer.getIdCustomer());
             } else {
-
                 log.info("Customer đã tồn tại với số điện thoại: {}, sử dụng customer ID: {}",
                         request.getCustomerPhone(), customer.getIdCustomer());
             }
@@ -523,7 +510,6 @@ public class OrderServiceImpl implements OrderService {
 
         Employee employee = null;
         if (employeeId != null) {
-
             employee = employeeRepository.findById(employeeId)
                     .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy nhân viên với ID: " + employeeId));
         }
@@ -538,7 +524,8 @@ public class OrderServiceImpl implements OrderService {
                     .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + productId));
 
             if (product.getStatus() == ProductStatus.OUT_OF_STOCK ||
-                    product.getStatus() == ProductStatus.DISCONTINUED) {
+                    product.getStatus() == ProductStatus.DISCONTINUED ||
+                    Boolean.TRUE.equals(product.getIsDelete())) {
                 throw new RuntimeException("Sản phẩm " + product.getProductName() + " không còn khả dụng");
             }
 
@@ -615,7 +602,6 @@ public class OrderServiceImpl implements OrderService {
         entityManager.refresh(savedOrder);
 
         for (OrderDetail orderDetail : savedOrder.getOrderDetails()) {
-
             String transactionNote = employee != null
                     ? "Đơn hàng từ nhân viên cho khách hàng"
                     : "Đơn hàng từ admin cho khách hàng";
@@ -662,7 +648,6 @@ public class OrderServiceImpl implements OrderService {
 
         Shipment shipment = shipmentRepository.findByOrder_IdOrder(orderId)
                 .orElseGet(() -> {
-
                     log.info("Creating new shipment for order: {}", orderId);
                     return Shipment.builder()
                             .order(order)
@@ -671,14 +656,13 @@ public class OrderServiceImpl implements OrderService {
                 });
 
         order.setStatus(Order.OrderStatus.COMPLETED);
-
         order.setDeliveredAt(LocalDateTime.now());
-
         order.setCompletedAt(LocalDateTime.now());
 
         int returnWindowDays = systemSettingService.getReturnWindowDays();
         order.setReturnWindowDays(returnWindowDays);
-        log.info("Order COMPLETED: completedAt={}, returnWindowDays={} for order: {}", order.getCompletedAt(), returnWindowDays, orderId);
+        log.info("Order COMPLETED: completedAt={}, returnWindowDays={} for order: {}", order.getCompletedAt(),
+                returnWindowDays, orderId);
 
         shipment.setShippingStatus(Shipment.ShippingStatus.DELIVERED);
 
@@ -692,18 +676,18 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<OrderDTO> getAllOrders(Order.OrderStatus status, Integer customerId, String keyword, Pageable pageable) {
-        log.info("Getting all orders with filters - status: {}, customerId: {}, keyword: {}", status, customerId, keyword);
+    public PageResponse<OrderDTO> getAllOrders(Order.OrderStatus status, Integer customerId, String keyword,
+            Pageable pageable) {
+        log.info("Getting all orders with filters - status: {}, customerId: {}, keyword: {}", status, customerId,
+                keyword);
 
         Page<Order> orderPage;
 
         if (keyword != null && !keyword.trim().isEmpty()) {
             orderPage = orderRepository.searchByFilters(customerId, status, keyword.trim(), pageable);
         } else if (customerId != null || status != null) {
-
             orderPage = orderRepository.findByFilters(customerId, status, pageable);
         } else {
-
             orderPage = orderRepository.findAllOrdersByOrderDateDesc(pageable);
         }
 
@@ -798,31 +782,15 @@ public class OrderServiceImpl implements OrderService {
 
         if (ghnService.isEnabled() && shippingAddress != null) {
             try {
-
-                if (shippingAddress.getDistrictId() != null && shippingAddress.getWardCode() != null) {
-                    log.info("GHN integration: Using districtId={}, wardCode={} from ShippingAddress",
-                            shippingAddress.getDistrictId(), shippingAddress.getWardCode());
-
-                    log.info("GHN integration: ShippingAddress has districtId/wardCode. " +
-                            "Full GHN integration can be implemented when shop district is configured.");
-                } else {
-                    log.info("GHN integration skipped: ShippingAddress does not have districtId/wardCode. " +
-                            "Creating basic shipment only.");
-                }
+                String ghnOrderCode = ghnService.createGHNOrder(order, shippingAddress);
+                shipment.setTrackingNumber(ghnOrderCode);
+                shipment.setShippingStatus(Shipment.ShippingStatus.PICKING_UP);
+                log.info("GHN order created successfully: {}", ghnOrderCode);
             } catch (Exception e) {
-                log.error("Error integrating GHN for order ID: {}. Creating basic shipment only.",
-                        order.getIdOrder(), e);
-
-            }
-        } else {
-            if (!ghnService.isEnabled()) {
-                log.info("GHN integration is disabled. Creating basic shipment only.");
-            } else {
-                log.info("No shipping address. Creating basic shipment only.");
+                log.error("Failed to create GHN order for order ID: {}", order.getIdOrder(), e);
             }
         }
 
         shipmentRepository.save(shipment);
-        log.info("Shipment created successfully for order ID: {}", order.getIdOrder());
     }
 }

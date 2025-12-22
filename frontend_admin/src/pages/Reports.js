@@ -106,7 +106,7 @@ const Reports = () => {
               fontSize: 14,
             }}
           >
-            Theo dõi hiệu suất kinh doanh và xuất báo cáo cho ElectronicStore
+            Theo dõi hiệu suất kinh doanh và xuất báo cáo cho Electronics Store
           </p>
         </div>
       </div>

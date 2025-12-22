@@ -15,8 +15,8 @@ const EmptyState = ({
   return (
     <Empty
       image={image}
-      imageStyle={{
-        height: 100,
+      styles={{
+        image: { height: 100 },
       }}
       description={
         <div>

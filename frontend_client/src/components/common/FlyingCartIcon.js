@@ -60,3 +60,5 @@ const FlyingCartIcon = ({ sourcePosition, targetPosition, onComplete }) => {
 };
 
 export default FlyingCartIcon;
+
+

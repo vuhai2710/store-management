@@ -366,7 +366,7 @@ const ImportOrders = () => {
             Quản lý đơn nhập hàng
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
-            Theo dõi các đơn nhập từ nhà cung cấp cho kho TechStore
+            Theo dõi các đơn nhập từ nhà cung cấp cho kho Electronics Store
           </Text>
         </div>
         <Button

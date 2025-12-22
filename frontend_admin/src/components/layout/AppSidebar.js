@@ -168,7 +168,7 @@ const AppSidebar = () => {
           background:
             "linear-gradient(90deg, #020617 0%, #020617 40%, #111827 100%)",
         }}>
-        <span>{collapsed ? "TS" : "TechStore"}</span>
+        <span>{collapsed ? "ES" : "Electronics Store"}</span>
         {!collapsed && (
           <span
             style={{

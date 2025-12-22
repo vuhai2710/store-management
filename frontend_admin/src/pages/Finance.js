@@ -297,7 +297,7 @@ const Finance = () => {
             Báo cáo Doanh thu & Tài chính
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
-            Theo dõi doanh thu, chi phí và lợi nhuận của TechStore
+            Theo dõi doanh thu, chi phí và lợi nhuận của Electronics Store
           </Text>
         </div>
 

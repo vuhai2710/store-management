@@ -15,12 +15,14 @@ export const productsService = {
     minPrice,
     maxPrice,
     inventoryStatus,
+    showDeleted = false,
   } = {}) => {
     const params = {
       pageNo,
       pageSize,
       sortBy,
       sortDirection,
+      showDeleted,
     };
 
     if (keyword && keyword.trim()) params.keyword = keyword.trim();
@@ -34,12 +36,15 @@ export const productsService = {
     return unwrap(resp);
   },
 
+  restoreProduct: async (id) => {
+    const resp = await api.put(API_ENDPOINTS.PRODUCTS.RESTORE(id));
+    return unwrap(resp);
+  },
+
   getProductById: async (id) => {
     const resp = await api.get(API_ENDPOINTS.PRODUCTS.BY_ID(id));
     return unwrap(resp);
   },
-
-
 
   getProductsByCategory: async (
     categoryId,
@@ -48,16 +53,15 @@ export const productsService = {
       pageSize = 10,
       sortBy = "idProduct",
       sortDirection = "ASC",
+      showDeleted = false,
     } = {}
   ) => {
-    const params = { pageNo, pageSize, sortBy, sortDirection };
+    const params = { pageNo, pageSize, sortBy, sortDirection, showDeleted };
     const resp = await api.get(API_ENDPOINTS.PRODUCTS.BY_CATEGORY(categoryId), {
       params,
     });
     return unwrap(resp);
   },
-
-
 
   getProductsBySupplier: async (
     supplierId,
@@ -66,18 +70,15 @@ export const productsService = {
       pageSize = 10,
       sortBy = "idProduct",
       sortDirection = "ASC",
+      showDeleted = false,
     } = {}
   ) => {
-    const params = { pageNo, pageSize, sortBy, sortDirection };
+    const params = { pageNo, pageSize, sortBy, sortDirection, showDeleted };
     const resp = await api.get(API_ENDPOINTS.PRODUCTS.BY_SUPPLIER(supplierId), {
       params,
     });
     return unwrap(resp);
   },
-
-
-
-
 
   getTop5BestSellingProducts: async ({ status } = {}) => {
     const params = {};
@@ -89,7 +90,6 @@ export const productsService = {
   },
 
   createProduct: async (product) => {
-
     const body = {
       idCategory: product.idCategory,
       productName: product.productName,

@@ -44,7 +44,7 @@ const ContactPage = ({ setCurrentPage }) => {
           Contact Us
         </h2>
 
-        {}
+        { }
         <div
           style={{
             display: "grid",
@@ -56,7 +56,7 @@ const ContactPage = ({ setCurrentPage }) => {
             { icon: Phone, title: "Phone", text: "+84 123456789" },
             { icon: MapPin, title: "Address", text: "số 3 Cầu Giấy" },
             { icon: Clock, title: "Open Time", text: "10:00 am to 23:00 pm" },
-            { icon: Mail, title: "Email", text: "hello@electronicstore.com" },
+            { icon: Mail, title: "Email", text: "hello@electronicsstore.com" },
           ].map((item, index) => (
             <div
               key={index}
@@ -84,7 +84,7 @@ const ContactPage = ({ setCurrentPage }) => {
           ))}
         </div>
 
-        {}
+        { }
         <form
           onSubmit={handleSubmit}
           style={{

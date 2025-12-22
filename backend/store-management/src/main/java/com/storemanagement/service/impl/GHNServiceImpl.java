@@ -23,8 +23,8 @@ public class GHNServiceImpl implements GHNService {
     private final ObjectMapper objectMapper;
 
     public GHNServiceImpl(GHNConfig ghnConfig,
-                         @Qualifier("ghnRestTemplate") RestTemplate ghnRestTemplate,
-                         ObjectMapper objectMapper) {
+            @Qualifier("ghnRestTemplate") RestTemplate ghnRestTemplate,
+            ObjectMapper objectMapper) {
         this.ghnConfig = ghnConfig;
         this.ghnRestTemplate = ghnRestTemplate;
         this.objectMapper = objectMapper;
@@ -60,22 +60,22 @@ public class GHNServiceImpl implements GHNService {
             log.debug("Calling GHN API: GET {}", url);
 
             ResponseEntity<GHNBaseResponseDTO<List<GHNProvinceDTO>>> response = ghnRestTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<List<GHNProvinceDTO>>>() {}
-            );
+                    url,
+                    HttpMethod.GET,
+                    requestEntity,
+                    new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<List<GHNProvinceDTO>>>() {
+                    });
 
             GHNBaseResponseDTO<List<GHNProvinceDTO>> responseBody = response.getBody();
 
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
                 throw new RuntimeException("Failed to get provinces from GHN: " +
-                    (responseBody != null ? responseBody.getMessage() : "Null response"));
+                        (responseBody != null ? responseBody.getMessage() : "Null response"));
             }
 
             log.info("Successfully got {} provinces from GHN",
-                responseBody.getData() != null ? responseBody.getData().size() : 0);
+                    responseBody.getData() != null ? responseBody.getData().size() : 0);
 
             return responseBody.getData();
 
@@ -102,22 +102,22 @@ public class GHNServiceImpl implements GHNService {
             log.debug("Calling GHN API: GET {}", url);
 
             ResponseEntity<GHNBaseResponseDTO<List<GHNDistrictDTO>>> response = ghnRestTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<List<GHNDistrictDTO>>>() {}
-            );
+                    url,
+                    HttpMethod.GET,
+                    requestEntity,
+                    new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<List<GHNDistrictDTO>>>() {
+                    });
 
             GHNBaseResponseDTO<List<GHNDistrictDTO>> responseBody = response.getBody();
 
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
                 throw new RuntimeException("Failed to get districts from GHN: " +
-                    (responseBody != null ? responseBody.getMessage() : "Null response"));
+                        (responseBody != null ? responseBody.getMessage() : "Null response"));
             }
 
             log.info("Successfully got {} districts from GHN",
-                responseBody.getData() != null ? responseBody.getData().size() : 0);
+                    responseBody.getData() != null ? responseBody.getData().size() : 0);
 
             return responseBody.getData();
 
@@ -144,22 +144,22 @@ public class GHNServiceImpl implements GHNService {
             log.debug("Calling GHN API: GET {}", url);
 
             ResponseEntity<GHNBaseResponseDTO<List<GHNWardDTO>>> response = ghnRestTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<List<GHNWardDTO>>>() {}
-            );
+                    url,
+                    HttpMethod.GET,
+                    requestEntity,
+                    new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<List<GHNWardDTO>>>() {
+                    });
 
             GHNBaseResponseDTO<List<GHNWardDTO>> responseBody = response.getBody();
 
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
                 throw new RuntimeException("Failed to get wards from GHN: " +
-                    (responseBody != null ? responseBody.getMessage() : "Null response"));
+                        (responseBody != null ? responseBody.getMessage() : "Null response"));
             }
 
             log.info("Successfully got {} wards from GHN",
-                responseBody.getData() != null ? responseBody.getData().size() : 0);
+                    responseBody.getData() != null ? responseBody.getData().size() : 0);
 
             return responseBody.getData();
 
@@ -172,21 +172,21 @@ public class GHNServiceImpl implements GHNService {
     @Override
     public GHNCalculateFeeResponseDTO calculateShippingFee(GHNCalculateFeeRequestDTO request) {
         log.info("Calculating shipping fee from GHN API: fromDistrictId={}, toDistrictId={}, toWardCode={}",
-            request.getFromDistrictId(), request.getToDistrictId(), request.getToWardCode());
+                request.getFromDistrictId(), request.getToDistrictId(), request.getToWardCode());
 
         if (!isEnabled()) {
             log.warn("GHN integration is disabled, returning default fee");
 
             return GHNCalculateFeeResponseDTO.builder()
-                .total(java.math.BigDecimal.valueOf(30000))
-                .serviceFee(java.math.BigDecimal.valueOf(25000))
-                .insuranceFee(java.math.BigDecimal.ZERO)
-                .pickStationFee(java.math.BigDecimal.ZERO)
-                .courierStationFee(java.math.BigDecimal.ZERO)
-                .codFee(java.math.BigDecimal.ZERO)
-                .returnFee(java.math.BigDecimal.ZERO)
-                .r2sFee(java.math.BigDecimal.ZERO)
-                .build();
+                    .total(java.math.BigDecimal.valueOf(30000))
+                    .serviceFee(java.math.BigDecimal.valueOf(25000))
+                    .insuranceFee(java.math.BigDecimal.ZERO)
+                    .pickStationFee(java.math.BigDecimal.ZERO)
+                    .courierStationFee(java.math.BigDecimal.ZERO)
+                    .codFee(java.math.BigDecimal.ZERO)
+                    .returnFee(java.math.BigDecimal.ZERO)
+                    .r2sFee(java.math.BigDecimal.ZERO)
+                    .build();
         }
 
         try {
@@ -197,22 +197,23 @@ public class GHNServiceImpl implements GHNService {
                     Integer toDistrictId = request.getToDistrictId();
 
                     if (fromDistrictId != null && toDistrictId != null) {
-                        log.info("No serviceId provided. Fetching available GHN services for fromDistrictId={}, toDistrictId={}",
-                            fromDistrictId, toDistrictId);
+                        log.info(
+                                "No serviceId provided. Fetching available GHN services for fromDistrictId={}, toDistrictId={}",
+                                fromDistrictId, toDistrictId);
                         java.util.List<GHNServiceDTO> services = getShippingServices(fromDistrictId, toDistrictId);
                         if (services != null && !services.isEmpty()) {
                             GHNServiceDTO firstService = services.get(0);
                             if (firstService.getServiceId() != null) {
                                 request.setServiceId(firstService.getServiceId());
                                 log.info("Selected GHN serviceId={} (service_type_id={}) for fee calculation",
-                                    firstService.getServiceId(), firstService.getServiceTypeId());
+                                        firstService.getServiceId(), firstService.getServiceTypeId());
                             }
                             if (request.getServiceTypeId() == null && firstService.getServiceTypeId() != null) {
                                 request.setServiceTypeId(firstService.getServiceTypeId());
                             }
                         } else {
                             log.warn("No available GHN services found for fromDistrictId={}, toDistrictId={}",
-                                fromDistrictId, toDistrictId);
+                                    fromDistrictId, toDistrictId);
                         }
                     } else {
                         log.warn("Cannot auto-select GHN service because fromDistrictId or toDistrictId is null");
@@ -234,23 +235,24 @@ public class GHNServiceImpl implements GHNService {
             log.info("GHN fee request body: {}", objectMapper.writeValueAsString(request));
 
             ResponseEntity<GHNBaseResponseDTO<GHNCalculateFeeResponseDTO>> response = ghnRestTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNCalculateFeeResponseDTO>>() {}
-            );
+                    url,
+                    HttpMethod.POST,
+                    requestEntity,
+                    new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNCalculateFeeResponseDTO>>() {
+                    });
 
             GHNBaseResponseDTO<GHNCalculateFeeResponseDTO> responseBody = response.getBody();
 
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
                 throw new RuntimeException("Failed to calculate shipping fee from GHN: " +
-                    (responseBody != null ? responseBody.getMessage() : "Null response"));
+                        (responseBody != null ? responseBody.getMessage() : "Null response"));
             }
 
             log.info("Successfully calculated shipping fee: {} VND",
-                responseBody.getData() != null && responseBody.getData().getTotal() != null
-                    ? responseBody.getData().getTotal() : "N/A");
+                    responseBody.getData() != null && responseBody.getData().getTotal() != null
+                            ? responseBody.getData().getTotal()
+                            : "N/A");
 
             return responseBody.getData();
 
@@ -261,15 +263,15 @@ public class GHNServiceImpl implements GHNService {
                 if (body != null && body.contains("route not found service")) {
                     log.warn("GHN returned 'route not found service'. Falling back to default shipping fee.");
                     return GHNCalculateFeeResponseDTO.builder()
-                        .total(java.math.BigDecimal.valueOf(30000))
-                        .serviceFee(java.math.BigDecimal.valueOf(25000))
-                        .insuranceFee(java.math.BigDecimal.ZERO)
-                        .pickStationFee(java.math.BigDecimal.ZERO)
-                        .courierStationFee(java.math.BigDecimal.ZERO)
-                        .codFee(java.math.BigDecimal.ZERO)
-                        .returnFee(java.math.BigDecimal.ZERO)
-                        .r2sFee(java.math.BigDecimal.ZERO)
-                        .build();
+                            .total(java.math.BigDecimal.valueOf(30000))
+                            .serviceFee(java.math.BigDecimal.valueOf(25000))
+                            .insuranceFee(java.math.BigDecimal.ZERO)
+                            .pickStationFee(java.math.BigDecimal.ZERO)
+                            .courierStationFee(java.math.BigDecimal.ZERO)
+                            .codFee(java.math.BigDecimal.ZERO)
+                            .returnFee(java.math.BigDecimal.ZERO)
+                            .r2sFee(java.math.BigDecimal.ZERO)
+                            .build();
                 }
             }
 
@@ -281,7 +283,7 @@ public class GHNServiceImpl implements GHNService {
     @Override
     public GHNCreateOrderResponseDTO createOrder(GHNCreateOrderRequestDTO request) {
         log.info("Creating GHN order: clientOrderCode={}, toName={}, toPhone={}",
-            request.getClientOrderCode(), request.getToName(), request.getToPhone());
+                request.getClientOrderCode(), request.getToName(), request.getToPhone());
 
         if (!isEnabled()) {
             log.warn("GHN integration is disabled, cannot create order");
@@ -297,22 +299,22 @@ public class GHNServiceImpl implements GHNService {
             log.debug("Request body: {}", objectMapper.writeValueAsString(request));
 
             ResponseEntity<GHNBaseResponseDTO<GHNCreateOrderResponseDTO>> response = ghnRestTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNCreateOrderResponseDTO>>() {}
-            );
+                    url,
+                    HttpMethod.POST,
+                    requestEntity,
+                    new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNCreateOrderResponseDTO>>() {
+                    });
 
             GHNBaseResponseDTO<GHNCreateOrderResponseDTO> responseBody = response.getBody();
 
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
                 throw new RuntimeException("Failed to create GHN order: " +
-                    (responseBody != null ? responseBody.getMessage() : "Null response"));
+                        (responseBody != null ? responseBody.getMessage() : "Null response"));
             }
 
             log.info("Successfully created GHN order: orderCode={}",
-                responseBody.getData() != null ? responseBody.getData().getOrderCode() : "N/A");
+                    responseBody.getData() != null ? responseBody.getData().getOrderCode() : "N/A");
 
             return responseBody.getData();
 
@@ -332,25 +334,26 @@ public class GHNServiceImpl implements GHNService {
         }
 
         try {
-            String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/detail?order_code=" + ghnOrderCode;
+            String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/detail?order_code="
+                    + ghnOrderCode;
             HttpHeaders headers = buildHeaders();
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
             log.debug("Calling GHN API: GET {}", url);
 
             ResponseEntity<GHNBaseResponseDTO<GHNOrderInfoDTO>> response = ghnRestTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNOrderInfoDTO>>() {}
-            );
+                    url,
+                    HttpMethod.GET,
+                    requestEntity,
+                    new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNOrderInfoDTO>>() {
+                    });
 
             GHNBaseResponseDTO<GHNOrderInfoDTO> responseBody = response.getBody();
 
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
                 throw new RuntimeException("Failed to get GHN order info: " +
-                    (responseBody != null ? responseBody.getMessage() : "Null response"));
+                        (responseBody != null ? responseBody.getMessage() : "Null response"));
             }
 
             return responseBody.getData();
@@ -386,18 +389,18 @@ public class GHNServiceImpl implements GHNService {
             log.debug("Request body: {}", objectMapper.writeValueAsString(requestBody));
 
             ResponseEntity<GHNBaseResponseDTO<Object>> response = ghnRestTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<Object>>() {}
-            );
+                    url,
+                    HttpMethod.POST,
+                    requestEntity,
+                    new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<Object>>() {
+                    });
 
             GHNBaseResponseDTO<Object> responseBody = response.getBody();
 
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
                 throw new RuntimeException("Failed to cancel GHN order: " +
-                    (responseBody != null ? responseBody.getMessage() : "Null response"));
+                        (responseBody != null ? responseBody.getMessage() : "Null response"));
             }
 
             log.info("Successfully cancelled GHN order: orderCode={}", ghnOrderCode);
@@ -411,7 +414,7 @@ public class GHNServiceImpl implements GHNService {
     @Override
     public List<GHNServiceDTO> getShippingServices(Integer fromDistrictId, Integer toDistrictId) {
         log.info("Getting shipping services from GHN: fromDistrictId={}, toDistrictId={}",
-            fromDistrictId, toDistrictId);
+                fromDistrictId, toDistrictId);
 
         if (!isEnabled()) {
             log.warn("GHN integration is disabled");
@@ -433,18 +436,18 @@ public class GHNServiceImpl implements GHNService {
             log.info("GHN available-services request body: {}", objectMapper.writeValueAsString(requestBody));
 
             ResponseEntity<GHNBaseResponseDTO<List<GHNServiceDTO>>> response = ghnRestTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<List<GHNServiceDTO>>>() {}
-            );
+                    url,
+                    HttpMethod.POST,
+                    requestEntity,
+                    new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<List<GHNServiceDTO>>>() {
+                    });
 
             GHNBaseResponseDTO<List<GHNServiceDTO>> responseBody = response.getBody();
 
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
                 throw new RuntimeException("Failed to get shipping services from GHN: " +
-                    (responseBody != null ? responseBody.getMessage() : "Null response"));
+                        (responseBody != null ? responseBody.getMessage() : "Null response"));
             }
 
             return responseBody.getData();
@@ -458,7 +461,7 @@ public class GHNServiceImpl implements GHNService {
     @Override
     public String getExpectedDeliveryTime(GHNExpectedDeliveryTimeRequestDTO request) {
         log.info("Getting expected delivery time from GHN: fromDistrictId={}, toDistrictId={}",
-            request.getFromDistrictId(), request.getToDistrictId());
+                request.getFromDistrictId(), request.getToDistrictId());
 
         if (!isEnabled()) {
             log.warn("GHN integration is disabled");
@@ -474,18 +477,18 @@ public class GHNServiceImpl implements GHNService {
             log.debug("Request body: {}", objectMapper.writeValueAsString(request));
 
             ResponseEntity<GHNBaseResponseDTO<GHNExpectedDeliveryTimeResponseDTO>> response = ghnRestTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNExpectedDeliveryTimeResponseDTO>>() {}
-            );
+                    url,
+                    HttpMethod.POST,
+                    requestEntity,
+                    new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNExpectedDeliveryTimeResponseDTO>>() {
+                    });
 
             GHNBaseResponseDTO<GHNExpectedDeliveryTimeResponseDTO> responseBody = response.getBody();
 
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
                 throw new RuntimeException("Failed to get expected delivery time from GHN: " +
-                    (responseBody != null ? responseBody.getMessage() : "Null response"));
+                        (responseBody != null ? responseBody.getMessage() : "Null response"));
             }
 
             return responseBody.getData() != null ? responseBody.getData().getLeadtime() : null;
@@ -506,25 +509,26 @@ public class GHNServiceImpl implements GHNService {
         }
 
         try {
-            String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/tracking?order_code=" + ghnOrderCode;
+            String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/tracking?order_code="
+                    + ghnOrderCode;
             HttpHeaders headers = buildHeaders();
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
             log.debug("Calling GHN API: GET {}", url);
 
             ResponseEntity<GHNBaseResponseDTO<GHNTrackingDTO>> response = ghnRestTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNTrackingDTO>>() {}
-            );
+                    url,
+                    HttpMethod.GET,
+                    requestEntity,
+                    new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<GHNTrackingDTO>>() {
+                    });
 
             GHNBaseResponseDTO<GHNTrackingDTO> responseBody = response.getBody();
 
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
                 throw new RuntimeException("Failed to track GHN order: " +
-                    (responseBody != null ? responseBody.getMessage() : "Null response"));
+                        (responseBody != null ? responseBody.getMessage() : "Null response"));
             }
 
             return responseBody.getData();
@@ -545,25 +549,25 @@ public class GHNServiceImpl implements GHNService {
         }
 
         try {
-            String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/print?order_code=" + ghnOrderCode;
+            String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/print?order_code="
+                    + ghnOrderCode;
             HttpHeaders headers = buildHeaders();
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
             log.debug("Calling GHN API: GET {}", url);
 
             ResponseEntity<byte[]> response = ghnRestTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                requestEntity,
-                byte[].class
-            );
+                    url,
+                    HttpMethod.GET,
+                    requestEntity,
+                    byte[].class);
 
             if (response.getStatusCode() != HttpStatus.OK || response.getBody() == null) {
                 throw new RuntimeException("Failed to print GHN order: Invalid response");
             }
 
             log.info("Successfully printed GHN order: orderCode={}, PDF size={} bytes",
-                ghnOrderCode, response.getBody().length);
+                    ghnOrderCode, response.getBody().length);
 
             return response.getBody();
 
@@ -591,18 +595,18 @@ public class GHNServiceImpl implements GHNService {
             log.debug("Request body: {}", objectMapper.writeValueAsString(request));
 
             ResponseEntity<GHNBaseResponseDTO<Object>> response = ghnRestTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<Object>>() {}
-            );
+                    url,
+                    HttpMethod.POST,
+                    requestEntity,
+                    new org.springframework.core.ParameterizedTypeReference<GHNBaseResponseDTO<Object>>() {
+                    });
 
             GHNBaseResponseDTO<Object> responseBody = response.getBody();
 
             if (responseBody == null || responseBody.getCode() == null || responseBody.getCode() != 200) {
                 log.error("GHN API error: {}", responseBody != null ? responseBody.getMessage() : "Null response");
                 throw new RuntimeException("Failed to update GHN order: " +
-                    (responseBody != null ? responseBody.getMessage() : "Null response"));
+                        (responseBody != null ? responseBody.getMessage() : "Null response"));
             }
 
             log.info("Successfully updated GHN order: orderCode={}", request.getOrderCode());
@@ -612,5 +616,43 @@ public class GHNServiceImpl implements GHNService {
             throw new RuntimeException("Failed to update GHN order: " + e.getMessage(), e);
         }
     }
-}
 
+    @Override
+    public String createGHNOrder(com.storemanagement.model.Order order,
+            com.storemanagement.model.ShippingAddress shippingAddress) {
+        log.info("Preparing GHN order request for Order ID: {}", order.getIdOrder());
+
+        List<GHNOrderItemDTO> ghnItems = order.getOrderDetails().stream()
+                .map(detail -> GHNOrderItemDTO.builder()
+                        .name(detail.getProductNameSnapshot())
+                        .code(detail.getProductCodeSnapshot())
+                        .quantity(detail.getQuantity())
+                        .price(detail.getPrice().intValue())
+                        .build())
+                .toList();
+
+        GHNCreateOrderRequestDTO request = GHNCreateOrderRequestDTO.builder()
+                .fromDistrictId(ghnConfig.getFromDistrictId())
+                .toDistrictId(shippingAddress.getDistrictId())
+                .toWardCode(shippingAddress.getWardCode())
+                .toName(shippingAddress.getRecipientName())
+                .toPhone(shippingAddress.getPhoneNumber())
+                .toAddress(shippingAddress.getAddress())
+                .weight(200 * ghnItems.size()) // Default estimate: 200g per item
+                .length(20) // Default box size
+                .width(15)
+                .height(10)
+                .serviceId(0) // 0 means auto-select service
+                .insuranceValue(order.getTotalAmount().intValue())
+                .codAmount(order.getPaymentMethod() == com.storemanagement.model.Order.PaymentMethod.CASH
+                        ? order.getFinalAmount().intValue()
+                        : 0)
+                .note(order.getNotes())
+                .items(ghnItems)
+                .clientOrderCode("ORDER_" + order.getIdOrder())
+                .build();
+
+        GHNCreateOrderResponseDTO response = createOrder(request);
+        return response != null ? response.getOrderCode() : null;
+    }
+}

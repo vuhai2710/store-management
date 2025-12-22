@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -138,11 +139,7 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     @Transactional(readOnly = true)
     public BigDecimal calculateDiscountForOrder(BigDecimal totalAmount, String promotionCode, String customerType) {
-        log.info("Calculating discount for order: totalAmount={}, promotionCode={}, customerType={}",
-                totalAmount, promotionCode, customerType);
-
         if (promotionCode != null && !promotionCode.trim().isEmpty()) {
-
             ValidatePromotionRequestDTO validateRequest = ValidatePromotionRequestDTO.builder()
                     .code(promotionCode.trim())
                     .totalAmount(totalAmount)
@@ -152,11 +149,7 @@ public class PromotionServiceImpl implements PromotionService {
             ValidatePromotionResponseDTO validateResponse = validatePromotion(validateRequest);
 
             if (validateResponse.getValid()) {
-                log.info("Applying promotion code: {}, discount: {}", promotionCode, validateResponse.getDiscount());
                 return validateResponse.getDiscount();
-            } else {
-                log.info("Promotion code rejected for order: {}, reason: {}", promotionCode,
-                        validateResponse.getMessage());
             }
         }
 
@@ -168,8 +161,6 @@ public class PromotionServiceImpl implements PromotionService {
         CalculateDiscountResponseDTO calculateResponse = calculateAutomaticDiscount(calculateRequest, customerType);
 
         if (calculateResponse.getApplicable()) {
-            log.info("Applying automatic discount: {}, discount: {}", calculateResponse.getRuleName(),
-                    calculateResponse.getDiscount());
             return calculateResponse.getDiscount();
         }
 
@@ -179,9 +170,6 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     @Transactional(readOnly = true)
     public BigDecimal calculateShippingDiscount(BigDecimal shippingFee, String shippingPromotionCode) {
-        log.info("Calculating shipping discount: shippingFee={}, shippingPromotionCode={}",
-                shippingFee, shippingPromotionCode);
-
         if (shippingPromotionCode == null || shippingPromotionCode.trim().isEmpty()) {
             return BigDecimal.ZERO;
         }
@@ -200,13 +188,9 @@ public class PromotionServiceImpl implements PromotionService {
         ValidatePromotionResponseDTO validateResponse = validatePromotion(validateRequest);
 
         if (validateResponse.getValid()) {
-
-            log.info("Applying shipping promotion code: {}, discount: {}",
-                    shippingPromotionCode, validateResponse.getDiscount());
             return validateResponse.getDiscount();
         }
 
-        log.info("Shipping promotion code not valid: {}", validateResponse.getMessage());
         return BigDecimal.ZERO;
     }
 
@@ -214,9 +198,6 @@ public class PromotionServiceImpl implements PromotionService {
     @Transactional(readOnly = true)
     public CalculateDiscountResponseDTO calculateAutoShippingDiscount(BigDecimal shippingFee, BigDecimal orderTotal,
             String customerType) {
-        log.info("Calculating automatic shipping discount: shippingFee={}, orderTotal={}, customerType={}",
-                shippingFee, orderTotal, customerType);
-
         if (shippingFee == null || shippingFee.compareTo(BigDecimal.ZERO) <= 0) {
             return CalculateDiscountResponseDTO.builder()
                     .applicable(false)
@@ -232,7 +213,6 @@ public class PromotionServiceImpl implements PromotionService {
                 customerType != null ? customerType : "REGULAR");
 
         if (shippingRules.isEmpty()) {
-            log.info("No applicable auto shipping discount rules found");
             return CalculateDiscountResponseDTO.builder()
                     .applicable(false)
                     .discount(BigDecimal.ZERO)
@@ -240,12 +220,8 @@ public class PromotionServiceImpl implements PromotionService {
         }
 
         PromotionRule rule = shippingRules.get(0);
-
         BigDecimal discount = calculateDiscountFromRule(rule, shippingFee);
-
         discount = discount.min(shippingFee);
-
-        log.info("Auto shipping discount applied: rule={}, discount={}", rule.getRuleName(), discount);
 
         return CalculateDiscountResponseDTO.builder()
                 .applicable(true)
@@ -258,13 +234,10 @@ public class PromotionServiceImpl implements PromotionService {
 
     private BigDecimal calculateDiscountFromPromotion(Promotion promotion, BigDecimal totalAmount) {
         if (promotion.getDiscountType() == Promotion.DiscountType.PERCENTAGE) {
-
             BigDecimal discount = totalAmount.multiply(promotion.getDiscountValue())
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
             return discount.min(totalAmount);
         } else {
-
             return promotion.getDiscountValue().min(totalAmount);
         }
     }
@@ -281,32 +254,24 @@ public class PromotionServiceImpl implements PromotionService {
 
     @Override
     public PromotionDTO createPromotion(PromotionDTO promotionDTO) {
-        log.info("Creating promotion: {}", promotionDTO.getCode());
-
         if (promotionRepository.findByCode(promotionDTO.getCode()).isPresent()) {
             throw new RuntimeException("Mã giảm giá đã tồn tại");
         }
 
         Promotion promotion = promotionMapper.toEntity(promotionDTO);
         promotion = promotionRepository.save(promotion);
-
-        log.info("Promotion created successfully with ID: {}", promotion.getIdPromotion());
         return promotionMapper.toDTO(promotion);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<PromotionDTO> getAllPromotions(String keyword, Pageable pageable) {
-        log.info("Getting all promotions with keyword: {}", keyword);
-
         Page<Promotion> promotions;
-
         if (keyword != null && !keyword.trim().isEmpty()) {
             promotions = promotionRepository.searchByKeyword(keyword.trim(), pageable);
         } else {
             promotions = promotionRepository.findAll(pageable);
         }
-
         return PageUtils.toPageResponse(promotions.map(promotionMapper::toDTO));
     }
 
@@ -314,31 +279,23 @@ public class PromotionServiceImpl implements PromotionService {
     @Transactional(readOnly = true)
     public PageResponse<PromotionDTO> getAllPromotions(String keyword, Promotion.PromotionScope scope,
             Pageable pageable) {
-        log.info("Getting all promotions with keyword: {}, scope: {}", keyword, scope);
-
         Page<Promotion> promotions = promotionRepository.searchByKeywordAndScope(
                 keyword != null ? keyword.trim() : null,
                 scope,
                 pageable);
-
         return PageUtils.toPageResponse(promotions.map(promotionMapper::toDTO));
     }
 
     @Override
     @Transactional(readOnly = true)
     public PromotionDTO getPromotionById(Integer id) {
-        log.info("Getting promotion by ID: {}", id);
-
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy mã giảm giá"));
-
         return promotionMapper.toDTO(promotion);
     }
 
     @Override
     public PromotionDTO updatePromotion(Integer id, PromotionDTO promotionDTO) {
-        log.info("Updating promotion ID: {}", id);
-
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy mã giảm giá"));
 
@@ -355,38 +312,26 @@ public class PromotionServiceImpl implements PromotionService {
         }
 
         promotion = promotionRepository.save(promotion);
-
-        log.info("Promotion updated successfully with ID: {}", promotion.getIdPromotion());
         return promotionMapper.toDTO(promotion);
     }
 
     @Override
     public void deletePromotion(Integer id) {
-        log.info("Deleting promotion ID: {}", id);
-
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy mã giảm giá"));
-
         promotionRepository.delete(promotion);
-        log.info("Promotion deleted successfully with ID: {}", id);
     }
 
     @Override
     public PromotionRuleDTO createPromotionRule(PromotionRuleDTO ruleDTO) {
-        log.info("Creating promotion rule: {}", ruleDTO.getRuleName());
-
         PromotionRule rule = promotionRuleMapper.toEntity(ruleDTO);
         rule = promotionRuleRepository.save(rule);
-
-        log.info("Promotion rule created successfully with ID: {}", rule.getIdRule());
         return promotionRuleMapper.toDTO(rule);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<PromotionRuleDTO> getAllPromotionRules(Pageable pageable) {
-        log.info("Getting all promotion rules");
-
         Page<PromotionRule> rules = promotionRuleRepository.findAll(pageable);
         return PageUtils.toPageResponse(rules.map(promotionRuleMapper::toDTO));
     }
@@ -394,18 +339,13 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     @Transactional(readOnly = true)
     public PromotionRuleDTO getPromotionRuleById(Integer id) {
-        log.info("Getting promotion rule by ID: {}", id);
-
         PromotionRule rule = promotionRuleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy quy tắc giảm giá"));
-
         return promotionRuleMapper.toDTO(rule);
     }
 
     @Override
     public PromotionRuleDTO updatePromotionRule(Integer id, PromotionRuleDTO ruleDTO) {
-        log.info("Updating promotion rule ID: {}", id);
-
         PromotionRule rule = promotionRuleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy quy tắc giảm giá"));
 
@@ -423,88 +363,62 @@ public class PromotionServiceImpl implements PromotionService {
         }
 
         rule = promotionRuleRepository.save(rule);
-
-        log.info("Promotion rule updated successfully with ID: {}", rule.getIdRule());
         return promotionRuleMapper.toDTO(rule);
     }
 
     @Override
     public void deletePromotionRule(Integer id) {
-        log.info("Deleting promotion rule ID: {}", id);
-
         PromotionRule rule = promotionRuleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy quy tắc giảm giá"));
-
         promotionRuleRepository.delete(rule);
-        log.info("Promotion rule deleted successfully with ID: {}", id);
     }
 
     @Override
     public void recordPromotionUsage(Integer promotionId, Integer orderId, Integer customerId) {
-        log.info("recordPromotionUsage called (no-op): promotionId={}, orderId={}, customerId={}",
-                promotionId, orderId, customerId);
+        // No-op
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ProductOnSaleDTO> getProductsOnSale() {
-        log.info("Fetching products on sale based on automatic promotion rules");
         LocalDateTime now = LocalDateTime.now();
 
         List<PromotionRule> activeRules = promotionRuleRepository.findByIsActiveTrue().stream()
                 .filter(rule -> rule.getStartDate() != null && rule.getEndDate() != null)
                 .filter(rule -> !now.isBefore(rule.getStartDate()) && !now.isAfter(rule.getEndDate()))
                 .filter(rule -> rule.getScope() == PromotionRule.PromotionScope.ORDER)
-
                 .toList();
 
-        log.info("Found {} active promotion rules", activeRules.size());
-
-        if (activeRules.isEmpty()) {
-            return new java.util.ArrayList<>();
-        }
+        if (activeRules.isEmpty())
+            return new ArrayList<>();
 
         PromotionRule bestRule = activeRules.stream()
                 .max((a, b) -> {
-
                     int priorityCompare = Integer.compare(
                             a.getPriority() != null ? a.getPriority() : 0,
                             b.getPriority() != null ? b.getPriority() : 0);
                     if (priorityCompare != 0)
                         return priorityCompare;
-
                     return a.getDiscountValue().compareTo(b.getDiscountValue());
-                })
-                .orElse(null);
+                }).orElse(null);
 
-        if (bestRule == null) {
-            return new java.util.ArrayList<>();
-        }
-
-        log.info("Using promotion rule: {} with {}% discount, minOrderAmount: {}",
-                bestRule.getRuleName(), bestRule.getDiscountValue(), bestRule.getMinOrderAmount());
+        if (bestRule == null)
+            return new ArrayList<>();
 
         BigDecimal minPrice = bestRule.getMinOrderAmount() != null ? bestRule.getMinOrderAmount() : BigDecimal.ZERO;
 
-        List<Product> eligibleProducts = productRepository.findAll().stream()
+        List<Product> eligibleProducts = productRepository.findAllByIsDeleteFalse().stream()
                 .filter(p -> p.getStockQuantity() != null && p.getStockQuantity() > 0)
                 .filter(p -> p.getPrice() != null && p.getPrice().compareTo(minPrice) >= 0)
                 .limit(20)
                 .toList();
 
-        log.info("Found {} products eligible for automatic discount", eligibleProducts.size());
-
-        java.util.List<ProductOnSaleDTO> productsOnSale = new java.util.ArrayList<>();
+        List<ProductOnSaleDTO> productsOnSale = new ArrayList<>();
 
         for (Product product : eligibleProducts) {
             BigDecimal originalPrice = product.getPrice();
-
             BigDecimal discountAmount = calculateDiscountFromRule(bestRule, originalPrice);
-            BigDecimal discountedPrice = originalPrice.subtract(discountAmount);
-
-            if (discountedPrice.compareTo(BigDecimal.ZERO) < 0) {
-                discountedPrice = BigDecimal.ZERO;
-            }
+            BigDecimal discountedPrice = originalPrice.subtract(discountAmount).max(BigDecimal.ZERO);
 
             String discountLabel;
             Integer discountPercentage = null;
@@ -525,7 +439,7 @@ public class PromotionServiceImpl implements PromotionService {
                         .orElseGet(() -> product.getImages().get(0).getImageUrl());
             }
 
-            ProductOnSaleDTO dto = ProductOnSaleDTO.builder()
+            productsOnSale.add(ProductOnSaleDTO.builder()
                     .productId(product.getIdProduct())
                     .name(product.getProductName())
                     .image(imageUrl)
@@ -536,9 +450,7 @@ public class PromotionServiceImpl implements PromotionService {
                     .promotionName(bestRule.getRuleName())
                     .remainingStock(product.getStockQuantity())
                     .discountPercentage(discountPercentage)
-                    .build();
-
-            productsOnSale.add(dto);
+                    .build());
         }
 
         productsOnSale.sort((a, b) -> {
@@ -550,7 +462,6 @@ public class PromotionServiceImpl implements PromotionService {
             return b.getOriginalPrice().compareTo(a.getOriginalPrice());
         });
 
-        log.info("Returning {} products on sale", productsOnSale.size());
         return productsOnSale;
     }
 

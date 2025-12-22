@@ -119,7 +119,7 @@ const Login = () => {
           <Space direction="vertical" size="small">
             <ShopOutlined style={{ fontSize: "48px", color: "#1890ff" }} />
             <Title level={2} style={{ margin: 0, color: "#262626" }}>
-              Electronic Store
+              Electronics Store
             </Title>
             <Text type="secondary">Hệ thống quản lý cửa hàng điện tử</Text>
           </Space>

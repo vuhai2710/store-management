@@ -287,7 +287,7 @@ const Dashboard = () => {
             Bảng điều khiển
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
-            Tổng quan nhanh về hiệu suất cửa hàng điện tử ElectronicStore
+            Tổng quan nhanh về hiệu suất cửa hàng điện tử Electronics Store
           </Text>
         </div>
         <Button

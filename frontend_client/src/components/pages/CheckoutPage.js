@@ -636,9 +636,9 @@ const CheckoutPage = ({ setCurrentPage }) => {
             gap: "2rem",
             alignItems: "start",
           }}>
-          {}
+          { }
           <div>
-            {}
+            { }
             <div
               style={{
                 backgroundColor: "white",
@@ -659,7 +659,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                 <MapPin size={24} /> Địa chỉ giao hàng
               </h3>
 
-              {}
+              { }
               {shippingAddresses.length > 0 && (
                 <div style={{ marginBottom: "1.5rem" }}>
                   {shippingAddresses.map((address) => (
@@ -731,7 +731,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                 </div>
               )}
 
-              {}
+              { }
               {!showAddressForm && (
                 <button
                   onClick={() => setShowAddressForm(true)}
@@ -747,7 +747,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                 </button>
               )}
 
-              {}
+              { }
               {showAddressForm && (
                 <form
                   onSubmit={handleCreateAddress}
@@ -902,7 +902,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
               )}
             </div>
 
-            {}
+            { }
             <div
               style={{
                 backgroundColor: "white",
@@ -1035,409 +1035,11 @@ const CheckoutPage = ({ setCurrentPage }) => {
               </div>
             </div>
 
-            {}
-            <div
-              style={{
-                backgroundColor: "white",
-                padding: "2rem",
-                borderRadius: "0.5rem",
-                marginTop: "2rem",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-              }}>
-              <h3
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: "bold",
-                  marginBottom: "1.5rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                }}>
-                <CreditCard size={24} /> Phương thức thanh toán
-              </h3>
+            { }
 
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "600",
-                    color: "#495057",
-                  }}>
-                  Chọn phương thức thanh toán *
-                </label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "1px solid #dee2e6",
-                    borderRadius: "0.25rem",
-                    fontSize: "1rem",
-                    cursor: "pointer",
-                  }}>
-                  <option value="CASH">Thanh toán khi nhận hàng (COD)</option>
-                  <option value="PAYOS">Thanh toán online qua PayOS</option>
-                </select>
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "600",
-                    color: "#495057",
-                  }}>
-                  Ghi chú (Tùy chọn)
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                  placeholder="Thêm ghi chú cho đơn hàng..."
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "1px solid #dee2e6",
-                    borderRadius: "0.25rem",
-                    fontSize: "1rem",
-                    resize: "vertical",
-                  }}
-                />
-              </div>
-
-              {}
-              <div
-                style={{
-                  marginTop: "1.5rem",
-                  paddingTop: "1.5rem",
-                  borderTop: "1px solid #dee2e6",
-                }}>
-                <h4
-                  style={{
-                    fontSize: "1.125rem",
-                    fontWeight: "bold",
-                    marginBottom: "1rem",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}>
-                  Mã giảm giá
-                </h4>
-
-                {}
-                {automaticDiscount > 0 && automaticDiscountInfo && (
-                  <div
-                    style={{
-                      backgroundColor: "#d4edda",
-                      border: "1px solid #c3e6cb",
-                      borderRadius: "0.25rem",
-                      padding: "0.75rem",
-                      marginBottom: "1rem",
-                      fontSize: "0.875rem",
-                      color: "#155724",
-                    }}>
-                    <strong>🎁 Giảm giá tự động đang áp dụng:</strong>{" "}
-                    {automaticDiscountInfo.ruleName || "Khuyến mãi tự động"} -
-                    Giảm {formatPrice(automaticDiscount)}
-                    {!promotionValid && (
-                      <div
-                        style={{
-                          marginTop: "0.5rem",
-                          fontSize: "0.8rem",
-                          color: "#6c757d",
-                        }}>
-                        💡 Bạn có thể nhập thêm mã giảm giá để được giảm thêm!
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "0.5rem",
-                    marginBottom: "0.5rem",
-                  }}>
-                  <input
-                    type="text"
-                    value={promotionCode}
-                    onChange={(e) =>
-                      setPromotionCode(e.target.value.toUpperCase())
-                    }
-                    placeholder="Nhập mã giảm giá"
-                    disabled={loadingPromotion || promotionValid}
-                    style={{
-                      flex: 1,
-                      padding: "0.75rem",
-                      border: "1px solid #dee2e6",
-                      borderRadius: "0.25rem",
-                      fontSize: "1rem",
-                      opacity: loadingPromotion || promotionValid ? 0.6 : 1,
-                    }}
-                  />
-                  {!promotionValid ? (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (!promotionCode || promotionCode.trim() === "") {
-                          setPromotionError("Vui lòng nhập mã giảm giá");
-                          return;
-                        }
-
-                        try {
-                          setLoadingPromotion(true);
-                          setPromotionError(null);
-
-                          const validateResponse =
-                            await promotionService.validatePromotion({
-                              code: promotionCode.trim(),
-                              totalAmount: orderSubtotal,
-                              expectedScope: 'ORDER',
-                            });
-
-                          if (validateResponse && validateResponse.valid) {
-                            setPromotionValid(true);
-                            setPromotionDiscount(
-                              Number(validateResponse.discount || 0)
-                            );
-                            setPromotionError(null);
-                          } else {
-                            setPromotionValid(false);
-                            setPromotionDiscount(0);
-                            setPromotionError(
-                              validateResponse?.message ||
-                              "Mã giảm giá không hợp lệ"
-                            );
-                          }
-                        } catch (error) {
-                          console.error("Error validating promotion:", error);
-                          setPromotionValid(false);
-                          setPromotionDiscount(0);
-                          setPromotionError(
-                            error?.message ||
-                            "Không thể xác thực mã giảm giá. Vui lòng thử lại."
-                          );
-                        } finally {
-                          setLoadingPromotion(false);
-                        }
-                      }}
-                      disabled={
-                        loadingPromotion ||
-                        !promotionCode ||
-                        promotionCode.trim() === "" ||
-                        promotionValid
-                      }
-                      style={{
-                        ...styles.buttonSecondary,
-                        padding: "0.75rem 1.5rem",
-                        opacity:
-                          loadingPromotion ||
-                            !promotionCode ||
-                            promotionCode.trim() === "" ||
-                            promotionValid
-                            ? 0.6
-                            : 1,
-                        cursor:
-                          loadingPromotion ||
-                            !promotionCode ||
-                            promotionCode.trim() === "" ||
-                            promotionValid
-                            ? "not-allowed"
-                            : "pointer",
-                      }}>
-                      {loadingPromotion ? "Đang kiểm tra..." : "Áp dụng"}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPromotionCode("");
-                        setPromotionValid(false);
-                        setPromotionDiscount(0);
-                        setPromotionError(null);
-                      }}
-                      style={{
-                        ...styles.buttonSecondary,
-                        padding: "0.75rem 1.5rem",
-                      }}>
-                      Xóa
-                    </button>
-                  )}
-                </div>
-                {promotionError && (
-                  <div
-                    style={{
-                      marginTop: "0.5rem",
-                      fontSize: "0.875rem",
-                      color: "#dc3545",
-                    }}>
-                    {promotionError}
-                  </div>
-                )}
-                {promotionValid && promotionDiscount > 0 && (
-                  <div
-                    style={{
-                      marginTop: "0.5rem",
-                      fontSize: "0.875rem",
-                      color: "#28a745",
-                      fontWeight: "600",
-                    }}>
-                    Mã giảm giá "{promotionCode}" đã được áp dụng: -
-                    {formatPrice(promotionDiscount)}
-                  </div>
-                )}
-
-                {}
-                {shippingFee > 0 && (
-                  <>
-                    <div style={{ marginTop: "1rem" }}>
-                      <strong>Mã giảm phí vận chuyển</strong>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "0.5rem",
-                        marginTop: "0.5rem",
-                        marginBottom: "0.5rem",
-                      }}>
-                      <input
-                        type="text"
-                        value={shippingPromotionCode}
-                        onChange={(e) =>
-                          setShippingPromotionCode(e.target.value.toUpperCase())
-                        }
-                        placeholder="Nhập mã giảm phí vận chuyển"
-                        disabled={loadingShippingPromotion || shippingPromotionValid}
-                        style={{
-                          flex: 1,
-                          padding: "0.75rem",
-                          border: "1px solid #dee2e6",
-                          borderRadius: "0.25rem",
-                          fontSize: "1rem",
-                          opacity: loadingShippingPromotion || shippingPromotionValid ? 0.6 : 1,
-                        }}
-                      />
-                      {!shippingPromotionValid ? (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (!shippingPromotionCode || shippingPromotionCode.trim() === "") {
-                              setShippingPromotionError("Vui lòng nhập mã giảm phí vận chuyển");
-                              return;
-                            }
-
-                            try {
-                              setLoadingShippingPromotion(true);
-                              setShippingPromotionError(null);
-
-                              const validateResponse =
-                                await promotionService.validateShippingPromotion({
-                                  code: shippingPromotionCode.trim(),
-                                  shippingFee: shippingFee,
-                                });
-
-                              if (validateResponse && validateResponse.valid) {
-                                setShippingPromotionValid(true);
-                                setShippingPromotionDiscount(
-                                  Number(validateResponse.discount || 0)
-                                );
-                                setShippingPromotionError(null);
-                              } else {
-                                setShippingPromotionValid(false);
-                                setShippingPromotionDiscount(0);
-                                setShippingPromotionError(
-                                  validateResponse?.message ||
-                                  "Mã giảm phí vận chuyển không hợp lệ"
-                                );
-                              }
-                            } catch (error) {
-                              console.error("Error validating shipping promotion:", error);
-                              setShippingPromotionValid(false);
-                              setShippingPromotionDiscount(0);
-                              setShippingPromotionError(
-                                error?.message ||
-                                "Không thể xác thực mã. Vui lòng thử lại."
-                              );
-                            } finally {
-                              setLoadingShippingPromotion(false);
-                            }
-                          }}
-                          disabled={
-                            loadingShippingPromotion ||
-                            !shippingPromotionCode ||
-                            shippingPromotionCode.trim() === "" ||
-                            shippingPromotionValid
-                          }
-                          style={{
-                            ...styles.buttonPrimary,
-                            padding: "0.75rem 1.5rem",
-                            opacity:
-                              loadingShippingPromotion ||
-                                !shippingPromotionCode ||
-                                shippingPromotionCode.trim() === "" ||
-                                shippingPromotionValid
-                                ? 0.6
-                                : 1,
-                            cursor:
-                              loadingShippingPromotion ||
-                                !shippingPromotionCode ||
-                                shippingPromotionCode.trim() === "" ||
-                                shippingPromotionValid
-                                ? "not-allowed"
-                                : "pointer",
-                          }}>
-                          {loadingShippingPromotion ? "Đang kiểm tra..." : "Áp dụng"}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShippingPromotionCode("");
-                            setShippingPromotionValid(false);
-                            setShippingPromotionDiscount(0);
-                            setShippingPromotionError(null);
-                          }}
-                          style={{
-                            ...styles.buttonSecondary,
-                            padding: "0.75rem 1.5rem",
-                          }}>
-                          Xóa
-                        </button>
-                      )}
-                    </div>
-                    {shippingPromotionError && (
-                      <div
-                        style={{
-                          marginTop: "0.5rem",
-                          fontSize: "0.875rem",
-                          color: "#dc3545",
-                        }}>
-                        {shippingPromotionError}
-                      </div>
-                    )}
-                    {shippingPromotionValid && shippingPromotionDiscount > 0 && (
-                      <div
-                        style={{
-                          marginTop: "0.5rem",
-                          fontSize: "0.875rem",
-                          color: "#28a745",
-                          fontWeight: "600",
-                        }}>
-                        🚚 Mã "{shippingPromotionCode}" đã được áp dụng: -
-                        {formatPrice(shippingPromotionDiscount)}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
           </div>
 
-          {}
+          { }
           <div>
             <div
               style={{
@@ -1456,6 +1058,198 @@ const CheckoutPage = ({ setCurrentPage }) => {
                 }}>
                 Tóm tắt đơn hàng
               </h3>
+
+              {/* Phương thức thanh toán gộp vào tóm tắt */}
+              <div style={{ marginBottom: "1.5rem", borderBottom: "1px solid #dee2e6", paddingBottom: "1.5rem" }}>
+                <div style={{ marginBottom: "1.25rem" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "0.5rem",
+                      fontWeight: "600",
+                      color: "#495057",
+                      fontSize: "0.9375rem"
+                    }}>
+                    Phương thức thanh toán *
+                  </label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      border: "1px solid #dee2e6",
+                      borderRadius: "0.5rem",
+                      fontSize: "0.9375rem",
+                      cursor: "pointer",
+                      backgroundColor: "#fff"
+                    }}>
+                    <option value="CASH">Thanh toán khi nhận hàng (COD)</option>
+                    <option value="PAYOS">Thanh toán online qua PayOS</option>
+                  </select>
+                </div>
+
+                {/* Giảm giá tự động info */}
+                {automaticDiscount > 0 && automaticDiscountInfo && (
+                  <div
+                    style={{
+                      backgroundColor: "#f0fdf4",
+                      border: "1px solid #dcfce7",
+                      borderRadius: "0.5rem",
+                      padding: "0.75rem",
+                      marginBottom: "1rem",
+                      fontSize: "0.8125rem",
+                      color: "#166534",
+                    }}>
+                    <div style={{ fontWeight: "600", marginBottom: "0.25rem" }}>🎁 {automaticDiscountInfo.ruleName || "Khuyến mãi tự động"}</div>
+                    <div>Đã giảm {formatPrice(automaticDiscount)}</div>
+                  </div>
+                )}
+
+                <div style={{ marginBottom: "1rem" }}>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "600", color: "#495057", fontSize: "0.9375rem" }}>
+                    Mã giảm giá
+                  </label>
+                  <div style={{ display: "flex", gap: "0.4rem" }}>
+                    <input
+                      type="text"
+                      value={promotionCode}
+                      onChange={(e) => setPromotionCode(e.target.value.toUpperCase())}
+                      placeholder="Mã giảm giá"
+                      disabled={loadingPromotion || promotionValid}
+                      style={{
+                        flex: 1,
+                        padding: "0.625rem",
+                        border: "1px solid #dee2e6",
+                        borderRadius: "0.5rem",
+                        fontSize: "0.875rem",
+                        opacity: promotionValid ? 0.7 : 1
+                      }}
+                    />
+                    {!promotionValid ? (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!promotionCode) return;
+                          try {
+                            setLoadingPromotion(true);
+                            const res = await promotionService.validatePromotion({
+                              code: promotionCode.trim(),
+                              totalAmount: orderSubtotal,
+                              expectedScope: 'ORDER',
+                            });
+                            if (res && res.valid) {
+                              setPromotionValid(true);
+                              setPromotionDiscount(Number(res.discount || 0));
+                            } else {
+                              toast.error(res?.message || "Mã không hợp lệ");
+                            }
+                          } catch (e) { toast.error("Lỗi xác thực mã"); }
+                          finally { setLoadingPromotion(false); }
+                        }}
+                        disabled={loadingPromotion || !promotionCode}
+                        style={{ ...styles.buttonSecondary, padding: "0 1rem", height: "auto", fontSize: "0.8125rem", borderRadius: "0.5rem" }}
+                      >
+                        {loadingPromotion ? "..." : "Áp dụng"}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => { setPromotionCode(""); setPromotionValid(false); setPromotionDiscount(0); }}
+                        style={{ border: "none", background: "#f1f5f9", color: "#64748b", padding: "0 0.75rem", borderRadius: "0.5rem", cursor: "pointer", fontSize: "0.8125rem" }}
+                      >
+                        Xóa
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Shipping Promo Input if shipping fee > 0 */}
+                {shippingFee > 0 && (
+                  <div style={{ marginBottom: "1rem" }}>
+                    <label style={{ display: "block", marginBottom: "0.4rem", fontWeight: "600", color: "#495057", fontSize: "0.9375rem" }}>
+                      Mã vận chuyển
+                    </label>
+                    <div style={{ display: "flex", gap: "0.4rem" }}>
+                      <input
+                        type="text"
+                        value={shippingPromotionCode}
+                        onChange={(e) => setShippingPromotionCode(e.target.value.toUpperCase())}
+                        placeholder="Mã vận chuyển"
+                        disabled={loadingShippingPromotion || shippingPromotionValid}
+                        style={{
+                          flex: 1,
+                          padding: "0.625rem",
+                          border: "1px solid #dee2e6",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.875rem",
+                          opacity: shippingPromotionValid ? 0.7 : 1
+                        }}
+                      />
+                      {!shippingPromotionValid ? (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!shippingPromotionCode) return;
+                            try {
+                              setLoadingShippingPromotion(true);
+                              const res = await promotionService.validateShippingPromotion({
+                                code: shippingPromotionCode.trim(),
+                                shippingFee: shippingFee,
+                              });
+                              if (res && res.valid) {
+                                setShippingPromotionValid(true);
+                                setShippingPromotionDiscount(Number(res.discount || 0));
+                              } else {
+                                toast.error(res?.message || "Mã không hợp lệ");
+                              }
+                            } catch (e) { toast.error("Lỗi xác thực mã"); }
+                            finally { setLoadingShippingPromotion(false); }
+                          }}
+                          disabled={loadingShippingPromotion || !shippingPromotionCode}
+                          style={{ ...styles.buttonSecondary, padding: "0 1rem", height: "auto", fontSize: "0.8125rem", borderRadius: "0.5rem" }}
+                        >
+                          {loadingShippingPromotion ? "..." : "Áp dụng"}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { setShippingPromotionCode(""); setShippingPromotionValid(false); setShippingPromotionDiscount(0); }}
+                          style={{ border: "none", background: "#f1f5f9", color: "#64748b", padding: "0 0.75rem", borderRadius: "0.5rem", cursor: "pointer", fontSize: "0.8125rem" }}
+                        >
+                          Xóa
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "0.5rem",
+                      fontWeight: "600",
+                      color: "#495057",
+                      fontSize: "0.9375rem"
+                    }}>
+                    Ghi chú
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={2}
+                    placeholder="Lưu ý cho shop..."
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      border: "1px solid #dee2e6",
+                      borderRadius: "0.5rem",
+                      fontSize: "0.9375rem",
+                      resize: "none",
+                    }}
+                  />
+                </div>
+              </div>
 
               <div
                 style={{
@@ -1514,7 +1308,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   </div>
                 )}
 
-                {}
+                { }
                 {manualShippingDiscount > 0 && shippingPromotionValid && (
                   <div
                     style={{
@@ -1528,7 +1322,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   </div>
                 )}
 
-                {}
+                { }
                 {autoShippingDiscountAmount > 0 && autoShippingDiscountInfo && (
                   <div
                     style={{
@@ -1547,7 +1341,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   </div>
                 )}
 
-                {}
+                { }
                 {autoPromoDiscount > 0 && automaticDiscountInfo && (
                   <div
                     style={{
@@ -1579,7 +1373,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
                   </div>
                 )}
 
-                {}
+                { }
                 {totalDiscount > 0 &&
                   autoPromoDiscount > 0 &&
                   manualCodeDiscount > 0 && (

@@ -91,7 +91,7 @@ public class ProductRecommendationServiceImpl implements ProductRecommendationSe
 
         if (finalProductIds.size() < 12) {
             log.info("Not enough products ({}), adding best-selling products as fallback", finalProductIds.size());
-            List<ProductDTO> bestSellingProducts = productService.getTop5BestSellingProducts(null);
+            List<ProductDTO> bestSellingProducts = productService.getTop5BestSellingProducts(null, false);
 
             final Set<Integer> finalProductIdsSet = new HashSet<>(finalProductIds);
             List<Integer> bestSellingProductIds = bestSellingProducts.stream()
@@ -194,11 +194,13 @@ public class ProductRecommendationServiceImpl implements ProductRecommendationSe
 
             if (userId != null) {
 
-                log.info("Getting top {} most viewed products for userId: {} (query limit: {})", limit, userId, queryLimit);
+                log.info("Getting top {} most viewed products for userId: {} (query limit: {})", limit, userId,
+                        queryLimit);
                 results = productViewRepository.findTopMostViewedProductsByUserNative(userId, queryLimit);
             } else {
 
-                log.info("No userId provided, getting top {} most viewed products from all users (query limit: {})", limit, queryLimit);
+                log.info("No userId provided, getting top {} most viewed products from all users (query limit: {})",
+                        limit, queryLimit);
                 results = productViewRepository.findTopMostViewedProductsNative(queryLimit);
             }
 
@@ -218,14 +220,17 @@ public class ProductRecommendationServiceImpl implements ProductRecommendationSe
 
                 if (!excludedProductIds.contains(productId)) {
                     productIds.add(productId);
-                    System.out.println("[getTopMostViewedProducts] ✓ Added product " + productId + " (views: " + viewCount + ")");
+                    System.out.println(
+                            "[getTopMostViewedProducts] ✓ Added product " + productId + " (views: " + viewCount + ")");
                     log.info("Added product {} to most viewed list (view count: {})", productId, viewCount);
                     if (productIds.size() >= limit) {
                         break;
                     }
                 } else {
-                    System.out.println("[getTopMostViewedProducts] ✗ Excluded product " + productId + " (views: " + viewCount + ", reason: purchased/in cart)");
-                    log.info("Excluded product {} from most viewed list (view count: {}, reason: already purchased or in cart)",
+                    System.out.println("[getTopMostViewedProducts] ✗ Excluded product " + productId + " (views: "
+                            + viewCount + ", reason: purchased/in cart)");
+                    log.info(
+                            "Excluded product {} from most viewed list (view count: {}, reason: already purchased or in cart)",
                             productId, viewCount);
                 }
             }
@@ -259,4 +264,3 @@ public class ProductRecommendationServiceImpl implements ProductRecommendationSe
         return productService.getProductsByIds(similarIds);
     }
 }
-

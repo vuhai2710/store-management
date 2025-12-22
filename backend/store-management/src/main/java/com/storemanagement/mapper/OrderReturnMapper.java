@@ -24,29 +24,28 @@ public interface OrderReturnMapper {
     @Mapping(target = "orderPromotionDiscountType", expression = "java(getPromotionDiscountType(entity))")
     @Mapping(target = "orderPromotionDiscountValue", expression = "java(getPromotionDiscountValue(entity))")
     @Mapping(target = "orderPromotionScope", expression = "java(getPromotionScope(entity))")
-    @Mapping(target = "createdByCustomerId",
-            expression = "java(entity.getCreatedByCustomer() != null ? entity.getCreatedByCustomer().getIdCustomer() : null)")
-    @Mapping(target = "processedByEmployeeId",
-            expression = "java(entity.getProcessedByEmployee() != null ? entity.getProcessedByEmployee().getIdEmployee() : null)")
+    @Mapping(target = "createdByCustomerId", expression = "java(entity.getCreatedByCustomer() != null ? entity.getCreatedByCustomer().getIdCustomer() : null)")
+    @Mapping(target = "processedByEmployeeId", expression = "java(entity.getProcessedByEmployee() != null ? entity.getProcessedByEmployee().getIdEmployee() : null)")
     @Mapping(target = "items", expression = "java(mapItems(entity.getItems()))")
     OrderReturnDTO toDTO(OrderReturn entity);
 
     @Mapping(target = "idOrderDetail", source = "orderDetail.idOrderDetail")
     @Mapping(target = "productName", expression = "java(item.getOrderDetail() != null ? (item.getOrderDetail().getProductNameSnapshot() != null ? item.getOrderDetail().getProductNameSnapshot() : (item.getOrderDetail().getProduct() != null ? item.getOrderDetail().getProduct().getProductName() : null)) : null)")
     @Mapping(target = "price", source = "orderDetail.price")
-    @Mapping(target = "exchangeProductId",
-            expression = "java(item.getExchangeProduct() != null ? item.getExchangeProduct().getIdProduct() : null)")
+    @Mapping(target = "exchangeProductId", expression = "java(item.getExchangeProduct() != null ? item.getExchangeProduct().getIdProduct() : null)")
     OrderReturnItemDTO toItemDTO(OrderReturnItem item);
 
     default List<OrderReturnItemDTO> mapItems(List<OrderReturnItem> items) {
-        if (items == null) return List.of();
+        if (items == null)
+            return List.of();
         return items.stream().map(this::toItemDTO).toList();
     }
 
     List<OrderReturnDTO> toDTOList(List<OrderReturn> list);
 
     default String getPromotionName(OrderReturn entity) {
-        if (entity.getOrder() == null) return null;
+        if (entity.getOrder() == null)
+            return null;
         if (entity.getOrder().getPromotion() != null) {
             return entity.getOrder().getPromotion().getCode();
         }
@@ -57,7 +56,8 @@ public interface OrderReturnMapper {
     }
 
     default String getPromotionDiscountType(OrderReturn entity) {
-        if (entity.getOrder() == null) return null;
+        if (entity.getOrder() == null)
+            return null;
         if (entity.getOrder().getPromotion() != null) {
             return entity.getOrder().getPromotion().getDiscountType().name();
         }
@@ -68,7 +68,8 @@ public interface OrderReturnMapper {
     }
 
     default java.math.BigDecimal getPromotionDiscountValue(OrderReturn entity) {
-        if (entity.getOrder() == null) return null;
+        if (entity.getOrder() == null)
+            return null;
         if (entity.getOrder().getPromotion() != null) {
             return entity.getOrder().getPromotion().getDiscountValue();
         }
@@ -79,7 +80,8 @@ public interface OrderReturnMapper {
     }
 
     default String getPromotionScope(OrderReturn entity) {
-        if (entity.getOrder() == null) return null;
+        if (entity.getOrder() == null)
+            return null;
         if (entity.getOrder().getPromotion() != null && entity.getOrder().getPromotion().getScope() != null) {
             return entity.getOrder().getPromotion().getScope().name();
         }

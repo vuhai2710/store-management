@@ -265,7 +265,7 @@ const OrderDetail = () => {
               Chi tiết đơn hàng #{orderId}
             </Title>
             <Text type="secondary" style={{ fontSize: 14 }}>
-              Theo dõi trạng thái và chi tiết sản phẩm cho đơn hàng TechStore
+              Theo dõi trạng thái và chi tiết sản phẩm cho đơn hàng Electronics Store
             </Text>
           </div>
         </Space>

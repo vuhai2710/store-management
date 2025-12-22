@@ -178,8 +178,8 @@ const Employees = () => {
       sorter?.order === "ascend"
         ? "ASC"
         : sorter?.order === "descend"
-        ? "DESC"
-        : sort.sortDirection;
+          ? "DESC"
+          : sort.sortDirection;
 
     dispatch(setPagination({ current: nextPage, pageSize: nextSize }));
     dispatch(setSort({ sortBy: nextSortBy, sortDirection: nextSortDir }));
@@ -305,7 +305,7 @@ const Employees = () => {
               color: "#64748B",
               fontSize: 14,
             }}>
-            Quản lý hồ sơ và trạng thái nhân viên TechStore
+            Quản lý hồ sơ và trạng thái nhân viên Electronics Store
           </p>
         </div>
         <Button

@@ -107,7 +107,7 @@ const AppHeader = ({ user: userProp }) => {
               marginBottom: 0,
               lineHeight: 1.1,
             }}>
-            ElectronicStore Admin
+            Electronics Store Admin
           </div>
           <div
             style={{

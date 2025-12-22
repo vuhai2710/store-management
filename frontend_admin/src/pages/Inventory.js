@@ -1116,7 +1116,7 @@ const Inventory = () => {
             Quản lý kho hàng
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
-            Theo dõi tồn kho và lịch sử nhập/xuất kho cho TechStore
+            Theo dõi tồn kho và lịch sử nhập/xuất kho cho Electronics Store
           </Text>
         </div>
       </div>

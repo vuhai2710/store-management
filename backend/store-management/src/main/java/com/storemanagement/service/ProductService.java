@@ -19,37 +19,38 @@ public interface ProductService {
 
     void deleteProduct(Integer id);
 
-    ProductDTO getProductById(Integer id);
+    ProductDTO getProductById(Integer id, Boolean showDeleted);
 
-    ProductDTO getProductByCode(String productCode);
+    ProductDTO getProductByCode(String productCode, Boolean showDeleted);
 
-    PageResponse<ProductDTO> getAllProductsPaginated(Pageable pageable);
+    PageResponse<ProductDTO> getAllProductsPaginated(Pageable pageable, Boolean showDeleted);
 
-    PageResponse<ProductDTO> searchProductsByName(String name, Pageable pageable);
+    PageResponse<ProductDTO> searchProductsByName(String name, Pageable pageable, Boolean showDeleted);
 
-    PageResponse<ProductDTO> getProductsByCategory(Integer idCategory, Pageable pageable);
+    PageResponse<ProductDTO> getProductsByCategory(Integer idCategory, Pageable pageable, Boolean showDeleted);
 
-    PageResponse<ProductDTO> getProductsByBrand(String brand, Pageable pageable);
+    PageResponse<ProductDTO> getProductsByBrand(String brand, Pageable pageable, Boolean showDeleted);
 
-    PageResponse<ProductDTO> getProductsBySupplier(Integer idSupplier, Pageable pageable);
+    PageResponse<ProductDTO> getProductsBySupplier(Integer idSupplier, Pageable pageable, Boolean showDeleted);
 
-    PageResponse<ProductDTO> searchProducts(String keyword,
-            Integer idCategory, String brand,
-            Double minPrice, Double maxPrice,
-            String inventoryStatus,
-            Pageable pageable);
+    PageResponse<ProductDTO> searchProducts(String keyword, Integer idCategory, Integer idSupplier, String brand,
+            Double minPrice,
+            Double maxPrice, String inventoryStatus, Boolean showDeleted, Pageable pageable);
 
-    List<ProductDTO> getTop5BestSellingProducts(String orderStatus);
+    void restoreProduct(Integer id);
 
-    PageResponse<ProductDTO> getProductsByPriceRange(Double minPrice, Double maxPrice, Pageable pageable);
+    List<ProductDTO> getTop5BestSellingProducts(String orderStatus, Boolean showDeleted);
 
-    PageResponse<ProductDTO> getBestSellingProducts(String orderStatus, Pageable pageable);
+    PageResponse<ProductDTO> getProductsByPriceRange(Double minPrice, Double maxPrice, Pageable pageable,
+            Boolean showDeleted);
 
-    PageResponse<ProductDTO> getNewProducts(Pageable pageable, Integer limit);
+    PageResponse<ProductDTO> getBestSellingProducts(String orderStatus, Pageable pageable, Boolean showDeleted);
 
-    List<ProductDTO> getRelatedProducts(Integer productId, Integer limit);
+    PageResponse<ProductDTO> getNewProducts(Pageable pageable, Integer limit, Boolean showDeleted);
 
-    List<String> getAllBrands();
+    List<ProductDTO> getRelatedProducts(Integer productId, Integer limit, Boolean showDeleted);
+
+    List<String> getAllBrands(Boolean showDeleted);
 
     List<ProductDTO> getProductsByIds(List<Long> productIds);
 }

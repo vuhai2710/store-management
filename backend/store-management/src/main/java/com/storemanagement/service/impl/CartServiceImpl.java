@@ -43,6 +43,13 @@ public class CartServiceImpl implements CartService {
     @Transactional(readOnly = true)
     public CartDTO getCart(Integer customerId) {
         Cart cart = getOrCreateCart(customerId);
+
+        // Filter out deleted products from the cart items
+        if (cart.getCartItems() != null) {
+            cart.getCartItems().removeIf(
+                    item -> item.getProduct() != null && Boolean.TRUE.equals(item.getProduct().getIsDelete()));
+        }
+
         CartDTO cartDTO = cartMapper.toDTO(cart);
 
         BigDecimal totalAmount = cartDTO.getTotalAmount() != null ? cartDTO.getTotalAmount() : BigDecimal.ZERO;
@@ -72,10 +79,7 @@ public class CartServiceImpl implements CartService {
             }
         }
 
-        BigDecimal finalAmount = totalAmount.subtract(automaticDiscount);
-        if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
-            finalAmount = BigDecimal.ZERO;
-        }
+        BigDecimal finalAmount = totalAmount.subtract(automaticDiscount).max(BigDecimal.ZERO);
 
         cartDTO.setAutomaticDiscount(automaticDiscount.setScale(2, RoundingMode.HALF_UP));
         cartDTO.setFinalAmount(finalAmount.setScale(2, RoundingMode.HALF_UP));
@@ -95,15 +99,14 @@ public class CartServiceImpl implements CartService {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy sản phẩm"));
 
-        if (product.getStatus() == ProductStatus.DISCONTINUED) {
-            throw new RuntimeException("Sản phẩm đã ngừng kinh doanh");
+        if (product.getStatus() == ProductStatus.DISCONTINUED || Boolean.TRUE.equals(product.getIsDelete())) {
+            throw new RuntimeException("Sản phẩm đã ngừng kinh doanh hoặc không còn tồn tại");
         }
 
         int availableStock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;
 
         if (product.getStatus() == ProductStatus.OUT_OF_STOCK) {
             if (availableStock > 0) {
-
                 product.setStatus(ProductStatus.IN_STOCK);
                 productRepository.save(product);
             } else {
@@ -191,7 +194,6 @@ public class CartServiceImpl implements CartService {
     private Cart getOrCreateCart(Integer customerId) {
         return cartRepository.findByCustomerIdCustomer(customerId)
                 .orElseGet(() -> {
-
                     Customer customer = customerRepository.findById(customerId)
                             .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng"));
                     Cart newCart = Cart.builder()
@@ -273,4 +275,3 @@ public class CartServiceImpl implements CartService {
         }
     }
 }
-

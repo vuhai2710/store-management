@@ -173,7 +173,7 @@ const RegisterPage = ({ setCurrentPage }) => {
           address: formData.address.trim() || undefined,
         });
 
-        toast.success("Đăng ký tài khoản thành công! Chào mừng bạn đến với Electronic Store.");
+        toast.success("Đăng ký tài khoản thành công! Chào mừng bạn đến với Electronics Store.");
 
         setCurrentPage("home");
       } catch (error) {
@@ -249,7 +249,7 @@ const RegisterPage = ({ setCurrentPage }) => {
             boxShadow: "0 24px 60px rgba(15, 23, 42, 0.16)",
             overflow: "hidden",
           }}>
-          {}
+          { }
           <div
             style={{
               background:
@@ -280,13 +280,13 @@ const RegisterPage = ({ setCurrentPage }) => {
               Đăng Ký Tài Khoản
             </h2>
             <p style={{ fontSize: "0.875rem", opacity: 0.9 }}>
-              Tạo tài khoản để bắt đầu mua sắm tại Electronic Store
+              Tạo tài khoản để bắt đầu mua sắm tại Electronics Store
             </p>
           </div>
 
-          {}
+          { }
           <form onSubmit={handleSubmit} style={{ padding: "2rem" }}>
-            {}
+            { }
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -309,7 +309,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {}
+            { }
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -332,7 +332,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {}
+            { }
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -355,7 +355,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {}
+            { }
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -378,7 +378,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {}
+            { }
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -400,7 +400,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {}
+            { }
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -437,7 +437,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {}
+            { }
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -474,9 +474,9 @@ const RegisterPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {}
+            { }
 
-            {}
+            { }
             {apiError && (
               <div
                 style={{
@@ -491,7 +491,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               </div>
             )}
 
-            {}
+            { }
             <Button
               type="submit"
               disabled={isLoading}
@@ -500,7 +500,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               {isLoading ? "Đang đăng ký..." : "Đăng Ký Ngay"}
             </Button>
 
-            {}
+            { }
             <div
               style={{
                 display: "flex",
@@ -524,7 +524,7 @@ const RegisterPage = ({ setCurrentPage }) => {
                 }}></div>
             </div>
 
-            {}
+            { }
             <div
               style={{
                 textAlign: "center",
@@ -547,7 +547,7 @@ const RegisterPage = ({ setCurrentPage }) => {
               </button>
             </div>
 
-            {}
+            { }
             <div style={{ textAlign: "center", marginTop: "1rem" }}>
               <button
                 type="button"

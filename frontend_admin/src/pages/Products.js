@@ -29,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 import {
   fetchProducts,
   deleteProduct,
+  restoreProduct,
   fetchProductsBySupplier,
 } from "../store/slices/productsSlice";
 import ProductForm from "../components/products/ProductForm";
@@ -76,6 +77,7 @@ const Products = () => {
   const debouncedMinPrice = useDebounce(minPrice, 400);
   const debouncedMaxPrice = useDebounce(maxPrice, 400);
   const [inventoryStatusFilter, setInventoryStatusFilter] = useState(null);
+  const [showDeleted, setShowDeleted] = useState(false);
 
   const [sortBy, setSortBy] = useState("idProduct");
   const [sortDirection, setSortDirection] = useState("ASC");
@@ -100,39 +102,39 @@ const Products = () => {
     loadMeta();
   }, []);
 
-  const fetchList = useCallback(() => {
-    if (supplierId) {
-
-      dispatch(
-        fetchProductsBySupplier({
-          supplierId,
-          pageNo: currentPage,
-          pageSize,
-          sortBy,
-          sortDirection,
-        })
-      );
-    } else {
-      dispatch(
-        fetchProducts({
-          pageNo: currentPage,
-          pageSize,
-          sortBy,
-          sortDirection,
-          keyword: debouncedKeyword?.trim() || undefined,
-          categoryId: categoryId || undefined,
-          brand: debouncedBrand?.trim() || undefined,
-          minPrice:
-            debouncedMinPrice != null ? Number(debouncedMinPrice) : undefined,
-          maxPrice:
-            debouncedMaxPrice != null ? Number(debouncedMaxPrice) : undefined,
-          inventoryStatus: inventoryStatusFilter || undefined,
-        })
-      );
+  const fetchList = useCallback(async () => {
+    try {
+      if (supplierId) {
+        await dispatch(
+          fetchProductsBySupplier({
+            supplierId: supplierId,
+            pageNo: currentPage,
+            pageSize,
+            showDeleted,
+          })
+        ).unwrap();
+      } else {
+        await dispatch(
+          fetchProducts({
+            pageNo: currentPage,
+            pageSize,
+            sortBy,
+            sortDirection,
+            keyword: debouncedKeyword,
+            categoryId,
+            brand: debouncedBrand,
+            minPrice: debouncedMinPrice,
+            maxPrice: debouncedMaxPrice,
+            inventoryStatus: inventoryStatusFilter,
+            showDeleted,
+          })
+        ).unwrap();
+      }
+    } catch {
+      message.error("Không thể tải danh sách sản phẩm");
     }
   }, [
     dispatch,
-    supplierId,
     currentPage,
     pageSize,
     sortBy,
@@ -143,6 +145,8 @@ const Products = () => {
     debouncedMinPrice,
     debouncedMaxPrice,
     inventoryStatusFilter,
+    supplierId,
+    showDeleted,
   ]);
 
   useEffect(() => {
@@ -175,8 +179,8 @@ const Products = () => {
     setMinPrice(undefined);
     setMaxPrice(undefined);
     setInventoryStatusFilter(null);
-    setSortBy("idProduct");
     setSortDirection("ASC");
+    setShowDeleted(false);
     resetPagination();
   };
 
@@ -205,6 +209,16 @@ const Products = () => {
       fetchList();
     } catch (e) {
       message.error(e?.message || "Xóa sản phẩm thất bại!");
+    }
+  };
+
+  const handleRestore = async (idProduct) => {
+    try {
+      await dispatch(restoreProduct(idProduct)).unwrap();
+      message.success("Khôi phục sản phẩm thành công!");
+      fetchList();
+    } catch (e) {
+      message.error(e?.message || "Khôi phục sản phẩm thất bại!");
     }
   };
 
@@ -254,23 +268,29 @@ const Products = () => {
         title: "Trạng thái",
         dataIndex: "status",
         key: "status",
-        render: (st, record) => {
-
-          if (st === "OUT_OF_STOCK" || record.stockQuantity === 0) {
-            return <Tag color="red">Hết hàng</Tag>;
-          } else if (
-            st === "IN_STOCK" &&
-            record.stockQuantity > 0 &&
-            record.stockQuantity <= (LOW_STOCK_THRESHOLD || 10)
-          ) {
-            return <Tag color="orange">Sắp hết hàng</Tag>;
-          } else if (st === "IN_STOCK") {
-            return <Tag color="green">Còn hàng</Tag>;
-          } else if (st === "DISCONTINUED") {
-            return <Tag color="default">Ngừng kinh doanh</Tag>;
-          }
-          return <Tag>{st}</Tag>;
-        },
+        render: (text, record) => (
+          <Space size="middle">
+            {record.isDelete ? (
+              <Tag color="error">Đã xóa</Tag>
+            ) : (
+              <Tag
+                color={
+                  text === "IN_STOCK"
+                    ? "success"
+                    : text === "OUT_OF_STOCK"
+                      ? "error"
+                      : "warning"
+                }
+              >
+                {text === "IN_STOCK"
+                  ? "Còn hàng"
+                  : text === "OUT_OF_STOCK"
+                    ? "Hết hàng"
+                    : "Ngừng kinh doanh"}
+              </Tag>
+            )}
+          </Space>
+        ),
       },
       { title: "Code", dataIndex: "productCode", key: "productCode" },
       { title: "Code Type", dataIndex: "codeType", key: "codeType" },
@@ -281,35 +301,47 @@ const Products = () => {
         fixed: "right",
         width: 200,
         render: (_, record) => (
-          <Space>
+          <Space size="middle">
             <Button
               type="text"
               icon={<EyeOutlined />}
-              onClick={() => handleView(record.idProduct)}
+              onClick={() => navigate(`/products/${record.idProduct}`)}
             />
-            <Button
-              type="text"
-              icon={<StarOutlined />}
-              onClick={() => handleViewReviews(record.idProduct)}
-              title="Xem đánh giá"
-            />
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => handleEdit(record)}
-            />
-            <Popconfirm
-              title="Xóa sản phẩm?"
-              onConfirm={() => handleDelete(record.idProduct)}
-              okText="Xóa"
-              cancelText="Hủy">
-              <Button type="text" danger icon={<DeleteOutlined />} />
-            </Popconfirm>
+            {!record.isDelete && (
+              <Button
+                type="text"
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setEditingProduct(record);
+                  setIsModalVisible(true);
+                }}
+              />
+            )}
+            {record.isDelete ? (
+              <Popconfirm
+                title="Bạn có chắc chắn muốn khôi phục sản phẩm này?"
+                onConfirm={() => handleRestore(record.idProduct)}
+              >
+                <Button type="text" icon={<ReloadOutlined />} title="Khôi phục" />
+              </Popconfirm>
+            ) : (
+              <Popconfirm
+                title="Bạn có chắc chắn muốn xóa sản phẩm này?"
+                onConfirm={() => handleDelete(record.idProduct)}
+              >
+                <Button
+                  type="text"
+                  danger
+                  icon={<DeleteOutlined />}
+                  title="Xóa"
+                />
+              </Popconfirm>
+            )}
           </Space>
         ),
       },
     ],
-    [handleView, handleEdit, handleDelete]
+    [handleView, handleEdit, handleDelete, handleRestore, navigate]
   );
 
   const handleExportExcel = useCallback(() => {
@@ -369,7 +401,7 @@ const Products = () => {
             Quản lý sản phẩm
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
-            Danh sách và quản lý tồn kho sản phẩm TechStore
+            Danh sách và quản lý tồn kho sản phẩm Electronics Store
           </Text>
         </div>
         <Button
@@ -387,24 +419,25 @@ const Products = () => {
 
       <Card
         style={{
-          marginBottom: 12,
           borderRadius: 12,
           border: "1px solid #E2E8F0",
-          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
-          background: "#FFFFFF",
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+          marginBottom: 24,
         }}
-        bodyStyle={{ padding: 16 }}>
-        <Row gutter={[8, 12]}>
-          <Col xs={24} sm={12} md={8}>
+        styles={{ body: { padding: "20px" } }}>
+        <Row gutter={[16, 16]}>
+          {/* Main search and selectors */}
+          <Col xs={24} lg={8}>
             <Input
               placeholder="Tìm kiếm theo mã hoặc tên sản phẩm..."
               prefix={<SearchOutlined style={{ color: "#94A3B8" }} />}
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
               allowClear
+              size="large"
             />
           </Col>
-          <Col xs={24} sm={12} md={6}>
+          <Col xs={24} sm={12} lg={4}>
             <Select
               placeholder="Danh mục"
               value={categoryId}
@@ -415,6 +448,7 @@ const Products = () => {
               allowClear
               style={{ width: "100%" }}
               showSearch
+              size="large"
               optionFilterProp="label"
               options={categories.map((c) => ({
                 value: c.idCategory,
@@ -422,7 +456,7 @@ const Products = () => {
               }))}
             />
           </Col>
-          <Col xs={24} sm={12} md={6}>
+          <Col xs={24} sm={12} lg={4}>
             <Select
               placeholder="Nhà cung cấp"
               value={supplierId}
@@ -433,6 +467,7 @@ const Products = () => {
               allowClear
               style={{ width: "100%" }}
               showSearch
+              size="large"
               optionFilterProp="label"
               options={suppliers.map((s) => ({
                 value: s.idSupplier,
@@ -440,36 +475,55 @@ const Products = () => {
               }))}
             />
           </Col>
-
-          <Col xs={24} sm={12} md={4}>
+          <Col xs={24} sm={12} lg={4}>
             <Input
               placeholder="Thương hiệu"
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
               allowClear
+              size="large"
             />
           </Col>
+          <Col xs={24} sm={12} lg={4}>
+            <Select
+              placeholder="Hiển thị sản phẩm"
+              style={{ width: "100%" }}
+              value={showDeleted}
+              size="large"
+              allowClear
+              onChange={(val) => {
+                setShowDeleted(val ?? false);
+                resetPagination();
+              }}
+            >
+              <Option value={false}>Sản phẩm đang bán</Option>
+              <Option value={true}>Sản phẩm đã xóa</Option>
+            </Select>
+          </Col>
 
-          <Col xs={12} sm={6} md={3}>
+          {/* Price range and secondary filters */}
+          <Col xs={12} sm={6} lg={4}>
             <InputNumber
               placeholder="Giá từ"
               value={minPrice}
               onChange={(value) => setMinPrice(value)}
               min={0}
               style={{ width: "100%" }}
+              size="large"
             />
           </Col>
-          <Col xs={12} sm={6} md={3}>
+          <Col xs={12} sm={6} lg={4}>
             <InputNumber
               placeholder="Giá đến"
               value={maxPrice}
               onChange={(value) => setMaxPrice(value)}
               min={0}
               style={{ width: "100%" }}
+              size="large"
             />
           </Col>
 
-          <Col xs={24} sm={12} md={6}>
+          <Col xs={24} sm={12} lg={4}>
             <Select
               placeholder="Trạng thái tồn kho"
               value={inventoryStatusFilter}
@@ -478,6 +532,7 @@ const Products = () => {
                 handlePageChange(1, pageSize);
               }}
               allowClear
+              size="large"
               style={{ width: "100%" }}>
               <Option value="COMING_SOON">Hàng sắp về</Option>
               <Option value="IN_STOCK">Còn hàng</Option>
@@ -485,21 +540,33 @@ const Products = () => {
             </Select>
           </Col>
 
-          <Col xs={24} sm={24} md={8}>
+          {/* Action Buttons */}
+          <Col xs={24} lg={12}>
             <Space
               wrap
               style={{
-                display: "flex",
+                width: "100%",
                 justifyContent: "flex-start",
-                gap: 8,
               }}>
-              <Button icon={<ReloadOutlined />} onClick={onResetFilters}>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={onResetFilters}
+                size="large"
+              >
                 Xóa lọc
               </Button>
-              <Button icon={<DownloadOutlined />} onClick={handleExportExcel}>
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={handleExportExcel}
+                size="large"
+              >
                 Xuất Excel
               </Button>
-              <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={handleExportCSV}
+                size="large"
+              >
                 Xuất CSV
               </Button>
             </Space>
@@ -514,7 +581,7 @@ const Products = () => {
           boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
           background: "#FFFFFF",
         }}
-        bodyStyle={{ padding: 16 }}>
+        styles={{ body: { padding: 16 } }}>
         {loading && (!list || list.length === 0) ? (
           <LoadingSkeleton type="table" rows={5} />
         ) : (
@@ -553,7 +620,7 @@ const Products = () => {
         onCancel={() => setIsModalVisible(false)}
         footer={null}
         width={800}
-        destroyOnClose>
+        destroyOnHidden>
         <ProductForm
           product={editingProduct}
           onSuccess={() => {
@@ -562,7 +629,7 @@ const Products = () => {
           }}
         />
       </Modal>
-    </div>
+    </div >
   );
 };
 

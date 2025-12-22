@@ -23,6 +23,7 @@ export const fetchProductsBySupplier = createAsyncThunk(
       pageSize = 10,
       sortBy = "idProduct",
       sortDirection = "ASC",
+      showDeleted = false,
     },
     { rejectWithValue }
   ) => {
@@ -32,6 +33,7 @@ export const fetchProductsBySupplier = createAsyncThunk(
         pageSize,
         sortBy,
         sortDirection,
+        showDeleted,
       });
       return res;
     } catch (err) {
@@ -82,6 +84,18 @@ export const deleteProduct = createAsyncThunk(
     try {
       await productsService.deleteProduct(id);
       return id;
+    } catch (err) {
+      return rejectWithValue(handleApiError(err));
+    }
+  }
+);
+
+export const restoreProduct = createAsyncThunk(
+  "products/restoreProduct",
+  async (id, { rejectWithValue }) => {
+    try {
+      const data = await productsService.restoreProduct(id);
+      return { id, data };
     } catch (err) {
       return rejectWithValue(handleApiError(err));
     }
@@ -221,6 +235,21 @@ const productsSlice = createSlice({
         s.top5BestSellers = Array.isArray(a.payload) ? a.payload : [];
       })
       .addCase(fetchTop5BestSellingProducts.rejected, (s, a) => {
+        s.loading = false;
+        s.error = a.payload || a.error;
+      })
+
+      .addCase(restoreProduct.pending, (s) => {
+        s.loading = true;
+        s.error = null;
+      })
+      .addCase(restoreProduct.fulfilled, (s, a) => {
+        s.loading = false;
+        const { id } = a.payload;
+        const idx = s.list.findIndex((p) => p.idProduct === id);
+        if (idx !== -1) s.list[idx].isDelete = false;
+      })
+      .addCase(restoreProduct.rejected, (s, a) => {
         s.loading = false;
         s.error = a.payload || a.error;
       });

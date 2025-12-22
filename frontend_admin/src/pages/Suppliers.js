@@ -215,7 +215,7 @@ const Suppliers = () => {
             Quản lý nhà cung cấp
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
-            Quản lý thông tin và danh sách nhà cung cấp của TechStore
+            Quản lý thông tin và danh sách nhà cung cấp của Electronics Store
           </Text>
         </div>
         <Button

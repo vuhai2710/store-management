@@ -408,7 +408,7 @@ const Orders = () => {
             Quản lý đơn hàng
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
-            Theo dõi và xử lý đơn hàng khách hàng TechStore
+            Theo dõi và xử lý đơn hàng khách hàng Electronics Store
           </Text>
         </div>
         <Button

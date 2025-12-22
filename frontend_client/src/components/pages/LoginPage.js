@@ -169,7 +169,7 @@ const LoginPage = ({ setCurrentPage }) => {
             boxShadow: "0 24px 60px rgba(15, 23, 42, 0.16)",
             overflow: "hidden",
           }}>
-          {}
+          { }
           <div
             style={{
               background:
@@ -200,13 +200,13 @@ const LoginPage = ({ setCurrentPage }) => {
               Đăng Nhập
             </h2>
             <p style={{ fontSize: "0.875rem", opacity: 0.9 }}>
-              Chào mừng trở lại với Electronic Store!
+              Chào mừng trở lại với Electronics Store!
             </p>
           </div>
 
-          {}
+          { }
           <form onSubmit={handleSubmit} style={{ padding: "2rem" }}>
-            {}
+            { }
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -229,7 +229,7 @@ const LoginPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {}
+            { }
             <div style={inputWrapperStyle}>
               <label
                 style={{
@@ -266,7 +266,7 @@ const LoginPage = ({ setCurrentPage }) => {
               />
             </div>
 
-            {}
+            { }
             <div
               style={{
                 display: "flex",
@@ -304,7 +304,7 @@ const LoginPage = ({ setCurrentPage }) => {
               </button>
             </div>
 
-            {}
+            { }
             {apiError && (
               <div
                 style={{
@@ -324,7 +324,7 @@ const LoginPage = ({ setCurrentPage }) => {
               </div>
             )}
 
-            {}
+            { }
             <Button
               type="submit"
               disabled={isLoading}
@@ -333,7 +333,7 @@ const LoginPage = ({ setCurrentPage }) => {
               {isLoading ? "Đang đăng nhập..." : "Đăng Nhập"}
             </Button>
 
-            {}
+            { }
             <div
               style={{
                 display: "flex",
@@ -357,7 +357,7 @@ const LoginPage = ({ setCurrentPage }) => {
                 }}></div>
             </div>
 
-            {}
+            { }
             <div
               style={{
                 textAlign: "center",
@@ -380,7 +380,7 @@ const LoginPage = ({ setCurrentPage }) => {
               </button>
             </div>
 
-            {}
+            { }
             <div style={{ textAlign: "center", marginTop: "1rem" }}>
               <button
                 type="button"
@@ -397,7 +397,7 @@ const LoginPage = ({ setCurrentPage }) => {
             </div>
           </form>
 
-          {}
+          { }
           {showForgotPassword && (
             <div
               style={{

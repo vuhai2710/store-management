@@ -126,3 +126,5 @@ export const formatInventoryStatus = (status) => {
   };
   return statusLabels[status] || status;
 };
+
+

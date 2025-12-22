@@ -28,7 +28,7 @@ const Footer = () => (
               marginBottom: "1rem",
               color: "#F9FAFB",
             }}>
-            Electronic Store
+            Electronics Store
           </h3>
           <p style={{ color: "#9CA3AF", fontSize: "0.875rem" }}>
             Address: số 3 Cầu Giấy
@@ -37,7 +37,7 @@ const Footer = () => (
             Phone: +84 123456789
           </p>
           <p style={{ color: "#9CA3AF", fontSize: "0.875rem" }}>
-            Email: hello@electronicstore.com
+            Email: hello@electronicsstore.com
           </p>
         </div>
         <div>

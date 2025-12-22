@@ -67,4 +67,8 @@ public class Product extends BaseEntity {
 
     @Column(name = "sku", unique = true, length = 50)
     private String sku;
+
+    @Column(name = "is_delete", nullable = false)
+    @Builder.Default
+    private Boolean isDelete = false;
 }

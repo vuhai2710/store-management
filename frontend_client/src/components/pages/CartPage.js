@@ -35,8 +35,16 @@ const CartPage = ({ cart, cartTotal, cartSubtotal, cartAutomaticDiscount, setCur
             </button>
           </div>
         ) : (
-          <>
-            <div style={{ overflowX: 'auto', marginBottom: '2rem', backgroundColor: '#FFFFFF', borderRadius: '0.75rem', boxShadow: '0 12px 30px rgba(15,23,42,0.06)' }}>
+          <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            {/* Cột trái: Danh sách sản phẩm */}
+            <div style={{
+              flex: '1',
+              minWidth: 'min(100%, 800px)',
+              backgroundColor: '#FFFFFF',
+              borderRadius: '0.75rem',
+              boxShadow: '0 12px 30px rgba(15,23,42,0.06)',
+              overflowX: 'auto'
+            }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead style={styles.tableHead}>
                   <tr>
@@ -82,9 +90,9 @@ const CartPage = ({ cart, cartTotal, cartSubtotal, cartAutomaticDiscount, setCur
                             </div>
                             <div>
                               <h4 style={{ fontWeight: '600', marginBottom: '0.25rem', color: '#212529' }}>{productName}</h4>
-                              {item.productCode || item.product?.productCode && (
+                              {(item.productCode || (item.product && item.product.productCode)) && (
                                 <p style={{ fontSize: '0.875rem', color: '#6c757d' }}>
-                                  Code: {item.productCode || item.product?.productCode}
+                                  Code: {item.productCode || item.product.productCode}
                                 </p>
                               )}
                             </div>
@@ -182,47 +190,55 @@ const CartPage = ({ cart, cartTotal, cartSubtotal, cartAutomaticDiscount, setCur
               </table>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
-              <div style={{ gridColumn: 'span 2' }}>{}</div>
-              <div style={{ backgroundColor: '#FFFFFF', padding: '1.75rem', borderRadius: '0.75rem', border: '1px solid #E2E8F0', boxShadow: '0 18px 45px rgba(15,23,42,0.10)' }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Tổng giỏ hàng</h3>
-                <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#495057' }}>
-                    <span>Tạm tính</span>
-                    <span>{formatPrice(cartSubtotal ?? cartTotal)}</span>
-                  </div>
-                  {cartAutomaticDiscount > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#28a745' }}>
-                      <span>Giảm giá tự động</span>
-                      <span>-{formatPrice(cartAutomaticDiscount)}</span>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6c757d', fontSize: '0.875rem' }}>
-                    <span>Phí vận chuyển</span>
-                    <span>Tính khi thanh toán</span>
-                  </div>
+            {/* Cột phải: Tổng giỏ hàng và Thanh toán */}
+            <div style={{
+              flex: '0 0 380px',
+              width: '100%',
+              backgroundColor: '#FFFFFF',
+              padding: '1.75rem',
+              borderRadius: '0.75rem',
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 18px 45px rgba(15,23,42,0.10)',
+              position: 'sticky',
+              top: '2rem'
+            }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Tổng giỏ hàng</h3>
+              <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#495057' }}>
+                  <span>Tạm tính</span>
+                  <span>{formatPrice(cartSubtotal ?? cartTotal)}</span>
                 </div>
-                <div style={{ marginBottom: '1.5rem', paddingTop: '1rem', borderTop: '2px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>Tổng cộng</span>
-                  <span style={{ fontWeight: 'bold', fontSize: '1.5rem', color: '#28a745' }}>
-                    {formatPrice(cartTotal)}
-                  </span>
+                {cartAutomaticDiscount > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#28a745' }}>
+                    <span>Giảm giá tự động</span>
+                    <span>-{formatPrice(cartAutomaticDiscount)}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6c757d', fontSize: '0.875rem' }}>
+                  <span>Phí vận chuyển</span>
+                  <span>Tính khi thanh toán</span>
                 </div>
-                <button
-                  onClick={() => setCurrentPage('checkout')}
-                  style={{ ...styles.buttonPrimary, width: '100%', padding: '0.75rem', fontSize: '1rem', fontWeight: 'bold' }}
-                >
-                  THANH TOÁN
-                </button>
-                <button
-                  onClick={() => setCurrentPage('shop')}
-                  style={{ ...styles.buttonSecondary, width: '100%', padding: '0.75rem', marginTop: '0.5rem', fontSize: '0.875rem' }}
-                >
-                  Tiếp tục mua sắm
-                </button>
               </div>
+              <div style={{ marginBottom: '1.5rem', paddingTop: '1rem', borderTop: '2px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>Tổng cộng</span>
+                <span style={{ fontWeight: 'bold', fontSize: '1.5rem', color: '#28a745' }}>
+                  {formatPrice(cartTotal)}
+                </span>
+              </div>
+              <button
+                onClick={() => setCurrentPage('checkout')}
+                style={{ ...styles.buttonPrimary, width: '100%', padding: '0.75rem', fontSize: '1rem', fontWeight: 'bold' }}
+              >
+                THANH TOÁN
+              </button>
+              <button
+                onClick={() => setCurrentPage('shop')}
+                style={{ ...styles.buttonSecondary, width: '100%', padding: '0.75rem', marginTop: '0.5rem', fontSize: '0.875rem' }}
+              >
+                Tiếp tục mua sắm
+              </button>
             </div>
-          </>
+          </div>
         )}
       </div>
     </section>

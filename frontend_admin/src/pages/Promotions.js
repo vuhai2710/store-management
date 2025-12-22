@@ -577,7 +577,7 @@ const Promotions = () => {
             Quản lý khuyến mãi & giảm giá
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
-            Cấu hình mã giảm giá và quy tắc giảm giá tự động cho TechStore
+            Cấu hình mã giảm giá và quy tắc giảm giá tự động cho Electronics Store
           </Text>
         </div>
       </div>

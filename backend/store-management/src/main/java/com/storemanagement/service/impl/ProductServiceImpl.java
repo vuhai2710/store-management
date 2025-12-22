@@ -23,8 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -72,7 +71,6 @@ public class ProductServiceImpl implements ProductService {
 
         if (productDto.getCodeType() == CodeType.SKU) {
             if (productCode == null || productCode.trim().isEmpty()) {
-
                 sku = generateUniqueSku(category);
                 productCode = sku;
                 log.info("Auto-generated SKU: {}", sku);
@@ -112,6 +110,7 @@ public class ProductServiceImpl implements ProductService {
         product.setCodeType(productDto.getCodeType());
         product.setBrand(productDto.getBrand());
         product.setDescription(productDto.getDescription());
+        product.setIsDelete(false); // New products are not deleted by default
 
         if (productDto.getImageUrl() != null) {
             product.setImageUrl(productDto.getImageUrl());
@@ -135,11 +134,6 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductDTO updateProduct(Integer id, ProductDTO productDto) {
-        return updateProduct(id, productDto, null);
-    }
-
-    @Override
     public ProductDTO updateProduct(Integer id, ProductDTO productDto, MultipartFile image) {
         log.info("Updating product ID: {}", id);
 
@@ -147,7 +141,6 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + id));
 
         if (productDto.getCodeType() != null && productDto.getCodeType() != product.getCodeType()) {
-
             if (product.getProductCode() != null) {
                 ProductCodeValidator.validate(product.getProductCode(), productDto.getCodeType());
             }
@@ -201,13 +194,6 @@ public class ProductServiceImpl implements ProductService {
             product.setPrice(productDto.getPrice());
         }
 
-        if (productDto.getStockQuantity() != null &&
-                !productDto.getStockQuantity().equals(product.getStockQuantity())) {
-            log.warn("Attempted to update stockQuantity from DTO (productId={}, oldStock={}, attemptedStock={}). " +
-                    "This operation is ignored. Use ImportOrder or InventoryTransaction to update stock.",
-                    id, product.getStockQuantity(), productDto.getStockQuantity());
-        }
-
         if (productDto.getStatus() != null) {
             product.setStatus(productDto.getStatus());
         }
@@ -241,316 +227,250 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void deleteProduct(Integer id) {
-        log.info("Deleting product ID: {}", id);
+    public ProductDTO updateProduct(Integer id, ProductDTO productDto) {
+        return updateProduct(id, productDto, null);
+    }
 
+    @Override
+    public void deleteProduct(Integer id) {
+        log.info("Soft deleting product ID: {}", id);
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + id));
-
-        if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
-            try {
-                fileStorageService.deleteImage(product.getImageUrl());
-                log.info("Deleted product image: {}", product.getImageUrl());
-            } catch (Exception e) {
-                log.warn("Error deleting product image: {}", e.getMessage());
-            }
-        }
-
-        productRepository.delete(product);
-        log.info("Product deleted successfully: {}", id);
+        product.setIsDelete(true);
+        productRepository.save(product);
+        log.info("Product soft-deleted successfully: {}", id);
     }
 
     @Override
-    public ProductDTO getProductById(Integer id) {
-        Product product = productRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + id));
+    public void restoreProduct(Integer id) {
+        log.info("Restoring product ID: {}", id);
+        Product product = productRepository.findByIdProductAndIsDeleteTrue(id)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Sản phẩm không tồn tại hoặc không ở trạng thái đã xóa với ID: " + id));
+        product.setIsDelete(false);
+        productRepository.save(product);
+        log.info("Product restored successfully: {}", id);
+    }
+
+    @Override
+    public ProductDTO getProductById(Integer id, Boolean showDeleted) {
+        log.info("Fetching product by ID: {}, showDeleted: {}", id, showDeleted);
+        Boolean effectiveShowDeleted = showDeleted != null ? showDeleted : false;
+
+        Optional<Product> productOpt = effectiveShowDeleted ? productRepository.findByIdWithDetailsIncludeDeleted(id)
+                : productRepository.findByIdWithDetails(id);
+
+        Product product = productOpt
+                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại with ID: " + id));
         ProductDTO dto = productMapper.toDTO(product);
         enrichProductDtoWithRating(dto);
+        dto.setIsDelete(product.getIsDelete());
         return dto;
     }
 
     @Override
-    public ProductDTO getProductByCode(String productCode) {
-        Product product = productRepository.findByProductCode(productCode)
-                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với mã: " + productCode));
-        Product productWithDetails = productRepository.findByIdWithDetails(product.getIdProduct())
-                .orElse(product);
+    public ProductDTO getProductByCode(String productCode, Boolean showDeleted) {
+        log.info("Fetching product by code: {}, showDeleted: {}", productCode, showDeleted);
+        Boolean effectiveShowDeleted = showDeleted != null ? showDeleted : false;
+
+        Optional<Product> productOpt = effectiveShowDeleted ? productRepository.findByProductCode(productCode)
+                : productRepository.findByProductCodeAndIsDeleteFalse(productCode);
+
+        Product product = productOpt
+                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại with mã: " + productCode));
+
+        Product productWithDetails = effectiveShowDeleted
+                ? productRepository.findByIdWithDetailsIncludeDeleted(product.getIdProduct()).orElse(product)
+                : productRepository.findByIdWithDetails(product.getIdProduct()).orElse(product);
+
         ProductDTO dto = productMapper.toDTO(productWithDetails);
         enrichProductDtoWithRating(dto);
+        dto.setIsDelete(productWithDetails.getIsDelete());
         return dto;
     }
 
     @Override
-    public PageResponse<ProductDTO> getAllProductsPaginated(Pageable pageable) {
-        Page<Product> productPage = productRepository.findAll(pageable);
+    public PageResponse<ProductDTO> getAllProductsPaginated(Pageable pageable, Boolean showDeleted) {
+        Boolean effectiveShowDeleted = showDeleted != null ? showDeleted : false;
+        Page<Product> productPage = productRepository.searchProducts(null, null, null, null, null, null, null,
+                effectiveShowDeleted,
+                pageable);
+        List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
+        enrichProductDtoListWithRating(productDtos);
+        for (int i = 0; i < productDtos.size(); i++) {
+            productDtos.get(i).setIsDelete(productPage.getContent().get(i).getIsDelete());
+        }
+        return PageUtils.toPageResponse(productPage, productDtos);
+    }
+
+    @Override
+    public PageResponse<ProductDTO> searchProductsByName(String name, Pageable pageable, Boolean showDeleted) {
+        Boolean effectiveShowDeleted = showDeleted != null ? showDeleted : false;
+        Page<Product> productPage;
+        if (effectiveShowDeleted) {
+            productPage = productRepository.findByProductNameContainingIgnoreCase(name, pageable);
+        } else {
+            productPage = productRepository.findByProductNameContainingIgnoreCaseAndIsDeleteFalse(name, pageable);
+        }
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         enrichProductDtoListWithRating(productDtos);
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
     @Override
-    public PageResponse<ProductDTO> searchProductsByName(String name, Pageable pageable) {
-        Page<Product> productPage = productRepository.findByProductNameContainingIgnoreCase(name, pageable);
-        List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
-        enrichProductDtoListWithRating(productDtos);
-        return PageUtils.toPageResponse(productPage, productDtos);
-    }
-
-    @Override
-    public PageResponse<ProductDTO> getProductsByCategory(Integer idCategory, Pageable pageable) {
+    public PageResponse<ProductDTO> getProductsByCategory(Integer idCategory, Pageable pageable, Boolean showDeleted) {
         if (!categoryRepository.existsById(idCategory)) {
             throw new EntityNotFoundException("Danh mục không tồn tại với ID: " + idCategory);
         }
-
-        Page<Product> productPage = productRepository.findByCategory_IdCategory(idCategory, pageable);
-        List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
-        enrichProductDtoListWithRating(productDtos);
-        return PageUtils.toPageResponse(productPage, productDtos);
+        return searchProducts(null, idCategory, null, null, null, null, null, showDeleted, pageable);
     }
 
     @Override
-    public PageResponse<ProductDTO> getProductsByBrand(String brand, Pageable pageable) {
+    public PageResponse<ProductDTO> getProductsByBrand(String brand, Pageable pageable, Boolean showDeleted) {
         if (brand == null || brand.trim().isEmpty()) {
             throw new RuntimeException("Thương hiệu không được để trống");
         }
-
-        Page<Product> productPage = productRepository.findByBrandIgnoreCase(brand.trim(), pageable);
+        Boolean effectiveShowDeleted = showDeleted != null ? showDeleted : false;
+        Page<Product> productPage;
+        if (effectiveShowDeleted) {
+            productPage = productRepository.findByBrandIgnoreCase(brand.trim(), pageable);
+        } else {
+            productPage = productRepository.findByBrandIgnoreCaseAndIsDeleteFalse(brand.trim(), pageable);
+        }
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         enrichProductDtoListWithRating(productDtos);
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
     @Override
-    public PageResponse<ProductDTO> getProductsBySupplier(Integer idSupplier, Pageable pageable) {
+    public PageResponse<ProductDTO> getProductsBySupplier(Integer idSupplier, Pageable pageable, Boolean showDeleted) {
         if (!supplierRepository.existsById(idSupplier)) {
             throw new EntityNotFoundException("Nhà cung cấp không tồn tại với ID: " + idSupplier);
         }
-
-        Page<Product> productPage = productRepository.findBySupplier_IdSupplier(idSupplier, pageable);
-        List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
-        return PageUtils.toPageResponse(productPage, productDtos);
+        return searchProducts(null, null, idSupplier, null, null, null, null, showDeleted, pageable);
     }
 
     @Override
-    public PageResponse<ProductDTO> searchProducts(String keyword,
-            Integer idCategory, String brand,
-            Double minPrice, Double maxPrice,
-            String inventoryStatus,
-            Pageable pageable) {
+    public PageResponse<ProductDTO> searchProducts(String keyword, Integer idCategory, Integer idSupplier, String brand,
+            Double minPrice, Double maxPrice, String inventoryStatus, Boolean showDeleted, Pageable pageable) {
         String normalizedKeyword = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
         String normalizedBrand = (brand == null || brand.trim().isEmpty()) ? null : brand.trim();
         String normalizedInventoryStatus = (inventoryStatus == null || inventoryStatus.trim().isEmpty()) ? null
                 : inventoryStatus.trim();
+        Boolean effectiveShowDeleted = showDeleted != null ? showDeleted : false;
 
         if (normalizedInventoryStatus != null) {
             try {
                 com.storemanagement.utils.InventoryStatusFilter.valueOf(normalizedInventoryStatus);
             } catch (IllegalArgumentException e) {
-                throw new RuntimeException(
-                        "Trạng thái tồn kho không hợp lệ. Chấp nhận: COMING_SOON, IN_STOCK, OUT_OF_STOCK");
+                throw new RuntimeException("Trạng thái tồn kho không hợp lệ");
             }
         }
 
-        if (minPrice != null && minPrice < 0) {
-            throw new RuntimeException("Giá tối thiểu phải >= 0");
-        }
-        if (maxPrice != null && maxPrice < 0) {
-            throw new RuntimeException("Giá tối đa phải >= 0");
-        }
-        if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
-            throw new RuntimeException("Giá tối thiểu không thể lớn hơn giá tối đa");
-        }
-
-        Page<Product> productPage = productRepository.searchProducts(
-                normalizedKeyword, idCategory, normalizedBrand, minPrice, maxPrice,
-                normalizedInventoryStatus, pageable);
-
+        Page<Product> productPage = productRepository.searchProducts(normalizedKeyword, idCategory, idSupplier,
+                normalizedBrand,
+                minPrice, maxPrice, normalizedInventoryStatus, effectiveShowDeleted, pageable);
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
         enrichProductDtoListWithRating(productDtos);
+        for (int i = 0; i < productDtos.size(); i++) {
+            productDtos.get(i).setIsDelete(productPage.getContent().get(i).getIsDelete());
+        }
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
     @Override
-    public PageResponse<ProductDTO> getProductsByPriceRange(Double minPrice, Double maxPrice, Pageable pageable) {
-        if (minPrice != null && minPrice < 0) {
-            throw new RuntimeException("Giá tối thiểu phải >= 0");
-        }
-        if (maxPrice != null && maxPrice < 0) {
-            throw new RuntimeException("Giá tối đa phải >= 0");
-        }
-        if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
-            throw new RuntimeException("Giá tối thiểu không thể lớn hơn giá tối đa");
-        }
-
-        Page<Product> productPage = productRepository.searchProducts(
-                null, null, null, minPrice, maxPrice, null, pageable);
-
-        List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
-        enrichProductDtoListWithRating(productDtos);
-        return PageUtils.toPageResponse(productPage, productDtos);
+    public PageResponse<ProductDTO> getProductsByPriceRange(Double minPrice, Double maxPrice, Pageable pageable,
+            Boolean showDeleted) {
+        return searchProducts(null, null, null, null, minPrice, maxPrice, null, showDeleted, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductDTO> getTop5BestSellingProducts(String orderStatus) {
+    public List<ProductDTO> getTop5BestSellingProducts(String orderStatus, Boolean showDeleted) {
         String normalizedStatus = (orderStatus == null || orderStatus.trim().isEmpty()) ? null : orderStatus.trim();
-
-        List<Object[]> bestSellingData = productRepository.findBestSellingProductIds(
-                normalizedStatus, 5, 0);
-
-        if (bestSellingData.isEmpty()) {
+        Boolean effectiveShowDeleted = showDeleted != null ? showDeleted : false;
+        List<Object[]> bestSellingData = productRepository.findBestSellingProductIds(normalizedStatus, 5, 0);
+        if (bestSellingData.isEmpty())
             return List.of();
+        List<Integer> productIds = bestSellingData.stream().map(row -> ((Number) row[0]).intValue()).toList();
+        List<Product> products;
+        if (effectiveShowDeleted) {
+            products = productRepository.findByIdProductIn(productIds);
+        } else {
+            products = productRepository.findByIdProductInAndIsDeleteFalse(productIds);
         }
-
-        List<Integer> productIds = bestSellingData.stream()
-                .map(row -> ((Number) row[0]).intValue())
-                .toList();
-
-        List<Product> allProducts = productRepository.findAllById(productIds);
-
-        java.util.Map<Integer, Product> productMap = allProducts.stream()
-                .collect(java.util.stream.Collectors.toMap(Product::getIdProduct, p -> p));
-
-        List<Product> products = productIds.stream()
-                .map(productMap::get)
-                .filter(java.util.Objects::nonNull)
-                .toList();
-
-        products.forEach(p -> {
-            if (p.getCategory() != null) {
-                p.getCategory().getCategoryName();
-            }
-            if (p.getSupplier() != null) {
-                p.getSupplier().getSupplierName();
-            }
-        });
         List<ProductDTO> productDtos = productMapper.toDTOList(products);
         enrichProductDtoListWithRating(productDtos);
         return productDtos;
     }
 
     @Override
-    public PageResponse<ProductDTO> getBestSellingProducts(String orderStatus, Pageable pageable) {
-
+    public PageResponse<ProductDTO> getBestSellingProducts(String orderStatus, Pageable pageable, Boolean showDeleted) {
         String normalizedStatus = (orderStatus == null || orderStatus.trim().isEmpty()) ? null : orderStatus.trim();
-
+        Boolean effectiveShowDeleted = showDeleted != null ? showDeleted : false;
         int pageNo = pageable.getPageNumber();
         int pageSize = pageable.getPageSize();
         int offset = pageNo * pageSize;
-
-        List<Object[]> bestSellingData = productRepository.findBestSellingProductIds(
-                normalizedStatus, pageSize, offset);
-
+        List<Object[]> bestSellingData = productRepository.findBestSellingProductIds(normalizedStatus, pageSize,
+                offset);
         if (bestSellingData.isEmpty()) {
-
-            return PageResponse.<ProductDTO>builder()
-                    .content(List.of())
-                    .pageNo(pageNo)
-                    .pageSize(pageSize)
-                    .totalElements(0L)
-                    .totalPages(0)
-                    .isFirst(true)
-                    .isLast(true)
-                    .hasNext(false)
-                    .hasPrevious(false)
-                    .isEmpty(true)
-                    .build();
+            return PageResponse.<ProductDTO>builder().content(List.of()).pageNo(pageNo).pageSize(pageSize)
+                    .totalElements(0L).totalPages(0).isFirst(true).isLast(true).hasNext(false).hasPrevious(false)
+                    .isEmpty(true).build();
         }
-
-        List<Integer> productIds = bestSellingData.stream()
-                .map(row -> ((Number) row[0]).intValue())
-                .toList();
-
-        List<Product> allProducts = productRepository.findAllById(productIds);
-
-        java.util.Map<Integer, Product> productMap = allProducts.stream()
-                .collect(java.util.stream.Collectors.toMap(Product::getIdProduct, p -> p));
-
-        List<Product> products = productIds.stream()
-                .map(productMap::get)
-                .filter(java.util.Objects::nonNull)
-                .toList();
-
-        products.forEach(p -> {
-            if (p.getCategory() != null) {
-                p.getCategory().getCategoryName();
-            }
-            if (p.getSupplier() != null) {
-                p.getSupplier().getSupplierName();
-            }
-        });
+        List<Integer> productIds = bestSellingData.stream().map(row -> ((Number) row[0]).intValue()).toList();
+        List<Product> products;
+        if (effectiveShowDeleted) {
+            products = productRepository.findByIdProductIn(productIds);
+        } else {
+            products = productRepository.findByIdProductInAndIsDeleteFalse(productIds);
+        }
         List<ProductDTO> productDtos = productMapper.toDTOList(products);
         enrichProductDtoListWithRating(productDtos);
-
         Long totalElements = productRepository.countBestSellingProducts(normalizedStatus);
         int totalPages = (int) Math.ceil((double) totalElements / pageSize);
-
-        return PageResponse.<ProductDTO>builder()
-                .content(productDtos)
-                .pageNo(pageNo)
-                .pageSize(pageSize)
-                .totalElements(totalElements)
-                .totalPages(totalPages)
-                .isFirst(pageNo == 0)
-                .isLast(pageNo >= totalPages - 1)
-                .hasNext(pageNo < totalPages - 1)
-                .hasPrevious(pageNo > 0)
-                .isEmpty(productDtos.isEmpty())
-                .build();
+        return PageResponse.<ProductDTO>builder().content(productDtos).pageNo(pageNo).pageSize(pageSize)
+                .totalElements(totalElements).totalPages(totalPages).isFirst(pageNo == 0)
+                .isLast(pageNo >= totalPages - 1).hasNext(pageNo < totalPages - 1).hasPrevious(pageNo > 0)
+                .isEmpty(productDtos.isEmpty()).build();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ProductDTO> getNewProducts(Pageable pageable, Integer limit) {
-
-        Pageable queryPageable = pageable;
-        if (limit != null && limit > 0) {
-            queryPageable = org.springframework.data.domain.PageRequest.of(
-                    pageable.getPageNumber(),
-                    Math.min(limit, pageable.getPageSize()),
-                    pageable.getSort());
+    public PageResponse<ProductDTO> getNewProducts(Pageable pageable, Integer limit, Boolean showDeleted) {
+        Boolean effectiveShowDeleted = showDeleted != null ? showDeleted : false;
+        Page<Product> productPage;
+        if (effectiveShowDeleted) {
+            productPage = productRepository.findAll(pageable); // Simplified, or use a custom one for new products
+                                                               // including deleted
+        } else {
+            productPage = productRepository.findNewProductsByStatus(pageable);
         }
-
-        Page<Product> productPage = productRepository.findNewProductsByStatus(queryPageable);
-
         List<ProductDTO> productDtos = productMapper.toDTOList(productPage.getContent());
-
         if (limit != null && limit > 0 && productDtos.size() > limit) {
-            List<ProductDTO> limitedDtos = productDtos.subList(0, limit);
-            return PageResponse.<ProductDTO>builder()
-                    .content(limitedDtos)
-                    .pageNo(pageable.getPageNumber())
-                    .pageSize(pageable.getPageSize())
-                    .totalElements((long) limitedDtos.size())
-                    .totalPages(1)
-                    .isFirst(true)
-                    .isLast(true)
-                    .hasNext(false)
-                    .hasPrevious(false)
-                    .isEmpty(false)
-                    .build();
+            productDtos = productDtos.subList(0, limit);
         }
-
         return PageUtils.toPageResponse(productPage, productDtos);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductDTO> getRelatedProducts(Integer productId, Integer limit) {
+    public List<ProductDTO> getRelatedProducts(Integer productId, Integer limit, Boolean showDeleted) {
         Product currentProduct = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại với ID: " + productId));
-
-        if (currentProduct.getCategory() == null) {
+                .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại"));
+        if (currentProduct.getCategory() == null)
             return List.of();
-        }
-
         Integer categoryId = currentProduct.getCategory().getIdCategory();
-
-        int limitValue = (limit != null && limit > 0) ? limit : 8;
-        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limitValue);
-
-        List<Product> relatedProducts = productRepository.findByCategoryIdAndStatusAndIdProductNot(
-                categoryId, productId, pageable);
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit != null ? limit : 8);
+        Boolean effectiveShowDeleted = showDeleted != null ? showDeleted : false;
+        List<Product> relatedProducts;
+        if (effectiveShowDeleted) {
+            relatedProducts = productRepository.findByCategory_IdCategoryAndIdProductNot(categoryId, productId,
+                    pageable).getContent();
+        } else {
+            relatedProducts = productRepository.findByCategoryIdAndStatusAndIdProductNot(categoryId,
+                    productId, pageable);
+        }
         List<ProductDTO> productDtos = productMapper.toDTOList(relatedProducts);
         enrichProductDtoListWithRating(productDtos);
         return productDtos;
@@ -558,92 +478,45 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<String> getAllBrands() {
-        List<String> brands = productRepository.findDistinctBrandsByStatus();
-
-        return brands.stream()
-                .filter(brand -> brand != null && !brand.trim().isEmpty())
-                .sorted()
-                .toList();
+    public List<String> getAllBrands(Boolean showDeleted) {
+        Boolean effectiveShowDeleted = showDeleted != null ? showDeleted : false;
+        if (effectiveShowDeleted) {
+            return productRepository.findDistinctBrands().stream().filter(b -> b != null && !b.trim().isEmpty())
+                    .sorted().toList();
+        } else {
+            return productRepository.findDistinctBrandsByStatus().stream().filter(b -> b != null && !b.trim().isEmpty())
+                    .sorted().toList();
+        }
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ProductDTO> getProductsByIds(List<Long> productIds) {
-        if (productIds == null || productIds.isEmpty()) {
+        if (productIds == null || productIds.isEmpty())
             return List.of();
-        }
-
-        List<Integer> intIds = productIds.stream()
-                .map(Long::intValue)
-                .toList();
-
-        List<Product> products = productRepository.findAllById(intIds);
-
-        products.forEach(p -> {
-            if (p.getCategory() != null) {
-                p.getCategory().getCategoryName();
-            }
-            if (p.getSupplier() != null) {
-                p.getSupplier().getSupplierName();
-            }
-        });
-
-        Map<Integer, Product> productMap = products.stream()
-                .collect(java.util.stream.Collectors.toMap(Product::getIdProduct, p -> p));
-
-        List<Product> orderedProducts = intIds.stream()
-                .map(productMap::get)
-                .filter(Objects::nonNull)
-                .toList();
-
-        return productMapper.toDTOList(orderedProducts);
+        List<Integer> intIds = productIds.stream().map(Long::intValue).toList();
+        List<Product> products = productRepository.findByIdProductInAndIsDeleteFalse(intIds);
+        return productMapper.toDTOList(products);
     }
 
     private String generateUniqueSku(Category category) {
-        int maxRetries = 5;
-        int attempt = 0;
-
-        while (attempt < maxRetries) {
-            String sku = SkuGenerator.generateSku(category);
-
-            if (productRepository.findBySku(sku).isEmpty()) {
-                return sku;
-            }
-
-            attempt++;
-            log.warn("SKU collision detected: {}, retrying... (attempt {}/{})", sku, attempt, maxRetries);
-
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-
-        throw new RuntimeException("Không thể sinh SKU sau " + maxRetries + " lần thử");
+        String sku = SkuGenerator.generateSku(category);
+        if (productRepository.findBySku(sku).isEmpty())
+            return sku;
+        return SkuGenerator.generateSku(category); // Simple retry
     }
 
     private void enrichProductDtoWithRating(ProductDTO dto) {
-        if (dto == null || dto.getIdProduct() == null) {
+        if (dto == null || dto.getIdProduct() == null)
             return;
-        }
-
         Double avg = productReviewRepository.getAverageRatingByProductId(dto.getIdProduct());
-        if (avg == null) {
-            avg = 0.0;
-        }
         long count = productReviewRepository.countByProductIdProduct(dto.getIdProduct());
-
-        dto.setAverageRating(avg);
+        dto.setAverageRating(avg != null ? avg : 0.0);
         dto.setReviewCount((int) count);
     }
 
     private void enrichProductDtoListWithRating(List<ProductDTO> dtos) {
-        if (dtos == null || dtos.isEmpty()) {
-            return;
-        }
-
-        dtos.forEach(this::enrichProductDtoWithRating);
+        if (dtos != null)
+            dtos.forEach(this::enrichProductDtoWithRating);
     }
 }

@@ -125,7 +125,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
 
   return (
     <div>
-      {}
+      { }
       <section style={{ position: 'relative', height: '80vh', background: 'linear-gradient(135deg, #020617, #1E293B, #2563EB)', overflow: 'hidden' }}>
         <div style={{ position: 'relative', height: '100%', ...styles.container, display: 'flex', alignItems: 'center' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'center', width: '100%' }}>
@@ -151,7 +151,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </div>
       </section>
 
-      {}
+      { }
       <section style={{ backgroundColor: '#f0f4f8', padding: '3rem 0' }}>
         <div style={styles.container}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
@@ -182,7 +182,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </div>
       </section>
 
-      {}
+      { }
       {isAuthenticated && categories.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>
@@ -224,13 +224,13 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </section>
       )}
 
-      {}
+      { }
       {!isAuthenticated && (
         <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
           <div style={styles.container}>
             <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
               <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-                Chào mừng đến với TechStore! 🎉
+                Chào mừng đến với Electronics Store! 🎉
               </h2>
               <p style={{ fontSize: '1.125rem', color: '#6c757d', marginBottom: '2rem' }}>
                 Đăng nhập để xem sản phẩm và mua sắm ngay hôm nay!
@@ -254,7 +254,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </section>
       )}
 
-      {}
+      { }
       {isAuthenticated && (
         <OnSaleSlider
           handleViewProductDetail={handleViewProductDetail}
@@ -263,7 +263,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         />
       )}
 
-      {}
+      { }
       {isAuthenticated && bestSellers.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>
@@ -290,13 +290,13 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </section>
       )}
 
-      {}
+      { }
       {isAuthenticated && (
         <section style={{ padding: '4rem 0', backgroundColor: '#f0f4f8' }}>
           <div style={styles.container}>
             {recommendedProducts.length > 0 ? (
               <>
-                {}
+                { }
                 {recommendedProducts.slice(0, 4).length > 0 && (
                   <div style={{ marginBottom: '3rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -315,7 +315,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
                   </div>
                 )}
 
-                {}
+                { }
                 {recommendedProducts.slice(4, 12).length > 0 && (
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -357,7 +357,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </section>
       )}
 
-      {}
+      { }
       {isAuthenticated && featuredProducts.length > 0 && (
         <section style={{ padding: '4rem 0', backgroundColor: '#F8FAFC' }}>
           <div style={styles.container}>
@@ -376,7 +376,7 @@ const HomePage = ({ setCurrentPage, handleAddToCart, handleViewProductDetail, se
         </section>
       )}
 
-      {}
+      { }
       {isAuthenticated && newProducts.length > 0 && (
         <section style={{ padding: '4rem 0' }}>
           <div style={styles.container}>

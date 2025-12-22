@@ -16,6 +16,9 @@ public interface GHNService {
 
     GHNCreateOrderResponseDTO createOrder(GHNCreateOrderRequestDTO request);
 
+    String createGHNOrder(com.storemanagement.model.Order order,
+            com.storemanagement.model.ShippingAddress shippingAddress);
+
     GHNOrderInfoDTO getOrderInfo(String ghnOrderCode);
 
     void cancelOrder(String ghnOrderCode, String reason);

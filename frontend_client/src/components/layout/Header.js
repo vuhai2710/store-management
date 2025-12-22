@@ -329,7 +329,7 @@ const Header = ({
               alignItems: "center",
               gap: "0.5rem",
             }}>
-            💻 Electronic Store
+            💻 Electronics Store
           </button>
 
           { }

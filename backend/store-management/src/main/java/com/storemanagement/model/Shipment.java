@@ -60,7 +60,7 @@ public class Shipment {
     private ShippingMethod shippingMethod = ShippingMethod.GHN;
 
     public enum ShippingStatus {
-        PREPARING, SHIPPED, DELIVERED
+        PREPARING, PICKING_UP, SHIPPED, DELIVERED
     }
 
     public enum ShippingMethod {
@@ -68,4 +68,3 @@ public class Shipment {
         SELF_PICKUP
     }
 }
-

@@ -19,3 +19,5 @@ export const ORDER_STATUS_COLORS = {
   [ORDER_STATUS.COMPLETED]: '#28a745',
   [ORDER_STATUS.CANCELED]: '#dc3545',
 };
+
+

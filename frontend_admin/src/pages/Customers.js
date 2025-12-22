@@ -293,7 +293,7 @@ const Customers = () => {
             Quản lý khách hàng
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
-            Quản lý hồ sơ và phân loại khách hàng TechStore
+            Quản lý hồ sơ và phân loại khách hàng Electronics Store
           </Text>
         </div>
         <Button

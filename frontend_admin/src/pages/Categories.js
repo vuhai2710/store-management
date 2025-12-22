@@ -211,7 +211,7 @@ const Categories = () => {
             Quản lý danh mục
           </Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
-            Quản lý danh mục sản phẩm của TechStore
+            Quản lý danh mục sản phẩm của Electronics Store
           </Text>
         </div>
         <Button
